@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Independent Image Editor with Hue Warp/Filter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+        .container {
+            width: 90%;
+            max-width: 800px;
+        }
+        .controls {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: grid;
+            gap: 15px;
+            grid-template-columns: 1fr;
+        }
+        .control-group {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="range"] {
+            width: calc(100% - 70px);
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        .slider-value {
+            font-weight: bold;
+            display: inline-block;
+            width: 50px;
+            text-align: right;
+        }
+        #fileInput, button {
+            width: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        #saveButton {
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        #saveButton:disabled {
+            background-color: #b3d7ff;
+            cursor: not-allowed;
+        }
+        #canvasContainer {
+            width: 100%;
+            margin-top: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+            background-color: #e9e9e9;
+            border-radius: 8px;
+        }
+        #imageCanvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Canvas Image Editor</h1>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="fileInput">1. Load Image (PNG / JPG)</label>
+                <input type="file" id="fileInput" accept="image/png, image/jpeg">
+            </div>
+
+            <div class="control-group">
+                <label for="hueShiftSlider">2. Apply Hue Shift (Filter)</label>
+                <input type="range" id="hueShiftSlider" min="0" max="360" value="0" disabled>
+                <span id="hueShiftValue" class="slider-value">0°</span>
+            </div>
+
+            <div class="control-group">
+                <label for="warpFactorSlider">3. Warp Factor (Exaggerates Shift on Bright Colors)</label>
+                <input type="range" id="warpFactorSlider" min="0.1" max="5.0" step="0.1" value="1.0" disabled>
+                <span id="warpFactorValue" class="slider-value">1.0x</span>
+            </div>
+            
+            <button id="saveButton" disabled>4. Save Edited Image (as original type)</button>
+        </div>
+
+        <div id="canvasContainer">
+            <canvas id="imageCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const fileInput = document.getElementById('fileInput');
+        const hueShiftSlider = document.getElementById('hueShiftSlider');
+        const hueShiftValueSpan = document.getElementById('hueShiftValue');
+        const warpFactorSlider = document.getElementById('warpFactorSlider');
+        const warpFactorValueSpan = document.getElementById('warpFactorValue');
+        const saveButton = document.getElementById('saveButton');
+        const canvas = document.getElementById('imageCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // --- State Variables ---
+        let originalImage = new Image();
+        let originalMimeType = 'image/png';
+        let isImageLoaded = false;
+
+
+        // =========================================================================
+        // === HSL CONVERSION UTILITIES (Copied from uploaded modules) ===
+        // =========================================================================
+        // These functions are critical for color filtering/warping.
+
+        /** Converts an RGB object (0-255) to HSL object (H: 0-360, S/L: 0-100). */
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h = 0, s = 0;
+            const l = (max + min) / 2;
+
+            if (max !== min) {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return { h: h * 360, s: s * 100, l: l * 100 };
+        }
+
+        /** Converts HSL (H: 0-360, S/L: 0-100) to RGB (0-255). */
+        function hslToRgb(h, s, l) {
+            let r, g, b;
+            h /= 360; s /= 100; l /= 100;
+
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1 / 6) return p + (q - p) * 6 * t;
+                    if (t < 1 / 2) return q;
+                    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                    return p;
+                };
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1 / 3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1 / 3);
+            }
+            return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+        }
+
+        // =========================================================================
+        // === CORE IMAGE MANIPULATION LOGIC ===
+        // =========================================================================
+
+        /**
+         * Applies the combined Hue Shift (Filter) and Warping effect to the image data.
+         * This function simulates the core logic of your editor modules.
+         */
+        function applyFilters() {
+            if (!isImageLoaded) return;
+            
+            const hueShiftDeg = parseInt(hueShiftSlider.value);
+            const warpFactor = parseFloat(warpFactorSlider.value);
+            
+            hueShiftValueSpan.textContent = `${hueShiftDeg}°`;
+            warpFactorValueSpan.textContent = `${warpFactor.toFixed(1)}x`;
+
+            // 1. Redraw the original image onto the canvas to start fresh
+            ctx.drawImage(originalImage, 0, 0);
+
+            if (hueShiftDeg === 0 && warpFactor === 1.0) {
+                // If both controls are neutral, stop here.
+                return;
+            }
+
+            // 2. Get the pixel data from the canvas
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            // 3. Iterate over every pixel (4 elements per pixel: R, G, B, A)
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const a = data[i + 3];
+
+                // Convert RGB to HSL
+                const { h, s, l } = rgbToHsl(r, g, b);
+                
+                // --- Hue Warping / Non-Uniform Shift Logic ---
+                // The warping is simulated by adjusting the shift amount based on the
+                // pixel's lightness (l). Brighter pixels shift more dramatically.
+                // The Warp Factor acts as an intensity multiplier.
+                const lightnessScale = l / 100; // Normalize lightness (0 to 1)
+                
+                // Base shift is the slider value
+                let effectiveShift = hueShiftDeg; 
+
+                // Apply the 'Warp Factor' as a lightness-dependent multiplier
+                // e.g., if warpFactor > 1, brighter areas shift more.
+                // If warpFactor < 1, darker areas shift less dramatically.
+                if (warpFactor !== 1.0) {
+                   effectiveShift *= (lightnessScale * (warpFactor - 1) + 1);
+                }
+                
+                // Apply the new, potentially warped, Hue Shift
+                let newH = (h + effectiveShift) % 360;
+                
+                // Handle negative hue wrap-around
+                if (newH < 0) newH += 360;
+                
+                // Convert HSL back to RGB
+                const { r: newR, g: newG, b: newB } = hslToRgb(newH, s, l);
+
+                // Update the pixel data
+                data[i] = newR;
+                data[i + 1] = newG;
+                data[i + 2] = newB;
+                // data[i + 3] (Alpha) remains 'a'
+            }
+
+            // 4. Put the modified data back onto the canvas
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        // =========================================================================
+        // === EVENT HANDLERS ===
+        // =========================================================================
+
+        // --- Load Image Handler ---
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Determine the original MIME type for saving
+            originalMimeType = file.type.includes('jpeg') ? 'image/jpeg' : 'image/png';
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                originalImage.onload = () => {
+                    // Set canvas dimensions to match the image
+                    canvas.width = originalImage.width;
+                    canvas.height = originalImage.height;
+                    
+                    isImageLoaded = true;
+                    // Enable controls after image is loaded
+                    hueShiftSlider.disabled = false;
+                    warpFactorSlider.disabled = false;
+                    saveButton.disabled = false;
+                    
+                    // Initial draw and filter application
+                    applyFilters();
+                };
+                originalImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // --- Filter/Warp Control Handlers ---
+        hueShiftSlider.addEventListener('input', applyFilters);
+        warpFactorSlider.addEventListener('input', applyFilters);
+
+
+        // --- Save Image Handler ---
+        saveButton.addEventListener('click', () => {
+            if (!isImageLoaded) return;
+
+            // Use the canvas to generate a data URL (Base64) with the original type
+            // Quality (0 to 1) is only relevant for 'image/jpeg'
+            const imageURL = canvas.toDataURL(originalMimeType, 0.95); 
+
+            // Create a temporary link element to trigger the download
+            const a = document.createElement('a');
+            a.href = imageURL;
+            
+            // Set the filename based on the original type
+            const extension = originalMimeType.includes('jpeg') ? 'jpg' : 'png';
+            a.download = `edited_image_${new Date().getTime()}.${extension}`;
+            
+            // Programmatically click the link to start the download
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+
+    </script>
+</body>
+</html>

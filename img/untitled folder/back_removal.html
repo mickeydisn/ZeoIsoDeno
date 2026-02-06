@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Fill Multi-Stage Background Processor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2b3a55 0%, #465a7f 100%);
+            min-height: 100vh;
+            color: #ecf0f1;
+        }
+        
+        .container {
+            margin: 0 auto;
+            background: #34495e;
+            border-radius: 16px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #2c3e50;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 2px solid #34495e;
+        }
+        
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        .controls-panel {
+            background: #2c3e50;
+            border-radius: 8px;
+            padding: 15px;
+            height: fit-content;
+        }
+        
+        .upload-section {
+            background: #3c526d;
+            border: 3px dashed #7f8c8d;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            background: #46607d;
+            border-color: #ecf0f1;
+        }
+        
+        .upload-section input {
+            display: none;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #496280;
+        }
+        
+        .control-group:last-child {
+            border-bottom: none;
+        }
+        
+        .control-label {
+            display: block;
+            font-weight: 600;
+            color: #ecf0f1;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+        }
+        
+        .slider-group input[type="range"] {
+            flex-grow: 1;
+            margin-right: 10px;
+            -webkit-appearance: none;
+            height: 5px;
+            background: #7f8c8d;
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        
+        .btn-success {
+            background: #2ecc71;
+            color: #2c3e50;
+        }
+        
+        .btn-success:hover {
+            background: #27ae60;
+        }
+
+        .canvas-area {
+            background: #2c3e50;
+            border-radius: 8px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .canvas-wrapper {
+            background: #2d3436;
+            border-radius: 4px;
+            padding: 10px;
+            position: relative;
+        }
+
+        .canvas-wrapper h3 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 1em;
+            color: #7f8c8d;
+        }
+
+        #sourceCanvas, #previewCanvas {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+            cursor: crosshair;
+            border: 1px solid #7f8c8d;
+            
+            /* Checkboard pattern for transparency 
+            background: linear-gradient(45deg, #ccc 25%, transparent 25%), 
+                        linear-gradient(-45deg, #ccc 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, #ccc 75%), 
+                        linear-gradient(-45deg, transparent 75%, #ccc 75%);
+            */
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+        }
+
+        /* Color Layers UI */
+        #colorLayersList {
+            list-style: none;
+            padding: 0;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        .color-layer-item {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px dashed #496280;
+            font-size: 0.85em;
+        }
+        .color-layer-item:last-child {
+            border-bottom: none;
+        }
+        .color-display {
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-radius: 4px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .color-info {
+            flex-grow: 1;
+        }
+        .layer-action {
+            color: #e74c3c;
+            cursor: pointer;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+        .layer-action:hover {
+            color: #c0392b;
+        }
+        .color-layer-item strong {
+            color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌊 Flood Fill Multi-Stage Background Processor</h1>
+            <p>Uses **Flood Fill** from (0,0) to process only the **connected background area**.</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="controls-panel">
+                <div class="upload-section" id="uploadZone">
+                    <div style="font-size: 2em; margin-bottom: 8px;">📁</div>
+                    <h3 style="font-size: 1em; margin-bottom: 5px;">Upload Sprite Sheet</h3>
+                    <p style="font-size: 0.85em; color: #7f8c8d;">PNG/JPG files</p>
+                    <input type="file" id="fileInput" accept="image/png,image/jpg">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Background Color Layers (Click Source Image to Sample & Add)</label>
+                    <ul id="colorLayersList">
+                        </ul>
+                    <p style="font-size: 0.75em; color: #7f8c8d; margin-top: 5px;">
+                        **Process (Connected Area Only):** Color 1 -> Color 2 -> ... -> Color N-1 -> **TRANSPARENT**
+                    </p>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Color Tolerance: <span id="toleranceValue">10</span></label>
+                    <div class="slider-group">
+                        <input type="range" id="toleranceInput" min="0" max="100" step="1" value="10">
+                    </div>
+                    <p style="font-size: 0.75em; color: #7f8c8d; margin-top: 5px;">How strictly the colors must match for replacement/removal.</p>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Fade Threshold (Alpha Matting): <span id="fadeValue">40</span></label>
+                    <div class="slider-group">
+                        <input type="range" id="fadeInput" min="0" max="255" step="1" value="40">
+                    </div>
+                    <p style="font-size: 0.75em; color: #7f8c8d; margin-top: 5px;">Blending range for the **final** color layer (Color N -> Transparent).</p>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Edge Erosion/Dilation (px): <span id="erosionValue">0</span></label>
+                    <div class="slider-group">
+                        <input type="range" id="erosionInput" min="-5" max="5" step="1" value="0">
+                    </div>
+                    <p style="font-size: 0.75em; color: #7f8c8d; margin-top: 5px;">Positive = Erosion (shrinks), Negative = Dilation (grows).</p>
+                </div>
+                
+                <button class="btn btn-success" id="downloadBtn" style="display:none;">💾 Download Clean PNG</button>
+            </div>
+            
+            <div class="canvas-area">
+                <div class="canvas-wrapper">
+                    <h3>Source Image (Click to Sample & Add Layer)</h3>
+                    <canvas id="sourceCanvas"></canvas>
+                </div>
+                <div class="canvas-wrapper">
+                    <h3>Result Preview</h3>
+                    <canvas id="previewCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let originalImage = null;
+        let sourceCanvas = document.getElementById('sourceCanvas');
+        let sourceCtx = sourceCanvas.getContext('2d');
+        let previewCanvas = document.getElementById('previewCanvas');
+        let previewCtx = previewCanvas.getContext('2d');
+        
+        // --- Global Data Structure for Color Layers ---
+        let colorLayers = []; 
+        
+        // --- DOM Elements ---
+        const fileInput = document.getElementById('fileInput');
+        const uploadZone = document.getElementById('uploadZone');
+        const colorLayersList = document.getElementById('colorLayersList');
+        const toleranceInput = document.getElementById('toleranceInput');
+        const toleranceValue = document.getElementById('toleranceValue');
+        const fadeInput = document.getElementById('fadeInput');
+        const fadeValue = document.getElementById('fadeValue');
+        const erosionInput = document.getElementById('erosionInput');
+        const erosionValue = document.getElementById('erosionValue');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // --- Event Listeners ---
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) loadImage(file);
+        });
+
+        // Continuous update on control changes
+        toleranceInput.addEventListener('input', () => { 
+            toleranceValue.textContent = toleranceInput.value;
+            applyBackgroundProcessing();
+        });
+        fadeInput.addEventListener('input', () => { 
+            fadeValue.textContent = fadeInput.value;
+            applyBackgroundProcessing();
+        });
+        erosionInput.addEventListener('input', () => { 
+            erosionValue.textContent = erosionInput.value;
+            applyBackgroundProcessing();
+        });
+        sourceCanvas.addEventListener('click', handleSourceClick);
+        downloadBtn.addEventListener('click', downloadFixedSheet);
+
+        // --- Core Functions ---
+
+        function updateColorLayersUI() {
+            colorLayersList.innerHTML = '';
+            colorLayers.forEach((color, index) => {
+                const li = document.createElement('li');
+                li.className = 'color-layer-item';
+
+                const hex = rgbToHex(color.r, color.g, color.b);
+                const actionText = index < colorLayers.length - 1 
+                    ? `-> <strong>Color ${index + 2}</strong>`
+                    : `-> **TRANSPARENT** (Fade)`;
+
+                li.innerHTML = `
+                    <span class="color-display" style="background-color: ${hex};"></span>
+                    <span class="color-info">Color ${index + 1}: ${hex} ${actionText}</span>
+                    <span class="layer-action" data-index="${index}">[X]</span>
+                `;
+                colorLayersList.appendChild(li);
+            });
+
+            document.querySelectorAll('.layer-action').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    colorLayers.splice(index, 1);
+                    updateColorLayersUI();
+                    applyBackgroundProcessing();
+                });
+            });
+        }
+
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImage = img;
+                    
+                    // 1. Set canvas size
+                    sourceCanvas.width = img.width;
+                    sourceCanvas.height = img.height;
+                    previewCanvas.width = img.width;
+                    previewCanvas.height = img.height;
+
+                    // 2. Draw source image
+                    sourceCtx.imageSmoothingEnabled = false;
+                    sourceCtx.drawImage(originalImage, 0, 0);
+
+                    // 3. Auto-sample background (top-left) and initialize layers
+                    const imgData = sourceCtx.getImageData(0, 0, 1, 1);
+                    const color = { r: imgData.data[0], g: imgData.data[1], b: imgData.data[2] };
+                    colorLayers = [color]; // Start with one layer
+                    updateColorLayersUI();
+                    
+                    // 4. Run initial processing
+                    applyBackgroundProcessing();
+                    downloadBtn.style.display = 'block';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleSourceClick(e) {
+            if (!originalImage) return;
+
+            const rect = sourceCanvas.getBoundingClientRect();
+            const scaleX = sourceCanvas.width / rect.width;
+            const scaleY = sourceCanvas.height / rect.height;
+            const x = Math.floor((e.clientX - rect.left) * scaleX);
+            const y = Math.floor((e.clientY - rect.top) * scaleY);
+            
+            const imgData = sourceCtx.getImageData(x, y, 1, 1);
+            const color = { r: imgData.data[0], g: imgData.data[1], b: imgData.data[2] };
+
+            colorLayers.push(color);
+            updateColorLayersUI();
+            applyBackgroundProcessing();
+        }
+
+        function colorDistance(r1, g1, b1, r2, g2, b2) {
+            // Manhattan distance for quick comparison
+            return Math.abs(r1 - r2) + Math.abs(g1 - g2) + Math.abs(b1 - b2);
+        }
+        
+        function getPixelColor(data, x, y, w) {
+            const idx = (y * w + x) * 4;
+            return { r: data[idx], g: data[idx + 1], b: data[idx + 2], a: data[idx + 3] };
+        }
+
+        function applyBackgroundProcessing() {
+            if (!originalImage || colorLayers.length === 0) {
+                previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                return;
+            }
+
+            const w = originalImage.width;
+            const h = originalImage.height;
+            
+            // 1. Get a fresh copy of the image data for processing
+            previewCtx.clearRect(0, 0, w, h);
+            previewCtx.drawImage(originalImage, 0, 0);
+            let imgData = previewCtx.getImageData(0, 0, w, h);
+            let data = imgData.data;
+
+            const tolerance = parseInt(toleranceInput.value) * 3;
+            const fadeThreshold = parseInt(fadeInput.value) * 3;
+            const erosion = parseInt(erosionInput.value);
+            
+            // Boolean array to track visited pixels in the connected background
+            const visited = new Uint8Array(w * h);
+            // Array to store the final alpha value for all pixels
+            const finalAlpha = new Uint8Array(w * h);
+
+            // Breadth-First Search (BFS) Queue
+            const queue = [];
+            
+            // Start Flood Fill at (0, 0)
+            const startX = 0;
+            const startY = 0;
+            const startIdx = startY * w + startX;
+
+            // Only proceed if (0, 0) is one of the target background colors
+            const startColor = getPixelColor(data, startX, startY, w);
+            let isStartColorMatch = false;
+            for(let i = 0; i < colorLayers.length; i++) {
+                if (colorDistance(startColor.r, startColor.g, startColor.b, colorLayers[i].r, colorLayers[i].g, colorLayers[i].b) <= tolerance) {
+                    isStartColorMatch = true;
+                    break;
+                }
+            }
+
+            if (isStartColorMatch) {
+                queue.push({ x: startX, y: startY });
+                visited[startIdx] = 1;
+            }
+
+
+            // Directions for 4-directional search
+            const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
+
+            // 2. --- FLOOD FILL / SEQUENTIAL REPLACEMENT PASS ---
+            while (queue.length > 0) {
+                const { x, y } = queue.shift();
+                const currentIdx4 = (y * w + x) * 4;
+                
+                // Find which layer color the current pixel matches
+                let matchedLayerIndex = -1;
+                for (let i = 0; i < colorLayers.length; i++) {
+                    const r = data[currentIdx4];
+                    const g = data[currentIdx4 + 1];
+                    const b = data[currentIdx4 + 2];
+                    
+                    if (colorDistance(r, g, b, colorLayers[i].r, colorLayers[i].g, colorLayers[i].b) <= tolerance) {
+                        matchedLayerIndex = i;
+                        break;
+                    }
+                }
+
+                if (matchedLayerIndex !== -1) {
+                    // This pixel is part of the connected background
+                    
+                    if (matchedLayerIndex < colorLayers.length - 1) {
+                        // Apply Sequential Color Replacement (Color i -> Color i+1)
+                        const nextColor = colorLayers[matchedLayerIndex + 1];
+                        data[currentIdx4] = nextColor.r;
+                        data[currentIdx4 + 1] = nextColor.g;
+                        data[currentIdx4 + 2] = nextColor.b;
+                    } 
+                    
+                    // Mark as connected background, which will be processed for transparency
+                    finalAlpha[y * w + x] = 1; // 1 = connected BG, 0 = not visited/foreground
+                    
+                    // Queue neighbors for propagation
+                    for (const dir of dirs) {
+                        const nx = x + dir.dx;
+                        const ny = y + dir.dy;
+                        const nIdx = ny * w + nx;
+                        
+                        if (nx >= 0 && nx < w && ny >= 0 && ny < h && visited[nIdx] === 0) {
+                            // Check if neighbor matches ANY target color before queuing
+                            const nColor = getPixelColor(data, nx, ny, w);
+                            let isNeighborMatch = false;
+                            for(let i = 0; i < colorLayers.length; i++) {
+                                if (colorDistance(nColor.r, nColor.g, nColor.b, colorLayers[i].r, colorLayers[i].g, colorLayers[i].b) <= tolerance) {
+                                    isNeighborMatch = true;
+                                    break;
+                                }
+                            }
+
+                            if (isNeighborMatch) {
+                                visited[nIdx] = 1;
+                                queue.push({ x: nx, y: ny });
+                            }
+                        }
+                    }
+                }
+                // If matchedLayerIndex is -1, the pixel is foreground. Propagation stops here.
+            }
+            
+            // 3. --- STAGE 2: ALPHA MATTING (Final Transparency Cut on Connected Pixels) ---
+            const finalBgColor = colorLayers[colorLayers.length - 1];
+            const bgR = finalBgColor.r;
+            const bgG = finalBgColor.g;
+            const bgB = finalBgColor.b;
+
+            for (let i = 0; i < w * h; i++) {
+                const j = i * 4;
+
+                if (finalAlpha[i] === 1) { // Only process pixels determined to be connected background
+                    const r = data[j];
+                    const g = data[j + 1];
+                    const b = data[j + 2];
+                    
+                    const dist = colorDistance(r, g, b, bgR, bgG, bgB);
+                    let alpha = 255;
+                    
+                    if (dist <= tolerance) {
+                        alpha = 0; // Definitely transparent
+                    } else if (dist < tolerance + fadeThreshold) {
+                        // Alpha Matting Blending Zone
+                        const normalizedDist = dist - tolerance;
+                        const fadeRange = fadeThreshold;
+                        alpha = Math.round(255 * (normalizedDist / fadeRange));
+                    }
+                    
+                    finalAlpha[i] = alpha;
+                    data[j + 3] = alpha; // Apply alpha for the upcoming erosion pass
+                } else {
+                    // Foreground object pixels
+                    finalAlpha[i] = 255; 
+                    data[j + 3] = 255;
+                }
+            }
+
+
+            // 4. --- STAGE 3: EROSION/DILATION (Optional Cleanup) ---
+            if (erosion !== 0) {
+                const isErosion = erosion > 0;
+                const radius = Math.abs(erosion);
+                const originalData = new Uint8ClampedArray(data); // Capture data *after* alpha matting
+
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const idx = y * w + x;
+                        
+                        let currentAlpha = originalData[idx * 4 + 3];
+
+                        if (isErosion && currentAlpha > 0) {
+                            // Erosion
+                            let shouldBeTransparent = false;
+                            for (let dy = -radius; dy <= radius; dy++) {
+                                for (let dx = -radius; dx <= radius; dx++) {
+                                    if (dx === 0 && dy === 0) continue;
+                                    const checkY = y + dy;
+                                    const checkX = x + dx;
+                                    
+                                    if (checkY >= 0 && checkY < h && checkX >= 0 && checkX < w) {
+                                        const checkIdx = checkY * w + checkX;
+                                        if (originalData[checkIdx * 4 + 3] < 1) { 
+                                            shouldBeTransparent = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if(shouldBeTransparent) break;
+                            }
+                            if (shouldBeTransparent) {
+                                finalAlpha[idx] = 0;
+                            }
+                        } else if (!isErosion && currentAlpha < 255) {
+                            // Dilation (Negative Erosion) - FIX APPLIED HERE
+                            let shouldBeOpaque = false;
+                            for (let dy = -radius; dy <= radius; dy++) {
+                                for (let dx = -radius; dx <= radius; dx++) { // FIXED LOOP CONDITION
+                                    if (dx === 0 && dy === 0) continue;
+                                    const checkY = y + dy;
+                                    const checkX = x + dx;
+                                    
+                                    if (checkY >= 0 && checkY < h && checkX >= 0 && checkX < w) {
+                                        const checkIdx = checkY * w + checkX;
+                                        if (originalData[checkIdx * 4 + 3] > 254) { 
+                                            shouldBeOpaque = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if(shouldBeOpaque) break;
+                            }
+                            if (shouldBeOpaque) {
+                                finalAlpha[idx] = 255;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 5. Apply Final Alpha and Draw
+            for (let i = 0; i < data.length; i += 4) {
+                data[i + 3] = finalAlpha[i / 4];
+            }
+            
+            previewCtx.putImageData(imgData, 0, 0);
+        }
+
+        function downloadFixedSheet() {
+            const link = document.createElement('a');
+            link.download = 'flood-fill-clean-sprite-sheet.png';
+            link.href = previewCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // --- Utility Functions ---
+
+        function componentToHex(c) {
+            const hex = c.toString(16);
+            return hex.length === 1 ? "0" + hex : hex;
+        }
+
+        function rgbToHex(r, g, b) {
+            return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+        }
+    </script>
+</body>
+</html>

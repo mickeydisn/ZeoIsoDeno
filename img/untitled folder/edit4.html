@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprite Grid Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 0.85em;
+        }
+        
+        .main-content {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 15px;
+        }
+        
+        .controls-panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            height: fit-content;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+        
+        .upload-section {
+            background: white;
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-section input {
+            display: none;
+        }
+        
+        .upload-section h3 {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .upload-section p {
+            font-size: 0.75em;
+            color: #6c757d;
+        }
+        
+        .control-group {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .control-group:last-child {
+            border-bottom: none;
+        }
+        
+        .control-label {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+            font-size: 0.8em;
+        }
+        
+        .control-input {
+            width: 100%;
+            padding: 6px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        
+        .control-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+        }
+        
+        .canvas-container {
+            background: #2d3436;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 600px;
+            position: relative;
+            overflow: auto;
+        }
+        
+        #mainCanvas {
+            border: 2px solid #667eea;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            image-rendering: pixelated;
+            cursor: pointer;
+        }
+        
+        .sprite-cell {
+            position: absolute;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+            cursor: pointer;
+        }
+        
+        .sprite-cell:hover {
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+        
+        .sprite-cell.selected {
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+        
+        .section-title {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin-bottom: 8px;
+        }
+        
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .slider-group input[type="range"] {
+            flex: 1;
+        }
+        
+        .slider-group input[type="number"] {
+            width: 60px;
+            padding: 4px;
+            border: 2px solid #dee2e6;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.75em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Sprite Grid Editor</h1>
+            <p>Edit individual sprites with filters, transformations, and backgrounds</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="controls-panel">
+                <div class="upload-section" id="spriteUploadZone">
+                    <div style="font-size: 2em; margin-bottom: 8px;">🖼️</div>
+                    <h3>Upload Sprite Sheet</h3>
+                    <p>PNG files (4 columns, 196x224 grid)</p>
+                    <input type="file" id="spriteInput" accept="image/png">
+                </div>
+                
+                <div class="upload-section" id="bgUploadZone" style="padding: 10px;">
+                    <div style="font-size: 1.5em; margin-bottom: 5px;">🌄</div>
+                    <h3>Upload Background</h3>
+                    <p>Optional background image</p>
+                    <input type="file" id="bgInput" accept="image/*">
+                </div>
+                
+                <button class="btn btn-danger" id="clearBgBtn" style="display:none;">Clear Background</button>
+                
+                <div class="control-group">
+                    <div class="section-title">Display Options</div>
+                    <label class="control-label">
+                        <input type="checkbox" id="showGridCheck" checked style="margin-right: 5px;">
+                        Show Grid Lines
+                    </label>
+                    <label class="control-label">
+                        <input type="checkbox" id="showTilesCheck" style="margin-right: 5px;">
+                        Show Isometric Tiles
+                    </label>
+                </div>
+                
+                <div class="control-group">
+                    <div class="section-title">Rows</div>
+                    <label class="control-label">Number of Rows</label>
+                    <input type="number" class="control-input" id="rowCount" value="1" min="1" max="20">
+                </div>
+                
+                <div class="control-group" id="spriteControls" style="display:none;">
+                    <div class="section-title">Selected Sprite</div>
+                    <span class="info-badge" id="selectedInfo">None</span>
+                    
+                    <label class="control-label">X Offset</label>
+                    <div class="slider-group">
+                        <input type="range" id="spriteXSlider" min="-98" max="98" value="0" step="1">
+                        <input type="number" id="spriteXInput" min="-98" max="98" value="0" step="1">
+                    </div>
+                    
+                    <label class="control-label">Y Offset</label>
+                    <div class="slider-group">
+                        <input type="range" id="spriteYSlider" min="-112" max="112" value="0" step="1">
+                        <input type="number" id="spriteYInput" min="-112" max="112" value="0" step="1">
+                    </div>
+                    
+                    <label class="control-label">Scale</label>
+                    <div class="slider-group">
+                        <input type="range" id="spriteScaleSlider" min="0.1" max="2" value="1" step="0.01">
+                        <input type="number" id="spriteScaleInput" min="0.1" max="2" value="1" step="0.01">
+                    </div>
+                    
+                    <button class="btn btn-primary" id="resetSpriteBtn">Reset Sprite</button>
+                </div>
+                
+                <div class="control-group">
+                    <div class="section-title">Global Filters</div>
+                    
+                    <label class="control-label">Hue Shift (°)</label>
+                    <div class="slider-group">
+                        <input type="range" id="hueSlider" min="0" max="360" value="0" step="1">
+                        <input type="number" id="hueInput" min="0" max="360" value="0" step="1">
+                    </div>
+                    
+                    <label class="control-label">Saturation (%)</label>
+                    <div class="slider-group">
+                        <input type="range" id="satSlider" min="0" max="200" value="100" step="1">
+                        <input type="number" id="satInput" min="0" max="200" value="100" step="1">
+                    </div>
+                    
+                    <label class="control-label">Brightness (%)</label>
+                    <div class="slider-group">
+                        <input type="range" id="brightSlider" min="0" max="200" value="100" step="1">
+                        <input type="number" id="brightInput" min="0" max="200" value="100" step="1">
+                    </div>
+                    
+                    <label class="control-label">Contrast (%)</label>
+                    <div class="slider-group">
+                        <input type="range" id="contrastSlider" min="0" max="200" value="100" step="1">
+                        <input type="number" id="contrastInput" min="0" max="200" value="100" step="1">
+                    </div>
+                    
+                    <button class="btn btn-primary" id="resetFiltersBtn">Reset Filters</button>
+                </div>
+                
+                <div class="control-group">
+                    <div class="section-title">Edge Blur</div>
+                    <label class="control-label">Blur Radius (px)</label>
+                    <div class="slider-group">
+                        <input type="range" id="edgeBlurSlider" min="0" max="5" value="0" step="0.5">
+                        <input type="number" id="edgeBlurInput" min="0" max="5" value="0" step="0.5">
+                    </div>
+                </div>
+                
+                <button class="btn btn-success" id="exportBtn" style="display:none;">💾 Export Edited Sheet</button>
+            </div>
+            
+            <div>
+                <div class="canvas-container">
+                    <canvas id="mainCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const SPRITE_WIDTH = 196;
+        const SPRITE_HEIGHT = 224;
+        const TILE_WIDTH = 128;
+        const TILE_HEIGHT = 64;
+        const TILE_PADDING = 10;
+        
+        let spriteImage = null;
+        let bgImage = null;
+        let canvas = document.getElementById('mainCanvas');
+        let ctx = canvas.getContext('2d');
+        
+        let sprites = [];
+        let selectedSprite = null;
+        
+        const spriteInput = document.getElementById('spriteInput');
+        const bgInput = document.getElementById('bgInput');
+        const spriteUploadZone = document.getElementById('spriteUploadZone');
+        const bgUploadZone = document.getElementById('bgUploadZone');
+        const clearBgBtn = document.getElementById('clearBgBtn');
+        const showGridCheck = document.getElementById('showGridCheck');
+        const showTilesCheck = document.getElementById('showTilesCheck');
+        const rowCountInput = document.getElementById('rowCount');
+        const exportBtn = document.getElementById('exportBtn');
+        
+        const spriteControls = document.getElementById('spriteControls');
+        const selectedInfo = document.getElementById('selectedInfo');
+        const spriteXSlider = document.getElementById('spriteXSlider');
+        const spriteXInput = document.getElementById('spriteXInput');
+        const spriteYSlider = document.getElementById('spriteYSlider');
+        const spriteYInput = document.getElementById('spriteYInput');
+        const spriteScaleSlider = document.getElementById('spriteScaleSlider');
+        const spriteScaleInput = document.getElementById('spriteScaleInput');
+        const resetSpriteBtn = document.getElementById('resetSpriteBtn');
+        
+        const hueSlider = document.getElementById('hueSlider');
+        const hueInput = document.getElementById('hueInput');
+        const satSlider = document.getElementById('satSlider');
+        const satInput = document.getElementById('satInput');
+        const brightSlider = document.getElementById('brightSlider');
+        const brightInput = document.getElementById('brightInput');
+        const contrastSlider = document.getElementById('contrastSlider');
+        const contrastInput = document.getElementById('contrastInput');
+        const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+        
+        const edgeBlurSlider = document.getElementById('edgeBlurSlider');
+        const edgeBlurInput = document.getElementById('edgeBlurInput');
+        
+        // Upload handlers
+        spriteUploadZone.addEventListener('click', () => spriteInput.click());
+        spriteInput.addEventListener('change', (e) => loadSpriteSheet(e.target.files[0]));
+        
+        bgUploadZone.addEventListener('click', () => bgInput.click());
+        bgInput.addEventListener('change', (e) => loadBackground(e.target.files[0]));
+        
+        clearBgBtn.addEventListener('click', () => {
+            bgImage = null;
+            clearBgBtn.style.display = 'none';
+            render();
+        });
+        
+        // Canvas click
+        canvas.addEventListener('click', handleCanvasClick);
+        
+        // Sync sliders and inputs
+        function syncInputs(slider, input, callback) {
+            slider.addEventListener('input', () => {
+                input.value = slider.value;
+                callback();
+            });
+            input.addEventListener('input', () => {
+                slider.value = input.value;
+                callback();
+            });
+        }
+        
+        syncInputs(spriteXSlider, spriteXInput, updateSelectedSprite);
+        syncInputs(spriteYSlider, spriteYInput, updateSelectedSprite);
+        syncInputs(spriteScaleSlider, spriteScaleInput, updateSelectedSprite);
+        
+        syncInputs(hueSlider, hueInput, render);
+        syncInputs(satSlider, satInput, render);
+        syncInputs(brightSlider, brightInput, render);
+        syncInputs(contrastSlider, contrastInput, render);
+        syncInputs(edgeBlurSlider, edgeBlurInput, render);
+        
+        showGridCheck.addEventListener('change', render);
+        showTilesCheck.addEventListener('change', render);
+        rowCountInput.addEventListener('input', initializeSprites);
+        
+        resetSpriteBtn.addEventListener('click', () => {
+            if (selectedSprite) {
+                selectedSprite.offsetX = 0;
+                selectedSprite.offsetY = 0;
+                selectedSprite.scale = 1;
+                spriteXSlider.value = spriteXInput.value = 0;
+                spriteYSlider.value = spriteYInput.value = 0;
+                spriteScaleSlider.value = spriteScaleInput.value = 1;
+                render();
+            }
+        });
+        
+        resetFiltersBtn.addEventListener('click', () => {
+            hueSlider.value = hueInput.value = 0;
+            satSlider.value = satInput.value = 100;
+            brightSlider.value = brightInput.value = 100;
+            contrastSlider.value = contrastInput.value = 100;
+            render();
+        });
+        
+        exportBtn.addEventListener('click', exportSheet);
+        
+        function loadSpriteSheet(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    spriteImage = img;
+                    initializeSprites();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function loadBackground(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    bgImage = img;
+                    clearBgBtn.style.display = 'block';
+                    render();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function initializeSprites() {
+            if (!spriteImage) return;
+            
+            const rows = parseInt(rowCountInput.value);
+            sprites = [];
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < 4; col++) {
+                    sprites.push({
+                        row,
+                        col,
+                        offsetX: 0,
+                        offsetY: 0,
+                        scale: 1
+                    });
+                }
+            }
+            
+            canvas.width = SPRITE_WIDTH * 4;
+            canvas.height = SPRITE_HEIGHT * rows;
+            
+            exportBtn.style.display = 'block';
+            render();
+        }
+        
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let dragStartOffsetX = 0;
+        let dragStartOffsetY = 0;
+        
+        function handleCanvasClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const col = Math.floor(x / SPRITE_WIDTH);
+            const row = Math.floor(y / SPRITE_HEIGHT);
+            
+            const sprite = sprites.find(s => s.row === row && s.col === col);
+            if (sprite) {
+                selectedSprite = sprite;
+                spriteControls.style.display = 'block';
+                selectedInfo.textContent = `Row ${row + 1}, Col ${col + 1}`;
+                spriteXSlider.value = spriteXInput.value = sprite.offsetX;
+                spriteYSlider.value = spriteYInput.value = sprite.offsetY;
+                spriteScaleSlider.value = spriteScaleInput.value = sprite.scale;
+                render();
+            }
+        }
+        
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const col = Math.floor(x / SPRITE_WIDTH);
+            const row = Math.floor(y / SPRITE_HEIGHT);
+            
+            const sprite = sprites.find(s => s.row === row && s.col === col);
+            if (sprite) {
+                isDragging = true;
+                dragStartX = x;
+                dragStartY = y;
+                dragStartOffsetX = sprite.offsetX;
+                dragStartOffsetY = sprite.offsetY;
+                selectedSprite = sprite;
+                canvas.style.cursor = 'grabbing';
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging && selectedSprite) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const deltaX = x - dragStartX;
+                const deltaY = y - dragStartY;
+                
+                selectedSprite.offsetX = dragStartOffsetX + deltaX;
+                selectedSprite.offsetY = dragStartOffsetY + deltaY;
+                
+                spriteXSlider.value = spriteXInput.value = selectedSprite.offsetX;
+                spriteYSlider.value = spriteYInput.value = selectedSprite.offsetY;
+                
+                render();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                canvas.style.cursor = 'pointer';
+            }
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            if (isDragging) {
+                isDragging = false;
+                canvas.style.cursor = 'pointer';
+            }
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            if (selectedSprite) {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const col = Math.floor(x / SPRITE_WIDTH);
+                const row = Math.floor(y / SPRITE_HEIGHT);
+                
+                const sprite = sprites.find(s => s.row === row && s.col === col);
+                if (sprite === selectedSprite) {
+                    const delta = e.deltaY > 0 ? -0.05 : 0.05;
+                    sprite.scale = Math.max(0.1, Math.min(2, sprite.scale + delta));
+                    spriteScaleSlider.value = spriteScaleInput.value = sprite.scale;
+                    render();
+                }
+            }
+        });
+        
+        function updateSelectedSprite() {
+            if (selectedSprite) {
+                selectedSprite.offsetX = parseFloat(spriteXInput.value);
+                selectedSprite.offsetY = parseFloat(spriteYInput.value);
+                selectedSprite.scale = parseFloat(spriteScaleInput.value);
+                render();
+            }
+        }
+        
+        function applyEdgeBlur(imageData, radius) {
+            if (radius === 0) return imageData;
+            
+            const w = imageData.width;
+            const h = imageData.height;
+            const data = imageData.data;
+            const blurred = new Uint8ClampedArray(data);
+            
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const i = (y * w + x) * 4;
+                    const alpha = data[i + 3];
+                    
+                    if (alpha > 0 && alpha < 255) {
+                        let sumR = 0, sumG = 0, sumB = 0, sumA = 0, count = 0;
+                        
+                        for (let dy = -radius; dy <= radius; dy++) {
+                            for (let dx = -radius; dx <= radius; dx++) {
+                                const nx = x + dx;
+                                const ny = y + dy;
+                                
+                                if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                                    const ni = (ny * w + nx) * 4;
+                                    sumR += data[ni];
+                                    sumG += data[ni + 1];
+                                    sumB += data[ni + 2];
+                                    sumA += data[ni + 3];
+                                    count++;
+                                }
+                            }
+                        }
+                        
+                        if (count > 0) {
+                            blurred[i] = sumR / count;
+                            blurred[i + 1] = sumG / count;
+                            blurred[i + 2] = sumB / count;
+                            blurred[i + 3] = sumA / count;
+                        }
+                    }
+                }
+            }
+            
+            return new ImageData(blurred, w, h);
+        }
+        
+        function drawIsometricTile(ctx, x, y) {
+            const centerX = x + SPRITE_WIDTH / 2;
+            const bottomY = y + SPRITE_HEIGHT - TILE_PADDING;
+            
+            ctx.fillStyle = 'rgba(102, 126, 234, 0.2)';
+            ctx.strokeStyle = 'rgba(102, 126, 234, 0.6)';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX, bottomY - TILE_HEIGHT);
+            ctx.lineTo(centerX + TILE_WIDTH / 2, bottomY - TILE_HEIGHT / 2);
+            ctx.lineTo(centerX, bottomY);
+            ctx.lineTo(centerX - TILE_WIDTH / 2, bottomY - TILE_HEIGHT / 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        function render() {
+            if (!spriteImage) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background in grid cells (no scaling, just crop)
+            if (bgImage) {
+                ctx.save();
+                ctx.imageSmoothingEnabled = false;
+                
+                sprites.forEach(sprite => {
+                    const destX = sprite.col * SPRITE_WIDTH;
+                    const destY = sprite.row * SPRITE_HEIGHT;
+                    
+                    // Extract exact portion from background image at same grid position
+                    const srcX = sprite.col * SPRITE_WIDTH;
+                    const srcY = sprite.row * SPRITE_HEIGHT;
+                    
+                    ctx.drawImage(
+                        bgImage,
+                        srcX, srcY, SPRITE_WIDTH, SPRITE_HEIGHT,
+                        destX, destY, SPRITE_WIDTH, SPRITE_HEIGHT
+                    );
+                });
+                
+                ctx.restore();
+            }
+            
+            // Get filter values
+            const hue = parseInt(hueInput.value);
+            const sat = parseInt(satInput.value);
+            const bright = parseInt(brightInput.value);
+            const contrast = parseInt(contrastInput.value);
+            const edgeBlur = parseFloat(edgeBlurInput.value);
+            
+            ctx.filter = `hue-rotate(${hue}deg) saturate(${sat}%) brightness(${bright}%) contrast(${contrast}%)`;
+            
+            // Draw each sprite
+            sprites.forEach(sprite => {
+                const destX = sprite.col * SPRITE_WIDTH;
+                const destY = sprite.row * SPRITE_HEIGHT;
+                const centerX = destX + SPRITE_WIDTH / 2;
+                const centerY = destY + SPRITE_HEIGHT / 2;
+                
+                ctx.save();
+                ctx.translate(centerX + sprite.offsetX, centerY + sprite.offsetY);
+                ctx.scale(sprite.scale, sprite.scale);
+                
+                const srcX = sprite.col * SPRITE_WIDTH;
+                const srcY = sprite.row * SPRITE_HEIGHT;
+                
+                // Extract sprite
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = SPRITE_WIDTH;
+                tempCanvas.height = SPRITE_HEIGHT;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.imageSmoothingEnabled = false;
+                tempCtx.drawImage(spriteImage, srcX, srcY, SPRITE_WIDTH, SPRITE_HEIGHT, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
+                
+                // Apply edge blur
+                if (edgeBlur > 0) {
+                    let imgData = tempCtx.getImageData(0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
+                    imgData = applyEdgeBlur(imgData, edgeBlur);
+                    tempCtx.putImageData(imgData, 0, 0);
+                }
+                
+                ctx.drawImage(tempCanvas, -SPRITE_WIDTH / 2, -SPRITE_HEIGHT / 2, SPRITE_WIDTH, SPRITE_HEIGHT);
+                ctx.restore();
+            });
+            
+            ctx.filter = 'none';
+            
+            // Draw grid
+            if (showGridCheck.checked) {
+                ctx.strokeStyle = 'rgba(102, 126, 234, 0.6)';
+                ctx.lineWidth = 2;
+                
+                for (let row = 0; row <= sprites.length / 4; row++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, row * SPRITE_HEIGHT);
+                    ctx.lineTo(canvas.width, row * SPRITE_HEIGHT);
+                    ctx.stroke();
+                }
+                
+                for (let col = 0; col <= 4; col++) {
+                    ctx.beginPath();
+                    ctx.moveTo(col * SPRITE_WIDTH, 0);
+                    ctx.lineTo(col * SPRITE_WIDTH, canvas.height);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw isometric tiles
+            if (showTilesCheck.checked) {
+                sprites.forEach(sprite => {
+                    drawIsometricTile(ctx, sprite.col * SPRITE_WIDTH, sprite.row * SPRITE_HEIGHT);
+                });
+            }
+            
+            // Highlight selected sprite
+            if (selectedSprite) {
+                const destX = selectedSprite.col * SPRITE_WIDTH;
+                const destY = selectedSprite.row * SPRITE_HEIGHT;
+                
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(destX, destY, SPRITE_WIDTH, SPRITE_HEIGHT);
+            }
+        }
+        
+        function exportSheet() {
+            if (!spriteImage) return;
+            
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = canvas.width;
+            exportCanvas.height = canvas.height;
+            const exportCtx = exportCanvas.getContext('2d');
+            exportCtx.imageSmoothingEnabled = false;
+            
+            // Draw background
+            if (bgImage) {
+                exportCtx.drawImage(bgImage, 0, 0, exportCanvas.width, exportCanvas.height);
+            }
+            
+            const hue = parseInt(hueInput.value);
+            const sat = parseInt(satInput.value);
+            const bright = parseInt(brightInput.value);
+            const contrast = parseInt(contrastInput.value);
+            const edgeBlur = parseFloat(edgeBlurInput.value);
+            
+            exportCtx.filter = `hue-rotate(${hue}deg) saturate(${sat}%) brightness(${bright}%) contrast(${contrast}%)`;
+            
+            sprites.forEach(sprite => {
+                const destX = sprite.col * SPRITE_WIDTH;
+                const destY = sprite.row * SPRITE_HEIGHT;
+                const centerX = destX + SPRITE_WIDTH / 2;
+                const centerY = destY + SPRITE_HEIGHT / 2;
+                
+                exportCtx.save();
+                exportCtx.translate(centerX + sprite.offsetX, centerY + sprite.offsetY);
+                exportCtx.scale(sprite.scale, sprite.scale);
+                
+                const srcX = sprite.col * SPRITE_WIDTH;
+                const srcY = sprite.row * SPRITE_HEIGHT;
+                
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = SPRITE_WIDTH;
+                tempCanvas.height = SPRITE_HEIGHT;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.imageSmoothingEnabled = false;
+                tempCtx.drawImage(spriteImage, srcX, srcY, SPRITE_WIDTH, SPRITE_HEIGHT, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
+                
+                if (edgeBlur > 0) {
+                    let imgData = tempCtx.getImageData(0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
+                    imgData = applyEdgeBlur(imgData, edgeBlur);
+                    tempCtx.putImageData(imgData, 0, 0);
+                }
+                
+                exportCtx.drawImage(tempCanvas, -SPRITE_WIDTH / 2, -SPRITE_HEIGHT / 2, SPRITE_WIDTH, SPRITE_HEIGHT);
+                exportCtx.restore();
+            });
+            
+            const link = document.createElement('a');
+            link.download = 'edited-sprite-sheet.png';
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprite Composer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 0.85em;
+        }
+        
+        .main-content {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: .5fr 280px 1fr;
+            gap: 15px;
+        }
+        
+        .asset-display{
+            zoom: .5;
+        }
+        .asset-panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+        
+        .controls-panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            height: fit-content;
+        }
+        
+        .upload-section {
+            background: white;
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-section input {
+            display: none;
+        }
+        
+        .upload-section h3 {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .upload-section p {
+            font-size: 0.75em;
+            color: #6c757d;
+        }
+        
+        .asset-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-top: 12px;
+        }
+        
+        .asset-item {
+            background: white;
+            border: 3px solid #dee2e6;
+            border-radius: 6px;
+            padding: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            aspect-ratio: 196/224;
+        }
+        
+        .asset-item:hover {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+        
+        .asset-item.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .asset-item canvas {
+            width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+            display: block;
+        }
+        
+        .asset-item-label {
+            font-size: 0.6em;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+        
+        .control-group {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .control-group:last-child {
+            border-bottom: none;
+        }
+        
+        .control-label {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+            font-size: 0.8em;
+        }
+        
+        .control-input {
+            width: 100%;
+            padding: 6px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        
+        .control-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: white;
+        }
+        
+
+        .canvas-container-parent {
+            overflow: scroll;
+            height: 80vh;       
+        }
+        .canvas-container {
+            background: #2d3436;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 600px;
+            position: relative;
+
+        }
+        
+        #mainCanvas {
+            border: 2px solid #667eea;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            image-rendering: pixelated;
+            cursor: pointer;
+        }
+        
+        .section-title {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin-bottom: 8px;
+        }
+        
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .slider-group input[type="range"] {
+            flex: 1;
+        }
+        
+        .slider-group input[type="number"] {
+            width: 60px;
+            padding: 4px;
+            border: 2px solid #dee2e6;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.75em;
+        }
+        
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Sprite Composer</h1>
+            <p>Compose sprite sheets by selecting and placing assets from your library</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="asset-panel">
+                <div class="upload-section" id="assetUploadZone">
+                    <div style="font-size: 2em; margin-bottom: 8px;">📦</div>
+                    <h3>Load Asset Sheet</h3>
+                    <p>PNG sprite sheet</p>
+                    <input type="file" id="assetInput" accept="image/png">
+                </div>
+                
+                <div class="section-title">Asset Library</div>
+                <div class="asset-display">
+                    <canvas id="assetCanvas"></canvas>
+                </div>
+            </div>
+            
+            <div class="controls-panel">
+                <div class="control-group">
+                    <div class="section-title">Workspace</div>
+                    <label class="control-label">Number of Rows</label>
+                    <input type="number" class="control-input" id="rowCount" value="1" min="1" max="20">
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">
+                        <input type="checkbox" id="showGridCheck" checked style="margin-right: 5px;">
+                        Show Grid Lines
+                    </label>
+                    <label class="control-label">
+                        <input type="checkbox" id="showTilesCheck" style="margin-right: 5px;">
+                        Show Isometric Tiles
+                    </label>
+                </div>
+                
+                <div class="control-group" id="spriteControls" style="display:none;">
+                    <div class="section-title">Selected Sprite</div>
+                    <span class="info-badge" id="selectedInfo">None</span>
+                    
+                    <label class="control-label">X Offset</label>
+                    <div class="slider-group">
+                        <input type="range" id="spriteXSlider" min="-98" max="98" value="0" step="1">
+                        <input type="number" id="spriteXInput" min="-98" max="98" value="0" step="1">
+                    </div>
+                    
+                    <label class="control-label">Y Offset</label>
+                    <div class="slider-group">
+                        <input type="range" id="spriteYSlider" min="-112" max="112" value="0" step="1">
+                        <input type="number" id="spriteYInput" min="-112" max="112" value="0" step="1">
+                    </div>
+                    
+                    <label class="control-label">Scale</label>
+                    <div class="slider-group">
+                        <input type="range" id="spriteScaleSlider" min="0.1" max="2" value="1" step="0.01">
+                        <input type="number" id="spriteScaleInput" min="0.1" max="2" value="1" step="0.01">
+                    </div>
+                    
+                    <div class="section-title" style="margin-top: 12px;">Transform</div>
+                    <div class="btn-group">
+                        <button class="btn btn-warning" id="flipHBtn">↔️ Flip H</button>
+                        <button class="btn btn-warning" id="mirrorHBtn">⇆ Mirror H</button>
+                    </div>
+                    
+                    <button class="btn btn-primary" id="clearSpriteBtn">🗑️ Clear Sprite</button>
+                    <button class="btn btn-primary" id="resetSpriteBtn">↺ Reset Transform</button>
+                </div>
+                
+                <button class="btn btn-success" id="exportBtn" style="display:none;">💾 Export Composed Sheet</button>
+            </div>
+            
+            <div class="canvas-container-parent">
+                <div class="canvas-container">
+                    <canvas id="mainCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const SPRITE_WIDTH = 196;
+        const SPRITE_HEIGHT = 224;
+        const TILE_WIDTH = 128;
+        const TILE_HEIGHT = 64;
+        const TILE_PADDING = 10;
+        
+        let assetImage = null;
+        let assetCanvas = document.getElementById('assetCanvas');
+        let assetCtx = assetCanvas.getContext('2d');
+        let canvas = document.getElementById('mainCanvas');
+        let ctx = canvas.getContext('2d');
+        
+        let workspace = [];
+        let selectedWorkspaceSprite = null;
+        let selectedAssetCell = null;
+        
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let dragStartOffsetX = 0;
+        let dragStartOffsetY = 0;
+        
+        const assetInput = document.getElementById('assetInput');
+        const assetUploadZone = document.getElementById('assetUploadZone');
+        const showGridCheck = document.getElementById('showGridCheck');
+        const showTilesCheck = document.getElementById('showTilesCheck');
+        const rowCountInput = document.getElementById('rowCount');
+        const exportBtn = document.getElementById('exportBtn');
+        
+        const spriteControls = document.getElementById('spriteControls');
+        const selectedInfo = document.getElementById('selectedInfo');
+        const spriteXSlider = document.getElementById('spriteXSlider');
+        const spriteXInput = document.getElementById('spriteXInput');
+        const spriteYSlider = document.getElementById('spriteYSlider');
+        const spriteYInput = document.getElementById('spriteYInput');
+        const spriteScaleSlider = document.getElementById('spriteScaleSlider');
+        const spriteScaleInput = document.getElementById('spriteScaleInput');
+        const flipHBtn = document.getElementById('flipHBtn');
+        const mirrorHBtn = document.getElementById('mirrorHBtn');
+        const clearSpriteBtn = document.getElementById('clearSpriteBtn');
+        const resetSpriteBtn = document.getElementById('resetSpriteBtn');
+        
+        // Upload handlers
+        assetUploadZone.addEventListener('click', () => assetInput.click());
+        assetInput.addEventListener('change', (e) => loadAssetSheet(e.target.files[0]));
+        
+        // Sync sliders and inputs
+        function syncInputs(slider, input, callback) {
+            slider.addEventListener('input', () => {
+                input.value = slider.value;
+                callback();
+            });
+            input.addEventListener('input', () => {
+                slider.value = input.value;
+                callback();
+            });
+        }
+        
+        syncInputs(spriteXSlider, spriteXInput, updateSelectedSprite);
+        syncInputs(spriteYSlider, spriteYInput, updateSelectedSprite);
+        syncInputs(spriteScaleSlider, spriteScaleInput, updateSelectedSprite);
+        
+        showGridCheck.addEventListener('change', render);
+        showTilesCheck.addEventListener('change', render);
+        rowCountInput.addEventListener('input', initializeWorkspace);
+        
+        flipHBtn.addEventListener('click', () => {
+            if (selectedWorkspaceSprite) {
+                selectedWorkspaceSprite.flipH = !selectedWorkspaceSprite.flipH;
+                render();
+            }
+        });
+        
+        mirrorHBtn.addEventListener('click', () => {
+            if (selectedWorkspaceSprite) {
+                selectedWorkspaceSprite.mirrorH = !selectedWorkspaceSprite.mirrorH;
+                render();
+            }
+        });
+        
+        clearSpriteBtn.addEventListener('click', () => {
+            if (selectedWorkspaceSprite) {
+                selectedWorkspaceSprite.assetCanvas = null;
+                selectedWorkspaceSprite.offsetX = 0;
+                selectedWorkspaceSprite.offsetY = 0;
+                selectedWorkspaceSprite.scale = 1;
+                selectedWorkspaceSprite.flipH = false;
+                selectedWorkspaceSprite.mirrorH = false;
+                render();
+            }
+        });
+        
+        resetSpriteBtn.addEventListener('click', () => {
+            if (selectedWorkspaceSprite) {
+                selectedWorkspaceSprite.offsetX = 0;
+                selectedWorkspaceSprite.offsetY = 0;
+                selectedWorkspaceSprite.scale = 1;
+                selectedWorkspaceSprite.flipH = false;
+                selectedWorkspaceSprite.mirrorH = false;
+                spriteXSlider.value = spriteXInput.value = 0;
+                spriteYSlider.value = spriteYInput.value = 0;
+                spriteScaleSlider.value = spriteScaleInput.value = 1;
+                render();
+            }
+        });
+        
+        exportBtn.addEventListener('click', exportSheet);
+        
+        function loadAssetSheet(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    assetImage = img;
+                    setupAssetCanvas();
+                    initializeWorkspace();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function setupAssetCanvas() {
+            assetCanvas.width = assetImage.width;
+            assetCanvas.height = assetImage.height;
+            renderAssetCanvas();
+        }
+        
+        function renderAssetCanvas() {
+            assetCtx.clearRect(0, 0, assetCanvas.width, assetCanvas.height);
+            assetCtx.imageSmoothingEnabled = false;
+            
+            // Draw the asset image
+            assetCtx.drawImage(assetImage, 0, 0);
+            
+            // Draw grid overlay
+            assetCtx.strokeStyle = 'rgba(102, 126, 234, 0.8)';
+            assetCtx.lineWidth = 2;
+            
+            const cols = Math.ceil(assetImage.width / SPRITE_WIDTH);
+            const rows = Math.ceil(assetImage.height / SPRITE_HEIGHT);
+            
+            // Draw vertical lines
+            for (let col = 0; col <= cols; col++) {
+                assetCtx.beginPath();
+                assetCtx.moveTo(col * SPRITE_WIDTH, 0);
+                assetCtx.lineTo(col * SPRITE_WIDTH, assetImage.height);
+                assetCtx.stroke();
+            }
+            
+            // Draw horizontal lines
+            for (let row = 0; row <= rows; row++) {
+                assetCtx.beginPath();
+                assetCtx.moveTo(0, row * SPRITE_HEIGHT);
+                assetCtx.lineTo(assetImage.width, row * SPRITE_HEIGHT);
+                assetCtx.stroke();
+            }
+            
+            // Highlight selected cell
+            if (selectedAssetCell) {
+                assetCtx.fillStyle = 'rgba(102, 126, 234, 0.3)';
+                assetCtx.fillRect(
+                    selectedAssetCell.col * SPRITE_WIDTH,
+                    selectedAssetCell.row * SPRITE_HEIGHT,
+                    SPRITE_WIDTH,
+                    SPRITE_HEIGHT
+                );
+                assetCtx.strokeStyle = 'rgba(102, 126, 234, 1)';
+                assetCtx.lineWidth = 4;
+                assetCtx.strokeRect(
+                    selectedAssetCell.col * SPRITE_WIDTH,
+                    selectedAssetCell.row * SPRITE_HEIGHT,
+                    SPRITE_WIDTH,
+                    SPRITE_HEIGHT
+                );
+            }
+        }
+        
+        assetCanvas.addEventListener('click', (e) => {
+            if (!assetImage) return;
+            
+            const rect = assetCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Convert to canvas coordinates
+            const scaleX = assetCanvas.width / rect.width;
+            const scaleY = assetCanvas.height / rect.height;
+            const canvasX = x * scaleX;
+            const canvasY = y * scaleY;
+            
+            const col = Math.floor(canvasX / SPRITE_WIDTH);
+            const row = Math.floor(canvasY / SPRITE_HEIGHT);
+            
+            // Check if click is within bounds
+            if (col * SPRITE_WIDTH < assetImage.width && 
+                row * SPRITE_HEIGHT < assetImage.height) {
+                selectedAssetCell = { row, col };
+                renderAssetCanvas();
+            }
+        });
+        
+        function initializeWorkspace() {
+            const rows = parseInt(rowCountInput.value);
+            workspace = [];
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < 4; col++) {
+                    workspace.push({
+                        row,
+                        col,
+                        assetCanvas: null,
+                        offsetX: 0,
+                        offsetY: 0,
+                        scale: 1,
+                        flipH: false,
+                        mirrorH: false
+                    });
+                }
+            }
+            
+            canvas.width = SPRITE_WIDTH * 4;
+            canvas.height = SPRITE_HEIGHT * rows;
+            
+            exportBtn.style.display = 'block';
+            render();
+        }
+        
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const col = Math.floor(x / SPRITE_WIDTH);
+            const row = Math.floor(y / SPRITE_HEIGHT);
+            
+            const sprite = workspace.find(s => s.row === row && s.col === col);
+            if (sprite) {
+                // If we have a selected asset cell, place it
+                if (selectedAssetCell && assetImage) {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = SPRITE_WIDTH;
+                    tempCanvas.height = SPRITE_HEIGHT;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.imageSmoothingEnabled = false;
+                    
+                    const srcX = selectedAssetCell.col * SPRITE_WIDTH;
+                    const srcY = selectedAssetCell.row * SPRITE_HEIGHT;
+                    
+                    tempCtx.drawImage(
+                        assetImage,
+                        srcX, srcY, SPRITE_WIDTH, SPRITE_HEIGHT,
+                        0, 0, SPRITE_WIDTH, SPRITE_HEIGHT
+                    );
+                    
+                    sprite.assetCanvas = tempCanvas;
+                    render();
+                }
+                
+                // Select the sprite for editing
+                selectedWorkspaceSprite = sprite;
+                spriteControls.style.display = 'block';
+                selectedInfo.textContent = `Row ${row + 1}, Col ${col + 1}`;
+                spriteXSlider.value = spriteXInput.value = sprite.offsetX;
+                spriteYSlider.value = spriteYInput.value = sprite.offsetY;
+                spriteScaleSlider.value = spriteScaleInput.value = sprite.scale;
+                
+                // Start dragging
+                isDragging = true;
+                dragStartX = x;
+                dragStartY = y;
+                dragStartOffsetX = sprite.offsetX;
+                dragStartOffsetY = sprite.offsetY;
+                canvas.style.cursor = 'grabbing';
+                
+                render();
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging && selectedWorkspaceSprite) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const deltaX = x - dragStartX;
+                const deltaY = y - dragStartY;
+                
+                selectedWorkspaceSprite.offsetX = dragStartOffsetX + deltaX;
+                selectedWorkspaceSprite.offsetY = dragStartOffsetY + deltaY;
+                
+                spriteXSlider.value = spriteXInput.value = selectedWorkspaceSprite.offsetX;
+                spriteYSlider.value = spriteYInput.value = selectedWorkspaceSprite.offsetY;
+                
+                render();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                canvas.style.cursor = 'pointer';
+            }
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            if (isDragging) {
+                isDragging = false;
+                canvas.style.cursor = 'pointer';
+            }
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            if (selectedWorkspaceSprite) {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const col = Math.floor(x / SPRITE_WIDTH);
+                const row = Math.floor(y / SPRITE_HEIGHT);
+                
+                const sprite = workspace.find(s => s.row === row && s.col === col);
+                if (sprite === selectedWorkspaceSprite) {
+                    const delta = e.deltaY > 0 ? -0.05 : 0.05;
+                    sprite.scale = Math.max(0.1, Math.min(2, sprite.scale + delta));
+                    spriteScaleSlider.value = spriteScaleInput.value = sprite.scale;
+                    render();
+                }
+            }
+        });
+        
+        function updateSelectedSprite() {
+            if (selectedWorkspaceSprite) {
+                selectedWorkspaceSprite.offsetX = parseFloat(spriteXInput.value);
+                selectedWorkspaceSprite.offsetY = parseFloat(spriteYInput.value);
+                selectedWorkspaceSprite.scale = parseFloat(spriteScaleInput.value);
+                render();
+            }
+        }
+        
+        function drawIsometricTile(ctx, x, y) {
+            const centerX = x + SPRITE_WIDTH / 2;
+            const bottomY = y + SPRITE_HEIGHT - TILE_PADDING;
+            
+            ctx.fillStyle = 'rgba(102, 126, 234, 0.2)';
+            ctx.strokeStyle = 'rgba(102, 126, 234, 0.6)';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX, bottomY - TILE_HEIGHT);
+            ctx.lineTo(centerX + TILE_WIDTH / 2, bottomY - TILE_HEIGHT / 2);
+            ctx.lineTo(centerX, bottomY);
+            ctx.lineTo(centerX - TILE_WIDTH / 2, bottomY - TILE_HEIGHT / 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw each sprite in workspace
+            workspace.forEach(sprite => {
+                if (sprite.assetCanvas) {
+                    const destX = sprite.col * SPRITE_WIDTH;
+                    const destY = sprite.row * SPRITE_HEIGHT;
+                    const centerX = destX + SPRITE_WIDTH / 2;
+                    const centerY = destY + SPRITE_HEIGHT / 2;
+                    
+                    ctx.save();
+                    
+                    if (sprite.mirrorH) {
+                        // Mirror horizontally at center of the workspace square
+                        const squareCenterX = destX + SPRITE_WIDTH / 2;
+                        
+                        ctx.save();
+                        ctx.imageSmoothingEnabled = false;
+                        
+                        // Create a temporary canvas for the mirrored version
+                        const mirrorCanvas = document.createElement('canvas');
+                        mirrorCanvas.width = SPRITE_WIDTH;
+                        mirrorCanvas.height = SPRITE_HEIGHT;
+                        const mirrorCtx = mirrorCanvas.getContext('2d');
+                        mirrorCtx.imageSmoothingEnabled = false;
+                        
+                        // Apply offset and scale to the source sprite first
+                        mirrorCtx.save();
+                        mirrorCtx.translate(SPRITE_WIDTH / 2 + sprite.offsetX, SPRITE_HEIGHT / 2 + sprite.offsetY);
+                        mirrorCtx.scale(sprite.scale, sprite.scale);
+                        mirrorCtx.drawImage(sprite.assetCanvas, -SPRITE_WIDTH / 2, -SPRITE_HEIGHT / 2);
+                        mirrorCtx.restore();
+                        
+                        // Now create the mirrored version
+                        const finalCanvas = document.createElement('canvas');
+                        finalCanvas.width = SPRITE_WIDTH;
+                        finalCanvas.height = SPRITE_HEIGHT;
+                        const finalCtx = finalCanvas.getContext('2d');
+                        finalCtx.imageSmoothingEnabled = false;
+                        
+                        // Draw left half
+                        finalCtx.drawImage(
+                            mirrorCanvas,
+                            0, 0, SPRITE_WIDTH / 2, SPRITE_HEIGHT,
+                            0, 0, SPRITE_WIDTH / 2, SPRITE_HEIGHT
+                        );
+                        
+                        // Draw right half (mirrored from left, based on square center)
+                        finalCtx.save();
+                        finalCtx.translate(SPRITE_WIDTH / 2, 0);
+                        finalCtx.scale(-1, 1);
+                        finalCtx.drawImage(
+                            mirrorCanvas,
+                            0, 0, SPRITE_WIDTH / 2, SPRITE_HEIGHT,
+                            -SPRITE_WIDTH / 2, 0, SPRITE_WIDTH / 2, SPRITE_HEIGHT
+                        );
+                        finalCtx.restore();
+                        
+                        // Draw the final result
+                        ctx.drawImage(finalCanvas, destX, destY);
+                        ctx.restore();
+                    } else {
+                        // Normal rendering with optional flip
+                        ctx.translate(centerX + sprite.offsetX, centerY + sprite.offsetY);
+                        ctx.scale(
+                            sprite.scale * (sprite.flipH ? -1 : 1),
+                            sprite.scale
+                        );
+                        ctx.imageSmoothingEnabled = false;
+                        ctx.drawImage(sprite.assetCanvas, -SPRITE_WIDTH / 2, -SPRITE_HEIGHT / 2, SPRITE_WIDTH, SPRITE_HEIGHT);
+                    }
+                    
+                    ctx.restore();
+                }
+            });
+            
+            // Draw grid
+            if (showGridCheck.checked) {
+                ctx.strokeStyle = 'rgba(102, 126, 234, 0.6)';
+                ctx.lineWidth = 2;
+                
+                for (let row = 0; row <= workspace.length / 4; row++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, row * SPRITE_HEIGHT);
+                    ctx.lineTo(canvas.width, row * SPRITE_HEIGHT);
+                    ctx.stroke();
+                }
+                
+                for (let col = 0; col <= 4; col++) {
+                    ctx.beginPath();
+                    ctx.moveTo(col * SPRITE_WIDTH, 0);
+                    ctx.lineTo(col * SPRITE_WIDTH, canvas.height);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw isometric tiles
+            if (showTilesCheck.checked) {
+                workspace.forEach(sprite => {
+                    drawIsometricTile(ctx, sprite.col * SPRITE_WIDTH, sprite.row * SPRITE_HEIGHT);
+                });
+            }
+            
+            // Highlight selected sprite
+            if (selectedWorkspaceSprite) {
+                const destX = selectedWorkspaceSprite.col * SPRITE_WIDTH;
+                const destY = selectedWorkspaceSprite.row * SPRITE_HEIGHT;
+                
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(destX, destY, SPRITE_WIDTH, SPRITE_HEIGHT);
+            }
+        }
+        
+        function exportSheet() {
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = canvas.width;
+            exportCanvas.height = canvas.height;
+            const exportCtx = exportCanvas.getContext('2d');
+            exportCtx.imageSmoothingEnabled = false;
+            
+            workspace.forEach(sprite => {
+                if (sprite.assetCanvas) {
+                    const destX = sprite.col * SPRITE_WIDTH;
+                    const destY = sprite.row * SPRITE_HEIGHT;
+                    const centerX = destX + SPRITE_WIDTH / 2;
+                    const centerY = destY + SPRITE_HEIGHT / 2;
+                    
+                    exportCtx.save();
+                    
+                    if (sprite.mirrorH) {
+                        exportCtx.save();
+                        exportCtx.imageSmoothingEnabled = false;
+                        
+                        // Create a temporary canvas for the transformed sprite
+                        const mirrorCanvas = document.createElement('canvas');
+                        mirrorCanvas.width = SPRITE_WIDTH;
+                        mirrorCanvas.height = SPRITE_HEIGHT;
+                        const mirrorCtx = mirrorCanvas.getContext('2d');
+                        mirrorCtx.imageSmoothingEnabled = false;
+                        
+                        // Apply offset and scale to the source sprite first
+                        mirrorCtx.save();
+                        mirrorCtx.translate(SPRITE_WIDTH / 2 + sprite.offsetX, SPRITE_HEIGHT / 2 + sprite.offsetY);
+                        mirrorCtx.scale(sprite.scale, sprite.scale);
+                        mirrorCtx.drawImage(sprite.assetCanvas, -SPRITE_WIDTH / 2, -SPRITE_HEIGHT / 2);
+                        mirrorCtx.restore();
+                        
+                        // Now create the mirrored version
+                        const finalCanvas = document.createElement('canvas');
+                        finalCanvas.width = SPRITE_WIDTH;
+                        finalCanvas.height = SPRITE_HEIGHT;
+                        const finalCtx = finalCanvas.getContext('2d');
+                        finalCtx.imageSmoothingEnabled = false;
+                        
+                        // Draw left half
+                        finalCtx.drawImage(
+                            mirrorCanvas,
+                            0, 0, SPRITE_WIDTH / 2, SPRITE_HEIGHT,
+                            0, 0, SPRITE_WIDTH / 2, SPRITE_HEIGHT
+                        );
+                        
+                        // Draw right half (mirrored from left, based on square center)
+                        finalCtx.save();
+                        finalCtx.translate(SPRITE_WIDTH / 2, 0);
+                        finalCtx.scale(-1, 1);
+                        finalCtx.drawImage(
+                            mirrorCanvas,
+                            0, 0, SPRITE_WIDTH / 2, SPRITE_HEIGHT,
+                            -SPRITE_WIDTH / 2, 0, SPRITE_WIDTH / 2, SPRITE_HEIGHT
+                        );
+                        finalCtx.restore();
+                        
+                        // Draw the final result
+                        exportCtx.drawImage(finalCanvas, destX, destY);
+                        exportCtx.restore();
+                    } else {
+                        exportCtx.translate(centerX + sprite.offsetX, centerY + sprite.offsetY);
+                        exportCtx.scale(
+                            sprite.scale * (sprite.flipH ? -1 : 1),
+                            sprite.scale
+                        );
+                        exportCtx.drawImage(sprite.assetCanvas, -SPRITE_WIDTH / 2, -SPRITE_HEIGHT / 2, SPRITE_WIDTH, SPRITE_HEIGHT);
+                    }
+                    
+                    exportCtx.restore();
+                }
+            });
+            
+            const link = document.createElement('a');
+            link.download = 'composed-sprite-sheet.png';
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>

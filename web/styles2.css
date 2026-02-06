@@ -1,0 +1,22 @@
+body {
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  /* overflow: hidden; */
+  background-color: #f4f4f4;
+}
+
+pre {
+  text-wrap-mode: wrap;
+  font-size: 0.8rem;
+}
+
+/* ------------------ */
+
+.active {
+  background-color: gray !important;
+  color: white;
+}
+
+/* ------------------ */
+
+/* ------------------ */

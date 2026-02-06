@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprite Compositor Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+        
+        .main-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: calc(100vh - 80px);
+        }
+        
+        .left-sidebar {
+            background: #f8f9fa;
+            border-right: 2px solid #dee2e6;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        .upload-section {
+            background: white;
+            border: 3px dashed #11998e;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            background: #f0fdf4;
+            border-color: #38ef7d;
+        }
+        
+        .upload-section input {
+            display: none;
+        }
+        
+        .collection {
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+        }
+        
+        .collection.collapsed .collection-grid {
+            display: none;
+        }
+        
+        .collection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .collection-header:hover {
+            background: #f8f9fa;
+        }
+        
+        .collection-name {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .collection-toggle {
+            font-size: 0.8em;
+            transition: transform 0.3s;
+        }
+        
+        .collection.collapsed .collection-toggle {
+            transform: rotate(-90deg);
+        }
+        
+        .collection-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+        }
+        
+        .sprite-thumb {
+            aspect-ratio: 192/224;
+            border: 2px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+            overflow: hidden;
+        }
+        
+        .sprite-thumb:hover {
+            border-color: #11998e;
+            transform: scale(1.05);
+        }
+        
+        .sprite-thumb canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+        
+        .right-content {
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            overflow: hidden;
+        }
+        
+        .workspace-section {
+            flex: 1;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            overflow-y: auto;
+        }
+        
+        .section-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .workspace-empty {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .row-item {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #dee2e6;
+        }
+        
+        .row-item.collapsed .row-sprites,
+        .row-item.collapsed .row-filters {
+            display: none;
+        }
+        
+        .row-item.collapsed {
+            padding: 5px 10px;
+        }
+        
+        .row-item.dragging {
+            opacity: 0.5;
+            cursor: move;
+        }
+        
+        .row-item.drag-over {
+            border-color: #11998e;
+            background: #f0fdf4;
+        }
+        
+        .row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        
+        .row-item.collapsed .row-header {
+            margin-bottom: 0;
+        }
+        
+        .row-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .row-label-input {
+            padding: 4px 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #495057;
+            background: white;
+            min-width: 150px;
+        }
+        
+        .row-label-input:focus {
+            outline: none;
+            border-color: #11998e;
+        }
+        
+        .row-toggle {
+            font-size: 0.9em;
+            transition: transform 0.3s;
+        }
+        
+        .row-item.collapsed .row-toggle {
+            transform: rotate(-90deg);
+        }
+        
+        .row-preview-mini {
+            display: none;
+            grid-template-columns: repeat(4, 40px);
+            gap: 5px;
+            margin-left: 10px;
+        }
+        
+        .row-item.collapsed .row-preview-mini {
+            display: grid;
+        }
+        
+        .mini-sprite {
+            width: 40px;
+            height: 45px;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            background: repeating-conic-gradient(#e9ecef 0% 25%, transparent 0% 50%) 50% / 10px 10px;
+            overflow: hidden;
+        }
+        
+        .mini-sprite canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+        
+        .row-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .row-sprites {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .row-sprite {
+            aspect-ratio: 192/224;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            background: repeating-conic-gradient(#e9ecef 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .row-sprite canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+        
+        .sprite-controls {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            display: flex;
+            gap: 2px;
+        }
+        
+        .sprite-btn {
+            padding: 2px 5px;
+            background: rgba(17, 153, 142, 0.9);
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7em;
+        }
+        
+        .sprite-btn:hover {
+            background: rgba(17, 153, 142, 1);
+        }
+        
+        .row-filters {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .filter-control {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        
+        .filter-label {
+            font-size: 0.7em;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .filter-input {
+            padding: 4px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 0.8em;
+            text-align: center;
+        }
+        
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .drag-handle {
+            cursor: move;
+            font-size: 1.2em;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Sprite Compositor Tool</h1>
+            <p>Compose sprite sheets from multiple collections with filters and transformations</p>
+        </div>
+        
+        <div class="main-layout">
+            <!-- Left Sidebar - Collections -->
+            <div class="left-sidebar">
+                <div class="upload-section" id="uploadZone">
+                    <div style="font-size: 1.5em; margin-bottom: 5px;">📁</div>
+                    <h3 style="font-size: 0.9em; margin-bottom: 3px;">Upload Sprite Sheets</h3>
+                    <p style="font-size: 0.75em; color: #6c757d;">192x224 4xN grid</p>
+                    <input type="file" id="fileInput" accept="image/png" multiple>
+                </div>
+                
+                <div id="collectionsContainer"></div>
+            </div>
+            
+            <!-- Right Content - Workspace -->
+            <div class="right-content">
+                <div class="workspace-section">
+                    <div class="section-title">
+                        <span>📋 Workspace</span>
+                        <div>
+                            <button class="btn btn-secondary" id="exportMetaBtn" style="display:none; margin-right: 8px;">📄 Export Metadata</button>
+                            <button class="btn btn-primary" id="exportBtn" style="display:none;">💾 Export Sheet</button>
+                        </div>
+                    </div>
+                    
+                    <div id="workspace">
+                        <div class="workspace-empty">
+                            Click on sprites from collections (left) to add rows to workspace
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const SPRITE_WIDTH = 192;
+        const SPRITE_HEIGHT = 224;
+        
+        let collections = [];
+        let workspace = [];
+        let copiedFilters = null;
+        let draggedRowIndex = null;
+        
+        const fileInput = document.getElementById('fileInput');
+        const uploadZone = document.getElementById('uploadZone');
+        const collectionsContainer = document.getElementById('collectionsContainer');
+        const workspaceDiv = document.getElementById('workspace');
+        const exportBtn = document.getElementById('exportBtn');
+        const exportMetaBtn = document.getElementById('exportMetaBtn');
+        
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileUpload);
+        exportBtn.addEventListener('click', exportWorkspace);
+        exportMetaBtn.addEventListener('click', exportMetadata);
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.style.background = '#f0fdf4';
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.style.background = 'white';
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.style.background = 'white';
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'image/png');
+            files.forEach(loadImage);
+        });
+        
+        function handleFileUpload(e) {
+            Array.from(e.target.files).forEach(loadImage);
+        }
+        
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    createCollection(img, file.name.replace('.png', ''));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function createCollection(img, name) {
+            const rows = img.height / SPRITE_HEIGHT;
+            const sprites = [];
+            
+            for (let row = 0; row < rows; row++) {
+                const rowSprites = [];
+                for (let col = 0; col < 4; col++) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = SPRITE_WIDTH;
+                    canvas.height = SPRITE_HEIGHT;
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(img, col * SPRITE_WIDTH, row * SPRITE_HEIGHT, SPRITE_WIDTH, SPRITE_HEIGHT, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
+                    rowSprites.push(canvas);
+                }
+                sprites.push(rowSprites);
+            }
+            
+            collections.push({ name, sprites });
+            renderCollections();
+        }
+        
+        function renderCollections() {
+            collectionsContainer.innerHTML = '';
+            
+            collections.forEach((collection, collIndex) => {
+                const collDiv = document.createElement('div');
+                collDiv.className = 'collection';
+                
+                const header = document.createElement('div');
+                header.className = 'collection-header';
+                header.onclick = () => collDiv.classList.toggle('collapsed');
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'collection-name';
+                const toggle = document.createElement('span');
+                toggle.className = 'collection-toggle';
+                toggle.textContent = '▼';
+                nameDiv.appendChild(toggle);
+                nameDiv.appendChild(document.createTextNode(collection.name));
+                
+                header.appendChild(nameDiv);
+                collDiv.appendChild(header);
+                
+                const grid = document.createElement('div');
+                grid.className = 'collection-grid';
+                
+                collection.sprites.forEach((row, rowIndex) => {
+                    row.forEach((sprite, spriteIndex) => {
+                        const thumb = document.createElement('div');
+                        thumb.className = 'sprite-thumb';
+                        const canvas = document.createElement('canvas');
+                        canvas.width = SPRITE_WIDTH;
+                        canvas.height = SPRITE_HEIGHT;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(sprite, 0, 0);
+                        thumb.appendChild(canvas);
+                        
+                        thumb.onclick = () => addRowToWorkspace(collIndex, rowIndex);
+                        
+                        grid.appendChild(thumb);
+                    });
+                });
+                
+                collDiv.appendChild(grid);
+                collectionsContainer.appendChild(collDiv);
+            });
+        }
+        
+        function addRowToWorkspace(collIndex, rowIndex) {
+            const sprites = collections[collIndex].sprites[rowIndex].map(s => {
+                const canvas = document.createElement('canvas');
+                canvas.width = SPRITE_WIDTH;
+                canvas.height = SPRITE_HEIGHT;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(s, 0, 0);
+                return {
+                    original: canvas,
+                    offsetX: 0,
+                    offsetY: 0,
+                    scaleX: 1,
+                    scaleY: 1,
+                    flipH: false,
+                    flipV: false
+                };
+            });
+            
+            workspace.push({
+                sprites,
+                label: `row_${workspace.length}`,
+                hue: 0,
+                saturation: 100,
+                contrast: 100,
+                brightness: 100,
+                invert: 0
+            });
+            
+            renderWorkspace();
+        }
+        
+        function renderWorkspace() {
+            if (workspace.length === 0) {
+                workspaceDiv.innerHTML = '<div class="workspace-empty">Click on sprites from collections (left) to add rows to workspace</div>';
+                exportBtn.style.display = 'none';
+                exportMetaBtn.style.display = 'none';
+                return;
+            }
+            
+            exportBtn.style.display = 'block';
+            exportMetaBtn.style.display = 'block';
+            workspaceDiv.innerHTML = '';
+            
+            workspace.forEach((row, rowIndex) => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row-item collapsed';
+                rowDiv.dataset.index = rowIndex;
+                
+                const dragHandle = document.createElement('span');
+                dragHandle.className = 'drag-handle';
+                dragHandle.textContent = '☰';
+                dragHandle.draggable = true;
+                
+                dragHandle.addEventListener('dragstart', (e) => {
+                    draggedRowIndex = rowIndex;
+                    rowDiv.classList.add('dragging');
+                });
+                
+                rowDiv.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    rowDiv.classList.add('drag-over');
+                });
+                
+                rowDiv.addEventListener('dragleave', () => {
+                    rowDiv.classList.remove('drag-over');
+                });
+                
+                rowDiv.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    rowDiv.classList.remove('drag-over');
+                    if (draggedRowIndex !== null && draggedRowIndex !== rowIndex) {
+                        const [movedRow] = workspace.splice(draggedRowIndex, 1);
+                        workspace.splice(rowIndex, 0, movedRow);
+                        renderWorkspace();
+                    }
+                });
+                
+                dragHandle.addEventListener('dragend', () => {
+                    rowDiv.classList.remove('dragging');
+                    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                    draggedRowIndex = null;
+                });
+                
+                const header = document.createElement('div');
+                header.className = 'row-header';
+                
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'row-title';
+                
+                const toggle = document.createElement('span');
+                toggle.className = 'row-toggle';
+                toggle.textContent = '▼';
+                
+                titleDiv.appendChild(toggle);
+                titleDiv.appendChild(dragHandle);
+                
+                const labelInput = document.createElement('input');
+                labelInput.type = 'text';
+                labelInput.className = 'row-label-input';
+                labelInput.value = row.label;
+                labelInput.onclick = (e) => e.stopPropagation();
+                labelInput.onchange = (e) => {
+                    workspace[rowIndex].label = e.target.value;
+                };
+                titleDiv.appendChild(labelInput);
+                
+                const miniPreview = document.createElement('div');
+                miniPreview.className = 'row-preview-mini';
+                row.sprites.forEach((sprite) => {
+                    const miniDiv = document.createElement('div');
+                    miniDiv.className = 'mini-sprite';
+                    const miniCanvas = document.createElement('canvas');
+                    miniCanvas.width = SPRITE_WIDTH;
+                    miniCanvas.height = SPRITE_HEIGHT;
+                    renderSprite(miniCanvas, sprite, row);
+                    miniDiv.appendChild(miniCanvas);
+                    miniPreview.appendChild(miniDiv);
+                });
+                titleDiv.appendChild(miniPreview);
+                
+                header.appendChild(titleDiv);
+                
+                header.onclick = (e) => {
+                    if (!e.target.closest('.row-actions')) {
+                        rowDiv.classList.toggle('collapsed');
+                    }
+                };
+                
+                const actions = document.createElement('div');
+                actions.className = 'row-actions';
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'btn btn-secondary';
+                copyBtn.textContent = '📋';
+                copyBtn.title = 'Copy Filters';
+                copyBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    copiedFilters = {
+                        hue: row.hue,
+                        saturation: row.saturation,
+                        contrast: row.contrast,
+                        brightness: row.brightness,
+                        invert: row.invert
+                    };
+                    renderWorkspace();
+                };
+                
+                const pasteBtn = document.createElement('button');
+                pasteBtn.className = 'btn btn-success';
+                pasteBtn.textContent = '📥';
+                pasteBtn.title = 'Paste Filters';
+                if (!copiedFilters) {
+                    pasteBtn.disabled = true;
+                    pasteBtn.style.opacity = '0.5';
+                    pasteBtn.style.cursor = 'not-allowed';
+                }
+                pasteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (copiedFilters) {
+                        workspace[rowIndex].hue = copiedFilters.hue;
+                        workspace[rowIndex].saturation = copiedFilters.saturation;
+                        workspace[rowIndex].contrast = copiedFilters.contrast;
+                        workspace[rowIndex].brightness = copiedFilters.brightness;
+                        workspace[rowIndex].invert = copiedFilters.invert;
+                        renderWorkspace();
+                    }
+                };
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-danger';
+                deleteBtn.textContent = '🗑️';
+                deleteBtn.title = 'Delete Row';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    workspace.splice(rowIndex, 1);
+                    renderWorkspace();
+                };
+                
+                actions.appendChild(copyBtn);
+                actions.appendChild(pasteBtn);
+                actions.appendChild(deleteBtn);
+                header.appendChild(actions);
+                rowDiv.appendChild(header);
+                
+                const spritesDiv = document.createElement('div');
+                spritesDiv.className = 'row-sprites';
+                
+                row.sprites.forEach((sprite, spriteIndex) => {
+                    const spriteDiv = document.createElement('div');
+                    spriteDiv.className = 'row-sprite';
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.width = SPRITE_WIDTH;
+                    canvas.height = SPRITE_HEIGHT;
+                    renderSprite(canvas, sprite, row);
+                    spriteDiv.appendChild(canvas);
+                    
+                    const controls = document.createElement('div');
+                    controls.className = 'sprite-controls';
+                    controls.innerHTML = `
+                        <button class="sprite-btn" onclick="adjustSprite(${rowIndex}, ${spriteIndex}, 'offsetX', -1)">◀</button>
+                        <button class="sprite-btn" onclick="adjustSprite(${rowIndex}, ${spriteIndex}, 'offsetX', 1)">▶</button>
+                        <button class="sprite-btn" onclick="adjustSprite(${rowIndex}, ${spriteIndex}, 'offsetY', -1)">▲</button>
+                        <button class="sprite-btn" onclick="adjustSprite(${rowIndex}, ${spriteIndex}, 'offsetY', 1)">▼</button>
+                        <button class="sprite-btn" onclick="toggleFlip(${rowIndex}, ${spriteIndex}, 'H')">↔</button>
+                        <button class="sprite-btn" onclick="toggleFlip(${rowIndex}, ${spriteIndex}, 'V')">↕</button>
+                    `;
+                    spriteDiv.appendChild(controls);
+                    
+                    spritesDiv.appendChild(spriteDiv);
+                });
+                
+                rowDiv.appendChild(spritesDiv);
+                
+                const filtersDiv = document.createElement('div');
+                filtersDiv.className = 'row-filters';
+                filtersDiv.innerHTML = `
+                    <div class="filter-control">
+                        <label class="filter-label">Hue</label>
+                        <input type="number" class="filter-input" value="${row.hue}" min="-180" max="180" step="10"
+                               onchange="updateFilter(${rowIndex}, 'hue', this.value)">
+                    </div>
+                    <div class="filter-control">
+                        <label class="filter-label">Sat</label>
+                        <input type="number" class="filter-input" value="${row.saturation}" min="0" max="200" step="10"
+                               onchange="updateFilter(${rowIndex}, 'saturation', this.value)">
+                    </div>
+                    <div class="filter-control">
+                        <label class="filter-label">Con</label>
+                        <input type="number" class="filter-input" value="${row.contrast}" min="0" max="200" step="10"
+                               onchange="updateFilter(${rowIndex}, 'contrast', this.value)">
+                    </div>
+                    <div class="filter-control">
+                        <label class="filter-label">Bri</label>
+                        <input type="number" class="filter-input" value="${row.brightness}" min="0" max="200" step="10"
+                               onchange="updateFilter(${rowIndex}, 'brightness', this.value)">
+                    </div>
+                    <div class="filter-control">
+                        <label class="filter-label">Inv</label>
+                        <input type="number" class="filter-input" value="${row.invert}" min="0" max="100" step="10"
+                               onchange="updateFilter(${rowIndex}, 'invert', this.value)">
+                    </div>
+                `;
+                
+                rowDiv.appendChild(filtersDiv);
+                workspaceDiv.appendChild(rowDiv);
+            });
+        }
+        
+        function renderSprite(canvas, sprite, rowFilters) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
+            ctx.save();
+            
+            ctx.translate(SPRITE_WIDTH / 2, SPRITE_HEIGHT / 2);
+            ctx.scale(sprite.flipH ? -1 : 1, sprite.flipV ? -1 : 1);
+            ctx.translate(-SPRITE_WIDTH / 2, -SPRITE_HEIGHT / 2);
+            ctx.translate(sprite.offsetX, sprite.offsetY);
+            ctx.scale(sprite.scaleX, sprite.scaleY);
+            
+            ctx.drawImage(sprite.original, 0, 0);
+            ctx.restore();
+            
+            const imageData = ctx.getImageData(0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
+            applyFilters(imageData, rowFilters);
+            ctx.putImageData(imageData, 0, 0);
+        }
+        
+        function applyFilters(imageData, filters) {
+            const data = imageData.data;
+            const { hue, saturation, contrast, brightness, invert } = filters;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] === 0) continue;
+                
+                let r = data[i], g = data[i + 1], b = data[i + 2];
+                
+                r *= brightness / 100;
+                g *= brightness / 100;
+                b *= brightness / 100;
+                
+                const cf = contrast / 100;
+                r = ((r / 255 - 0.5) * cf + 0.5) * 255;
+                g = ((g / 255 - 0.5) * cf + 0.5) * 255;
+                b = ((b / 255 - 0.5) * cf + 0.5) * 255;
+                
+                const gray = 0.2989 * r + 0.5870 * g + 0.1140 * b;
+                const sf = saturation / 100;
+                r = gray + (r - gray) * sf;
+                g = gray + (g - gray) * sf;
+                b = gray + (b - gray) * sf;
+                
+                if (hue !== 0) {
+                    const angle = hue * Math.PI / 180;
+                    const cosA = Math.cos(angle), sinA = Math.sin(angle);
+                    const nr = r * (0.299 + 0.701 * cosA + 0.168 * sinA) + g * (0.587 - 0.587 * cosA + 0.330 * sinA) + b * (0.114 - 0.114 * cosA - 0.497 * sinA);
+                    const ng = r * (0.299 - 0.299 * cosA - 0.328 * sinA) + g * (0.587 + 0.413 * cosA + 0.035 * sinA) + b * (0.114 - 0.114 * cosA + 0.292 * sinA);
+                    const nb = r * (0.299 - 0.300 * cosA + 1.250 * sinA) + g * (0.587 - 0.588 * cosA - 1.050 * sinA) + b * (0.114 + 0.886 * cosA - 0.203 * sinA);
+                    r = nr; g = ng; b = nb;
+                }
+                
+                if (invert > 0) {
+                    const iv = invert / 100;
+                    r = r + (255 - 2 * r) * iv;
+                    g = g + (255 - 2 * g) * iv;
+                    b = b + (255 - 2 * b) * iv;
+                }
+                
+                data[i] = Math.max(0, Math.min(255, r));
+                data[i + 1] = Math.max(0, Math.min(255, g));
+                data[i + 2] = Math.max(0, Math.min(255, b));
+            }
+        }
+        
+        window.adjustSprite = (rowIndex, spriteIndex, prop, delta) => {
+            workspace[rowIndex].sprites[spriteIndex][prop] += delta;
+            updateSingleSprite(rowIndex, spriteIndex);
+        };
+        
+        window.toggleFlip = (rowIndex, spriteIndex, direction) => {
+            const sprite = workspace[rowIndex].sprites[spriteIndex];
+            if (direction === 'H') sprite.flipH = !sprite.flipH;
+            else sprite.flipV = !sprite.flipV;
+            updateSingleSprite(rowIndex, spriteIndex);
+        };
+        
+        window.updateFilter = (rowIndex, filter, value) => {
+            workspace[rowIndex][filter] = parseFloat(value);
+            updateSingleRow(rowIndex);
+        };
+        
+        function updateSingleSprite(rowIndex, spriteIndex) {
+            const row = workspace[rowIndex];
+            const sprite = row.sprites[spriteIndex];
+            
+            // Update main sprite in row
+            const mainCanvas = document.querySelector(`.row-item[data-index="${rowIndex}"] .row-sprite:nth-child(${spriteIndex + 1}) canvas`);
+            if (mainCanvas) {
+                renderSprite(mainCanvas, sprite, row);
+            }
+            
+            // Update mini preview
+            const miniCanvas = document.querySelector(`.row-item[data-index="${rowIndex}"] .mini-sprite:nth-child(${spriteIndex + 1}) canvas`);
+            if (miniCanvas) {
+                renderSprite(miniCanvas, sprite, row);
+            }
+        }
+        
+        function updateSingleRow(rowIndex) {
+            const row = workspace[rowIndex];
+            
+            // Update all sprites in the row
+            row.sprites.forEach((sprite, spriteIndex) => {
+                const mainCanvas = document.querySelector(`.row-item[data-index="${rowIndex}"] .row-sprite:nth-child(${spriteIndex + 1}) canvas`);
+                if (mainCanvas) {
+                    renderSprite(mainCanvas, sprite, row);
+                }
+                
+                const miniCanvas = document.querySelector(`.row-item[data-index="${rowIndex}"] .mini-sprite:nth-child(${spriteIndex + 1}) canvas`);
+                if (miniCanvas) {
+                    renderSprite(miniCanvas, sprite, row);
+                }
+            });
+        }
+        
+        function exportWorkspace() {
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_WIDTH * 4;
+            canvas.height = SPRITE_HEIGHT * workspace.length;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            workspace.forEach((row, rowIndex) => {
+                row.sprites.forEach((sprite, spriteIndex) => {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = SPRITE_WIDTH;
+                    tempCanvas.height = SPRITE_HEIGHT;
+                    renderSprite(tempCanvas, sprite, row);
+                    ctx.drawImage(tempCanvas, spriteIndex * SPRITE_WIDTH, rowIndex * SPRITE_HEIGHT);
+                });
+            });
+            
+            const link = document.createElement('a');
+            link.download = 'composed-sprite-sheet.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        function exportMetadata() {
+            const metadata = workspace.map((row, index) => ({
+                label: row.label,
+                top: index * SPRITE_HEIGHT
+            }));
+            
+            const json = JSON.stringify(metadata, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.download = 'sprite-metadata.json';
+            link.href = url;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

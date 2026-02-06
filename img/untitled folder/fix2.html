@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bad Sprite Sheet Fixer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 0.85em;
+        }
+        
+        .main-content {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 15px;
+        }
+        
+        .controls-panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            height: fit-content;
+        }
+        
+        .upload-section {
+            background: white;
+            border: 3px dashed #f093fb;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            background: #fff5f7;
+            border-color: #f5576c;
+        }
+        
+        .upload-section input {
+            display: none;
+        }
+        
+        .control-group {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .control-group:last-child {
+            border-bottom: none;
+        }
+        
+        .control-label {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+            font-size: 0.8em;
+        }
+        
+        .control-input {
+            width: 100%;
+            padding: 6px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        
+        .control-input:focus {
+            outline: none;
+            border-color: #f093fb;
+        }
+        
+        .value-input {
+            flex: 1;
+            padding: 6px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 0.85em;
+            text-align: center;
+        }
+        
+        .value-input:focus {
+            outline: none;
+            border-color: #f093fb;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .canvas-container {
+            background: #2d3436;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 500px;
+            position: relative;
+            overflow: auto;
+        }
+        
+        #mainCanvas {
+            border: 2px solid #f093fb;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(240, 147, 251, 0.3);
+            image-rendering: pixelated;
+            cursor: grab;
+        }
+        
+        #mainCanvas:active {
+            cursor: grabbing;
+        }
+        
+        .stats {
+            background: #e7f3ff;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.75em;
+            margin-bottom: 12px;
+        }
+        
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+        
+        .stats-label {
+            color: #495057;
+        }
+        
+        .stats-value {
+            font-weight: 600;
+            color: #f5576c;
+        }
+        
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-top: 15px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .preview-item {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .preview-item canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Bad Sprite Sheet Fixer</h1>
+            <p>Adjust, resize, and align your misaligned sprite sheets to 192x224 grid</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="controls-panel">
+                <div class="upload-section" id="uploadZone">
+                    <div style="font-size: 2em; margin-bottom: 8px;">📁</div>
+                    <h3 style="font-size: 1em; margin-bottom: 5px;">Upload Bad Sprite Sheet</h3>
+                    <p style="font-size: 0.85em; color: #6c757d;">PNG files only</p>
+                    <input type="file" id="fileInput" accept="image/png,image/jpg">
+                </div>
+                
+                <div id="stats" class="stats" style="display:none;">
+                    <div class="stats-item">
+                        <span class="stats-label">Original:</span>
+                        <span class="stats-value" id="originalSize">-</span>
+                    </div>
+                    <div class="stats-item">
+                        <span class="stats-label">Output:</span>
+                        <span class="stats-value" id="outputSize">-</span>
+                    </div>
+                    <div class="stats-item">
+                        <span class="stats-label">Rows:</span>
+                        <span class="stats-value" id="gridRows">-</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">🔍 Zoom</label>
+                    <input type="number" class="control-input value-input" id="zoomInput" 
+                           min="0.5" max="4" step="0.1" value="1">
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">🔍 Scale</label>
+                    <input type="number" class="control-input value-input" id="scaleInput" 
+                           min="0.5" max="2" step="0.01" value="1">
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">↔️ Offset X</label>
+                    <input type="number" class="control-input value-input" id="offsetXInput" 
+                           min="-500" max="500" step="1" value="0">
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">↕️ Offset Y</label>
+                    <input type="number" class="control-input value-input" id="offsetYInput" 
+                           min="-500" max="500" step="1" value="0">
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">↔️ H-Gap</label>
+                    <input type="number" class="control-input value-input" id="hGapInput" 
+                           min="-100" max="100" step="1" value="0">
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">↕️ V-Gap</label>
+                    <input type="number" class="control-input value-input" id="vGapInput" 
+                           min="-100" max="100" step="1" value="0">
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">
+                        <input type="checkbox" id="removeBgCheck" style="margin-right: 5px;">
+                        Remove Background
+                    </label>
+                </div>
+                
+                <div class="control-group" id="smoothEdgeGroup" style="display:none;">
+                    <label class="control-label">🔪 Edge Erosion</label>
+                    <input type="number" class="control-input value-input" id="smoothEdgeInput" 
+                           min="0" max="10" step="1" value="2">
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">
+                        <input type="checkbox" id="showTilesCheck" style="margin-right: 5px;">
+                        Show Isometric Tiles
+                    </label>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">🔢 Rows to Extract</label>
+                    <input type="number" class="control-input value-input" id="rowCount" value="1" min="1">
+                </div>
+                
+                <button class="btn btn-primary" id="previewBtn" style="display:none;">👁️ Preview Grid</button>
+                <button class="btn btn-success" id="exportBtn" style="display:none;">💾 Export Fixed Sheet</button>
+            </div>
+            
+            <div>
+                <div class="canvas-container">
+                    <canvas id="mainCanvas"></canvas>
+                </div>
+                
+                <div id="previewSection" style="display:none;">
+                    <h3 style="margin: 15px 0 10px 0; color: #495057;">Preview (4 sprites per row):</h3>
+                    <div class="preview-grid" id="previewGrid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const SPRITE_WIDTH = 192;
+        const SPRITE_HEIGHT = 224;
+        const TILE_WIDTH = 128;
+        const TILE_HEIGHT = 64;
+        const TILE_PADDING = 6;
+        
+        let originalImage = null;
+        let canvas = document.getElementById('mainCanvas');
+        let ctx = canvas.getContext('2d');
+        let canvasZoom = 1;
+        
+        const fileInput = document.getElementById('fileInput');
+        const uploadZone = document.getElementById('uploadZone');
+        const zoomInput = document.getElementById('zoomInput');
+        const scaleInput = document.getElementById('scaleInput');
+        const offsetXInput = document.getElementById('offsetXInput');
+        const offsetYInput = document.getElementById('offsetYInput');
+        const hGapInput = document.getElementById('hGapInput');
+        const vGapInput = document.getElementById('vGapInput');
+        const removeBgCheck = document.getElementById('removeBgCheck');
+        const smoothEdgeInput = document.getElementById('smoothEdgeInput');
+        const smoothEdgeGroup = document.getElementById('smoothEdgeGroup');
+        const showTilesCheck = document.getElementById('showTilesCheck');
+        const rowCountInput = document.getElementById('rowCount');
+        const previewBtn = document.getElementById('previewBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const stats = document.getElementById('stats');
+        const previewSection = document.getElementById('previewSection');
+        const previewGrid = document.getElementById('previewGrid');
+        
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) loadImage(file);
+        });
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.style.background = '#fff5f7';
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.style.background = 'white';
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.style.background = 'white';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'image/png') {
+                loadImage(file);
+            }
+        });
+        
+        zoomInput.addEventListener('input', () => {
+            canvasZoom = parseFloat(zoomInput.value);
+            updateCanvasZoom();
+        });
+        
+        scaleInput.addEventListener('input', updatePreview);
+        offsetXInput.addEventListener('input', updatePreview);
+        offsetYInput.addEventListener('input', updatePreview);
+        hGapInput.addEventListener('input', updatePreview);
+        vGapInput.addEventListener('input', updatePreview);
+        removeBgCheck.addEventListener('change', () => {
+            smoothEdgeGroup.style.display = removeBgCheck.checked ? 'block' : 'none';
+            updatePreview();
+        });
+        smoothEdgeInput.addEventListener('input', updatePreview);
+        showTilesCheck.addEventListener('change', updatePreview);
+        rowCountInput.addEventListener('input', updatePreview);
+        
+        previewBtn.addEventListener('click', generatePreview);
+        exportBtn.addEventListener('click', exportFixedSheet);
+        
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImage = img;
+                    document.getElementById('originalSize').textContent = `${img.width}x${img.height}`;
+                    stats.style.display = 'block';
+                    previewBtn.style.display = 'block';
+                    exportBtn.style.display = 'block';
+                    updatePreview();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function updateCanvasZoom() {
+            canvas.style.transform = `scale(${canvasZoom})`;
+            canvas.style.transformOrigin = 'top left';
+        }
+        
+        function getBackgroundColor(img) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = img.width;
+            tempCanvas.height = img.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(img, 0, 0);
+            const imgData = tempCtx.getImageData(0, 0, 1, 1);
+            return {
+                r: imgData.data[0],
+                g: imgData.data[1],
+                b: imgData.data[2]
+            };
+        }
+        
+        function removeBackground(sourceCanvas, bgColor, erosion) {
+            const w = sourceCanvas.width;
+            const h = sourceCanvas.height;
+            const tempCtx = sourceCanvas.getContext('2d');
+            const imgData = tempCtx.getImageData(0, 0, w, h);
+            const data = imgData.data;
+            const tolerance = 30;
+            const alphaMap = new Uint8Array(w * h);
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const idx = i / 4;
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const diff = Math.abs(r - bgColor.r) + Math.abs(g - bgColor.g) + Math.abs(b - bgColor.b);
+                alphaMap[idx] = diff < tolerance ? 0 : 255;
+            }
+            
+            if (erosion > 0) {
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const idx = y * w + x;
+                        if (alphaMap[idx] === 255) {
+                            let nearBackground = false;
+                            for (let dy = -erosion; dy <= erosion && !nearBackground; dy++) {
+                                for (let dx = -erosion; dx <= erosion; dx++) {
+                                    const checkY = y + dy;
+                                    const checkX = x + dx;
+                                    if (checkY >= 0 && checkY < h && checkX >= 0 && checkX < w) {
+                                        const checkIdx = checkY * w + checkX;
+                                        if (alphaMap[checkIdx] === 0) {
+                                            const dist = Math.sqrt(dx * dx + dy * dy);
+                                            if (dist <= erosion) {
+                                                nearBackground = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            if (nearBackground) {
+                                alphaMap[idx] = 0;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const idx = i / 4;
+                if (alphaMap[idx] === 0) {
+                    data[i + 3] = 0;
+                }
+            }
+            
+            tempCtx.putImageData(imgData, 0, 0);
+        }
+        
+        function drawIsometricTile(ctx, x, y, w, h) {
+            const centerX = x + w / 2;
+            const bottomY = y + h - TILE_PADDING;
+            ctx.fillStyle = 'rgba(100, 200, 255, 0.3)';
+            ctx.strokeStyle = 'rgba(100, 200, 255, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX, bottomY - TILE_HEIGHT);
+            ctx.lineTo(centerX + TILE_WIDTH / 2, bottomY - TILE_HEIGHT / 2);
+            ctx.lineTo(centerX, bottomY);
+            ctx.lineTo(centerX - TILE_WIDTH / 2, bottomY - TILE_HEIGHT / 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        function updatePreview() {
+            if (!originalImage) return;
+            
+            const scale = parseFloat(scaleInput.value);
+            const offsetX = parseInt(offsetXInput.value);
+            const offsetY = parseInt(offsetYInput.value);
+            const hGap = parseInt(hGapInput.value);
+            const vGap = parseInt(vGapInput.value);
+            const rows = parseInt(rowCountInput.value);
+            const removeBg = removeBgCheck.checked;
+            const erosion = removeBg ? parseInt(smoothEdgeInput.value) : 0;
+            const showTiles = showTilesCheck.checked;
+            
+            const outputW = SPRITE_WIDTH * 4;
+            const outputH = SPRITE_HEIGHT * rows;
+            
+            document.getElementById('outputSize').textContent = `${outputW}x${outputH}`;
+            document.getElementById('gridRows').textContent = rows;
+            
+            canvas.width = outputW;
+            canvas.height = outputH;
+            
+            ctx.imageSmoothingEnabled = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = originalImage.width * scale;
+            tempCanvas.height = originalImage.height * scale;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.imageSmoothingEnabled = false;
+            tempCtx.drawImage(originalImage, 0, 0, tempCanvas.width, tempCanvas.height);
+            
+            if (removeBg) {
+                const bgColor = getBackgroundColor(originalImage);
+                removeBackground(tempCanvas, bgColor, erosion);
+            }
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < 4; col++) {
+                    const srcX = offsetX + col * SPRITE_WIDTH + col * hGap;
+                    const srcY = offsetY + row * SPRITE_HEIGHT + row * vGap;
+                    const destX = col * SPRITE_WIDTH;
+                    const destY = row * SPRITE_HEIGHT;
+                    ctx.drawImage(tempCanvas, srcX, srcY, SPRITE_WIDTH, SPRITE_HEIGHT, destX, destY, SPRITE_WIDTH, SPRITE_HEIGHT);
+                }
+            }
+            
+            ctx.strokeStyle = 'rgba(240, 147, 251, 0.6)';
+            ctx.lineWidth = 2;
+            
+            for (let row = 0; row <= rows; row++) {
+                ctx.beginPath();
+                ctx.moveTo(0, row * SPRITE_HEIGHT);
+                ctx.lineTo(outputW, row * SPRITE_HEIGHT);
+                ctx.stroke();
+            }
+            
+            for (let col = 0; col <= 4; col++) {
+                ctx.beginPath();
+                ctx.moveTo(col * SPRITE_WIDTH, 0);
+                ctx.lineTo(col * SPRITE_WIDTH, outputH);
+                ctx.stroke();
+            }
+            
+            if (showTiles) {
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < 4; col++) {
+                        drawIsometricTile(ctx, col * SPRITE_WIDTH, row * SPRITE_HEIGHT, SPRITE_WIDTH, SPRITE_HEIGHT);
+                    }
+                }
+            }
+            
+            updateCanvasZoom();
+        }
+        
+        function generatePreview() {
+            if (!originalImage) return;
+            
+            const scale = parseFloat(scaleInput.value);
+            const offsetX = parseInt(offsetXInput.value);
+            const offsetY = parseInt(offsetYInput.value);
+            const hGap = parseInt(hGapInput.value);
+            const vGap = parseInt(vGapInput.value);
+            const rows = parseInt(rowCountInput.value);
+            const removeBg = removeBgCheck.checked;
+            const erosion = removeBg ? parseInt(smoothEdgeInput.value) : 0;
+            
+            previewGrid.innerHTML = '';
+            
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = originalImage.width * scale;
+            tempCanvas.height = originalImage.height * scale;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.imageSmoothingEnabled = false;
+            tempCtx.drawImage(originalImage, 0, 0, tempCanvas.width, tempCanvas.height);
+            
+            if (removeBg) {
+                const bgColor = getBackgroundColor(originalImage);
+                removeBackground(tempCanvas, bgColor, erosion);
+            }
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < 4; col++) {
+                    const spriteCanvas = document.createElement('canvas');
+                    spriteCanvas.width = SPRITE_WIDTH;
+                    spriteCanvas.height = SPRITE_HEIGHT;
+                    const spriteCtx = spriteCanvas.getContext('2d');
+                    spriteCtx.imageSmoothingEnabled = false;
+                    
+                    const srcX = offsetX + col * SPRITE_WIDTH + col * hGap;
+                    const srcY = offsetY + row * SPRITE_HEIGHT + row * vGap;
+                    
+                    spriteCtx.drawImage(tempCanvas, srcX, srcY, SPRITE_WIDTH, SPRITE_HEIGHT, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
+                    
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'preview-item';
+                    previewItem.appendChild(spriteCanvas);
+                    previewGrid.appendChild(previewItem);
+                }
+            }
+            
+            previewSection.style.display = 'block';
+        }
+        
+        function exportFixedSheet() {
+            if (!originalImage) return;
+            
+            const scale = parseFloat(scaleInput.value);
+            const offsetX = parseInt(offsetXInput.value);
+            const offsetY = parseInt(offsetYInput.value);
+            const hGap = parseInt(hGapInput.value);
+            const vGap = parseInt(vGapInput.value);
+            const rows = parseInt(rowCountInput.value);
+            const removeBg = removeBgCheck.checked;
+            const erosion = removeBg ? parseInt(smoothEdgeInput.value) : 0;
+            
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = SPRITE_WIDTH * 4;
+            exportCanvas.height = SPRITE_HEIGHT * rows;
+            const exportCtx = exportCanvas.getContext('2d');
+            exportCtx.imageSmoothingEnabled = false;
+            
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = originalImage.width * scale;
+            tempCanvas.height = originalImage.height * scale;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.imageSmoothingEnabled = false;
+            tempCtx.drawImage(originalImage, 0, 0, tempCanvas.width, tempCanvas.height);
+            
+            if (removeBg) {
+                const bgColor = getBackgroundColor(originalImage);
+                removeBackground(tempCanvas, bgColor, erosion);
+            }
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < 4; col++) {
+                    const srcX = offsetX + col * SPRITE_WIDTH + col * hGap;
+                    const srcY = offsetY + row * SPRITE_HEIGHT + row * vGap;
+                    exportCtx.drawImage(tempCanvas, srcX, srcY, SPRITE_WIDTH, SPRITE_HEIGHT, col * SPRITE_WIDTH, row * SPRITE_HEIGHT, SPRITE_WIDTH, SPRITE_HEIGHT);
+                }
+            }
+            
+            const link = document.createElement('a');
+            link.download = 'fixed-sprite-sheet.png';
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>

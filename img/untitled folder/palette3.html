@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular Sprite Sheet Editor - Canvas Module</title>
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #2a2a2a;
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .controls {
+            background: #3a3a3a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 5px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background: #357abd;
+        }
+        .btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .main-area {
+            display: flex;
+            gap: 20px;
+        }
+        .sheet-panel, .workspace-panel {
+            background: #3a3a3a;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .sheet-panel {
+            flex: 1;
+        }
+        .workspace-panel {
+            width: 700px;
+        }
+        .panel-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #4a90e2;
+        }
+        .canvas-container {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        canvas {
+            border: 1px solid #555;
+            image-rendering: pixelated;
+            cursor: crosshair;
+        }
+        #workspaceCanvas {
+            background-image: 
+                linear-gradient(45deg, #333 25%, transparent 25%),
+                linear-gradient(-45deg, #333 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #333 75%),
+                linear-gradient(-45deg, transparent 75%, #333 75%);
+            background-size: 20px 20px;
+            background-color: #222;
+        }
+
+        /* Input Controls */
+        .slider-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+        .slider-control label {
+            min-width: 100px;
+            font-size: 14px;
+        }
+        .slider-control input[type="range"] {
+            flex: 1;
+        }
+        .slider-control span {
+            min-width: 30px;
+            text-align: right;
+            font-size: 14px;
+        }
+        
+        /* Module Section Styles */
+        .module-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #555;
+        }
+        .module-group {
+            border: 1px solid #555;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .module-group-title {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #a3be8c;
+        }
+
+        /* Palette Specific Styles */
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 40px);
+            gap: 5px;
+            margin: 10px 0;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .palette-color {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #555;
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+        }
+        .palette-color.selected {
+            border-color: #4a90e2;
+            box-shadow: 0 0 5px #4a90e2;
+        }
+        .palette-color .count {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 10px;
+            padding: 1px 3px;
+            border-radius: 2px;
+        }
+        .sort-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .sort-btn {
+            padding: 5px 10px;
+            background: #555;
+            border: 1px solid #666;
+            color: white;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .sort-btn.active {
+            background: #4a90e2;
+            border-color: #4a90e2;
+        }
+        .transform-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Modular Sprite Sheet Editor</h1>
+        
+        <div class="controls">
+            <input type="file" id="fileInput" accept="image/*" class="file-input">
+            <button class="btn" id="saveBtn" disabled>Save Sprite Sheet</button>
+        </div>
+
+        <div class="main-area">
+            <div class="sheet-panel">
+                <div class="panel-title">Sprite Sheet</div>
+                <div class="canvas-container">
+                    <canvas id="sheetCanvas"></canvas>
+                </div>
+                <div class="info" id="sheetInfo">Load an image to start editing</div>
+            </div>
+
+            <div class="workspace-panel">
+                <div class="panel-title">Workspace Editor</div>
+                
+                <!-- Drawing Tools - Elements here are intentionally global as they are part of the main app UI -->
+                <div class="module-group">
+                    <div class="module-group-title">Drawing Tools</div>
+                    <div class="tools" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button class="btn tool-btn active" data-tool="paint">Paint</button>
+                        <button class="btn tool-btn" data-tool="erase">Erase</button>
+                        <button class="btn tool-btn" data-tool="pick">Pick Color</button>
+                    </div>
+                    <div class="color-picker" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <label>Color:</label>
+                        <div class="color-display" id="colorDisplay" style="width: 30px; height: 30px; border: 2px solid #fff; border-radius: 5px; cursor: pointer;"></div>
+                        <input type="color" id="colorPicker" value="#000000">
+                    </div>
+                    <div class="slider-control">
+                        <label>Brush Size:</label>
+                        <input type="range" id="brushSize" min="1" max="10" value="1">
+                        <span id="brushSizeValue">1</span>
+                    </div>
+                    <div class="slider-control">
+                        <label>Zoom:</label>
+                        <input type="range" id="zoomSlider" min="1" max="8" value="3">
+                        <span id="zoomValue">3x</span>
+                    </div>
+                </div>
+
+                <!-- Workspace Canvas -->
+                <div class="canvas-container">
+                    <div class="canvas-wrapper">
+                        <canvas id="workspaceCanvas" width="192" height="224"></canvas>
+                    </div>
+                </div>
+
+                <div class="workspace-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button class="btn" id="applyBtn" disabled>Apply to Sheet</button>
+                    <button class="btn" id="clearBtn" disabled>Clear Workspace</button>
+                </div>
+                
+                <!-- MODULE PLACEHOLDERS -->
+                <div id="transform-module-container" class="module-section"></div>
+                <div id="color-editor-container" class="module-section"></div>
+                <div id="palette-module-container" class="module-section"></div>
+                <!-- END MODULE PLACEHOLDERS -->
+
+                <div class="info" id="workspaceInfo" style="margin-top: 10px;">Select a sprite from the sheet to edit</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // === UTILITY FUNCTIONS (Commonly used by multiple modules) ===
+        // =========================================================================
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function rgbToHsl(rgb) {
+            const r = rgb.r / 255, g = rgb.g / 255, b = rgb.b / 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            
+            if (max === min) { h = s = 0; }
+            else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                    case g: h = ((b - r) / d + 2) / 6; break;
+                    case b: h = ((r - g) / d + 4) / 6; break;
+                }
+            }
+            return { h: h * 360, s: s, l: l };
+        }
+
+        function hslToRgb(h, s, l) {
+            let r, g, b;
+            h /= 360; 
+
+            if (s === 0) {
+                r = g = b = l; 
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255)
+            };
+        }
+
+        function colorDistance(rgb1, rgb2) {
+            const dr = rgb1.r - rgb2.r;
+            const dg = rgb1.g - rgb2.g;
+            const db = rgb1.b - rgb2.b;
+            return Math.sqrt(dr * dr + dg * dg + db * db);
+        }
+
+        // =========================================================================
+        // === 1. CANVAS MODULE (Centralized Canvas and Data Management) ===
+        // =========================================================================
+
+        class CanvasModule {
+            constructor(config) {
+                this.SPRITE_WIDTH = config.spriteWidth;
+                this.SPRITE_HEIGHT = config.spriteHeight;
+                this.sheetCanvas = document.getElementById(config.sheetCanvasId);
+                this.sheetCtx = this.sheetCanvas.getContext('2d', { willReadFrequently: true });
+                this.workspaceCanvas = document.getElementById(config.workspaceCanvasId);
+                this.workspaceCtx = this.workspaceCanvas.getContext('2d', { willReadFrequently: true });
+                
+                this.currentBaseData = null;  // Source of Truth (S.O.T) - Base pixel data
+                this.originalBaseData = null; // Original S.O.T copy for reset
+                this.colorState = { hue: 0, saturation: 0, contrast: 0, brightness: 0 };
+                this.transformState = { translateX: 0, translateY: 0, scale: 1 };
+
+                this.workspaceCanvas.width = this.SPRITE_WIDTH;
+                this.workspaceCanvas.height = this.SPRITE_HEIGHT;
+            }
+
+            // --- Public Getters ---
+            getSpriteWidth() { return this.SPRITE_WIDTH; }
+            getSpriteHeight() { return this.SPRITE_HEIGHT; }
+            getWorkspaceCtx() { return this.workspaceCtx; }
+            getCurrentBaseData() { return this.currentBaseData; }
+            getOriginalBaseDataCopy() { 
+                if (!this.originalBaseData) return null;
+                const copy = this.workspaceCtx.createImageData(this.originalBaseData);
+                copy.data.set(this.originalBaseData.data);
+                return copy;
+            }
+            createImageData(width, height) { 
+                return this.workspaceCtx.createImageData(width, height); 
+            }
+            getWorkspaceData() {
+                return this.workspaceCtx.getImageData(0, 0, this.SPRITE_WIDTH, this.SPRITE_HEIGHT);
+            }
+
+            // --- State/Data Setters ---
+            setCurrentBaseData(data) { this.currentBaseData = data; }
+            setOriginalBaseData(data) { 
+                // Deep clone and store the original data
+                this.originalBaseData = this.workspaceCtx.createImageData(data);
+                this.originalBaseData.data.set(data.data);
+            }
+            setColorState(state) { this.colorState = state; }
+            setTransformState(state) { this.transformState = state; }
+
+            // --- Core Commit Functions (Called by Modules) ---
+
+            /** * Executes a function that mutates the pixel data, then updates S.O.T and redraws.
+             * @param {function(ImageData): boolean} mutationFunction - Receives a mutable copy of current ImageData. Returns true if mutated.
+             */
+            commitPixelDataMutation(mutationFunction) {
+                if (!this.currentBaseData) return;
+                
+                // Clone the S.O.T data
+                const baseDataCopy = this.workspaceCtx.createImageData(this.currentBaseData);
+                baseDataCopy.data.set(this.currentBaseData.data);
+
+                // Module performs the mutation on the copy
+                const wasChanged = mutationFunction(baseDataCopy);
+                
+                if (wasChanged) {
+                    // Update S.O.T and trigger redraw
+                    this.currentBaseData = baseDataCopy;
+                    this.redrawWorkspace();
+                }
+            }
+
+            /**
+             * Executes a function that applies context transformations, updates S.O.T and redraws.
+             * @param {function(CanvasRenderingContext2D, HTMLCanvasElement)} drawCallback - Module applies ctx changes here.
+             */
+            commitContextTransform(drawCallback) {
+                if (!this.currentBaseData) return;
+
+                const width = this.SPRITE_WIDTH;
+                const height = this.SPRITE_HEIGHT;
+                
+                // 1. Create a temp canvas holding the S.O.T
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                tempCanvas.getContext('2d').putImageData(this.currentBaseData, 0, 0);
+
+                // 2. Clear the main workspace
+                this.workspaceCtx.clearRect(0, 0, width, height);
+
+                // 3. Apply the transformation provided by the module
+                this.workspaceCtx.save();
+                this.workspaceCtx.setTransform(1, 0, 0, 1, 0, 0); 
+                drawCallback(this.workspaceCtx, tempCanvas); // Module executes changes on context
+                this.workspaceCtx.restore();
+
+                // 4. Update the S.O.T from the transformed canvas result
+                this.currentBaseData = this.getWorkspaceData(); 
+                
+                // 5. Trigger a full redraw (to apply any remaining filter state)
+                this.redrawWorkspace(); 
+            }
+
+            // --- Rendering Pipeline ---
+            redrawWorkspace(paletteModule) {
+                if (!this.currentBaseData) {
+                    this.workspaceCtx.clearRect(0, 0, this.SPRITE_WIDTH, this.SPRITE_HEIGHT);
+                    if (paletteModule) paletteModule.onDataUpdate(null);
+                    return;
+                }
+                
+                const width = this.SPRITE_WIDTH;
+                const height = this.SPRITE_HEIGHT;
+                
+                // 1. Apply Color Filter (on currentBaseData) - returns new ImageData (Visual Filter)
+                const filteredData = ColorEditorModule.applyFilter(
+                    this.currentBaseData, 
+                    this.colorState,
+                    this.workspaceCtx.createImageData.bind(this.workspaceCtx)
+                );
+                
+                // 2. Apply Transform (State) and draw to canvas
+                const { translateX, translateY, scale } = this.transformState;
+                this._executeCanvasDrawVisualFilter(filteredData, width, height, (ctx, tempCanvas) => {
+                    const sx = width / 2;
+                    const sy = height / 2;
+                    ctx.translate(sx, sy);
+                    ctx.scale(scale, scale);
+                    ctx.translate(-sx, -sy);
+                    ctx.translate(translateX, translateY);
+                    ctx.drawImage(tempCanvas, 0, 0);
+                });
+                
+                // 3. Notify Palette Module with the PERMANENT BASE data
+                if (paletteModule) paletteModule.onDataUpdate(this.currentBaseData);
+            }
+
+            _executeCanvasDrawVisualFilter(imageData, width, height, drawCallback) {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                tempCanvas.getContext('2d').putImageData(imageData, 0, 0);
+
+                this.workspaceCtx.clearRect(0, 0, width, height);
+                this.workspaceCtx.save();
+                this.workspaceCtx.setTransform(1, 0, 0, 1, 0, 0); 
+
+                drawCallback(this.workspaceCtx, tempCanvas);
+
+                this.workspaceCtx.restore();
+            }
+        }
+
+        // =========================================================================
+        // === 2. COLOR PALETTE MODULE (CanvasModule User) ===
+        // =========================================================================
+
+        class ColorPaletteModule {
+            /**
+             * @param {string} containerId - The ID of the div container.
+             * @param {CanvasModule} canvasModule - The canvas manager.
+             */
+            constructor(containerId, canvasModule) {
+                this.container = document.getElementById(containerId);
+                this.canvasModule = canvasModule; 
+                this.lastImageData = null; 
+                this.colorPalette = {};
+                this.selectedColors = new Set();
+                this.currentSort = 'count';
+
+                this.render();
+                
+                const idSuffix = this.container.id;
+                this.grid = this.container.querySelector(`#paletteGrid-${idSuffix}`);
+                this.extractBtn = this.container.querySelector(`#extractPaletteBtn-${idSuffix}`);
+                this.mergeBtn = this.container.querySelector(`#mergeColorsBtn-${idSuffix}`);
+                this.autoMergeBtn = this.container.querySelector(`#autoMergeBtn-${idSuffix}`);
+                this.mergeThresholdInput = this.container.querySelector(`#mergeThreshold-${idSuffix}`);
+                this.thresholdValueSpan = this.container.querySelector(`#thresholdValue-${idSuffix}`);
+
+                this.attachEventListeners();
+            }
+
+            // ... (render and attachEventListeners are the same) ...
+            render() {
+                const idSuffix = this.container.id;
+                this.container.innerHTML = `
+                    <div class="module-group">
+                        <div class="module-group-title">Color Palette (Merge Logic Here)</div>
+                        <div class="sort-buttons">
+                            <button class="sort-btn active" data-sort="count">Count</button>
+                            <button class="sort-btn" data-sort="hue">Hue</button>
+                            <button class="sort-btn" data-sort="brightness">Bright</button>
+                        </div>
+                        <div class="palette-grid" id="paletteGrid-${idSuffix}"></div>
+                        <div class="slider-control">
+                            <label>Auto-merge threshold:</label>
+                            <input type="range" id="mergeThreshold-${idSuffix}" min="0" max="50" value="10">
+                            <span id="thresholdValue-${idSuffix}">10</span>
+                        </div>
+                        <div class="transform-buttons">
+                            <button class="btn" id="extractPaletteBtn-${idSuffix}" disabled>Refresh Palette</button>
+                            <button class="btn" id="mergeColorsBtn-${idSuffix}" disabled>Merge Selected</button>
+                            <button class="btn" id="autoMergeBtn-${idSuffix}" disabled>Auto-Merge</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            attachEventListeners() {
+                this.extractBtn.addEventListener('click', () => this.extractPaletteFromData(this.lastImageData)); 
+                this.mergeBtn.addEventListener('click', () => this.handleMergeSelected());
+                this.autoMergeBtn.addEventListener('click', () => this.handleAutoMerge());
+                this.mergeThresholdInput.addEventListener('input', (e) => {
+                    this.thresholdValueSpan.textContent = e.target.value;
+                });
+                this.container.querySelectorAll('.sort-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.handleSort(e.target));
+                });
+            }
+
+            /** Public method called by the orchestrator when canvas base data changes. */
+            onDataUpdate(imageData) {
+                this.lastImageData = imageData;
+                if (!imageData) {
+                    this.grid.innerHTML = '';
+                    this.extractBtn.disabled = true;
+                    this.autoMergeBtn.disabled = true;
+                    this.mergeBtn.disabled = true;
+                    return;
+                }
+                this.extractPaletteFromData(imageData);
+                this.extractBtn.disabled = false;
+                this.autoMergeBtn.disabled = false;
+            }
+
+            extractPaletteFromData(imageData) {
+                // ... (Same palette extraction logic)
+                this.colorPalette = {};
+                this.selectedColors.clear();
+                
+                const pixels = imageData.data;
+                for (let i = 0; i < pixels.length; i += 4) {
+                    const a = pixels[i + 3];
+                    if (a > 0) {
+                        const hex = '#' + [pixels[i], pixels[i + 1], pixels[i + 2]]
+                            .map(v => v.toString(16).padStart(2, '0')).join('');
+                        this.colorPalette[hex] = (this.colorPalette[hex] || 0) + 1;
+                    }
+                }
+                this.displayPalette();
+            }
+
+            displayPalette() {
+                // ... (Same display palette logic)
+                this.grid.innerHTML = '';
+                let sortedColors = Object.entries(this.colorPalette);
+                
+                // ... (Sorting logic)
+
+                sortedColors.forEach(([color, count]) => {
+                    const colorDiv = document.createElement('div');
+                    colorDiv.className = 'palette-color' + (this.selectedColors.has(color) ? ' selected' : '');
+                    colorDiv.style.backgroundColor = color;
+                    colorDiv.title = `Count: ${count}\nColor: ${color}`;
+                    colorDiv.innerHTML = `<span class="count">${count}</span>`;
+                    colorDiv.addEventListener('click', () => this.handleColorSelection(color, colorDiv));
+                    this.grid.appendChild(colorDiv);
+                });
+                this.mergeBtn.disabled = this.selectedColors.size < 2;
+            }
+
+            handleColorSelection(color, colorDiv) {
+                // ... (Same selection logic)
+                if (this.selectedColors.has(color)) {
+                    this.selectedColors.delete(color);
+                    colorDiv.classList.remove('selected');
+                } else {
+                    this.selectedColors.add(color);
+                    colorDiv.classList.add('selected');
+                }
+                this.mergeBtn.disabled = this.selectedColors.size < 2;
+            }
+            
+            handleSort(targetBtn) {
+                // ... (Same sorting logic)
+                this.container.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+                targetBtn.classList.add('active');
+                this.currentSort = targetBtn.dataset.sort;
+                this.displayPalette();
+            }
+
+            /** * Merges colors by manipulating the ImageData array.
+             * This function is passed to the CanvasModule's commit utility.
+             * @param {ImageData} imageData - The current image data object to mutate.
+             */
+            mergeColorsCallback(imageData, targetColor, colorsToMerge) {
+                const pixels = imageData.data;
+                const targetRGB = hexToRgb(targetColor);
+                let changed = false;
+                
+                for (let i = 0; i < pixels.length; i += 4) {
+                    const a = pixels[i + 3];
+                    if (a > 0) {
+                        const hex = '#' + [pixels[i], pixels[i + 1], pixels[i + 2]].map(v => v.toString(16).padStart(2, '0')).join('');
+                        
+                        if (colorsToMerge.includes(hex)) {
+                            pixels[i] = targetRGB.r;
+                            pixels[i + 1] = targetRGB.g;
+                            pixels[i + 2] = targetRGB.b;
+                            changed = true;
+                        }
+                    }
+                }
+                return changed; 
+            }
+
+            handleMergeSelected() {
+                if (this.selectedColors.size < 2) return;
+                const colors = Array.from(this.selectedColors);
+                const targetColor = colors[0]; 
+                
+                // Module uses the CanvasModule to commit the change
+                this.canvasModule.commitPixelDataMutation(imageData => 
+                    this.mergeColorsCallback(imageData, targetColor, colors)
+                );
+                
+                this.selectedColors.clear();
+                this.displayPalette();
+            }
+
+            handleAutoMerge() {
+                const threshold = parseInt(this.mergeThresholdInput.value);
+                const colors = Object.entries(this.colorPalette)
+                    .sort((a, b) => b[1] - a[1]) 
+                    .map(e => e[0]);
+                
+                // ... (Auto-merge grouping logic - Same as before)
+                const mergedColors = new Set();
+                let allColorsToMerge = [];
+                
+                for (let i = 0; i < colors.length; i++) {
+                    const targetColor = colors[i];
+                    if (mergedColors.has(targetColor)) continue;
+                    
+                    const mergeGroup = [targetColor];
+                    const targetRGB = hexToRgb(targetColor);
+                    
+                    for (let j = i + 1; j < colors.length; j++) {
+                        const otherColor = colors[j];
+                        if (mergedColors.has(otherColor)) continue;
+
+                        const otherRGB = hexToRgb(otherColor);
+                        if (colorDistance(targetRGB, otherRGB) <= threshold) {
+                            mergeGroup.push(otherColor);
+                        }
+                    }
+
+                    if (mergeGroup.length > 1) {
+                        allColorsToMerge.push(mergeGroup);
+                        mergeGroup.forEach(c => mergedColors.add(c));
+                    }
+                    mergedColors.add(targetColor);
+                }
+                
+                if (allColorsToMerge.length > 0) {
+                    // Apply all merges sequentially using the CanvasModule
+                    this.canvasModule.commitPixelDataMutation(imageData => {
+                        let data = imageData;
+                        let changed = false;
+                        
+                        allColorsToMerge.forEach(group => {
+                            const targetColor = group[0];
+                            // Apply merge directly to the ImageData array
+                            if(this.mergeColorsCallback(data, targetColor, group)) {
+                                changed = true;
+                            }
+                        });
+                        return changed;
+                    });
+                    
+                    this.selectedColors.clear();
+                    this.displayPalette();
+                } else {
+                    // Replaced alert() with a console log or a status update
+                    console.log('No colors found within threshold to auto-merge.');
+                }
+            }
+        }
+
+        // =========================================================================
+        // === 3. COLOR EDITOR MODULE (CanvasModule User) ===
+        // =========================================================================
+
+        class ColorEditorModule {
+            /**
+             * @param {string} containerId - The ID of the div container.
+             * @param {object} initialState - Initial state {hue, saturation, contrast, brightness}.
+             * @param {CanvasModule} canvasModule - The canvas manager.
+             */
+            constructor(containerId, canvasModule) {
+                this.container = document.getElementById(containerId);
+                this.canvasModule = canvasModule; 
+                this.initialState = { hue: 0, saturation: 0, contrast: 0, brightness: 0 };
+
+                this.render();
+
+                const idSuffix = this.container.id;
+                this.resetColorBtn = this.container.querySelector(`#resetColorBtn-${idSuffix}`);
+                this.attachEventListeners();
+            }
+            
+            render() {
+                 // ... (Same as before)
+                 const state = this.canvasModule.colorState;
+                 const idSuffix = this.container.id;
+                this.container.innerHTML = `
+                    <div class="module-group">
+                        <div class="module-group-title">Color Adjustments (Hue, Contrast, Saturation, Brightness)</div>
+                        <div class="slider-control">
+                            <label>Hue:</label>
+                            <input type="range" id="hueSlider-${idSuffix}" min="-180" max="180" value="${state.hue}">
+                            <span id="hueValue-${idSuffix}">${state.hue}°</span>
+                        </div>
+                        <div class="slider-control">
+                            <label>Saturation:</label>
+                            <input type="range" id="saturationSlider-${idSuffix}" min="-100" max="100" value="${state.saturation}">
+                            <span id="saturationValue-${idSuffix}">${state.saturation}%</span>
+                        </div>
+                        <div class="slider-control">
+                            <label>Contrast:</label>
+                            <input type="range" id="contrastSlider-${idSuffix}" min="-100" max="100" value="${state.contrast}">
+                            <span id="contrastValue-${idSuffix}">${state.contrast}%</span>
+                        </div>
+                        <div class="slider-control">
+                            <label>Brightness (Equaliser):</label>
+                            <input type="range" id="brightnessSlider-${idSuffix}" min="-100" max="100" value="${state.brightness}">
+                            <span id="brightnessValue-${idSuffix}">${state.brightness}%</span>
+                        </div>
+                        <div class="transform-buttons">
+                            <button class="btn" id="resetColorBtn-${idSuffix}">Reset Color Edits</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            attachEventListeners() {
+                this.container.querySelectorAll('input[type="range"]').forEach(input => {
+                    input.addEventListener('input', this.handleSliderChange.bind(this));
+                });
+                this.resetColorBtn.addEventListener('click', this.resetState.bind(this));
+            }
+
+            handleSliderChange(e) {
+                const id = e.target.id;
+                const value = parseInt(e.target.value);
+                const span = this.container.querySelector(`#${id.replace('Slider', 'Value')}`);
+                const keyName = id.substring(0, id.indexOf('Slider')).toLowerCase();
+                
+                // Update state in CanvasModule
+                const newState = { ...this.canvasModule.colorState, [keyName]: value };
+                this.canvasModule.setColorState(newState);
+                
+                span.textContent = keyName === 'hue' ? `${value}°` : `${value}%`;
+                this.canvasModule.redrawWorkspace();
+            }
+
+            resetState() {
+                const newState = this.initialState;
+                this.canvasModule.setColorState(newState);
+                
+                this.container.querySelectorAll('input[type="range"]').forEach(input => {
+                    input.value = 0;
+                    const valueSpan = this.container.querySelector(`#${input.id.replace('Slider', 'Value')}`);
+                    valueSpan.textContent = input.id.includes('hueSlider') ? '0°' : '0%';
+                });
+                this.canvasModule.redrawWorkspace();
+            }
+            
+            static applyFilter(baseData, state, createImageData) {
+                // ... (Same static function for applying filters - it remains static as it's pure logic)
+                if (!baseData) return null;
+
+                const { hue, saturation, contrast, brightness } = state;
+                if (hue === 0 && saturation === 0 && contrast === 0 && brightness === 0) {
+                    const copyData = createImageData(baseData.width, baseData.height);
+                    copyData.data.set(baseData.data);
+                    return copyData; 
+                }
+
+                const newData = createImageData(baseData.width, baseData.height);
+                const pixels = baseData.data;
+                const newPixels = newData.data;
+
+                const contrastFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+                const brightnessFactor = brightness * 2.55; 
+
+                for (let i = 0; i < pixels.length; i += 4) {
+                    if (pixels[i + 3] === 0) {
+                        newPixels[i+3] = 0;
+                        continue;
+                    }
+
+                    let r = pixels[i];
+                    let g = pixels[i + 1];
+                    let b = pixels[i + 2];
+
+                    r += brightnessFactor;
+                    g += brightnessFactor;
+                    b += brightnessFactor;
+
+                    r = (r - 128) * contrastFactor + 128;
+                    g = (g - 128) * contrastFactor + 128;
+                    b = (b - 128) * contrastFactor + 128;
+                    
+                    let hsl = rgbToHsl({r, g, b});
+
+                    hsl.h = (hsl.h + hue) % 360;
+                    if (hsl.h < 0) hsl.h += 360;
+
+                    hsl.s = Math.max(0, Math.min(1, hsl.s + saturation / 100));
+
+                    const finalRgb = hslToRgb(hsl.h, hsl.s, hsl.l);
+
+                    newPixels[i] = Math.max(0, Math.min(255, finalRgb.r));
+                    newPixels[i + 1] = Math.max(0, Math.min(255, finalRgb.g));
+                    newPixels[i + 2] = Math.max(0, Math.min(255, finalRgb.b));
+                    newPixels[i + 3] = pixels[i + 3];
+                }
+                
+                return newData;
+            }
+        }
+
+        // =========================================================================
+        // === 4. TRANSFORM MODULE (CanvasModule User) ===
+        // =========================================================================
+
+        class TransformModule {
+            /**
+             * @param {string} containerId - The ID of the div container.
+             * @param {CanvasModule} canvasModule - The canvas manager.
+             * @param {function(string)} onSimpleAction - Callback when a simple action (like reset) is triggered.
+             */
+            constructor(containerId, canvasModule, onSimpleAction) {
+                this.container = document.getElementById(containerId);
+                this.canvasModule = canvasModule; 
+                this.onSimpleAction = onSimpleAction; 
+                
+                this.render();
+
+                const idSuffix = this.container.id;
+                // ... (Store references)
+                this.translateXSlider = this.container.querySelector(`#translateXSlider-${idSuffix}`);
+                this.translateYSlider = this.container.querySelector(`#translateYSlider-${idSuffix}`);
+                this.scaleSlider = this.container.querySelector(`#scaleSlider-${idSuffix}`);
+                this.translateXValue = this.container.querySelector(`#translateXValue-${idSuffix}`);
+                this.translateYValue = this.container.querySelector(`#translateYValue-${idSuffix}`);
+                this.scaleValue = this.container.querySelector(`#scaleValue-${idSuffix}`);
+                this.flipHBtn = this.container.querySelector(`#flipHBtn-${idSuffix}`);
+                this.mirrorHLeftBtn = this.container.querySelector(`#mirrorHLeftBtn-${idSuffix}`);
+                this.mirrorHRightBtn = this.container.querySelector(`#mirrorHRightBtn-${idSuffix}`);
+                this.resetTransformBtn = this.container.querySelector(`#resetTransformBtn-${idSuffix}`);
+
+                this.attachEventListeners();
+            }
+
+            render() {
+                const state = this.canvasModule.transformState;
+                const idSuffix = this.container.id;
+                this.container.innerHTML = `
+                    <div class="module-group">
+                        <div class="module-group-title">Transformations (Actions Included)</div>
+                        <div class="slider-control">
+                            <label>Translate X:</label>
+                            <input type="range" id="translateXSlider-${idSuffix}" min="-50" max="50" value="${state.translateX}">
+                            <span id="translateXValue-${idSuffix}">${state.translateX}px</span>
+                        </div>
+                        <div class="slider-control">
+                            <label>Translate Y:</label>
+                            <input type="range" id="translateYSlider-${idSuffix}" min="-50" max="50" value="${state.translateY}">
+                            <span id="translateYValue-${idSuffix}">${state.translateY}px</span>
+                        </div>
+                        <div class="slider-control">
+                            <label>Scale:</label>
+                            <input type="range" id="scaleSlider-${idSuffix}" min="50" max="200" value="${state.scale * 100}">
+                            <span id="scaleValue-${idSuffix}">${state.scale * 100}%</span>
+                        </div>
+                        <div class="transform-buttons">
+                            <button class="btn" id="flipHBtn-${idSuffix}">Flip H</button>
+                            <button class="btn" id="mirrorHLeftBtn-${idSuffix}">Mirror H (L)</button>
+                            <button class="btn" id="mirrorHRightBtn-${idSuffix}">Mirror H (R)</button>
+                            <button class="btn" id="resetTransformBtn-${idSuffix}">Reset Transform</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            attachEventListeners() {
+                this.translateXSlider.addEventListener('input', (e) => this.handleTranslateChange('translateX', e));
+                this.translateYSlider.addEventListener('input', (e) => this.handleTranslateChange('translateY', e));
+                this.scaleSlider.addEventListener('input', this.handleScaleChange.bind(this));
+                
+                this.flipHBtn.addEventListener('click', () => this.handleComplexAction('flipH'));
+                this.mirrorHLeftBtn.addEventListener('click', () => this.handleComplexAction('mirrorHLeft'));
+                this.mirrorHRightBtn.addEventListener('click', () => this.handleComplexAction('mirrorHRight'));
+                
+                this.resetTransformBtn.addEventListener('click', () => this.onSimpleAction('reset')); 
+            }
+
+            handleTranslateChange(axis, e) {
+                const value = parseInt(e.target.value);
+                const valueSpan = axis === 'translateX' ? this.translateXValue : this.translateYValue;
+                valueSpan.textContent = `${value}px`;
+                
+                const newState = { ...this.canvasModule.transformState, [axis]: value };
+                this.canvasModule.setTransformState(newState);
+                this.canvasModule.redrawWorkspace();
+            }
+
+            handleScaleChange(e) {
+                const value = parseInt(e.target.value);
+                this.scaleValue.textContent = `${value}%`;
+                
+                const newState = { ...this.canvasModule.transformState, scale: value / 100 };
+                this.canvasModule.setTransformState(newState);
+                this.canvasModule.redrawWorkspace();
+            }
+            
+            handleComplexAction(action) {
+                this.resetSliders(); 
+                this.canvasModule.setTransformState({ translateX: 0, translateY: 0, scale: 1 });
+                
+                const width = this.canvasModule.getSpriteWidth();
+                const height = this.canvasModule.getSpriteHeight();
+
+                switch(action) {
+                    case 'flipH':
+                        // The module defines the canvas context manipulation
+                        this.canvasModule.commitContextTransform((ctx, tempCanvas) => {
+                            ctx.translate(width, 0); 
+                            ctx.scale(-1, 1);       
+                            ctx.drawImage(tempCanvas, 0, 0);
+                        });
+                        break;
+                    case 'mirrorHLeft':
+                        // The module defines the pixel mutation
+                        this.canvasModule.commitPixelDataMutation(imageData => 
+                            TransformModule.applyMirrorTransform(imageData, 'left', width, height)
+                        );
+                        break;
+                    case 'mirrorHRight':
+                        // The module defines the pixel mutation
+                        this.canvasModule.commitPixelDataMutation(imageData => 
+                            TransformModule.applyMirrorTransform(imageData, 'right', width, height)
+                        );
+                        break;
+                }
+            }
+
+            resetSliders() {
+                this.translateXSlider.value = 0;
+                this.translateXValue.textContent = '0px';
+                this.translateYSlider.value = 0;
+                this.translateYValue.textContent = '0px';
+                this.scaleSlider.value = 100;
+                this.scaleValue.textContent = '100%';
+            }
+
+            /**
+             * Static function to perform the pixel-level mirror.
+             */
+            static applyMirrorTransform(imageData, side, width, height) {
+                const pixels = imageData.data;
+                const halfWidth = Math.floor(width / 2);
+                let changed = false;
+                
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < halfWidth; x++) {
+                        const srcX = side === 'left' ? x : width - 1 - x;
+                        const destX = side === 'left' ? width - 1 - x : x;
+                        
+                        const srcIndex = (y * width + srcX) * 4;
+                        const destIndex = (y * width + destX) * 4;
+                        
+                        // Copy pixel data [R, G, B, A]
+                        for(let i = 0; i < 4; i++) {
+                            // Only set destination if source pixel is visible/not transparent
+                            if (pixels[srcIndex + 3] > 0) {
+                                pixels[destIndex + i] = pixels[srcIndex + i];
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+                return changed; 
+            }
+        }
+
+        // =========================================================================
+        // === 5. MAIN APPLICATION CLASS (The Orchestrator) ===
+        // =========================================================================
+
+        class SpriteSheetEditor {
+            constructor(config) {
+                this.COLS = config.cols;
+                this.PIXEL_SIZE = config.initialZoom;
+                this.sheetImage = null;
+                this.selectedSprite = null;
+                this.isDrawing = false;
+                this.rows = 0;
+                this.currentTool = 'paint';
+                this.currentColor = '#000000';
+                this.brushSize = 1;
+                
+                // Initialize CanvasModule first
+                this.canvasModule = new CanvasModule(config);
+
+                this.updateCanvasScale();
+                
+                this.initializeModules(config);
+
+                this.attachAllEventListeners();
+                document.getElementById('colorDisplay').style.backgroundColor = this.currentColor;
+            }
+
+            initializeModules(config) {
+                // Modules now receive the CanvasModule instance
+                this.colorEditorModule = new ColorEditorModule(
+                    config.colorEditorContainerId,
+                    this.canvasModule
+                );
+                
+                this.paletteModule = new ColorPaletteModule(
+                    config.paletteContainerId,
+                    this.canvasModule
+                );
+
+                this.transformModule = new TransformModule(
+                    config.transformModuleContainerId,
+                    this.canvasModule,
+                    (action) => this.handleTransformAction(action)
+                );
+
+                // Pass the palette module back to canvas for redrawing notification
+                this.canvasModule.paletteModule = this.paletteModule;
+            }
+            
+            // --- Action Handlers from Modules ---
+            
+            handleTransformAction(action) {
+                if (!this.canvasModule.getCurrentBaseData()) return;
+                
+                if (action === 'reset') {
+                    // Reset S.O.T to original and states to initial
+                    this.canvasModule.setCurrentBaseData(this.canvasModule.getOriginalBaseDataCopy());
+                    this.canvasModule.setColorState(this.colorEditorModule.initialState);
+                    this.canvasModule.setTransformState(this.transformModule.initialState);
+                    
+                    this.transformModule.resetSliders();
+                    this.colorEditorModule.resetState(); 
+                    
+                    this.canvasModule.redrawWorkspace();
+                }
+            }
+
+            // --- Drawing/File/Sheet Functions (Mostly delegating to CanvasModule) ---
+            
+            handleFileLoad(e) {
+                // ... (Same as before)
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        this.sheetImage = img;
+                        const width = this.canvasModule.getSpriteWidth();
+                        const height = this.canvasModule.getSpriteHeight();
+
+                        this.rows = Math.ceil(img.height / height);
+                        this.canvasModule.sheetCanvas.width = img.width;
+                        this.canvasModule.sheetCanvas.height = img.height;
+                        this.canvasModule.sheetCtx.drawImage(img, 0, 0);
+                        this.drawGrid();
+                        document.getElementById('sheetInfo').textContent = `Image loaded: ${img.width}×${img.height}px | ${this.COLS} columns × ${this.rows} rows`;
+                        document.getElementById('saveBtn').disabled = false;
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            handleSheetClick(e) {
+                if (!this.sheetImage) return;
+                if (this.sheetImage.naturalWidth === 0) return;
+                
+                const width = this.canvasModule.getSpriteWidth();
+                const height = this.canvasModule.getSpriteHeight();
+                const rect = this.canvasModule.sheetCanvas.getBoundingClientRect();
+                const col = Math.floor((e.clientX - rect.left) / width);
+                const row = Math.floor((e.clientY - rect.top) / height);
+                
+                if (col < this.COLS && row < this.rows) {
+                    this.selectedSprite = { col, row };
+                    const sx = col * width;
+                    const sy = row * height;
+                    
+                    this.canvasModule.workspaceCtx.clearRect(0, 0, width, height);
+                    this.canvasModule.workspaceCtx.drawImage(this.sheetImage, sx, sy, width, height, 0, 0, width, height);
+                    
+                    const tempBaseData = this.canvasModule.getWorkspaceData();
+                    
+                    // Set S.O.T and Original data
+                    this.canvasModule.setOriginalBaseData(tempBaseData);
+                    this.canvasModule.setCurrentBaseData(tempBaseData);
+
+                    // Reset all visual states
+                    this.transformModule.resetSliders(); 
+                    this.colorEditorModule.resetState(); 
+                    
+                    document.getElementById('workspaceInfo').textContent = `Editing sprite: Col ${col + 1}, Row ${row + 1}`;
+                    document.getElementById('applyBtn').disabled = false;
+                    document.getElementById('clearBtn').disabled = false;
+                    this.canvasModule.redrawWorkspace(this.paletteModule); 
+                }
+            }
+
+            handleDrawStart(e) {
+                if (this.selectedSprite === null) return;
+                this.isDrawing = true;
+                this.draw(e);
+            }
+
+            handleDrawMove(e) {
+                if (!this.isDrawing) return;
+                this.draw(e);
+            }
+
+            draw(e) {
+                if (!this.canvasModule.getCurrentBaseData()) return;
+
+                const width = this.canvasModule.getSpriteWidth();
+                const rect = this.canvasModule.workspaceCanvas.getBoundingClientRect();
+                const scaleX = this.canvasModule.workspaceCanvas.width / rect.width;
+                const x = Math.floor((e.clientX - rect.left) * scaleX);
+                const y = Math.floor((e.clientY - rect.top) * scaleX);
+                
+                if (this.currentTool === 'pick') {
+                    // Always pick color from the visually rendered canvas
+                    const pixel = this.canvasModule.getWorkspaceData().data.slice((y * width + x) * 4, (y * width + x) * 4 + 4);
+                    if (pixel[3] > 0) {
+                        const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(v => v.toString(16).padStart(2, '0')).join('');
+                        this.currentColor = hex;
+                        document.getElementById('colorPicker').value = hex;
+                        document.getElementById('colorDisplay').style.backgroundColor = this.currentColor;
+                    }
+                    return;
+                }
+                
+                // Drawing modifies the S.O.T, so we use the commit function
+                this.canvasModule.commitPixelDataMutation(imageData => {
+                    let changed = false;
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = width;
+                    tempCanvas.height = this.canvasModule.getSpriteHeight();
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.putImageData(imageData, 0, 0);
+
+                    const halfSize = Math.floor(this.brushSize / 2);
+                    
+                    for (let i = -halfSize; i <= halfSize; i++) {
+                        for (let j = -halfSize; j <= halfSize; j++) {
+                            const px = x + i;
+                            const py = y + j;
+                            if (px >= 0 && px < width && py >= 0 && py < this.canvasModule.getSpriteHeight()) {
+                                if (this.currentTool === 'erase') {
+                                    tempCtx.clearRect(px, py, 1, 1);
+                                } else {
+                                    tempCtx.fillStyle = this.currentColor;
+                                    tempCtx.fillRect(px, py, 1, 1);
+                                }
+                                changed = true;
+                            }
+                        }
+                    }
+                    // Update the ImageData object that was passed in
+                    imageData.data.set(tempCtx.getImageData(0, 0, width, this.canvasModule.getSpriteHeight()).data);
+                    return changed;
+                });
+            }
+            
+            applyToSheet() {
+                if (this.selectedSprite === null) return;
+                
+                const finalData = this.canvasModule.getWorkspaceData();
+                const width = this.canvasModule.getSpriteWidth();
+                const height = this.canvasModule.getSpriteHeight();
+
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                tempCanvas.getContext('2d').putImageData(finalData, 0, 0);
+
+                const sx = this.selectedSprite.col * width;
+                const sy = this.selectedSprite.row * height;
+                
+                this.canvasModule.sheetCtx.clearRect(sx, sy, width, height);
+                this.canvasModule.sheetCtx.drawImage(tempCanvas, sx, sy);
+                
+                this.drawGrid();
+
+                const newSheetDataUrl = this.canvasModule.sheetCanvas.toDataURL();
+                
+                const updatedImage = new Image();
+                updatedImage.onload = () => {
+                    this.sheetImage = updatedImage;
+                    // Replaced alert() with console log
+                    console.log('Changes applied to sprite sheet and saved for re-selection!');
+                };
+                updatedImage.src = newSheetDataUrl;
+            }
+
+            clearWorkspace() {
+                this.canvasModule.workspaceCtx.clearRect(0, 0, this.canvasModule.getSpriteWidth(), this.canvasModule.getSpriteHeight());
+                this.canvasModule.setCurrentBaseData(null); 
+                this.canvasModule.setOriginalBaseData(null);
+                this.canvasModule.redrawWorkspace(this.paletteModule);
+                document.getElementById('applyBtn').disabled = true;
+                document.getElementById('clearBtn').disabled = true;
+                document.getElementById('workspaceInfo').textContent = 'Select a sprite from the sheet to edit';
+                this.selectedSprite = null;
+            }
+            
+            updateCanvasScale() {
+                const width = this.canvasModule.getSpriteWidth();
+                const height = this.canvasModule.getSpriteHeight();
+                this.canvasModule.workspaceCanvas.style.width = (width * this.PIXEL_SIZE) + 'px';
+                this.canvasModule.workspaceCanvas.style.height = (height * this.PIXEL_SIZE) + 'px';
+            }
+
+            drawGrid() {
+                // ... (Same grid drawing logic)
+                const width = this.canvasModule.sheetCanvas.width;
+                const height = this.canvasModule.sheetCanvas.height;
+                const sw = this.canvasModule.getSpriteWidth();
+                const sh = this.canvasModule.getSpriteHeight();
+
+                this.canvasModule.sheetCtx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+                this.canvasModule.sheetCtx.lineWidth = 1;
+                
+                for (let row = 0; row <= this.rows; row++) {
+                    this.canvasModule.sheetCtx.beginPath();
+                    this.canvasModule.sheetCtx.moveTo(0, row * sh);
+                    this.canvasModule.sheetCtx.lineTo(width, row * sh);
+                    this.canvasModule.sheetCtx.stroke();
+                }
+                for (let col = 0; col <= this.COLS; col++) {
+                    this.canvasModule.sheetCtx.beginPath();
+                    this.canvasModule.sheetCtx.moveTo(col * sw, 0);
+                    this.canvasModule.sheetCtx.lineTo(col * sw, height);
+                    this.canvasModule.sheetCtx.stroke();
+                }
+            }
+            
+            saveSheet() {
+                // ... (Same save logic)
+                const link = document.createElement('a');
+                link.download = 'sprite-sheet-edited.png';
+                link.href = this.canvasModule.sheetCanvas.toDataURL();
+                link.click();
+            }
+            
+            attachAllEventListeners() {
+                // ... (Same event listeners)
+                document.getElementById('fileInput').addEventListener('change', this.handleFileLoad.bind(this));
+                this.canvasModule.sheetCanvas.addEventListener('click', this.handleSheetClick.bind(this));
+                this.canvasModule.workspaceCanvas.addEventListener('mousedown', this.handleDrawStart.bind(this));
+                this.canvasModule.workspaceCanvas.addEventListener('mousemove', this.handleDrawMove.bind(this));
+                document.addEventListener('mouseup', () => this.isDrawing = false); 
+                document.getElementById('colorPicker').addEventListener('input', (e) => {
+                    this.currentColor = e.target.value;
+                    document.getElementById('colorDisplay').style.backgroundColor = this.currentColor;
+                });
+                document.getElementById('brushSize').addEventListener('input', (e) => {
+                    this.brushSize = parseInt(e.target.value);
+                    document.getElementById('brushSizeValue').textContent = this.brushSize;
+                });
+                document.getElementById('zoomSlider').addEventListener('input', (e) => {
+                    this.PIXEL_SIZE = parseInt(e.target.value);
+                    document.getElementById('zoomValue').textContent = this.PIXEL_SIZE + 'x';
+                    this.updateCanvasScale();
+                });
+                document.querySelectorAll('.tool-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    this.currentTool = e.currentTarget.dataset.tool;
+                }));
+
+                document.getElementById('applyBtn').addEventListener('click', this.applyToSheet.bind(this));
+                document.getElementById('clearBtn').addEventListener('click', this.clearWorkspace.bind(this));
+                document.getElementById('saveBtn').addEventListener('click', this.saveSheet.bind(this));
+            }
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const editorConfig = {
+                spriteWidth: 192,
+                spriteHeight: 224,
+                cols: 4,
+                initialZoom: 3,
+                sheetCanvasId: 'sheetCanvas',
+                workspaceCanvasId: 'workspaceCanvas',
+                paletteContainerId: 'palette-module-container',
+                colorEditorContainerId: 'color-editor-container',
+                transformModuleContainerId: 'transform-module-container',
+            };
+
+            const editor = new SpriteSheetEditor(editorConfig);
+        });
+    </script>
+</body>
+</html>

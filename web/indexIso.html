@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link
+      rel="stylesheet"
+      href="https://www.w3schools.com/lib/w3-theme-blue-grey.css"
+    >
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Open+Sans"
+    >
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    >
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    >
+
+    <title>HTMX Multi-Filter Table</title>
+    <script src="https://unpkg.com/htmx.org@1.9.5"></script>
+    <link rel="stylesheet" href="stylesIso.css">
+  </head>
+  <body style="text-align: center">
+    <a href="#menu" class="menu-toggle">☰</a>
+    <div id="menu" style="z-index: 100">
+      <a href="#" class="menu-toggle">✖</a>
+      <div id="menuMapFrom"></div>
+      <hr>
+      <textarea id="GlobalJson" rows="40"></textarea>
+      <button id="GlobalJsonUpdate" class="validate-btn">Valider</button>
+    </div>
+    <!-- End Menu -->
+
+    <div
+      id="displayMiniMap"
+      class="displayOption"
+      style="display: none; justify-content: center"
+    >
+      <canvas
+        id="miniMap-image"
+        width="800"
+        height="800"
+        style="border: none"
+      ></canvas>
+    </div>
+
+    <div
+      id="displayMap"
+      class="displayOption"
+      style="display: flex; justify-content: center"
+    >
+      <div id="fps">FPS: 0</div>
+      <div id="righMenu">
+        <div id="mapflyMenu"></div>
+        <div id="infoMenu"></div>
+      </div>
+      <div
+        id="mapRelative"
+        style="width: 1400px; height: 800px; position: relative"
+      >
+        <canvas
+          id="map-image"
+          width="1600"
+          height="800"
+          style="border: none"
+        ></canvas>
+        <div style="position: absolute">
+          <div
+            id="mapGrid"
+            style="transition: 0.3s; transform: rotateX(60deg) rotateY(0deg) rotateZ(45deg); transform-style: preserve-3d; display: grid; z-index: 40"
+          >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./js/main.ts"></script>
+
+    <script>
+      /// ---------------------------------------------------------------------
+      /// ---------------------------------------------------------------------
+      /*
+      document.addEventListener("keydown", async (event) => {
+        const key = event.key;
+        console.log("Touche pressée :", key);
+
+        if (key == "z") GlobalJSON.y += 32;
+        if (key == "s") GlobalJSON.y -= 32;
+        if (key == "q") GlobalJSON.x -= 32;
+        if (key == "d") GlobalJSON.x += 32;
+        if (["z", "s", "q", "d"].includes(key)) {
+          try {
+            const response = await fetch(
+              `/miniMap.png?x=${GlobalJSON.x}&y=${GlobalJSON.y}`,
+            );
+            const blob = await response.blob();
+            const imageUrl = URL.createObjectURL(blob);
+
+            document.getElementById("miniMap-image").src = imageUrl;
+          } catch (error) {
+            console.error("Erreur lors de la requête :", error);
+          }
+        }
+      });
+      */
+      /// ---------------------------------------------------------------------
+      /// ---------------------------------------------------------------------
+
+      /// ---------------------------------------------------------------------
+      /// ---------------------------------------------------------------------
+      /*
+      async function callMiniMap() {
+        const jsonData = GlobalJSON;
+        try {
+          const params = [
+            "x=" + jsonData.x,
+            "y=" + jsonData.y,
+            "zoom=" + jsonData.miniMap.zoom,
+            "definition=" + jsonData.miniMap.definition,
+            "ShowB=" + jsonData.miniMap.ShowB,
+            "ShowL=" + jsonData.miniMap.ShowL,
+            "ShowLB=" + jsonData.miniMap.ShowLB,
+            "ShowT=" + jsonData.miniMap.ShowT,
+            "ShowH=" + jsonData.miniMap.ShowH,
+          ];
+          console.log(params.join("&"));
+          const response = await fetch(
+            `/miniMap.png?${params.join("&")}`,
+          );
+          const blob = await response.blob();
+          const imageUrl = URL.createObjectURL(blob);
+
+          document.getElementById("miniMap-image").src = imageUrl;
+        } catch (error) {
+          console.error("Erreur lors de la requête :", error);
+        }
+      }
+
+      async function callMap() {
+        const jsonData = GlobalJSON;
+        try {
+          const params = [
+            "x=" + jsonData.x,
+            "y=" + jsonData.y,
+            "definition=" + jsonData.map.definition,
+            "tileScaleMod=" + jsonData.map.tileScaleMod,
+          ];
+          {
+            console.log(params.join("&"));
+            const response = await fetch(
+              `/map.png?${params.join("&")}`,
+            );
+            const blob = await response.blob();
+            const imageUrl = URL.createObjectURL(blob);
+            document.getElementById("map-image").src = imageUrl;
+          }
+          {
+            const response = await fetch(
+              `/map.data?${params.join("&")}`,
+            );
+            const data = await response.json();
+            const gcm = GlobalConf.mapGrid;
+
+            console.log("Edit Lvl = ", gcm._mapGrid);
+
+            for (let i = 0; i < gcm.gridSize; i++) {
+              for (let j = 0; j < gcm.gridSize; j++) {
+                const x = (gcm.gridSize - 1 - i) * gcm.mod;
+                const y = (gcm.gridSize - 1 - j) * gcm.mod;
+                const tileLvl = data.tilesLvl[x][y];
+                // console.log(tileLvl , gcm._heightScall)
+                gcm._mapGrid[i][j].style.top =
+                  -(tileLvl * gcm._heightScall) + "px";
+                gcm._mapGrid[i][j].style.left =
+                  -(tileLvl * gcm._heightScall) + "px";
+
+                // .style.top = (i * DRAW_TILE_COUNT + j) + "px;";
+              }
+            }
+            console.log(data);
+          }
+        } catch (error) {
+          console.error("Erreur lors de la requête :", error);
+        }
+      }
+      */
+      /// ---------------------------------------------------------------------
+      /// ---------------------------------------------------------------------
+      /// ---------------------------------------------------------------------
+
+      /// -----------------------------
+      // Event listeners when Click on Mini Map
+      const miniMapImage = document.getElementById("miniMap-image");
+      miniMapImage.addEventListener("click", (event) => {
+        const sizeX = 800;
+        const sizeY = 800;
+
+        const conf = GlobalJSON;
+        const scall = conf.miniMap.definition / conf.miniMap.zoom;
+        console.log(
+          event.offsetX - sizeX / 2,
+          -event.offsetY + sizeY / 2,
+        );
+        const x = conf.x +
+          Math.round((event.offsetX - sizeX / 2) / scall);
+        const y = conf.y +
+          Math.round((-event.offsetY + sizeY / 2) / scall);
+        updateXY(x, y);
+        updatFormEvent();
+      });
+
+      /// ---------------------------------------------------------------------
+      /// ---------------------------------------------------------------------
+      /// ---------------------------------------------------------------------
+    </script>
+  </body>
+</html>

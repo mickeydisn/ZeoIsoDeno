@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprite Sheet Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 0.85em;
+        }
+        
+        .main-content {
+            padding: 15px;
+        }
+        
+        .workspace-section {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .workspace-header {
+            color: white;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .workspace-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 100px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            padding: 10px;
+        }
+        
+        .workspace-empty {
+            color: white;
+            text-align: center;
+            padding: 20px;
+            opacity: 0.7;
+            font-style: italic;
+        }
+        
+        .upload-section {
+            background: #f8f9fa;
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            background: #e9ecef;
+            border-color: #764ba2;
+        }
+        
+        .upload-section input {
+            display: none;
+        }
+        
+        .upload-icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .collections-section {
+            margin-bottom: 20px;
+        }
+        
+        .collection {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .collection.collapsed .sprite-rows {
+            display: none;
+        }
+        
+        .collection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #dee2e6;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .collection-header:hover {
+            background: #e9ecef;
+            margin: -5px -5px 10px -5px;
+            padding: 5px 5px 13px 5px;
+            border-radius: 6px;
+        }
+        
+        .collection-name {
+            font-weight: 600;
+            color: #495057;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .collection-toggle {
+            font-size: 0.9em;
+            transition: transform 0.3s;
+        }
+        
+        .collection.collapsed .collection-toggle {
+            transform: rotate(-90deg);
+        }
+        
+        .sprite-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .sprite-row {
+            background: white;
+            border-radius: 8px;
+            padding: 8px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .sprite-row.dragging {
+            opacity: 0.5;
+            border-color: #667eea;
+        }
+        
+        .sprite-row.drag-over {
+            border-color: #28a745;
+            background: #e7f9ed;
+        }
+        
+        .row-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 60px;
+        }
+        
+        .drag-handle {
+            cursor: move;
+            font-size: 1.2em;
+            color: #6c757d;
+        }
+        
+        .row-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 0.8em;
+        }
+        
+        .sprites-container {
+            display: flex;
+            gap: 5px;
+            flex: 1;
+        }
+        
+        .sprite-item {
+            background: white;
+            border-radius: 4px;
+            padding: 3px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .sprite-item canvas {
+            max-width: 80px;
+            height: auto;
+            display: block;
+            image-rendering: pixelated;
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        .export-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            color: white;
+        }
+        
+        .export-preview {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .export-preview canvas {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Sprite Sheet Manager</h1>
+            <p>Upload, organize, and export your 4xN sprite sheets (192x224 per sprite)</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- WORKSPACE SECTION -->
+            <div class="workspace-section">
+                <div class="workspace-header">
+                    <span>✨ Workspace (Drag rows here)</span>
+                    <div>
+                        <button class="btn btn-success btn-small" id="exportWorkspaceBtn" style="display:none;">💾 Save Workspace</button>
+                        <button class="btn btn-danger btn-small" id="clearWorkspaceBtn" style="display:none;">🗑️ Clear All</button>
+                    </div>
+                </div>
+                <div class="workspace-rows" id="workspaceRows">
+                    <div class="workspace-empty">Drag rows from collections below to build your new sprite sheet</div>
+                </div>
+            </div>
+            
+            <!-- UPLOAD SECTION -->
+            <div class="upload-section" id="uploadZone">
+                <div class="upload-icon">📁</div>
+                <h3>Click or drag to upload sprite sheet</h3>
+                <p>Each file creates a new immutable collection</p>
+                <input type="file" id="fileInput" accept="image/png">
+            </div>
+            
+            <!-- COLLECTIONS SECTION -->
+            <div id="collectionsSection" class="collections-section"></div>
+            
+            <!-- EXPORT SECTION -->
+            <div id="exportSection" class="export-section" style="display:none;">
+                <h2>📤 Export Preview</h2>
+                <p>Your workspace is ready to download!</p>
+                <div class="export-preview">
+                    <canvas id="exportCanvas"></canvas>
+                </div>
+                <button class="btn btn-success" id="downloadBtn" style="margin-top: 15px;">⬇️ Download PNG</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const SPRITE_WIDTH = 192;
+        const SPRITE_HEIGHT = 224;
+        const COLS = 4;
+        
+        let collections = [];
+        let workspace = [];
+        let draggedItem = null;
+        
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const collectionsSection = document.getElementById('collectionsSection');
+        const workspaceRows = document.getElementById('workspaceRows');
+        const exportSection = document.getElementById('exportSection');
+        
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileUpload);
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.style.background = '#e9ecef';
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.style.background = '#f8f9fa';
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.style.background = '#f8f9fa';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'image/png') {
+                loadImage(file);
+            }
+        });
+        
+        document.getElementById('exportWorkspaceBtn').addEventListener('click', exportWorkspace);
+        document.getElementById('clearWorkspaceBtn').addEventListener('click', clearWorkspace);
+        document.getElementById('downloadBtn').addEventListener('click', downloadSheet);
+        
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (file) loadImage(file);
+        }
+        
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const fileName = file.name.replace('.png', '');
+                    createCollection(img, fileName);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function createCollection(img, name) {
+            const rows = img.height / SPRITE_HEIGHT;
+            const collectionRows = [];
+            
+            for (let row = 0; row < rows; row++) {
+                const sprites = [];
+                for (let col = 0; col < COLS; col++) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = SPRITE_WIDTH;
+                    canvas.height = SPRITE_HEIGHT;
+                    const ctx = canvas.getContext('2d');
+                    
+                    ctx.drawImage(
+                        img,
+                        col * SPRITE_WIDTH,
+                        row * SPRITE_HEIGHT,
+                        SPRITE_WIDTH,
+                        SPRITE_HEIGHT,
+                        0, 0,
+                        SPRITE_WIDTH,
+                        SPRITE_HEIGHT
+                    );
+                    
+                    sprites.push(canvas);
+                }
+                collectionRows.push({ sprites, collectionName: name, originalIndex: row });
+            }
+            
+            collections.push({
+                name: name,
+                rows: collectionRows
+            });
+            
+            renderCollections();
+        }
+        
+        function renderCollections() {
+            collectionsSection.innerHTML = '';
+            
+            collections.forEach((collection, collIndex) => {
+                const collDiv = document.createElement('div');
+                collDiv.className = 'collection';
+                collDiv.dataset.collIndex = collIndex;
+                
+                const header = document.createElement('div');
+                header.className = 'collection-header';
+                header.onclick = () => {
+                    collDiv.classList.toggle('collapsed');
+                };
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'collection-name';
+                
+                const toggle = document.createElement('span');
+                toggle.className = 'collection-toggle';
+                toggle.textContent = '▼';
+                
+                const nameText = document.createElement('span');
+                nameText.textContent = `📦 ${collection.name} (${collection.rows.length} rows)`;
+                
+                nameDiv.appendChild(toggle);
+                nameDiv.appendChild(nameText);
+                
+                header.appendChild(nameDiv);
+                collDiv.appendChild(header);
+                
+                const rowsDiv = document.createElement('div');
+                rowsDiv.className = 'sprite-rows';
+                
+                collection.rows.forEach((row, rowIndex) => {
+                    const rowDiv = createRowElement(row, rowIndex, collIndex, false);
+                    rowsDiv.appendChild(rowDiv);
+                });
+                
+                collDiv.appendChild(rowsDiv);
+                collectionsSection.appendChild(collDiv);
+            });
+        }
+        
+        function renderWorkspace() {
+            workspaceRows.innerHTML = '';
+            
+            if (workspace.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'workspace-empty';
+                empty.textContent = 'Drag rows from collections below to build your new sprite sheet';
+                workspaceRows.appendChild(empty);
+                document.getElementById('exportWorkspaceBtn').style.display = 'none';
+                document.getElementById('clearWorkspaceBtn').style.display = 'none';
+            } else {
+                workspace.forEach((row, index) => {
+                    const rowDiv = createRowElement(row, index, -1, true);
+                    workspaceRows.appendChild(rowDiv);
+                });
+                document.getElementById('exportWorkspaceBtn').style.display = 'inline-block';
+                document.getElementById('clearWorkspaceBtn').style.display = 'inline-block';
+            }
+            
+            exportSection.style.display = 'none';
+        }
+        
+        function createRowElement(row, rowIndex, collIndex, isWorkspace) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'sprite-row';
+            
+            if (isWorkspace) {
+                rowDiv.draggable = true;
+                rowDiv.dataset.rowIndex = rowIndex;
+                rowDiv.dataset.collIndex = collIndex;
+                rowDiv.dataset.isWorkspace = isWorkspace;
+                
+                rowDiv.addEventListener('dragstart', handleDragStart);
+                rowDiv.addEventListener('dragover', handleDragOver);
+                rowDiv.addEventListener('drop', handleDrop);
+                rowDiv.addEventListener('dragend', handleDragEnd);
+            }
+            
+            const header = document.createElement('div');
+            header.className = 'row-header';
+            
+            if (isWorkspace) {
+                const dragHandle = document.createElement('span');
+                dragHandle.className = 'drag-handle';
+                dragHandle.textContent = '☰';
+                header.appendChild(dragHandle);
+            }
+            
+            const rowNum = document.createElement('span');
+            rowNum.style.fontSize = '0.85em';
+            rowNum.style.color = '#6c757d';
+            rowNum.textContent = `${rowIndex + 1}`;
+            
+            header.appendChild(rowNum);
+            
+            const spritesContainer = document.createElement('div');
+            spritesContainer.className = 'sprites-container';
+            
+            row.sprites.forEach((canvas) => {
+                const spriteDiv = document.createElement('div');
+                spriteDiv.className = 'sprite-item';
+                
+                const clonedCanvas = document.createElement('canvas');
+                clonedCanvas.width = SPRITE_WIDTH;
+                clonedCanvas.height = SPRITE_HEIGHT;
+                const ctx = clonedCanvas.getContext('2d');
+                ctx.drawImage(canvas, 0, 0);
+                
+                spriteDiv.appendChild(clonedCanvas);
+                spritesContainer.appendChild(spriteDiv);
+            });
+            
+            const actions = document.createElement('div');
+            actions.className = 'row-actions';
+            
+            if (isWorkspace) {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-danger btn-small';
+                deleteBtn.textContent = '🗑️';
+                deleteBtn.title = 'Remove from workspace';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeFromWorkspace(rowIndex);
+                };
+                actions.appendChild(deleteBtn);
+            } else {
+                const addBtn = document.createElement('button');
+                addBtn.className = 'btn btn-success btn-small';
+                addBtn.textContent = '➕';
+                addBtn.title = 'Add to workspace';
+                addBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    addToWorkspace(collIndex, rowIndex);
+                };
+                actions.appendChild(addBtn);
+            }
+            
+            rowDiv.appendChild(header);
+            rowDiv.appendChild(spritesContainer);
+            rowDiv.appendChild(actions);
+            
+            return rowDiv;
+        }
+        
+        function handleDragStart(e) {
+            const rowIndex = parseInt(e.target.dataset.rowIndex);
+            const collIndex = parseInt(e.target.dataset.collIndex);
+            const isWorkspace = e.target.dataset.isWorkspace === 'true';
+            
+            draggedItem = {
+                rowIndex,
+                collIndex,
+                isWorkspace
+            };
+            
+            e.target.classList.add('dragging');
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            const target = e.target.closest('.sprite-row, .workspace-rows');
+            if (target) {
+                target.classList.add('drag-over');
+            }
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            
+            const dropTarget = e.target.closest('.sprite-row, .workspace-rows');
+            if (dropTarget) {
+                dropTarget.classList.remove('drag-over');
+            }
+            
+            if (!draggedItem || !draggedItem.isWorkspace) return;
+            
+            // Only allow reordering within workspace
+            if (e.target.closest('.workspace-rows')) {
+                const targetRow = e.target.closest('.sprite-row');
+                if (targetRow) {
+                    const targetIndex = parseInt(targetRow.dataset.rowIndex);
+                    const [movedRow] = workspace.splice(draggedItem.rowIndex, 1);
+                    workspace.splice(targetIndex, 0, movedRow);
+                    renderWorkspace();
+                }
+            }
+        }
+        
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            document.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+            draggedItem = null;
+        }
+        
+        function removeFromWorkspace(index) {
+            workspace.splice(index, 1);
+            renderWorkspace();
+        }
+        
+        function addToWorkspace(collIndex, rowIndex) {
+            const row = collections[collIndex].rows[rowIndex];
+            workspace.push({ ...row });
+            renderWorkspace();
+        }
+        
+        function toggleCollection(collIndex) {
+            const allColls = document.querySelectorAll('.collection');
+            const collDiv = allColls[collIndex];
+            if (collDiv) {
+                collDiv.classList.toggle('collapsed');
+            }
+        }
+        
+        function clearWorkspace() {
+            if (confirm('Clear all rows from workspace?')) {
+                workspace = [];
+                renderWorkspace();
+            }
+        }
+        
+        function exportWorkspace() {
+            if (workspace.length === 0) {
+                alert('Workspace is empty!');
+                return;
+            }
+            
+            const canvas = document.getElementById('exportCanvas');
+            canvas.width = SPRITE_WIDTH * COLS;
+            canvas.height = SPRITE_HEIGHT * workspace.length;
+            const ctx = canvas.getContext('2d');
+            
+            workspace.forEach((row, rowIndex) => {
+                row.sprites.forEach((spriteCanvas, colIndex) => {
+                    ctx.drawImage(
+                        spriteCanvas,
+                        colIndex * SPRITE_WIDTH,
+                        rowIndex * SPRITE_HEIGHT
+                    );
+                });
+            });
+            
+            exportSection.style.display = 'block';
+            exportSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function downloadSheet() {
+            const canvas = document.getElementById('exportCanvas');
+            const link = document.createElement('a');
+            link.download = 'workspace-sprite-sheet.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>

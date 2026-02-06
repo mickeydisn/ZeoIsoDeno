@@ -1,0 +1,294 @@
+import { City } from "../../IsoGame/city/city.ts";
+import { FactoryMap } from "../../IsoGame/map/factory/factoryMap.ts";
+import { TilesActions } from "../../IsoGame/map/tileActions.ts";
+import { AssetLoaderOpti } from "../../IsoGame/mapIso/asset/assetLoaderOpti.ts";
+import {
+  CanvasMapDrawers,
+  CanvasMapDrawersConf,
+} from "../../IsoGame/mapIso/canvasMapDrawer.ts";
+import { WcBuildConf_GraveA } from "../../IsoGame/wcBuilding2/conf/buildConf_GraveA.ts";
+import { WcBuildingFactoryGenarator } from "../../IsoGame/wcBuilding2/wcBuildingFactory.ts";
+import { World } from "../../IsoGame/word.ts";
+import { MessageHandler } from "./worker/messageHandler.ts";
+
+export type GameHandlerData = any;
+
+export class GameWorker {
+  private world = new World();
+
+  private handler: MessageHandler;
+  x: number = 0;
+  y: number = 0;
+  xf: number = 0;
+  yf: number = 0;
+
+  private assetLoader!: AssetLoaderOpti;
+  private canvasMap!: OffscreenCanvas;
+  private canvasMapDrawer!: CanvasMapDrawers;
+  private sharedMapLvl!: Float32Array;
+  /*
+  private sharedMapInfo!: Float32Array;
+  */
+  framId: number = 0;
+  private _shouldRun = false;
+
+  constructor() {
+    this.handler = new MessageHandler(self);
+    self.onmessage = (e) => this.handlers.get(e.data.action)?.(e.data);
+  }
+
+  // ============================================================================
+  // INIT
+  // ============================================================================
+
+  private initWorker = async (_data: GameHandlerData) => {
+    console.log("=== InitGameWorker");
+
+    console.log("== Load Asset");
+    this.assetLoader = await AssetLoaderOpti.create();
+
+    console.log("== Load Word");
+    this.world.init();
+
+    this.handler.send({ action: "callback_initWorker" });
+  };
+
+  // ============================================================================
+  // SET SHARED
+  // ============================================================================
+
+  private setCanvasMap = (data: GameHandlerData) => {
+    const canvas = data.canvas as OffscreenCanvas;
+    this.canvasMap = canvas;
+  };
+
+  private setMapLvl = (data: GameHandlerData) => {
+    const buffer = data.buffer as SharedArrayBuffer;
+    this.sharedMapLvl = new Float32Array(buffer);
+  };
+
+  private initCanvasMap = (data: GameHandlerData) => {
+    console.log("=== Init Render Worker");
+    this.canvasMapDrawer = new CanvasMapDrawers(
+      this.world,
+      data.width | 1600,
+      data.height | 800,
+      data.mapConf as CanvasMapDrawersConf || {
+        DRAW_TILE_COUNT: 40,
+        SCALE_SIZE: 1, // 2 / 3,
+        SCALE_MOD: 1,
+      },
+      this.assetLoader,
+      this.canvasMap,
+    );
+
+    this.handler.send(
+      {
+        action: "callback_initCanvasMap",
+        mapConf: data.mapConf,
+        mapLvlBuffer: this.canvasMapDrawer.bufferMapLvl,
+        mapInfoBuffer: this.canvasMapDrawer.bufferMapInfo,
+      },
+    );
+  };
+
+  // ============================================================================
+  // == MESSAGE
+  // ============================================================================
+
+  private handlers = new Map<string, (_data: GameHandlerData) => void>([
+    ["initWorker", this.initWorker.bind(this)],
+    ["initCanvasMap", this.initCanvasMap.bind(this)],
+
+    ["setCanvasMap", this.setCanvasMap.bind(this)],
+    ["setMapLvl", this.setMapLvl.bind(this)],
+
+    [
+      "startRender",
+      (_data) => this.startLoop(),
+    ],
+    [
+      "stopRender",
+      (_data) => this.stopLoop(),
+    ],
+    // ----
+    [
+      "setCenter",
+      (data) => {
+        this.x = data.x;
+        this.y = data.y;
+        this.xf = data.x;
+        this.yf = data.y;
+      },
+    ],
+
+    [
+      "updatePlayerMovement",
+      (data: GameHandlerData) => {
+        const pm = data.playerMovement;
+        const diffX = pm.up ? 1 : pm.down ? -1 : 0;
+        const diffY = pm.left ? 1 : pm.right ? -1 : 0;
+        const speed = .1;
+        // if move :
+        if (diffX != 0 || diffY != 0) {
+          this.xf += diffY != 0 ? diffX * speed * .70 : diffX * speed;
+          this.yf += diffX != 0 ? diffY * speed * .70 : diffY * speed;
+
+          this.x = Math.floor(this.xf);
+          this.y = Math.floor(this.yf);
+
+          const tile = FactoryMap.getInstance().getTile(this.x - 1, this.y - 1);
+          this.handler.send(
+            {
+              action: "infoCell",
+              data: tile.toJsonInfo(),
+            },
+          );
+        }
+      },
+    ],
+
+    ["gridClick_Building", (data: GameHandlerData) => {
+      const x = this.x + Math.round(
+        (data.x | 0) * this.canvasMapDrawer.conf.DRAW_TILE_COUNT / 30,
+      );
+      const y = this.y + Math.round(
+        (data.y | 0) * this.canvasMapDrawer.conf.DRAW_TILE_COUNT / 30,
+      );
+      console.log("####################### gridClick ");
+      console.log(data);
+
+      const buildingConf1 = new WcBuildConf_GraveA({
+        growLoopCount: data.growLoopCount === undefined
+          ? 20
+          : data.growLoopCount,
+        endLoopMax: data.endLoopMax === undefined ? 100 : data.endLoopMax,
+      });
+      const building1 = new WcBuildingFactoryGenarator(
+        this.world,
+        buildingConf1,
+      );
+      building1.start2(x, y);
+
+      // const city = new City(this.world, this.x, this.y);
+    }],
+    ["gridClick", (data: GameHandlerData) => {
+      const x = data.x;
+      const y = data.y;
+      console.log("####################### gridClick CITY ");
+      console.log(data);
+
+      const city = new City(this.world, x, y);
+    }],
+
+    [
+      "init_test",
+      (data) => {
+        TilesActions.getInstance().doActions([{
+          func: "lvlFlatSquare",
+          x: data.x,
+          y: data.y,
+          size: 80,
+        }, {
+          func: "clearItemSquare",
+          x: data.x,
+          y: data.y,
+          size: 80,
+        }]);
+      },
+    ],
+
+    [
+      "query_infoCell",
+      (data) => {
+        const x = data.x !== undefined
+          ? data.x
+          : data.gridX !== undefined
+          ? data.gridX + this.x - 1
+          : this.x;
+        const y = data.y !== undefined
+          ? data.y
+          : data.gridY !== undefined
+          ? data.gridY + this.y - 1
+          : this.y;
+
+        const tile = FactoryMap.getInstance().getTile(x, y);
+        this.handler.send(
+          {
+            action: "infoCell",
+            data: tile.toJsonInfo(),
+          },
+        );
+      },
+    ],
+  ]);
+
+  addHandels(key: string, func: (_data: GameHandlerData) => void) {
+    this.handlers.set(key, func);
+  }
+
+  // ============================================================================
+  // == LOOP
+  // ============================================================================
+
+  // ----------------------------------------------------------------------------
+  // FPS
+  lastFrameTime = performance.now();
+  frameTimes: number[] = [];
+
+  updateFPS() {
+    const now = performance.now();
+    const delta = now - this.lastFrameTime;
+    this.lastFrameTime = now;
+
+    this.frameTimes.push(delta);
+    if (this.frameTimes.length > 60) this.frameTimes.shift(); // Keep last 60 frames
+
+    const avgFrameTime = this.frameTimes.reduce((a, b) => a + b, 0) /
+      this.frameTimes.length;
+    const fps = Math.round(1000 / avgFrameTime);
+    this.handler.send({ action: "FPS", fps: fps });
+  }
+
+  startLoop() {
+    console.log("GameWorker: # START #");
+    this._shouldRun = true;
+    this.updateFram();
+  }
+
+  stopLoop() {
+    console.log("GameWorker: # STOP #");
+    this._shouldRun = false;
+  }
+
+  // 🌟 Read Matrix & Update Grid Efficiently
+  updateFram() {
+    if (!this._shouldRun) {
+      return;
+    }
+    this.framId = (this.framId + 1) % 1024;
+    if (this.framId % 4 == 0) {
+      this.updateFPS();
+      console.log("Draw");
+
+      this.world.tick();
+
+      this.canvasMapDrawer.drawUpdate(
+        this.x,
+        this.y,
+        this.xf - this.x,
+        this.yf - this.y,
+      );
+    }
+    requestAnimationFrame(this.updateFram.bind(this));
+    // setTimeout(this.updateFram.bind(this), 1);
+  }
+}
+
+// ============================================================================
+// ============================================================================
+
+new GameWorker();
+
+// ============================================================================
+// ============================================================================

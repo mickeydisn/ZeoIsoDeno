@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Background Remover (Alpha Matting)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2b3a55 0%, #465a7f 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #ecf0f1;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #34495e;
+            border-radius: 16px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #2c3e50;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 2px solid #34495e;
+        }
+        
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+        
+        .main-content {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        .controls-panel {
+            background: #2c3e50;
+            border-radius: 8px;
+            padding: 15px;
+            height: fit-content;
+        }
+        
+        .upload-section {
+            background: #3c526d;
+            border: 3px dashed #7f8c8d;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            background: #46607d;
+            border-color: #ecf0f1;
+        }
+        
+        .upload-section input {
+            display: none;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #496280;
+        }
+        
+        .control-group:last-child {
+            border-bottom: none;
+        }
+        
+        .control-label {
+            display: block;
+            font-weight: 600;
+            color: #ecf0f1;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .control-input, .value-display {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            background: #3c526d;
+            color: white;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+        }
+        
+        .slider-group input[type="range"] {
+            flex-grow: 1;
+            margin-right: 10px;
+            -webkit-appearance: none;
+            height: 5px;
+            background: #7f8c8d;
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        
+        .btn-success {
+            background: #2ecc71;
+            color: #2c3e50;
+        }
+        
+        .btn-success:hover {
+            background: #27ae60;
+        }
+
+        .canvas-area {
+            background: #2c3e50;
+            border-radius: 8px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .canvas-wrapper {
+            background: #2d3436;
+            border-radius: 4px;
+            padding: 10px;
+            position: relative;
+        }
+
+        .canvas-wrapper h3 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 1em;
+            color: #7f8c8d;
+        }
+
+        #sourceCanvas, #previewCanvas {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+            cursor: crosshair;
+            border: 1px solid #7f8c8d;
+            background: linear-gradient(45deg, #ccc 25%, transparent 25%), 
+                        linear-gradient(-45deg, #ccc 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, #ccc 75%), 
+                        linear-gradient(-45deg, transparent 75%, #ccc 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+        }
+
+        #bgDisplay {
+            width: 30px;
+            height: 30px;
+            border: 2px solid white;
+            border-radius: 4px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        .color-picker-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Advanced Sprite Background Remover</h1>
+            <p>Use Alpha Matting to remove noisy backgrounds and achieve superior edge quality.</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="controls-panel">
+                <div class="upload-section" id="uploadZone">
+                    <div style="font-size: 2em; margin-bottom: 8px;">📁</div>
+                    <h3 style="font-size: 1em; margin-bottom: 5px;">Upload Sprite Sheet</h3>
+                    <p style="font-size: 0.85em; color: #7f8c8d;">PNG/JPG files</p>
+                    <input type="file" id="fileInput" accept="image/png,image/jpg">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Background Color (Click Source Image to Sample)</label>
+                    <div class="color-picker-group">
+                        <span id="bgDisplay" style="background-color: #000000;"></span>
+                        <input type="text" id="bgColorHex" class="control-input" value="#000000" style="flex-grow: 1;">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Color Tolerance: <span id="toleranceValue">10</span></label>
+                    <div class="slider-group">
+                        <input type="range" id="toleranceInput" min="0" max="100" step="1" value="10">
+                    </div>
+                    <p style="font-size: 0.75em; color: #7f8c8d; margin-top: 5px;">How close a pixel must be to the BG color to be considered background.</p>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Fade Threshold (Alpha Matting): <span id="fadeValue">40</span></label>
+                    <div class="slider-group">
+                        <input type="range" id="fadeInput" min="0" max="255" step="1" value="40">
+                    </div>
+                    <p style="font-size: 0.75em; color: #7f8c8d; margin-top: 5px;">Range (in color distance) where alpha blending occurs, crucial for anti-aliasing.</p>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Edge Erosion/Dilation (px): <span id="erosionValue">0</span></label>
+                    <div class="slider-group">
+                        <input type="range" id="erosionInput" min="-5" max="5" step="1" value="0">
+                    </div>
+                    <p style="font-size: 0.75em; color: #7f8c8d; margin-top: 5px;">Positive = Erosion (shrinks), Negative = Dilation (grows).</p>
+                </div>
+                
+                <button class="btn btn-success" id="downloadBtn" style="display:none;">💾 Download Fixed PNG</button>
+            </div>
+            
+            <div class="canvas-area">
+                <div class="canvas-wrapper">
+                    <h3>Source Image (Click to Sample Color)</h3>
+                    <canvas id="sourceCanvas"></canvas>
+                </div>
+                <div class="canvas-wrapper">
+                    <h3>Result Preview</h3>
+                    <canvas id="previewCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let originalImage = null;
+        let sourceCanvas = document.getElementById('sourceCanvas');
+        let sourceCtx = sourceCanvas.getContext('2d');
+        let previewCanvas = document.getElementById('previewCanvas');
+        let previewCtx = previewCanvas.getContext('2d');
+        let backgroundColor = { r: 0, g: 0, b: 0 }; // Default black
+        
+        // --- DOM Elements ---
+        const fileInput = document.getElementById('fileInput');
+        const uploadZone = document.getElementById('uploadZone');
+        const bgColorHexInput = document.getElementById('bgColorHex');
+        const bgDisplay = document.getElementById('bgDisplay');
+        const toleranceInput = document.getElementById('toleranceInput');
+        const toleranceValue = document.getElementById('toleranceValue');
+        const fadeInput = document.getElementById('fadeInput');
+        const fadeValue = document.getElementById('fadeValue');
+        const erosionInput = document.getElementById('erosionInput');
+        const erosionValue = document.getElementById('erosionValue');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // --- Event Listeners ---
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) loadImage(file);
+        });
+
+        // Continuous update on control changes
+        toleranceInput.addEventListener('input', () => { 
+            toleranceValue.textContent = toleranceInput.value;
+            applyBackgroundRemoval();
+        });
+        fadeInput.addEventListener('input', () => { 
+            fadeValue.textContent = fadeInput.value;
+            applyBackgroundRemoval();
+        });
+        erosionInput.addEventListener('input', () => { 
+            erosionValue.textContent = erosionInput.value;
+            applyBackgroundRemoval();
+        });
+        bgColorHexInput.addEventListener('change', (e) => {
+            const hex = e.target.value;
+            if (isValidHex(hex)) {
+                setBackgroundColor(hexToRgb(hex));
+                applyBackgroundRemoval();
+            }
+        });
+        sourceCanvas.addEventListener('click', handleSourceClick);
+        downloadBtn.addEventListener('click', downloadFixedSheet);
+
+        // --- Core Functions ---
+
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImage = img;
+                    
+                    // 1. Set canvas size
+                    sourceCanvas.width = img.width;
+                    sourceCanvas.height = img.height;
+                    previewCanvas.width = img.width;
+                    previewCanvas.height = img.height;
+
+                    // 2. Draw source image
+                    sourceCtx.imageSmoothingEnabled = false;
+                    sourceCtx.drawImage(originalImage, 0, 0);
+
+                    // 3. Auto-sample background (top-left) and update UI
+                    const imgData = sourceCtx.getImageData(0, 0, 1, 1);
+                    const color = { r: imgData.data[0], g: imgData.data[1], b: imgData.data[2] };
+                    setBackgroundColor(color);
+                    
+                    // 4. Run initial removal
+                    applyBackgroundRemoval();
+                    downloadBtn.style.display = 'block';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleSourceClick(e) {
+            if (!originalImage) return;
+
+            const rect = sourceCanvas.getBoundingClientRect();
+            // Scale mouse coordinates to actual pixel coordinates
+            const scaleX = sourceCanvas.width / rect.width;
+            const scaleY = sourceCanvas.height / rect.height;
+            const x = Math.floor((e.clientX - rect.left) * scaleX);
+            const y = Math.floor((e.clientY - rect.top) * scaleY);
+            
+            // Get pixel data at click location
+            const imgData = sourceCtx.getImageData(x, y, 1, 1);
+            const color = { r: imgData.data[0], g: imgData.data[1], b: imgData.data[2] };
+
+            setBackgroundColor(color);
+            applyBackgroundRemoval();
+        }
+
+        function setBackgroundColor(color) {
+            backgroundColor = color;
+            const hex = rgbToHex(color.r, color.g, color.b);
+            bgDisplay.style.backgroundColor = hex;
+            bgColorHexInput.value = hex;
+        }
+
+        function colorDistance(r1, g1, b1, r2, g2, b2) {
+            // Simple Manhattan distance for speed
+            return Math.abs(r1 - r2) + Math.abs(g1 - g2) + Math.abs(b1 - b2);
+        }
+        
+        function applyBackgroundRemoval() {
+            if (!originalImage) return;
+
+            const w = originalImage.width;
+            const h = originalImage.height;
+            
+            // Reset preview canvas and draw source image
+            previewCtx.clearRect(0, 0, w, h);
+            previewCtx.drawImage(originalImage, 0, 0);
+            
+            let imgData = previewCtx.getImageData(0, 0, w, h);
+            const data = imgData.data;
+
+            const tolerance = parseInt(toleranceInput.value) * 3; // Max color distance is 255*3 = 765
+            const fadeThreshold = parseInt(fadeInput.value) * 3;
+            const erosion = parseInt(erosionInput.value);
+
+            const bgR = backgroundColor.r;
+            const bgG = backgroundColor.g;
+            const bgB = backgroundColor.b;
+            
+            const newAlpha = new Uint8Array(w * h); // For storing new alpha values
+            let originalAlpha = new Uint8ClampedArray(data.length);
+
+            // 1. Alpha Matting Pass (Calculates soft edges)
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                
+                const dist = colorDistance(r, g, b, bgR, bgG, bgB);
+                let alpha = 255; // Assume opaque initially
+                
+                if (dist <= tolerance) {
+                    // Pixel is definitely background (within tolerance)
+                    alpha = 0;
+                } else if (dist < tolerance + fadeThreshold) {
+                    // Pixel is in the blending zone (Alpha Matting)
+                    const normalizedDist = dist - tolerance;
+                    const fadeRange = fadeThreshold;
+                    // Calculate fractional alpha: 0 at tolerance, 255 at tolerance + fadeThreshold
+                    alpha = Math.round(255 * (normalizedDist / fadeRange));
+                }
+                // If dist >= tolerance + fadeThreshold, alpha remains 255 (fully opaque foreground)
+
+                newAlpha[i / 4] = alpha;
+                originalAlpha[i] = data[i];
+                originalAlpha[i+1] = data[i+1];
+                originalAlpha[i+2] = data[i+2];
+                originalAlpha[i+3] = alpha; // Store the new calculated alpha
+            }
+
+            // 2. Erosion/Dilation Pass (Optional Cleanup)
+            if (erosion !== 0) {
+                const isErosion = erosion > 0;
+                const radius = Math.abs(erosion);
+
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const idx = y * w + x;
+                        
+                        let currentAlpha = originalAlpha[idx * 4 + 3];
+
+                        if (isErosion && currentAlpha > 0) {
+                            // Erosion: If any neighbor is fully transparent, set this pixel to transparent.
+                            let shouldBeTransparent = false;
+                            for (let dy = -radius; dy <= radius; dy++) {
+                                for (let dx = -radius; dx <= radius; dx++) {
+                                    const checkY = y + dy;
+                                    const checkX = x + dx;
+                                    
+                                    if (checkY >= 0 && checkY < h && checkX >= 0 && checkX < w) {
+                                        const checkIdx = checkY * w + checkX;
+                                        // Check if neighbor alpha is 0 (or close to 0)
+                                        if (originalAlpha[checkIdx * 4 + 3] < 1) { 
+                                            shouldBeTransparent = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if(shouldBeTransparent) break;
+                            }
+                            if (shouldBeTransparent) {
+                                newAlpha[idx] = 0;
+                            }
+                        } else if (!isErosion && currentAlpha < 255) {
+                            // Dilation: If any neighbor is fully opaque, set this pixel to fully opaque.
+                            let shouldBeOpaque = false;
+                            for (let dy = -radius; dy <= radius; dy++) {
+                                for (let dx = -radius; dx <= radius; dx++) {
+                                    const checkY = y + dy;
+                                    const checkX = x + dx;
+                                    
+                                    if (checkY >= 0 && checkY < h && checkX >= 0 && checkX < w) {
+                                        const checkIdx = checkY * w + checkX;
+                                        // Check if neighbor alpha is 255 (or close to 255)
+                                        if (originalAlpha[checkIdx * 4 + 3] > 254) { 
+                                            shouldBeOpaque = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if(shouldBeOpaque) break;
+                            }
+                            if (shouldBeOpaque) {
+                                newAlpha[idx] = 255;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. Apply Final Alpha
+            for (let i = 0; i < data.length; i += 4) {
+                data[i + 3] = newAlpha[i / 4];
+            }
+            
+            previewCtx.putImageData(imgData, 0, 0);
+        }
+
+        function downloadFixedSheet() {
+            const link = document.createElement('a');
+            link.download = 'clean-sprite-sheet.png';
+            link.href = previewCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // --- Utility Functions ---
+
+        function componentToHex(c) {
+            const hex = c.toString(16);
+            return hex.length === 1 ? "0" + hex : hex;
+        }
+
+        function rgbToHex(r, g, b) {
+            return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex.trim());
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 0, g: 0, b: 0 }; 
+        }
+
+        function isValidHex(hex) {
+            return /^#?([0-9A-F]{3}){1,2}$/i.test(hex.trim());
+        }
+    </script>
+</body>
+</html>

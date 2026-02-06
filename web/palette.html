@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+        <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+
+        <title>Modular Sprite Sheet Editor - Canvas-Centric Modules</title>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Open+Sans"
+        >
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+        >
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+        >
+    
+        <title>HTMX Multi-Filter Table</title>
+        <script src="https://unpkg.com/htmx.org@1.9.5"></script>
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+
+            background: #2a2a2a;
+            color: #fff;
+            font-family: Arial, sans-serif;
+ 
+        }
+
+        /* ------------------ */
+        .menu-toggle {
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            background: white;
+            border-radius: 5px;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            color: black;
+        }
+        .menu-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        #menu {
+            z-index: 111;
+            position: absolute;
+            top: 0;
+            right: -100vw;
+            transition: left 0.3s ease;
+            overflow: scroll;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #menu2 {
+            z-index: 11000;
+            position: absolute;
+            top: 55px;
+            right: 0;
+            transition: left 0.3s 
+            ease;
+            overflow: scroll;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #menu:target {
+            right: 0;
+        }
+
+        .sheet-panel {
+            background: #3a3a3a;
+            padding: 15px;
+            border-radius: 8px;
+            width: 30vw;
+            display: flex;
+            grid-gap: 1rem;
+            flex-direction: column;
+            overflow: scroll;
+            height: calc(100vh - 30px);
+
+        }
+
+
+        /* ------------------ */
+        .controls-controls {
+            background: #3a3a3a;
+            padding: 10px;
+            height: 50px;
+            border-radius: 0 0px 16px 16px;
+            margin-bottom: 4px;
+        }
+
+        .workspace-controls {
+            display: flex;
+            background: #3a3a3a;
+            padding: 10px;
+            border-radius: 16px;
+            height: calc(100vh - 54px);
+            overflow: scroll;
+        }
+
+        .module-group-editor {
+            border: 1px solid #555;
+            height: fit-content;
+            padding: 10px;
+            border-radius: 17px;
+            width: 100%;
+        }
+        .module-card {
+            background-color: #2c3e50;
+            border-radius: 8px;
+            color: #ecf0f1;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* ------------------ */
+        #isogame-module {
+            height: calc(100vh - 74px);
+        }
+
+        #displayMap {
+            align-items: center;
+            position: absolute;
+            width: calc(100vw - 34px);
+            height: calc(100vh - 96px);
+            overflow: hidden;
+        }
+
+        #fps {
+            position: absolute;
+            top: 0px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        #righMenu {
+            position: absolute;
+            top: 0px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 2000;
+            width: 20vw;
+
+            & #infoMenu > #infoCell > div {
+                margin: 5px 10px;
+            }
+            & #infoMenu > #infoCell {
+                width: 90%;
+                height: 40vh;
+                text-align: left;
+                /* word-break: break-word; */
+                /* white-space: break-spaces; */
+            }
+
+            & #infoMenu .gridFaces {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                align-items: center;
+                justify-content: center;
+                max-height: 30vh;
+                overflow: scroll;
+                border: #fff solid 1px;
+                /* word-break: break-word; */
+
+                & > div {
+                text-align: center;
+                padding: 0.2rem;
+                }
+            }
+
+            & #mapflyMenu {
+                padding: 5px 10px;
+            }
+        }
+
+
+        /* ----------------------------------------------------- */
+        #mapGrid {
+            position: absolute;
+            transform: rotateX(60deg) rotateY(0deg) rotateZ(45deg) translate(0px, 0px);
+            transform-style: preserve-3d;
+            will-change: transform;   /* makes hover stable */
+            display: grid;
+            grid-template-columns: repeat(40, 2.5%);
+            pointer-events: none;
+        }
+
+        #mapGrid .tileActionBase {
+            position: relative;
+            will-change: transform;   /* makes hover stable */
+            transform-style: preserve-3d;
+            pointer-events: none;
+        }
+
+        #mapGrid .tileActionBase .hit {
+            position: absolute;
+            pointer-events: all;
+            will-change: transform;   /* makes hover stable */
+
+            top: -2px;    /* expand a few pixels outside the tile */
+            left: -2px;
+            width: calc(100% + 4px);
+            height: calc(100% + 4px); 
+
+            opacity: 0;
+            transition: opacity 0.2s;
+            background-color: #00F;
+        }
+
+        #mapGrid .tileActionBase .hit:hover {
+            opacity: 0.8;
+            background-color: #F00;
+            box-shadow: 2px 10px 50px rgba(255, 0, 0, 1);
+        }
+
+
+        /* ------------------ */
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 5px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background: #357abd;
+        }
+        .btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+
+        .panel-title {
+            font-size: 1.6rem;
+            margin-bottom: 10px;
+            padding: 1.1rem;
+            color: #4a90e2;
+            display: inline-flex;
+            width: calc(100% - 1rem);
+            
+            transition: all .5s;
+            &:hover {
+                background-color: #2a2a2a;
+            }
+        }
+        .canvas-container {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        canvas {
+            border: 1px solid #555;
+            image-rendering: pixelated;
+            cursor: crosshair;
+        }
+        #workspaceCanvas {
+            background-image: 
+                linear-gradient(45deg, #333 25%, transparent 25%),
+                linear-gradient(-45deg, #333 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #333 75%),
+                linear-gradient(-45deg, transparent 75%, #333 75%);
+            background-size: 20px 20px;
+            background-color: #222;
+        }
+
+        /* Input Controls */
+        .slider-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+        .slider-control label {
+            min-width: 100px;
+            font-size: 14px;
+        }
+        .slider-control input[type="range"] {
+            flex: 1;
+        }
+        .slider-control span {
+            min-width: 30px;
+            text-align: right;
+            font-size: 14px;
+        }
+        
+
+        /* Module Section Styles */
+
+
+        .module-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #555;
+        }
+        .module-group {
+            border: 1px solid #555;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+
+        }
+
+        .module-group-title {
+            cursor: pointer;
+            margin-bottom: 5px;
+            color: #a3be8c;
+            font-size: 1.1em; 
+        }
+
+
+        /* Palette Specific Styles */
+        .sort-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .sort-btn {
+            padding: 5px 10px;
+            background: #555;
+            border: 1px solid #666;
+            color: white;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .sort-btn.active {
+            background: #4a90e2;
+            border-color: #4a90e2;
+        }
+        .transform-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+/* ------------*/
+
+        .detail-group {
+            & > summary {
+                /* margin-bottom: 10px; */
+                margin-top: 1rem;
+                padding: .4rem 0 .4rem 1rem;
+                font-size: 1.4em;
+                border-bottom: 1px solid #34495e;
+                padding-bottom: 5px;
+                color: #a3be8c;
+                width: 100%;
+                cursor: pointer;
+            }
+            & > summary:hover {
+                box-shadow: inset 0 0 10px;
+            }
+            > div {
+                display: flex;
+                flex-direction: column;
+                gap: .8rem;
+            }
+
+        }
+
+    </style>
+</head>
+<body>
+    <a href="#menu" class="menu-toggle">☰</a>
+    <div id="menu-icon-container"></div>
+
+    <div id="menu">
+        <a href="#" class="menu-toggle">✖</a>
+        <div class="sheet-panel">
+            <div class="panel-title">Sprite Sheet</div>
+        </div>
+    </div>
+
+    <div id="menu2">
+        <div class="sheet-panel">
+            <div id="action-module"></div>
+            <div id="workspace-container"></div>
+            <div id="palette-container"></div>
+            <div class="panel-title">Sprite Sheet</div>
+        </div>
+    </div>
+   
+    <div class="controls-controls"></div>
+
+    <div class="workspace-controls">
+        <div class="module-group-editor" id="isometric-grid-container">
+            <canvas id="canva-mini-map" width="1600" height="800">
+            </canvas>
+            
+        </div>
+        <div class="module-group-editor" id="sheet-editor-module"></div>
+        <div class="module-group-editor" id="isogame-module">
+
+            
+            <div
+                id="displayMap"
+                class="displayOption"
+                style="display: flex; justify-content: center"
+            >
+                <div id="fps">FPS: 0</div>
+                <div id="righMenu">
+                <div id="mapflyMenu"></div>
+                <div id="infoMenu"></div>
+            </div>
+            <div
+              id="mapRelative"
+              style="width: 1400px; height: 800px; position: relative"
+            >
+              <canvas
+                id="map-image"
+                width="1600"
+                height="800"
+                style="border: none"
+              ></canvas>
+              <div style="position: absolute">
+                <div
+                  id="mapGrid"
+                  style="transition: 0.3s; transform: rotateX(60deg) rotateY(0deg) rotateZ(45deg); transform-style: preserve-3d; display: grid; z-index: 40"
+                >
+                </div>
+              </div>
+            </div>
+          </div>
+      
+
+        </div>
+
+
+    </div>
+
+    <script type="module" src="./jsP/main2.ts"></script>
+    <script type="module" src="./jsWorker/main.ts"></script>
+    <!--
+    <script type="module" src="./js/main.ts"></script>
+     -->
+
+</body>
+</html>

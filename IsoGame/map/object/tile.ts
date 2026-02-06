@@ -1,0 +1,178 @@
+import { CityEntity } from "../../entity/cityEntity.ts";
+import { WcBuildTile, WcBuildTileInfo } from "../../wcBuilding2/wcBuildTile.ts";
+import { FactoryMap } from "../factory/factoryMap.ts";
+import { RecordRawItem } from "../factory/factoryTileGenerator.ts";
+import { RawTile } from "./tileRaw.ts";
+
+export const AXE_DIRECTION = [
+  [0, 1],
+  [1, 0],
+  [0, -1],
+  [-1, 0],
+];
+export const AXE_DIRECTION2 = [
+  [1, 1],
+  [-1, 1],
+  [1, -1],
+  [-1, -1],
+];
+
+export const TILE_GEN_ZOOM = 2;
+
+export type TileInfo = {
+  x: number;
+  y: number;
+  currentLvl: number;
+  currentColor: [number, number, number];
+  isBlock: boolean;
+  isFrise: boolean;
+  wcBuildTile: WcBuildTileInfo | null;
+  // cityNode: this.cityNode?.toJson() ?? null,
+  // items: this.items,
+};
+
+export class Tile extends RawTile {
+  cx: number;
+  cy: number;
+
+  _currentLvl: number;
+  _currentColor: Uint8Array;
+
+  isBlock: boolean = false;
+  isFrise: boolean = false;
+
+  _nearTiles: Tile[] = [];
+  _nearTilesCross: Tile[] = [];
+
+  items: RecordRawItem[] = [];
+
+  entities: CityEntity[] = [];
+  temporatyItems: any[] = [];
+  cityNode?: any;
+  wcBuild?: WcBuildTile;
+
+  constructor(x: number, y: number, cx: number, cy: number) {
+    super(x, y);
+    this.cx = cx;
+    this.cy = cy;
+    this._currentLvl = this.genLvl2;
+    this._currentColor = this.genColor;
+    this.items = this.genItems;
+    // this.lvlGen();
+  }
+
+  toJsonInfo(): TileInfo {
+    return {
+      x: this.x,
+      y: this.y,
+      currentLvl: this._currentLvl,
+      currentColor: [...this._currentColor] as [number, number, number],
+      isBlock: this.isBlock,
+      isFrise: this.isFrise,
+      wcBuildTile: this.wcBuild?.toJsonInfo() ?? null,
+      // cityNode: this.cityNode?.toJson() ?? null,
+      // items: this.items,
+    };
+  }
+  // ---
+
+  get lvl() {
+    return this._currentLvl;
+  }
+  set lvl(lvl: number) {
+    if (this.isFrise) return;
+    this._currentLvl = lvl;
+  }
+  clearLvl() {
+    if (this.isFrise) return;
+    this._currentLvl = this.genLvl2;
+  }
+
+  get color() {
+    return [...this._currentColor];
+  }
+  set color([r, g, b, a]: number[]) {
+    if (this.isFrise) return;
+    this._currentColor = new Uint8Array([r, g, b, a]);
+  }
+  clearColor() {
+    if (this.isFrise) return;
+    this._currentColor = this.genColor;
+  }
+
+  // ==============================
+  addEntity(entity: CityEntity) {
+    // if (this.isFrise) return;
+    if (!this.entities.includes(entity)) {
+      this.entities.push(entity);
+    }
+  }
+  removeEntity(entity: CityEntity) {
+    // if (this.isFrise) return;
+    const index = this.entities.indexOf(entity);
+    if (index > -1) {
+      this.entities.splice(index, 1);
+    }
+  }
+  // ==============================
+
+  clearItem() {
+    if (this.isFrise) return;
+    if (!this.isFrise) this.items.splice(0, this.items.length);
+  }
+  clearTemporatyItem() {
+    this.temporatyItems.splice(0, this.temporatyItems.length);
+  }
+
+  toJsonSave() {
+    return {
+      id: `${this.x}_${this.y}`,
+      x: this.x,
+      y: this.y,
+      chunkId: `${this.cx}_${this.cy}`,
+      cx: this.cx,
+      cy: this.cy,
+      currentLvl: this._currentLvl,
+      currentColor: [...this._currentColor],
+      isBlock: this.isBlock,
+      isFrise: this.isFrise,
+      items: this.items ?? [],
+    };
+  }
+
+  fromJsonSave(data: any) {
+    this.color = data.currentColor;
+    this.lvl = data.currentLvl;
+    this.isBlock = data.isBlock;
+    this.isFrise = data.isFrise;
+    this.items = data.items ?? [];
+  }
+
+  get nearTiles() {
+    if (this._nearTiles.length == 0) {
+      this._nearTiles = [0, 1, 2, 3].map((axe) => {
+        const [dx, dy] = AXE_DIRECTION[axe];
+        return FactoryMap.getInstance().getTile(this.x + dx, this.y + dy);
+      });
+    }
+    return this._nearTiles;
+  }
+  get nearCrossTiles() {
+    if (this._nearTiles.length == 0) {
+      this._nearTilesCross = [0, 1, 2, 3].map((axe) => {
+        const [dx, dy] = AXE_DIRECTION2[axe];
+        return FactoryMap.getInstance().getTile(this.x + dx, this.y + dy);
+      });
+    }
+    return this._nearTilesCross;
+  }
+  nearTilesAxe(size = 1) {
+    return [0, 1, 2, 3].map((axe) => {
+      const [dx, dy] = AXE_DIRECTION[axe];
+      return FactoryMap.getInstance().getTile(this.x + dx * size, this.y + dy * size);
+    });
+  }
+  get nearSquareTiles() {
+    return [...this.nearTiles, ...this.nearCrossTiles];
+  }
+}
