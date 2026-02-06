@@ -11,7 +11,7 @@ var initFlyMenu = (gameWorker2) => {
       action: "initCanvasMap",
       mapConf: {
         DRAW_TILE_COUNT: 40,
-        SCALE_SIZE: 1,
+        SCALE_SIZE: 0.85,
         SCALE_MOD: 1
       }
     });

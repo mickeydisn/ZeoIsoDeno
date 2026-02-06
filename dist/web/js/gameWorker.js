@@ -10248,7 +10248,8 @@ var GameWorker = class {
         const pm = data.playerMovement;
         const diffX = pm.up ? 1 : pm.down ? -1 : 0;
         const diffY = pm.left ? 1 : pm.right ? -1 : 0;
-        const speed = 0.1;
+        const mapMod = this.canvasMapDrawer.conf.SCALE_MOD;
+        const speed = 0.5 * mapMod;
         if (diffX != 0 || diffY != 0) {
           this.xf += diffY != 0 ? diffX * speed * 0.7 : diffX * speed;
           this.yf += diffX != 0 ? diffY * speed * 0.7 : diffY * speed;

@@ -1,7 +1,6 @@
 {
   "tasks": {
-    "isoserve": "deno run  --allow-ffi  --unstable-ffi  --watch --allow-net --allow-read --allow-write --allow-env --allow-sys ./IsoGame/serveImg.ts",
-    "isoweb": "deno run  --allow-ffi  --unstable-ffi  --watch --allow-net --allow-read --allow-write --allow-env --allow-sys --allow-run ./webServer.ts"
+    "web-service": "deno run  --allow-ffi  --unstable-ffi  --watch --allow-net --allow-read --allow-write --allow-env --allow-sys --allow-run ./webServer.ts"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1",

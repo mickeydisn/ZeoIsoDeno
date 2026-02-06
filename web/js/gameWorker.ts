@@ -128,7 +128,8 @@ export class GameWorker {
         const pm = data.playerMovement;
         const diffX = pm.up ? 1 : pm.down ? -1 : 0;
         const diffY = pm.left ? 1 : pm.right ? -1 : 0;
-        const speed = .1;
+        const mapMod = this.canvasMapDrawer.conf.SCALE_MOD;
+        const speed = .5 * mapMod;
         // if move :
         if (diffX != 0 || diffY != 0) {
           this.xf += diffY != 0 ? diffX * speed * .70 : diffX * speed;

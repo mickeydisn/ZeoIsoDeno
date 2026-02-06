@@ -14,7 +14,7 @@ export const initFlyMenu = (gameWorker: Worker) => {
         action: "initCanvasMap",
         mapConf: {
           DRAW_TILE_COUNT: 40,
-          SCALE_SIZE: 1,
+          SCALE_SIZE: .85,
           SCALE_MOD: 1,
         },
       });
