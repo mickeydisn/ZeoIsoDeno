@@ -1,4 +1,8 @@
-/img/save
-*.DS_store
+.vscode
+.DS_store
 .config.*
-zeoIso2023
+/dist
+
+
+/img/save
+
