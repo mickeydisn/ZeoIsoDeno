@@ -685,3 +685,148 @@ pre {
   border-color: rgba(255, 100, 100, 0.5);
   color: #fff;
 }
+
+/* ------------------ */
+/* Building Config Panel Styles */
+/* ------------------ */
+
+#buildingConfigPanel {
+  margin-top: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px;
+}
+
+.building-config-header {
+  font-weight: bold;
+  font-size: 12px;
+  color: #aaa;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#buildingConfigSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.building-config-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #ccc;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.building-config-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.building-config-btn.active {
+  background: rgba(100, 200, 100, 0.3);
+  border-color: rgba(100, 200, 100, 0.5);
+  color: #fff;
+}
+
+.building-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.building-empty {
+  color: #666;
+  font-size: 10px;
+  padding: 10px;
+  text-align: center;
+  font-style: italic;
+}
+
+#buildingParams {
+  margin-bottom: 8px;
+}
+
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 10px;
+  color: #aaa;
+}
+
+.param-row span:first-child {
+  min-width: 80px;
+  text-align: right;
+  font-size: 10px;
+}
+
+.param-row input[type="range"] {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.param-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: rgba(100, 150, 255, 0.8);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.param-row input[type="range"]::-webkit-slider-thumb:hover {
+  background: rgba(100, 150, 255, 1);
+}
+
+.param-row input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: rgba(100, 150, 255, 0.8);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.param-row input[type="range"]::-moz-range-thumb:hover {
+  background: rgba(100, 150, 255, 1);
+}
+
+.param-row span:last-child {
+  min-width: 30px;
+  text-align: left;
+  font-family: monospace;
+  font-size: 9px;
+  color: #ccc;
+}
+
+#buildingDescription {
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  font-size: 10px;
+  color: #999;
+  line-height: 1.4;
+  font-style: italic;
+}

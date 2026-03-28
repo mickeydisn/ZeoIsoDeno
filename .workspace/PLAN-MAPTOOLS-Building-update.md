@@ -112,30 +112,22 @@ This update focuses on code hygiene, configuration correctness, and UI consisten
 
 **File**: `web/stylesIso.css` (MODIFY)
 
-- [ ] Add `.building-config-header` styles:
-  ```css
-  .building-config-header {
-    font-weight: bold;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    margin-bottom: 8px;
-  }
-  ```
-- [ ] Add `.building-config-btn` styles (align with existing `.tool-btn` pattern)
-- [ ] Add `.building-name` styles
-- [ ] Add `.building-empty` styles (empty state message)
-- [ ] Add `.param-row` styles (label + slider layout)
-- [ ] Add `#buildingConfigPanel` container styles
-- [ ] Add `#buildingDescription` styles
+- [x] Add `.building-config-header` styles
+- [x] Add `.building-config-btn` styles (align with existing `.tool-btn` pattern)
+- [x] Add `.building-name` styles
+- [x] Add `.building-empty` styles (empty state message)
+- [x] Add `.param-row` styles (label + slider layout)
+- [x] Add `#buildingConfigPanel` container styles
+- [x] Add `#buildingDescription` styles
 
 ### Task 3.2: Consolidate Duplicated CSS
 
 **Files**: `web/styles.css`, `web/styles2.css`, `web/stylesIso.css` (MODIFY)
 
-- [ ] Remove duplicate `.active` class from `styles.css` and `styles2.css` (keep in `stylesIso.css`)
-- [ ] Remove duplicate `pre` tag styles from `styles2.css` (keep in `stylesIso.css`)
-- [ ] Remove empty/duplicate `body` rules from `styles.css` and `styles2.css`
-- [ ] Verify `indexIso.html` only links `stylesIso.css` (single source of truth)
+- [x] Remove duplicate `.active` class from `styles.css` and `styles2.css` (keep in `stylesIso.css`)
+- [x] Remove duplicate `pre` tag styles from `styles2.css` (keep in `stylesIso.css`)
+- [x] Remove empty/duplicate `body` rules from `styles.css` and `styles2.css`
+- [x] Verify `indexIso.html` only links `stylesIso.css` (single source of truth)
 
 ### Task 3.3: Align Building Panel with Existing UI Patterns
 
