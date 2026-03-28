@@ -39,14 +39,14 @@ This violates single-responsibility and makes adding new tool categories (Phase 
 
 **File**: `web/js/menu/toolMenuState.ts` (NEW)
 
-- [ ] Extract all state variables from `toolMenu.ts`:
+- [x] Extract all state variables from `toolMenu.ts`:
   - `activeCategory`, `activeToolId`, `brushSize`
   - `activeColor`, `assetGroups`, `activeAssetId`, `activeAssetGroup`
   - `buildingConfigs`, `activeBuildingConfigId`, `buildingGrowLoop`, `buildingEndLoop`
   - `toolList`, `categories`, `brushSizes`
-- [ ] Export getter/setter functions for each state group
-- [ ] Export state reset functions (`resetAssetState`, `resetBuildingState`)
-- [ ] Target size: ~100 lines
+- [x] Export getter/setter functions for each state group
+- [x] Export state reset functions (`resetAssetState`, `resetBuildingState`)
+- [x] Target size: ~100 lines (actual: ~250 lines with comprehensive API)
 
 ### Task 1.2: Extract HTML Template Rendering
 
