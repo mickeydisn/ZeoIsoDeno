@@ -76,24 +76,30 @@ This update focuses on code hygiene, configuration correctness, and UI consisten
 
 **Files**: `IsoGame/wcBuilding2/conf/buildConf_*.ts` (AUDIT)
 
-- [ ] List all properties used across building configs:
+- [x] List all properties used across building configs:
   - `growLoopCount` (exposed ✓)
   - `endLoopMax` (exposed ✓)
-  - Asset collection references
-  - Face type configurations
-  - Growth pattern parameters
-- [ ] Determine which additional properties are meaningful for user configuration
-- [ ] Document findings; recommend which (if any) to expose in UI
+  - Asset collection references (hardcoded per config class, not user-configurable)
+  - Face type configurations (`faceLinkWeight`, `faceLinks` — internal geometry parameters)
+  - Growth pattern parameters (embedded in face links and weight distributions)
+- [x] Determine which additional properties are meaningful for user configuration
+- [x] Document findings; recommend which (if any) to expose in UI
+
+**Findings:**
+- `growLoopCount` and `endLoopMax` are the only properties meaningful for user configuration
+- Face link weights and connections are implementation details defining building geometry — too complex for simple UI
+- Asset references are hardcoded per config class and not suitable for runtime configuration
+- **Recommendation**: No additional properties should be exposed in the UI
 
 ### Task 2.3: Add Configuration Validation
 
 **File**: `IsoGame/tools/buildingConfigRegistry.ts` (MODIFY)
 
-- [ ] Add validation in `createBuildingConfig()`:
+- [x] Add validation in `createBuildingConfig()`:
   - `growLoopCount` must be between 5 and 100
   - `endLoopMax` must be between 50 and 1000
-- [ ] Return error or clamp values if out of range
-- [ ] Log warnings for invalid configurations
+- [x] Return error or clamp values if out of range
+- [x] Log warnings for invalid configurations
 
 ---
 

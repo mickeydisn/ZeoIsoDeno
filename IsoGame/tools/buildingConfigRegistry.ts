@@ -109,7 +109,28 @@ export function createBuildingConfig(
     console.error(`Building config not found: ${id}`);
     return null;
   }
-  return entry.createConfig(options);
+
+  // Validate and clamp growLoopCount (5-100)
+  let growLoopCount = options.growLoopCount;
+  if (growLoopCount < 5) {
+    console.warn(`growLoopCount ${growLoopCount} below minimum (5), clamping to 5`);
+    growLoopCount = 5;
+  } else if (growLoopCount > 100) {
+    console.warn(`growLoopCount ${growLoopCount} above maximum (100), clamping to 100`);
+    growLoopCount = 100;
+  }
+
+  // Validate and clamp endLoopMax (50-1000)
+  let endLoopMax = options.endLoopMax;
+  if (endLoopMax < 50) {
+    console.warn(`endLoopMax ${endLoopMax} below minimum (50), clamping to 50`);
+    endLoopMax = 50;
+  } else if (endLoopMax > 1000) {
+    console.warn(`endLoopMax ${endLoopMax} above maximum (1000), clamping to 1000`);
+    endLoopMax = 1000;
+  }
+
+  return entry.createConfig({ growLoopCount, endLoopMax });
 }
 
 /**
