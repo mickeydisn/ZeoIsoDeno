@@ -64,6 +64,10 @@ var activeHue = 0;
 var activeContrast = 100;
 var activeSaturation = 100;
 var activeBrightness = 100;
+var buildingConfigs = [];
+var activeBuildingConfigId = "grave_a";
+var buildingGrowLoop = 20;
+var buildingEndLoop = 100;
 var initToolMenu = (gameWorker2) => {
   const toolMenuEl = document.getElementById("toolMenu");
   if (!toolMenuEl)
@@ -138,6 +142,23 @@ function renderToolMenu(container, gameWorker2) {
       </div>
       <div id="assetImageList"></div>
       <div id="assetGroupList"></div>
+    </div>
+    <div id="buildingConfigPanel" style="display: ${activeCategory === "structure" ? "block" : "none"}">
+      <div class="building-config-header">Building Configuration</div>
+      <div id="buildingConfigSelector"></div>
+      <div id="buildingParams">
+        <div class="param-row">
+          <span>Grow Loop:</span>
+          <input type="range" min="5" max="100" value="${buildingGrowLoop}" id="growLoopSlider">
+          <span id="growLoopValue">${buildingGrowLoop}</span>
+        </div>
+        <div class="param-row">
+          <span>End Loop Max:</span>
+          <input type="range" min="50" max="5000" value="${buildingEndLoop}" id="endLoopSlider">
+          <span id="endLoopValue">${buildingEndLoop}</span>
+        </div>
+      </div>
+      <div id="buildingDescription">${getActiveBuildingDescription()}</div>
     </div>
   `;
   container.querySelectorAll(".category-tab").forEach((tab) => {
@@ -255,9 +276,16 @@ function setActiveCategory(category, container, gameWorker2) {
   if (suffixSelectorEl) {
     suffixSelectorEl.style.display = category === "asset" ? "flex" : "none";
   }
+  const buildingConfigEl = container.querySelector("#buildingConfigPanel");
+  if (buildingConfigEl) {
+    buildingConfigEl.style.display = category === "structure" ? "block" : "none";
+  }
   renderToolList(container, gameWorker2);
   if (category === "asset") {
     renderAssetBrowser(container, gameWorker2);
+  }
+  if (category === "structure") {
+    initBuildingConfigHandlers(container, gameWorker2);
   }
 }
 function setActiveColor(color, container, gameWorker2) {
@@ -482,6 +510,114 @@ function handleAssetGroups(groups, container) {
   const toolMenuEl = container || document.getElementById("toolMenu");
   if (toolMenuEl && activeCategory === "asset") {
     renderAssetBrowser(toolMenuEl, self);
+  }
+}
+function getActiveBuildingDescription() {
+  const config = buildingConfigs.find((c) => c.id === activeBuildingConfigId);
+  return config?.description || "Select a building configuration";
+}
+function renderBuildingConfigSelector(container, gameWorker2) {
+  const selectorEl = container.querySelector("#buildingConfigSelector");
+  if (!selectorEl)
+    return;
+  if (buildingConfigs.length === 0) {
+    selectorEl.innerHTML = '<div class="building-empty">Loading building configs...</div>';
+    return;
+  }
+  selectorEl.innerHTML = buildingConfigs.map((config) => `
+    <button class="building-config-btn ${config.id === activeBuildingConfigId ? "active" : ""}" data-config-id="${config.id}">
+      <span class="building-name">${config.name}</span>
+    </button>
+  `).join("");
+  selectorEl.querySelectorAll(".building-config-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const configId = btn.dataset.configId;
+      setActiveBuildingConfig(configId, container, gameWorker2);
+    });
+  });
+}
+function setActiveBuildingConfig(configId, container, gameWorker2) {
+  activeBuildingConfigId = configId;
+  const config = buildingConfigs.find((c) => c.id === configId);
+  if (config) {
+    buildingGrowLoop = config.defaultGrowLoop;
+    buildingEndLoop = config.defaultEndLoop;
+  }
+  const growLoopSlider = container.querySelector("#growLoopSlider");
+  const endLoopSlider = container.querySelector("#endLoopSlider");
+  const growLoopValue = container.querySelector("#growLoopValue");
+  const endLoopValue = container.querySelector("#endLoopValue");
+  const descriptionEl = container.querySelector("#buildingDescription");
+  if (growLoopSlider)
+    growLoopSlider.value = String(buildingGrowLoop);
+  if (endLoopSlider)
+    endLoopSlider.value = String(buildingEndLoop);
+  if (growLoopValue)
+    growLoopValue.textContent = String(buildingGrowLoop);
+  if (endLoopValue)
+    endLoopValue.textContent = String(buildingEndLoop);
+  if (descriptionEl)
+    descriptionEl.textContent = getActiveBuildingDescription();
+  container.querySelectorAll(".building-config-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.configId === configId);
+  });
+  gameWorker2.postMessage({
+    action: "setBuildingConfig",
+    configId
+  });
+  gameWorker2.postMessage({
+    action: "setBuildingParams",
+    growLoop: buildingGrowLoop,
+    endLoop: buildingEndLoop
+  });
+}
+function initBuildingConfigHandlers(container, gameWorker2) {
+  renderBuildingConfigSelector(container, gameWorker2);
+  const growLoopSlider = container.querySelector("#growLoopSlider");
+  if (growLoopSlider) {
+    growLoopSlider.addEventListener("input", (e) => {
+      const value = parseInt(e.target.value);
+      buildingGrowLoop = value;
+      const valueEl = container.querySelector("#growLoopValue");
+      if (valueEl)
+        valueEl.textContent = String(value);
+      gameWorker2.postMessage({
+        action: "setBuildingParams",
+        growLoop: buildingGrowLoop,
+        endLoop: buildingEndLoop
+      });
+    });
+  }
+  const endLoopSlider = container.querySelector("#endLoopSlider");
+  if (endLoopSlider) {
+    endLoopSlider.addEventListener("input", (e) => {
+      const value = parseInt(e.target.value);
+      buildingEndLoop = value;
+      const valueEl = container.querySelector("#endLoopValue");
+      if (valueEl)
+        valueEl.textContent = String(value);
+      gameWorker2.postMessage({
+        action: "setBuildingParams",
+        growLoop: buildingGrowLoop,
+        endLoop: buildingEndLoop
+      });
+    });
+  }
+}
+function handleBuildingConfigList(configs, container) {
+  buildingConfigs = configs;
+  if (configs.length > 0 && !activeBuildingConfigId) {
+    activeBuildingConfigId = configs[0].id;
+    buildingGrowLoop = configs[0].defaultGrowLoop;
+    buildingEndLoop = configs[0].defaultEndLoop;
+  }
+  const toolMenuEl = container || document.getElementById("toolMenu");
+  if (toolMenuEl) {
+    const gameWorker2 = self.__gameWorker;
+    if (gameWorker2) {
+      renderBuildingConfigSelector(toolMenuEl, gameWorker2);
+      initBuildingConfigHandlers(toolMenuEl, gameWorker2);
+    }
   }
 }
 
@@ -1100,6 +1236,9 @@ handlers.append([
   }],
   ["assetPreview", (data) => {
     handleAssetPreview(data.blobUrl);
+  }],
+  ["buildingConfigList", (data) => {
+    handleBuildingConfigList(data.configs);
   }]
 ]);
 startLoop();

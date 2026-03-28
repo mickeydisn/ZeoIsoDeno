@@ -10110,6 +10110,10 @@ var ToolRegistry = class _ToolRegistry {
   activeColor = [128, 128, 128];
   // Default gray
   activeAssetId = null;
+  // Building configuration state
+  activeBuildingConfigId = "grave_a";
+  buildingGrowLoop = 20;
+  buildingEndLoop = 100;
   static getInstance() {
     return _ToolRegistry.instance ??= new _ToolRegistry();
   }
@@ -10164,6 +10168,23 @@ var ToolRegistry = class _ToolRegistry {
   }
   getActiveAssetId() {
     return this.activeAssetId;
+  }
+  // Building configuration methods
+  setBuildingConfig(id) {
+    this.activeBuildingConfigId = id;
+  }
+  getBuildingConfigId() {
+    return this.activeBuildingConfigId;
+  }
+  setBuildingParams(growLoop, endLoop) {
+    this.buildingGrowLoop = growLoop;
+    this.buildingEndLoop = endLoop;
+  }
+  getBuildingParams() {
+    return {
+      growLoop: this.buildingGrowLoop,
+      endLoop: this.buildingEndLoop
+    };
   }
 };
 var toolRegistry = ToolRegistry.getInstance();
@@ -10409,6 +10430,108 @@ var assetTools = [
   clearItemsTool
 ];
 
+// IsoGame/tools/buildingConfigRegistry.ts
+var buildingConfigRegistry = /* @__PURE__ */ new Map();
+buildingConfigRegistry.set("grave_a", {
+  id: "grave_a",
+  name: "Graveyard",
+  description: "A fenced graveyard with tombstones, bones, and an altar. Features organic growth patterns with fence segments and inner grave areas.",
+  defaultGrowLoop: 20,
+  defaultEndLoop: 100,
+  createConfig: (options) => new WcBuildConf_GraveA(options)
+});
+buildingConfigRegistry.set("house_a", {
+  id: "house_a",
+  name: "House",
+  description: "A simple house structure with walls, roof, windows, and a door. Features fence perimeter and platform areas.",
+  defaultGrowLoop: 20,
+  defaultEndLoop: 100,
+  createConfig: (options) => new WcBuildConf_HouseA(options)
+});
+buildingConfigRegistry.set("manor_a", {
+  id: "manor_a",
+  name: "Manor",
+  description: "An elegant manor building with multiple rooms and decorative elements. Larger and more complex than a standard house.",
+  defaultGrowLoop: 30,
+  defaultEndLoop: 150,
+  createConfig: (options) => new WcBuildConf_ManorA(options)
+});
+buildingConfigRegistry.set("lab_border_a", {
+  id: "lab_border_a",
+  name: "Lab Border",
+  description: "A laboratory border structure with walls and entrances. Used to define laboratory perimeters.",
+  defaultGrowLoop: 15,
+  defaultEndLoop: 80,
+  createConfig: (options) => new WcBuildConf_LabBorderA(options)
+});
+buildingConfigRegistry.set("lab_pipe_a", {
+  id: "lab_pipe_a",
+  name: "Lab Pipe",
+  description: "A laboratory pipe structure with connections and junctions. Used for creating pipe networks within laboratories.",
+  defaultGrowLoop: 25,
+  defaultEndLoop: 120,
+  createConfig: (options) => new WcBuildConf_LabPipeA(options)
+});
+buildingConfigRegistry.set("r_lab_a", {
+  id: "r_lab_a",
+  name: "Research Lab",
+  description: "A research laboratory with equipment areas and specialized rooms. Advanced structure for scientific facilities.",
+  defaultGrowLoop: 35,
+  defaultEndLoop: 200,
+  createConfig: (options) => new WcBuildConf_RLabA(options)
+});
+function getBuildingConfigList() {
+  return Array.from(buildingConfigRegistry.values()).map((entry) => ({
+    id: entry.id,
+    name: entry.name,
+    description: entry.description,
+    defaultGrowLoop: entry.defaultGrowLoop,
+    defaultEndLoop: entry.defaultEndLoop
+  }));
+}
+function createBuildingConfig(id, options) {
+  const entry = buildingConfigRegistry.get(id);
+  if (!entry) {
+    console.error(`Building config not found: ${id}`);
+    return null;
+  }
+  return entry.createConfig(options);
+}
+
+// IsoGame/tools/structureTools.ts
+var placeBuildingTool = {
+  id: "place_building",
+  name: "Place Building",
+  icon: "\u{1F3E0}",
+  category: "structure",
+  execute(x, y, _brushSize, world) {
+    const configId = toolRegistry.getBuildingConfigId();
+    const params = toolRegistry.getBuildingParams();
+    console.log(
+      `Place Building: config=${configId}, growLoop=${params.growLoop}, endLoop=${params.endLoop}, pos=(${x}, ${y})`
+    );
+    const buildingConf = createBuildingConfig(configId, {
+      growLoopCount: params.growLoop,
+      endLoopMax: params.endLoop
+    });
+    if (!buildingConf) {
+      console.error(`Failed to create building config: ${configId}`);
+      return;
+    }
+    const generator = new WcBuildingFactoryGenarator(world, buildingConf);
+    const success = generator.start2(x, y);
+    if (success) {
+      console.log(`Building placed successfully at (${x}, ${y})`);
+    } else {
+      console.error(`Failed to place building at (${x}, ${y})`);
+    }
+    return { success, configId, x, y };
+  }
+};
+var structureTools = [
+  placeBuildingTool
+];
+
 // web/js/worker/messageHandler.ts
 var HandelersMap = class extends Map {
   append(handler) {
@@ -10501,9 +10624,14 @@ var GameWorker = class {
     terrainTools.forEach((tool) => toolRegistry.register(tool));
     colorTools.forEach((tool) => toolRegistry.register(tool));
     assetTools.forEach((tool) => toolRegistry.register(tool));
+    structureTools.forEach((tool) => toolRegistry.register(tool));
     this.handler.send({
       action: "toolList",
       tools: toolRegistry.getToolInfoList()
+    });
+    this.handler.send({
+      action: "buildingConfigList",
+      configs: getBuildingConfigList()
     });
     const assetGroups = this.assetLoader.assetList.map((g) => ({
       group: g.group,
@@ -10663,6 +10791,20 @@ var GameWorker = class {
       }
     ],
     // Tool System Handlers
+    [
+      "setBuildingConfig",
+      (data) => {
+        console.log("setBuildingConfig received:", data.configId);
+        toolRegistry.setBuildingConfig(data.configId);
+      }
+    ],
+    [
+      "setBuildingParams",
+      (data) => {
+        console.log("setBuildingParams received:", data.growLoop, data.endLoop);
+        toolRegistry.setBuildingParams(data.growLoop, data.endLoop);
+      }
+    ],
     [
       "setActiveTool",
       (data) => {
