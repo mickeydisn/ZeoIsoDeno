@@ -37,11 +37,11 @@ This update focuses on code hygiene, configuration correctness, and UI consisten
 
 **File**: `IsoGame/wcBuilding2/` (AUDIT)
 
-- [ ] Review `AbstractBuildConf.ts` — ensure base class exports are minimal and focused
-- [ ] Review `wcBuildingFactory.ts` — confirm `WcBuildingFactoryGenarator` is the only public API needed
-- [ ] Review `wcUtils.ts` — verify utility functions are actually used; remove dead exports
-- [ ] Review `wcBuildFace.ts` — check if face type constants can be consolidated
-- [ ] Document the intended public API of the package (what external code should import)
+- [x] Review `AbstractBuildConf.ts` — ensure base class exports are minimal and focused
+- [x] Review `wcBuildingFactory.ts` — confirm `WcBuildingFactoryGenarator` is the only public API needed
+- [x] Review `wcUtils.ts` — verify utility functions are actually used; remove dead exports
+- [x] Review `wcBuildFace.ts` — check if face type constants can be consolidated
+- [x] Document the intended public API of the package (what external code should import)
 
 ### Task 1.3: Naming Consistency Pass
 

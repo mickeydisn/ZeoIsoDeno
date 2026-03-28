@@ -26,7 +26,7 @@ export const confsRawTile_to_confsTile = (
 };
 // ---------------------------------------------
 
-export const confRawTile_to_confsTile = (conf: WcConfTile): WcConfTile[] => {
+const confRawTile_to_confsTile = (conf: WcConfTile): WcConfTile[] => {
   const DIRECTIONS = ["_NW", "_NE", "_SE", "_SW"];
 
   // Implement shifting internally to remove dependency
