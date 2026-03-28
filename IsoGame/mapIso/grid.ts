@@ -117,8 +117,17 @@ export class GridMapDrawers {
 
             // updateXY(clickX + GlobalState.x, clickY + GlobalState.y);
             console.log("click :", this.mod, clickX, clickY);
+
+            // Send info query
             this.gameWorker.postMessage({
               action: "query_infoCell",
+              gridX: clickX,
+              gridY: clickY,
+            });
+
+            // Send tool click
+            this.gameWorker.postMessage({
+              action: "toolClick",
               gridX: clickX,
               gridY: clickY,
             });

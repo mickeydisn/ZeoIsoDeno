@@ -53,13 +53,48 @@ export interface EventInfoCell extends BaseMessage {
   data: TileInfo;
 }
 
+// Tool System Messages
+export interface EventSetActiveTool extends BaseMessage {
+  action: "setActiveTool";
+  toolId: string;
+}
+
+export interface EventSetBrushSize extends BaseMessage {
+  action: "setBrushSize";
+  size: number;
+}
+
+export interface EventToolClick extends BaseMessage {
+  action: "toolClick";
+  gridX: number;
+  gridY: number;
+}
+
+export interface EventToolExecuted extends BaseMessage {
+  action: "toolExecuted";
+  toolId: string | null;
+  success: boolean;
+}
+
+export interface EventToolList extends BaseMessage {
+  action: "toolList";
+  tools: Array<{
+    id: string;
+    name: string;
+    icon: string;
+    category: string;
+  }>;
+}
+
 // ----
 
 type ToMainMessage =
   | EventMainInit
   | EventCallbackInitCanvasMap
   | EventInfoCell
-  | EventInfoFPS;
+  | EventInfoFPS
+  | EventToolExecuted
+  | EventToolList;
 
 type WorkerInitMessage =
   | EventInitWorker
@@ -68,9 +103,12 @@ type WorkerInitMessage =
   | EventStartRender
   | EventGridClick;
 
-// type GameMessage = EventInitWorker | EventStartRender | EventGridClick;
+type ToolMessage =
+  | EventSetActiveTool
+  | EventSetBrushSize
+  | EventToolClick;
 
-type WorkerMessage = WorkerInitMessage | ToMainMessage; // | GameMessage;
+type WorkerMessage = WorkerInitMessage | ToMainMessage | ToolMessage; // | GameMessage;
 
 class HandelersMap extends Map<string, (_data: any) => void> {
   append(handler: [string, (_data: any) => void][]) {

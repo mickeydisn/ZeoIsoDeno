@@ -1,5 +1,6 @@
 import { CanvasMapDrawersConf } from "../../IsoGame/mapIso/canvasMapDrawer.ts";
 import { initFlyMenu } from "./menu/flyMenu.ts";
+import { initToolMenu, handleToolList, handleToolExecuted } from "./menu/toolMenu.ts";
 import { infoMenu, updateInfoCell } from "./menu/InfoMenu.ts";
 import { GameHandlerData } from "./gameWorker.ts";
 import { GlobalState, initMenu, updatGlobalJSON } from "./gobalState.ts";
@@ -28,6 +29,7 @@ const gameWorker = new Worker(
 
 initKeyBoard(gameWorker);
 initFlyMenu(gameWorker);
+initToolMenu(gameWorker);
 infoMenu(gameWorker);
 
 // ============================================================================
@@ -161,6 +163,12 @@ handlers.append([
   }],
   ["infoCell", (data) => {
     updateInfoCell(data);
+  }],
+  ["toolList", (data) => {
+    handleToolList(data.tools);
+  }],
+  ["toolExecuted", (data) => {
+    handleToolExecuted(data.toolId, data.success);
   }],
 ]);
 

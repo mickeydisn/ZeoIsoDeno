@@ -6,6 +6,7 @@ import {
   CanvasMapDrawers,
   CanvasMapDrawersConf,
 } from "../../IsoGame/mapIso/canvasMapDrawer.ts";
+import { toolRegistry } from "../../IsoGame/tools/toolRegistry.ts";
 import { WcBuildConf_GraveA } from "../../IsoGame/wcBuilding2/conf/buildConf_GraveA.ts";
 import { WcBuildingFactoryGenarator } from "../../IsoGame/wcBuilding2/wcBuildingFactory.ts";
 import { World } from "../../IsoGame/word.ts";
@@ -220,6 +221,43 @@ export class GameWorker {
             data: tile.toJsonInfo(),
           },
         );
+      },
+    ],
+
+    // Tool System Handlers
+    [
+      "setActiveTool",
+      (data: GameHandlerData) => {
+        toolRegistry.setActive(data.toolId);
+      },
+    ],
+    [
+      "setBrushSize",
+      (data: GameHandlerData) => {
+        toolRegistry.setBrushSize(data.size);
+      },
+    ],
+    [
+      "toolClick",
+      (data: GameHandlerData) => {
+        const x = data.gridX !== undefined
+          ? data.gridX + this.x - 1
+          : data.x !== undefined
+          ? data.x
+          : this.x;
+        const y = data.gridY !== undefined
+          ? data.gridY + this.y - 1
+          : data.y !== undefined
+          ? data.y
+          : this.y;
+
+        toolRegistry.executeAt(x, y, this.world);
+
+        this.handler.send({
+          action: "toolExecuted",
+          toolId: toolRegistry.getActiveId(),
+          success: true,
+        });
       },
     ],
   ]);

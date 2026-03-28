@@ -65,53 +65,53 @@ export class ToolRegistry {
 
 **File**: `web/js/menu/toolMenu.ts`
 
-- [ ] Create `initToolMenu(gameWorker: Worker)` function following `flyMenu.ts` pattern
-- [ ] Render category tabs: `[Terrain] [Color] [Assets] [Structure] [Inspect]`
-- [ ] Render tool buttons per category (initially empty, populated in later phases)
-- [ ] Render brush size selector: `[1×1] [3×3] [5×5] [9×9]`
-- [ ] Render active tool display: `Active: ⬆️ Raise Terrain (3×3)`
-- [ ] On tool button click: send `setActiveTool { toolId }` to worker
-- [ ] On brush button click: send `setBrushSize { size }` to worker
-- [ ] On map click (via grid.ts): send `toolClick { x, y }` to worker
-- [ ] Update active tool display on `toolExecuted` callback
+- [x] Create `initToolMenu(gameWorker: Worker)` function following `flyMenu.ts` pattern
+- [x] Render category tabs: `[Terrain] [Color] [Assets] [Structure] [Inspect]`
+- [x] Render tool buttons per category (initially empty, populated in later phases)
+- [x] Render brush size selector: `[1×1] [3×3] [5×5] [9×9]`
+- [x] Render active tool display: `Active: ⬆️ Raise Terrain (3×3)`
+- [x] On tool button click: send `setActiveTool { toolId }` to worker
+- [x] On brush button click: send `setBrushSize { size }` to worker
+- [x] On map click (via grid.ts): send `toolClick { x, y }` to worker
+- [x] Update active tool display on `toolExecuted` callback
 
 ### Task 1.3: Add Tool Menu to HTML
 
 **File**: `web/indexIso.html`
 
-- [ ] Add `<div id="toolMenu"></div>` inside `#righMenu` between `#mapflyMenu` and `#infoMenu`
-- [ ] Verify DOM structure: `<div id="righMenu"><div id="mapflyMenu"></div><div id="toolMenu"></div><div id="infoMenu"></div></div>`
+- [x] Add `<div id="toolMenu"></div>` inside `#righMenu` between `#mapflyMenu` and `#infoMenu`
+- [x] Verify DOM structure: `<div id="righMenu"><div id="mapflyMenu"></div><div id="toolMenu"></div><div id="infoMenu"></div></div>`
 
 ### Task 1.4: Add Tool Menu Styles
 
 **File**: `web/stylesIso.css`
 
-- [ ] Style `#toolMenu` container (padding, width, within `#righMenu`)
-- [ ] Style category tabs (flex row, active state highlighting)
-- [ ] Style tool buttons (grid layout, hover states, active state with `.active` class)
-- [ ] Style brush size buttons (inline, active state)
-- [ ] Style active tool display bar
+- [x] Style `#toolMenu` container (padding, width, within `#righMenu`)
+- [x] Style category tabs (flex row, active state highlighting)
+- [x] Style tool buttons (grid layout, hover states, active state with `.active` class)
+- [x] Style brush size buttons (inline, active state)
+- [x] Style active tool display bar
 
 ### Task 1.5: Wire Worker Messages
 
 **File**: `web/js/gameWorker.ts`
 
-- [ ] Add `setActiveTool` handler: `toolRegistry.setActive(data.toolId)`
-- [ ] Add `setBrushSize` handler: `toolRegistry.setBrushSize(data.size)`
-- [ ] Add `toolClick` handler: `toolRegistry.executeAt(data.x, data.y, this.world)` then send `toolExecuted` callback
-- [ ] Import `ToolRegistry` from `IsoGame/tools/toolRegistry.ts`
+- [x] Add `setActiveTool` handler: `toolRegistry.setActive(data.toolId)`
+- [x] Add `setBrushSize` handler: `toolRegistry.setBrushSize(data.size)`
+- [x] Add `toolClick` handler: `toolRegistry.executeAt(data.x, data.y, this.world)` then send `toolExecuted` callback
+- [x] Import `ToolRegistry` from `IsoGame/tools/toolRegistry.ts`
 
 **File**: `web/js/main.ts`
 
-- [ ] Import and call `initToolMenu(gameWorker)` after `initFlyMenu(gameWorker)`
-- [ ] Add `toolExecuted` handler in `handlers.append()` to update UI
+- [x] Import and call `initToolMenu(gameWorker)` after `initFlyMenu(gameWorker)`
+- [x] Add `toolExecuted` handler in `handlers.append()` to update UI
 
 ### Task 1.6: Update Grid Click to Support Tool Mode
 
 **File**: `IsoGame/mapIso/grid.ts`
 
-- [ ] Modify tile click handler to also send `toolClick` message (in addition to existing `query_infoCell`)
-- [ ] Pass `gridX` and `gridY` as tile coordinates in `toolClick` payload
+- [x] Modify tile click handler to also send `toolClick` message (in addition to existing `query_infoCell`)
+- [x] Pass `gridX` and `gridY` as tile coordinates in `toolClick` payload
 
 ---
 
