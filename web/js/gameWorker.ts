@@ -138,6 +138,9 @@ export class GameWorker {
     [
       "updatePlayerMovement",
       (data: GameHandlerData) => {
+        if (!this.canvasMapDrawer) {
+          return;
+        }
         const pm = data.playerMovement;
         const diffX = pm.up ? 1 : pm.down ? -1 : 0;
         const diffY = pm.left ? 1 : pm.right ? -1 : 0;
@@ -163,6 +166,10 @@ export class GameWorker {
     ],
 
     ["gridClick_Building", (data: GameHandlerData) => {
+      if (!this.canvasMapDrawer) {
+        console.warn("CanvasMapDrawer not initialized yet");
+        return;
+      }
       const x = this.x + Math.round(
         (data.x | 0) * this.canvasMapDrawer.conf.DRAW_TILE_COUNT / 30,
       );
