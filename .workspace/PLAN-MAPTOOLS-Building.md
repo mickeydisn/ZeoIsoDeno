@@ -135,7 +135,7 @@ This plan extends the existing tool system (Phases 1-4 completed) with a dedicat
 
 **File**: `web/js/menu/toolMenu.ts` (MODIFY)
 
-- [ ] Add state variables:
+- [x] Add state variables:
   ```typescript
   let buildingConfigs: Array<{ id: string; name: string; description: string; defaultGrowLoop: number; defaultEndLoop: number }> = [];
   let activeBuildingConfigId: string = "grave_a";
@@ -147,7 +147,7 @@ This plan extends the existing tool system (Phases 1-4 completed) with a dedicat
 
 **File**: `web/js/menu/toolMenu.ts` (MODIFY)
 
-- [ ] Add `buildingConfigPanel` HTML section in `renderToolMenu()` (hidden by default, shown when structure category is active):
+- [x] Add `buildingConfigPanel` HTML section in `renderToolMenu()` (hidden by default, shown when structure category is active):
   ```html
   <div id="buildingConfigPanel" style="display: none">
     <div class="building-config-header">Building Configuration</div>
@@ -169,17 +169,17 @@ This plan extends the existing tool system (Phases 1-4 completed) with a dedicat
     <div id="buildingDescription">${getActiveBuildingDescription()}</div>
   </div>
   ```
-- [ ] Show/hide `buildingConfigPanel` when structure category is selected/deselected
-- [ ] Add `renderBuildingConfigSelector()` function to populate config buttons
-- [ ] Add click handlers for config buttons → send `setBuildingConfig` to worker
-- [ ] Add input handlers for sliders → send `setBuildingParams` to worker
-- [ ] Add `getActiveBuildingDescription()` helper function
+- [x] Show/hide `buildingConfigPanel` when structure category is selected/deselected
+- [x] Add `renderBuildingConfigSelector()` function to populate config buttons
+- [x] Add click handlers for config buttons → send `setBuildingConfig` to worker
+- [x] Add input handlers for sliders → send `setBuildingParams` to worker
+- [x] Add `getActiveBuildingDescription()` helper function
 
 ### Task 3.3: Handle Building Config List from Worker
 
 **File**: `web/js/menu/toolMenu.ts` (MODIFY)
 
-- [ ] Add `handleBuildingConfigList()` exported function:
+- [x] Add `handleBuildingConfigList()` exported function:
   ```typescript
   export function handleBuildingConfigList(configs: BuildingConfigEntry[]) {
     buildingConfigs = configs;
@@ -191,8 +191,8 @@ This plan extends the existing tool system (Phases 1-4 completed) with a dedicat
 
 **File**: `web/js/main.ts` (MODIFY)
 
-- [ ] Import `handleBuildingConfigList` from `toolMenu.ts`
-- [ ] Add handler for `buildingConfigList` message from worker:
+- [x] Import `handleBuildingConfigList` from `toolMenu.ts`
+- [x] Add handler for `buildingConfigList` message from worker:
   ```typescript
   handlers.append("buildingConfigList", (data) => {
     handleBuildingConfigList(data.configs);
@@ -208,21 +208,34 @@ This plan extends the existing tool system (Phases 1-4 completed) with a dedicat
 
 ### Task 4.1: Research Building Removal
 
-- [ ] Investigate how buildings are stored in the world/tile system
-- [ ] Determine if buildings leave persistent tile data that can be identified
-- [ ] Check if `TilesActions` has a `clearAllSquare` or similar function
-- [ ] Assess if building removal requires tracking placed building tiles
+- [x] Investigate how buildings are stored in the world/tile system
+- [x] Determine if buildings leave persistent tile data that can be identified
+- [x] Check if `TilesActions` has a `clearAllSquare` or similar function
+- [x] Assess if building removal requires tracking placed building tiles
+
+**Research Findings:**
+- Buildings store `WcBuildTile` on `tile.wcBuild` property
+- Buildings add items to `tile.items` array (asset items)
+- `clearAllSquare` clears: `isBlock`, `isFrise`, `color`, `items` - but NOT `wcBuild`
+- The `wcBuild` property persists after `clearAllSquare` call
+- Need to also clear `tile.wcBuild = undefined` for complete removal
 
 ### Task 4.2: Design Removal Approach
 
-- [ ] Option A: Clear all tiles in area (destructive, simple)
-- [ ] Option B: Track placed building tiles, selectively remove (complex, precise)
-- [ ] Option C: Undo/redo system for building operations (most complex)
-- [ ] Document recommended approach and create sub-plan
+- [x] Option A: Clear all tiles in area (destructive, simple)
+- [x] Option B: Track placed building tiles, selectively remove (complex, precise)
+- [x] Option C: Undo/redo system for building operations (most complex)
+- [x] Document recommended approach and create sub-plan
+
+**Recommended: Option A (Enhanced)**
+- Simple and effective for game use case
+- Clear all visual elements + `wcBuild` property in area
+- Users can "paint" over unwanted buildings
+- No complex tracking or undo system needed
 
 ### Task 4.3: Create Sub-Plan Document
 
-- [ ] Create `.workspace/PLAN-MAPTOOLS-BuildingRemoval.md` with:
+- [x] Create `.workspace/PLAN-MAPTOOLS-BuildingRemoval.md` with:
   - Chosen approach and rationale
   - Implementation tasks
   - Integration points with existing tool system
