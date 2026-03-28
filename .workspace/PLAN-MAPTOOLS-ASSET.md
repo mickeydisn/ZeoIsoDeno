@@ -212,9 +212,10 @@ Default values (no filter): `H0_C100_S100_B100` (can be omitted entirely)
 
 ### Items
 
-- [ ] Remove unused helper functions: `getColumnOffset()`, `getAssetIndex()`, `getAssetGroup()`
-- [ ] Remove unused state: `activeAssetSuffix` (replaced by filter suffix system)
-- [ ] Update `#selectedAssetLabel` to show full key including filter suffix
+- [x] Remove unused helper functions: `getColumnOffset()`, `getAssetIndex()`, `getAssetGroup()` — Already removed (never existed in final code)
+- [x] Remove unused CSS class `.asset-preview-sprite` — Removed from `web/stylesIso.css`
+- [x] Update `#selectedAssetLabel` to show full key including filter suffix — Already implemented in `setActiveAsset()`
+- [x] `activeAssetSuffix` is still actively used for direction suffixes (`_NE`, `_NW`, `_SW`, `_SE`) — NOT unused, do NOT remove. The filter suffix system (`buildFilterSuffix()`) is separate and complementary.
 - [ ] Test asset preview with different directions (`_NE`, `_NW`, `_SW`, `_SE`)
 - [ ] Test asset preview with different filter values (hue rotation, saturation, etc.)
 - [ ] Verify that placing assets on the map still works with filter suffixes

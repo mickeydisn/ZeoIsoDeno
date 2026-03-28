@@ -545,17 +545,6 @@ pre {
   text-align: center;
 }
 
-.asset-preview-sprite {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto;
-  border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.3);
-  background-repeat: no-repeat;
-  background-size: 256px auto;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
 .asset-preview-img {
   max-width: 100%;
   max-height: 60px;
