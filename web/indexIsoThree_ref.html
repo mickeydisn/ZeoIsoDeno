@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISO CITY</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --panel: rgba(12, 12, 20, 0.85);
+    --border: rgba(255,255,255,0.08);
+    --accent: #e8ff47;
+    --accent2: #47c8ff;
+    --text: #e8e8f0;
+    --dim: rgba(232,232,240,0.45);
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'Space Mono', monospace;
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  #canvas-container {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+
+  canvas { display: block; }
+
+  /* ── HEADER ── */
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+    background: linear-gradient(to bottom, rgba(10,10,15,0.9) 0%, transparent 100%);
+    pointer-events: none;
+  }
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  header span {
+    font-size: 0.65rem;
+    color: var(--dim);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── PANEL ── */
+  #panel {
+    position: fixed;
+    right: 0; top: 0; bottom: 0;
+    width: 260px;
+    z-index: 20;
+    background: var(--panel);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-left: 1px solid var(--border);
+    padding: 80px 22px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    overflow-y: auto;
+    transition: transform 0.35s cubic-bezier(.16,1,.3,1);
+  }
+  #panel.hidden { transform: translateX(100%); }
+
+  .panel-section { display: flex; flex-direction: column; gap: 14px; }
+
+  .panel-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .control-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .control-row label {
+    font-size: 0.65rem;
+    color: var(--dim);
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+  .control-row .val {
+    font-size: 0.65rem;
+    color: var(--accent2);
+    min-width: 38px;
+    text-align: right;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 8px rgba(232,255,71,0.6);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+  /* Day arc */
+  .sun-arc {
+    position: relative;
+    height: 60px;
+    margin-top: 4px;
+  }
+  .sun-arc canvas { width: 100%; height: 100%; }
+
+  /* Toggle button */
+  #toggle-panel {
+    position: fixed;
+    right: 270px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 25;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    cursor: pointer;
+    padding: 10px 6px;
+    letter-spacing: 0.12em;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    border-radius: 4px 0 0 4px;
+    backdrop-filter: blur(10px);
+    transition: right 0.35s cubic-bezier(.16,1,.3,1), background 0.2s;
+  }
+  #toggle-panel:hover { background: rgba(232,255,71,0.1); }
+  #toggle-panel.shifted { right: 10px; }
+
+  /* Regen button */
+  #regen-btn {
+    margin-top: auto;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    text-transform: uppercase;
+    border-radius: 2px;
+    transition: background 0.2s, color 0.2s;
+  }
+  #regen-btn:hover { background: var(--accent); color: #0a0a0f; }
+
+  /* Bottom status */
+  #status {
+    position: fixed;
+    bottom: 16px; left: 24px;
+    font-size: 0.58rem;
+    color: var(--dim);
+    letter-spacing: 0.08em;
+    z-index: 10;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<header>
+  <h1>ISO CITY</h1>
+  <span>40 × 40 · THREE.JS</span>
+</header>
+
+<button id="toggle-panel">CONFIG</button>
+
+<div id="panel">
+  <!-- CAMERA -->
+  <div class="panel-section">
+    <div class="panel-label">Camera</div>
+    <div class="control-row">
+      <label>Zoom</label>
+      <span class="val" id="val-zoom">1.0</span>
+    </div>
+    <input type="range" id="sl-zoom" min="0.3" max="3" step="0.05" value="1">
+
+    <div class="control-row">
+      <label>Rotation</label>
+      <span class="val" id="val-rot">45°</span>
+    </div>
+    <input type="range" id="sl-rot" min="0" max="360" step="1" value="45">
+
+    <div class="control-row">
+      <label>Tilt</label>
+      <span class="val" id="val-tilt">55°</span>
+    </div>
+    <input type="range" id="sl-tilt" min="10" max="89" step="1" value="55">
+  </div>
+
+  <!-- DAYTIME -->
+  <div class="panel-section">
+    <div class="panel-label">Daytime</div>
+    <div class="sun-arc"><canvas id="arc-canvas"></canvas></div>
+    <div class="control-row">
+      <label>Hour</label>
+      <span class="val" id="val-hour">12:00</span>
+    </div>
+    <input type="range" id="sl-hour" min="0" max="24" step="0.1" value="12">
+
+    <div class="control-row">
+      <label>Sun intensity</label>
+      <span class="val" id="val-sun">1.2</span>
+    </div>
+    <input type="range" id="sl-sun" min="0" max="3" step="0.05" value="1.2">
+  </div>
+
+  <!-- POST -->
+  <div class="panel-section">
+    <div class="panel-label">Post-FX</div>
+    <div class="control-row">
+      <label>Blur (DoF)</label>
+      <span class="val" id="val-blur">0</span>
+    </div>
+    <input type="range" id="sl-blur" min="0" max="12" step="0.2" value="0">
+
+    <div class="control-row">
+      <label>Fog density</label>
+      <span class="val" id="val-fog">0.008</span>
+    </div>
+    <input type="range" id="sl-fog" min="0" max="0.06" step="0.001" value="0.008">
+
+    <div class="control-row">
+      <label>Vignette</label>
+      <span class="val" id="val-vig">0.4</span>
+    </div>
+    <input type="range" id="sl-vig" min="0" max="1" step="0.02" value="0.4">
+  </div>
+
+  <button id="regen-btn">↺ Regenerate City</button>
+</div>
+
+<div id="status" id="status">drag to orbit · scroll to zoom</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+  // ─── STATE ───────────────────────────────────────────────────────────────
+  const state = {
+    zoom: 1, rot: 45, tilt: 55,
+    hour: 12, sunIntensity: 1.2,
+    blur: 0, fog: 0.008, vignette: 0.4
+  };
+
+  // ─── THREE SETUP ─────────────────────────────────────────────────────────
+  const container = document.getElementById('canvas-container');
+  const W = () => window.innerWidth, H = () => window.innerHeight;
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(W(), H());
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  container.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x0a0a1e, state.fog);
+
+  // Orthographic camera for true iso feel
+  let aspect = W() / H();
+  const frustumSize = 40;
+  const camera = new THREE.OrthographicCamera(
+    -frustumSize * aspect / 2, frustumSize * aspect / 2,
+    frustumSize / 2, -frustumSize / 2, 0.1, 1000
+  );
+
+  function updateCamera() {
+    const r = state.rot * Math.PI / 180;
+    const t = state.tilt * Math.PI / 180;
+    const dist = 80 / state.zoom;
+    camera.position.set(
+      Math.sin(r) * Math.cos(t) * dist,
+      Math.sin(t) * dist,
+      Math.cos(r) * Math.cos(t) * dist
+    );
+    camera.lookAt(0, 2, 0);
+    const s = 1 / state.zoom;
+    const asp = W() / H();
+    camera.left   = -frustumSize * asp / 2 * s;
+    camera.right  =  frustumSize * asp / 2 * s;
+    camera.top    =  frustumSize / 2 * s;
+    camera.bottom = -frustumSize / 2 * s;
+    camera.updateProjectionMatrix();
+  }
+  updateCamera();
+
+  // ─── LIGHTS ──────────────────────────────────────────────────────────────
+  const ambient = new THREE.AmbientLight(0xffffff, 0.3);
+  scene.add(ambient);
+
+  const sun = new THREE.DirectionalLight(0xfff5e0, 1.2);
+  sun.castShadow = true;
+  sun.shadow.mapSize.width = 2048;
+  sun.shadow.mapSize.height = 2048;
+  sun.shadow.camera.near = 0.5;
+  sun.shadow.camera.far = 300;
+  sun.shadow.camera.left = -40;
+  sun.shadow.camera.right = 40;
+  sun.shadow.camera.top = 40;
+  sun.shadow.camera.bottom = -40;
+  sun.shadow.bias = -0.001;
+  sun.shadow.normalBias = 0.02;
+  scene.add(sun);
+
+  // Hemisphere fill
+  const hemi = new THREE.HemisphereLight(0x87ceeb, 0x3a2a1a, 0.4);
+  scene.add(hemi);
+
+  function updateSunByHour(h) {
+    // h in [0,24]
+    const angle = (h / 24) * Math.PI * 2 - Math.PI / 2;
+    const elevation = Math.sin((h / 24) * Math.PI) * 60; // deg above horizon
+    const azimuth = angle;
+    const dist = 60;
+    sun.position.set(
+      Math.cos(azimuth) * dist,
+      elevation,
+      Math.sin(azimuth) * dist
+    );
+
+    // Sky + fog color by time
+    const t = Math.max(0, Math.sin((h / 24) * Math.PI));
+    const night = new THREE.Color(0x020410);
+    const dawn  = new THREE.Color(0xff7043);
+    const day   = new THREE.Color(0x87ceeb);
+    let sky;
+    if (h < 6 || h > 18) {
+      sky = night.clone();
+      const blend = h < 6 ? h / 6 : (24 - h) / 6;
+      sky.lerp(dawn, blend * 0.5);
+    } else if (h < 8) {
+      sky = dawn.clone().lerp(day, (h - 6) / 2);
+    } else if (h > 16) {
+      sky = day.clone().lerp(dawn, (h - 16) / 2);
+    } else {
+      sky = day.clone();
+    }
+    renderer.setClearColor(sky, 1);
+    scene.fog.color.copy(sky);
+
+    // Sun color
+    if (t < 0.15) {
+      sun.color.setHex(0x334488); // moonlight
+    } else if (t < 0.35) {
+      sun.color.setHex(0xff8844); // golden
+    } else {
+      sun.color.setHex(0xfff5e0); // daylight
+    }
+
+    // Ambient warmth
+    ambient.color.copy(sky).multiplyScalar(0.5);
+    ambient.intensity = 0.2 + t * 0.4;
+    hemi.intensity = 0.1 + t * 0.5;
+
+    sun.intensity = state.sunIntensity * Math.max(0, t);
+  }
+  updateSunByHour(state.hour);
+
+  // ─── CITY GENERATION ─────────────────────────────────────────────────────
+  const GRID = 40;
+  const HALF = GRID / 2;
+
+  // Palette sets for biomes
+  const palettes = [
+    // downtown glass
+    [0x2a4a6b, 0x1e3a5f, 0x3d6b8a, 0x5b8fa8, 0x7ab3c4, 0x9bccd8],
+    // terracotta / warm
+    [0xc26b3c, 0xa0522d, 0xd4874e, 0xe8a87c, 0xb5714a, 0x8b4513],
+    // brutalist concrete
+    [0x6b6b70, 0x888890, 0x555560, 0x9a9aa5, 0x4a4a55, 0x7a7a85],
+    // greenery
+    [0x2d6a4f, 0x40916c, 0x52b788, 0x1b4332, 0x74c69d, 0x95d5b2],
+    // neon night
+    [0x1a0033, 0x2d0066, 0x400099, 0x6600cc, 0x9900ff, 0xcc33ff],
+  ];
+
+  // Noise helper (simple 2D)
+  function noise2(x, y) {
+    const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+    return n - Math.floor(n);
+  }
+  function smoothNoise(x, y, scale = 0.15) {
+    const sx = x * scale, sy = y * scale;
+    const ix = Math.floor(sx), iy = Math.floor(sy);
+    const fx = sx - ix, fy = sy - iy;
+    const u = fx * fx * (3 - 2 * fx);
+    const v = fy * fy * (3 - 2 * fy);
+    return THREE.MathUtils.lerp(
+      THREE.MathUtils.lerp(noise2(ix, iy), noise2(ix+1, iy), u),
+      THREE.MathUtils.lerp(noise2(ix, iy+1), noise2(ix+1, iy+1), u),
+      v
+    );
+  }
+
+  let cityGroup = new THREE.Group();
+  scene.add(cityGroup);
+
+  // Ground plane
+  const groundGeo = new THREE.PlaneGeometry(GRID + 4, GRID + 4);
+  const groundMat = new THREE.MeshLambertMaterial({ color: 0x1a1a2e });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  function buildCity() {
+    // Clear old
+    while (cityGroup.children.length) cityGroup.remove(cityGroup.children[0]);
+
+    const seed = Math.random() * 1000 | 0;
+    const pal = palettes[Math.random() * palettes.length | 0];
+
+    for (let gx = 0; gx < GRID; gx++) {
+      for (let gz = 0; gz < GRID; gz++) {
+        const cx = gx - HALF + 0.5;
+        const cz = gz - HALF + 0.5;
+
+        // Height based on noise + distance from center peak
+        const dist = Math.sqrt(cx*cx + cz*cz) / HALF;
+        const n1 = smoothNoise(gx + seed, gz + seed, 0.18);
+        const n2 = smoothNoise(gx + seed, gz + seed, 0.4) * 0.3;
+        const cityMask = Math.pow(Math.max(0, 1 - dist * 0.8), 2);
+        const h = 0.2 + (n1 + n2) * cityMask * 10 + Math.random() * 0.3;
+
+        // Color selection
+        const colorIdx = Math.floor(noise2(gx * 3.1 + seed, gz * 2.7 + seed) * pal.length);
+        const baseColor = new THREE.Color(pal[colorIdx % pal.length]);
+        // Slight brightness variation
+        const bright = 0.7 + noise2(gx + seed * 2, gz + seed * 2) * 0.6;
+        baseColor.multiplyScalar(bright);
+
+        const geo = new THREE.BoxGeometry(0.92, h, 0.92);
+        const mat = new THREE.MeshStandardMaterial({
+          color: baseColor,
+          roughness: 0.4 + Math.random() * 0.4,
+          metalness: Math.random() * 0.3,
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(cx, h / 2, cz);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        cityGroup.add(mesh);
+      }
+    }
+  }
+  buildCity();
+
+  // ─── POST-FX: blur via CSS filter on canvas ───────────────────────────────
+  function applyBlur() {
+    renderer.domElement.style.filter = state.blur > 0
+      ? `blur(${state.blur}px)`
+      : 'none';
+  }
+
+  // ─── VIGNETTE OVERLAY ─────────────────────────────────────────────────────
+  const vigCanvas = document.createElement('canvas');
+  vigCanvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:5;';
+  document.body.appendChild(vigCanvas);
+
+  function drawVignette() {
+    vigCanvas.width = W(); vigCanvas.height = H();
+    const ctx = vigCanvas.getContext('2d');
+    const cx = W() / 2, cy = H() / 2;
+    const r = Math.sqrt(cx*cx + cy*cy);
+    const g = ctx.createRadialGradient(cx, cy, r * 0.3, cx, cy, r);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, `rgba(0,0,0,${state.vignette})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W(), H());
+  }
+  drawVignette();
+
+  // ─── SUN ARC MINI CANVAS ─────────────────────────────────────────────────
+  function drawArc() {
+    const c = document.getElementById('arc-canvas');
+    c.width = c.offsetWidth * devicePixelRatio;
+    c.height = c.offsetHeight * devicePixelRatio;
+    const ctx = c.getContext('2d');
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    const W2 = c.offsetWidth, H2 = c.offsetHeight;
+    ctx.clearRect(0, 0, W2, H2);
+    // arc
+    ctx.beginPath();
+    ctx.arc(W2/2, H2 + 4, W2 * 0.6, Math.PI, 0);
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // sun dot
+    const t = state.hour / 24;
+    const a = Math.PI - t * Math.PI;
+    const r = W2 * 0.6;
+    const sx = W2/2 + Math.cos(a) * r;
+    const sy = H2 + 4 + Math.sin(a) * r;
+    const isDay = state.hour > 5 && state.hour < 19;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = isDay ? '#e8ff47' : '#334488';
+    ctx.shadowColor = isDay ? '#e8ff47' : '#334488';
+    ctx.shadowBlur = 10;
+    ctx.fill();
+    // horizon labels
+    ctx.font = '8px Space Mono';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText('00h', 4, H2 - 2);
+    ctx.fillText('24h', W2 - 26, H2 - 2);
+    ctx.fillText('12h', W2/2 - 10, 12);
+  }
+
+  // ─── ORBIT DRAG ───────────────────────────────────────────────────────────
+  let drag = null;
+  renderer.domElement.addEventListener('mousedown', e => {
+    drag = { x: e.clientX, y: e.clientY, rot: state.rot, tilt: state.tilt };
+  });
+  window.addEventListener('mousemove', e => {
+    if (!drag) return;
+    state.rot  = drag.rot  - (e.clientX - drag.x) * 0.4;
+    state.tilt = Math.max(10, Math.min(89, drag.tilt + (e.clientY - drag.y) * 0.3));
+    document.getElementById('sl-rot').value = ((state.rot % 360) + 360) % 360;
+    document.getElementById('sl-tilt').value = state.tilt;
+    document.getElementById('val-rot').textContent = (((state.rot % 360) + 360) % 360 | 0) + '°';
+    document.getElementById('val-tilt').textContent = (state.tilt | 0) + '°';
+    updateCamera();
+  });
+  window.addEventListener('mouseup', () => drag = null);
+  renderer.domElement.addEventListener('wheel', e => {
+    state.zoom = Math.max(0.3, Math.min(3, state.zoom - e.deltaY * 0.001));
+    document.getElementById('sl-zoom').value = state.zoom;
+    document.getElementById('val-zoom').textContent = state.zoom.toFixed(2);
+    updateCamera();
+  }, { passive: true });
+
+  // Touch
+  let lastTouch = null;
+  renderer.domElement.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY, rot: state.rot, tilt: state.tilt };
+  });
+  renderer.domElement.addEventListener('touchmove', e => {
+    if (!lastTouch || e.touches.length !== 1) return;
+    e.preventDefault();
+    state.rot  = lastTouch.rot  - (e.touches[0].clientX - lastTouch.x) * 0.4;
+    state.tilt = Math.max(10, Math.min(89, lastTouch.tilt + (e.touches[0].clientY - lastTouch.y) * 0.3));
+    updateCamera();
+  }, { passive: false });
+
+  // ─── SLIDERS ─────────────────────────────────────────────────────────────
+  function bindSlider(id, key, valId, fmt, cb) {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => {
+      state[key] = parseFloat(el.value);
+      document.getElementById(valId).textContent = fmt(state[key]);
+      if (cb) cb();
+    });
+  }
+
+  bindSlider('sl-zoom', 'zoom', 'val-zoom', v => v.toFixed(2), updateCamera);
+  bindSlider('sl-rot',  'rot',  'val-rot',  v => (v|0) + '°', updateCamera);
+  bindSlider('sl-tilt', 'tilt', 'val-tilt', v => (v|0) + '°', updateCamera);
+  bindSlider('sl-sun',  'sunIntensity', 'val-sun', v => v.toFixed(2), () => { sun.intensity = state.sunIntensity * Math.max(0, Math.sin((state.hour / 24) * Math.PI)); });
+  bindSlider('sl-fog',  'fog',  'val-fog',  v => v.toFixed(3), () => { scene.fog.density = state.fog; });
+  bindSlider('sl-blur', 'blur', 'val-blur', v => v.toFixed(1), applyBlur);
+  bindSlider('sl-vig',  'vignette', 'val-vig', v => v.toFixed(2), drawVignette);
+  bindSlider('sl-hour', 'hour', 'val-hour', v => {
+    const hh = Math.floor(v), mm = Math.round((v - hh) * 60);
+    return hh.toString().padStart(2,'0') + ':' + mm.toString().padStart(2,'0');
+  }, () => { updateSunByHour(state.hour); drawArc(); });
+
+  // ─── PANEL TOGGLE ─────────────────────────────────────────────────────────
+  const panel = document.getElementById('panel');
+  const toggleBtn = document.getElementById('toggle-panel');
+  toggleBtn.addEventListener('click', () => {
+    panel.classList.toggle('hidden');
+    toggleBtn.classList.toggle('shifted');
+  });
+
+  // ─── REGEN ────────────────────────────────────────────────────────────────
+  document.getElementById('regen-btn').addEventListener('click', buildCity);
+
+  // ─── RESIZE ───────────────────────────────────────────────────────────────
+  window.addEventListener('resize', () => {
+    renderer.setSize(W(), H());
+    updateCamera();
+    drawVignette();
+  });
+
+  // ─── RENDER LOOP ──────────────────────────────────────────────────────────
+  let frame = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    frame++;
+    // Gentle idle sway
+    if (!drag) {
+      state.rot += 0.02;
+      updateCamera();
+    }
+    renderer.render(scene, camera);
+  }
+
+  // Init arc
+  setTimeout(drawArc, 100);
+  animate();
+})();
+</script>
+</body>
+</html>

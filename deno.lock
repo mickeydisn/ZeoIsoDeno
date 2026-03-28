@@ -1344,6 +1344,12 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1"
-    ]
+    ],
+    "packageJson": {
+      "dependencies": [
+        "npm:@types/three@~0.183.1",
+        "npm:three@~0.183.2"
+      ]
+    }
   }
 }
