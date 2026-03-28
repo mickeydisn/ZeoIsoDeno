@@ -269,13 +269,24 @@ export class GameWorker {
           ? data.y
           : this.y;
 
-        toolRegistry.executeAt(x, y, this.world);
+        const result = toolRegistry.executeAt(x, y, this.world);
 
         this.handler.send({
           action: "toolExecuted",
           toolId: toolRegistry.getActiveId(),
           success: true,
         });
+
+        // Handle tool-specific result data
+        if (result && result.pickedColor) {
+          const [r, g, b] = result.pickedColor as number[];
+          this.handler.send({
+            action: "pickedColor",
+            r,
+            g,
+            b,
+          });
+        }
       },
     ],
   ]);

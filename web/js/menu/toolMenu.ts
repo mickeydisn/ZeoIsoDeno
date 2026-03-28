@@ -235,6 +235,30 @@ export function handleToolExecuted(toolId: string, success: boolean) {
   }
 }
 
+// Called when eyedropper picks a color from the map
+export function handlePickedColor(r: number, g: number, b: number) {
+  const toolMenuEl = document.getElementById('toolMenu');
+  if (!toolMenuEl) return;
+
+  // Convert RGB to hex
+  const hex = '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+  
+  // Update the color picker input
+  const colorPickerInput = toolMenuEl.querySelector('#colorPickerInput') as HTMLInputElement;
+  if (colorPickerInput) {
+    colorPickerInput.value = hex;
+  }
+
+  // Update the hex display
+  const colorHexEl = toolMenuEl.querySelector('#colorHex') as HTMLElement;
+  if (colorHexEl) {
+    colorHexEl.textContent = hex;
+  }
+
+  // Update active color state
+  activeColor = hex;
+}
+
 function capitalizeFirst(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }

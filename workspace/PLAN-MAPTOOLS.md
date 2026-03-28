@@ -213,9 +213,9 @@ export const raiseTerrainTool: MapTool = {
 ### Task 3.3: Implement Eyedropper Tool
 
 - [x] Create `eyedropperTool` with `id: "eyedropper"`, icon `💉`
-- [ ] Read tile color: `FactoryMap.getInstance().getTile(x, y).color`
-- [ ] Send color back to main: `handler.send({ action: "pickedColor", color: [...] })`
-- [ ] Main thread: update color picker UI and send `setColor` to worker
+- [x] Read tile color: `FactoryMap.getInstance().getTileColor(x, y)`
+- [x] Send color back to main: `handler.send({ action: "pickedColor", r, g, b })`
+- [x] Main thread: update color picker UI via `handlePickedColor()`
 
 ### Task 3.4: Implement Random Shade Tool
 
@@ -229,7 +229,7 @@ export const raiseTerrainTool: MapTool = {
 **File**: `web/js/menu/toolMenu.ts`
 
 - [x] Add color picker `<input type="color">` to color category tab
-- [ ] Handle `pickedColor` message from worker to update color picker value
+- [x] Handle `pickedColor` message from worker via `handlePickedColor()`
 - [x] On color change: send `setColor` message to worker
 
 ### Task 3.6: Register Color Tools in Worker

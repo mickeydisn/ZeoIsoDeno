@@ -5,7 +5,7 @@ export interface MapTool {
   name: string;
   icon: string;
   category: "terrain" | "color" | "asset" | "structure" | "inspect";
-  execute(x: number, y: number, brushSize: number, world: World): void;
+  execute(x: number, y: number, brushSize: number, world: World): Record<string, unknown> | void;
 }
 
 export class ToolRegistry {
@@ -55,9 +55,9 @@ export class ToolRegistry {
     return Array.from(this.tools.values());
   }
 
-  executeAt(x: number, y: number, world: World): void {
+  executeAt(x: number, y: number, world: World): Record<string, unknown> | void {
     if (this.activeTool) {
-      this.activeTool.execute(x, y, this.brushSize, world);
+      return this.activeTool.execute(x, y, this.brushSize, world);
     }
   }
 

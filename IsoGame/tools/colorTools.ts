@@ -1,4 +1,5 @@
 import { TilesActions } from "../map/tileActions.ts";
+import { FactoryMap } from "../map/factory/factoryMap.ts";
 import { MapTool, toolRegistry } from "./toolRegistry.ts";
 import { World } from "../word.ts";
 
@@ -39,9 +40,12 @@ export const eyedropperTool: MapTool = {
   icon: "💉",
   category: "color",
   execute(x: number, y: number, _brushSize: number, _world: World) {
-    // Eyedropper reads tile color - this will be handled by sending message back to main
-    // For now, just log the action
-    console.log(`Eyedropper at (${x}, ${y}) - color pickup will be sent to main thread`);
+    const color = FactoryMap.getInstance().getTileColor(x, y);
+    if (color) {
+      const [r, g, b] = color;
+      toolRegistry.setActiveColor(r, g, b);
+      return { pickedColor: [r, g, b] };
+    }
   },
 };
 
