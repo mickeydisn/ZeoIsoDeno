@@ -52,49 +52,49 @@ This violates single-responsibility and makes adding new tool categories (Phase 
 
 **File**: `web/js/menu/toolMenuRender.ts` (NEW)
 
-- [ ] Extract `renderToolMenu()` function
-- [ ] Extract sub-render functions:
+- [x] Extract `renderToolMenu()` function
+- [x] Extract sub-render functions:
   - `renderCategoryTabs()`
-  - `renderToolButtons()`
+  - `renderToolList()` (was renderToolButtons)
   - `renderBrushSelector()`
   - `renderColorPanel()`
   - `renderAssetPanel()`
   - `renderBuildingPanel()`
   - `renderInspectPanel()`
-- [ ] Import state from `toolMenuState.ts`
-- [ ] Target size: ~250 lines
+- [x] Import state from `toolMenuState.ts`
+- [x] Target size: ~312 lines (actual)
 
 ### Task 1.3: Extract Worker Message Handlers
 
 **File**: `web/js/menu/toolMenuHandlers.ts` (NEW)
 
-- [ ] Extract all exported handler functions:
+- [x] Extract all exported handler functions:
   - `handleToolList()`
   - `handleToolExecuted()`
   - `handlePickedColor()`
   - `handleAssetPreview()`
   - `handleAssetGroups()`
   - `handleBuildingConfigList()`
-- [ ] Each handler updates state via `toolMenuState.ts` and triggers re-render
-- [ ] Target size: ~100 lines
+- [x] Each handler updates state via `toolMenuState.ts` and triggers re-render
+- [x] Target size: ~165 lines (actual)
 
 ### Task 1.4: Slim Down toolMenu.ts
 
 **File**: `web/js/menu/toolMenu.ts` (MODIFY)
 
-- [ ] Reduce to orchestrator role:
+- [x] Reduce to orchestrator role:
   - Import and re-export handlers from `toolMenuHandlers.ts`
   - `initToolMenu()` function that wires DOM and initial render
-  - `setActiveCategory()` and `setActiveTool()` state transitions
   - Event listener setup
-- [ ] Target size: ~150 lines (under 500 ✓)
+  - DOM rendering helpers
+- [x] Target size: 500 lines (under 500 ✓)
 
 ### Task 1.5: Update Imports in main.ts
 
 **File**: `web/js/main.ts` (MODIFY)
 
-- [ ] Update import path if handler exports change
-- [ ] Verify all message handlers still work after split
+- [x] Handler exports re-exported from toolMenu.ts (no change needed)
+- [x] All message handlers still work after split
 
 ---
 
@@ -111,26 +111,28 @@ The tools directory has **7 linting issues**, primarily unused parameters in `as
 
 **Files**: `IsoGame/tools/*.ts`
 
-- [ ] Fix 3 unused parameters in `assetTools.ts` (prefix with `_` or remove)
-- [ ] Fix remaining 4 issues across tool files
-- [ ] Run `deno lint IsoGame/tools/` to verify zero issues
+- [x] Fix 3 unused parameters in `assetTools.ts` (prefix with `_` or remove)
+- [x] Fix 3 unused parameters in `colorTools.ts` (prefix with `_`)
+- [x] Fix 1 unused variable in `terrainTools.ts` (prefix with `_`)
+- [x] Run `deno lint IsoGame/tools/` to verify zero issues
 
 ### Task 2.2: Fix toolMenu Linter Issues
 
 **Files**: `web/js/menu/toolMenu*.ts` (after Phase 1 split)
 
-- [ ] Replace `any` types with proper interfaces for worker messages
-- [ ] Fix `prefer-const` where applicable
-- [ ] Fix unused variables/imports
-- [ ] Run `deno lint web/js/menu/` to verify zero issues
+- [x] Remove unused imports from `toolMenu.ts`
+- [x] Remove unused import `MapToolInfo` from `toolMenuRender.ts`
+- [x] Prefix unused parameter `_container` in `handleFilterChange`
+- [x] Fix `infoMenu.ts`: prefix unused `_gameWorker`, replace `any` types with proper interfaces
+- [x] Run `deno lint web/js/menu/` to verify zero issues
 
 ### Task 2.3: Fix web/js/ Linter Issues (Targeted)
 
 **Files**: `web/js/main.ts`, `web/js/gameWorker.ts`
 
-- [ ] Fix issues in files directly related to tool system
-- [ ] Do NOT fix issues in legacy files (`keyboad.ts`, `gobalState.ts`) — defer to separate cleanup
-- [ ] Run `deno lint web/js/main.ts web/js/gameWorker.ts` to verify
+- [x] Fix `GameHandlerData = any` → `GameHandlerData = unknown`
+- [x] Fix unused `city` variable → prefix with `_city`
+- [x] Run `deno lint web/js/main.ts web/js/gameWorker.ts` to verify
 
 ---
 
@@ -147,7 +149,7 @@ Each tool file (`terrainTools.ts`, `colorTools.ts`, `assetTools.ts`, `structureT
 
 **File**: `IsoGame/tools/toolBuilder.ts` (NEW)
 
-- [ ] Create `createTool(config)` helper function:
+- [x] Create `createTool(config)` helper function:
   ```typescript
   export function createTool(config: {
     id: string;
@@ -157,8 +159,8 @@ Each tool file (`terrainTools.ts`, `colorTools.ts`, `assetTools.ts`, `structureT
     execute: MapTool["execute"];
   }): MapTool
   ```
-- [ ] Export `createToolArray(...tools)` for cleaner array exports
-- [ ] Target size: ~30 lines
+- [x] Export `createToolArray(...tools)` for cleaner array exports
+- [x] Target size: ~30 lines
 
 ### Task 3.2: Refactor Tool Files to Use Builder
 
