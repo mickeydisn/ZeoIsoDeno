@@ -67,12 +67,12 @@ Replace the sprite-based approach with a canvas-to-data-URL approach using `Asse
 
 ### Items
 
-- [ ] Add `assetPreview` message handler in `web/js/menu/toolMenu.ts` (exported function `handleAssetPreview(blobUrl: string)`)
-- [ ] Update `#selectedAssetPreview` rendering to use `<img>` with blob URL instead of CSS sprite
-- [ ] Modify `setActiveAsset` handler in worker to call `assetLoader.getAsset()` and send preview
-- [ ] Modify `setActiveAssetSuffix` to also trigger preview update via worker
-- [ ] Remove `updateAssetPreview()`, `getColumnOffset()`, `getAssetIndex()`, `getAssetGroup()` helper functions
-- [ ] Remove `.asset-preview-sprite` CSS class (replace with `.asset-preview-img`)
+- [x] Add `assetPreview` message handler in `web/js/menu/toolMenu.ts` (exported function `handleAssetPreview(blobUrl: string)`)
+- [x] Update `#selectedAssetPreview` rendering to use `<img>` with blob URL instead of CSS sprite
+- [x] Modify `setActiveAsset` handler in worker to call `assetLoader.getAsset()` and send preview
+- [x] Modify `setActiveAssetSuffix` to also trigger preview update via worker
+- [x] Remove `updateAssetPreview()`, `getColumnOffset()`, `getAssetIndex()`, `getAssetGroup()` helper functions
+- [x] Remove `.asset-preview-sprite` CSS class (replace with `.asset-preview-img`)
 
 ---
 

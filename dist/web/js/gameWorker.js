@@ -9943,8 +9943,18 @@ var CanvasMapDrawers = class {
     }
     try {
       const key = itemConf.key;
-      const keySelect = Array.isArray(key) ? key[this.frameCount % key.length] : key;
-      const cimage = this.assetLoader.getAsset(keySelect);
+      let keySelect = Array.isArray(key) ? key[this.frameCount % key.length] : key;
+      let cimage = this.assetLoader.getAsset(keySelect);
+      if (!cimage) {
+        const directions = ["_NE", "_NW", "_SW", "_SE"];
+        for (const dir of directions) {
+          cimage = this.assetLoader.getAsset(keySelect + dir);
+          if (cimage) {
+            keySelect = keySelect + dir;
+            break;
+          }
+        }
+      }
       if (cimage) {
         const off = itemConf.off ? itemConf.off : { x: 0, y: 0 };
         const lvl = currentlvl + (itemConf.lvl || 0) * this.conf.SCALE_SIZE;
@@ -10091,6 +10101,314 @@ var CanvasMapDrawers = class {
   }
 };
 
+// IsoGame/tools/toolRegistry.ts
+var ToolRegistry = class _ToolRegistry {
+  static instance;
+  tools = /* @__PURE__ */ new Map();
+  activeTool = null;
+  brushSize = 1;
+  activeColor = [128, 128, 128];
+  // Default gray
+  activeAssetId = null;
+  static getInstance() {
+    return _ToolRegistry.instance ??= new _ToolRegistry();
+  }
+  register(tool) {
+    this.tools.set(tool.id, tool);
+  }
+  setActive(toolId) {
+    const tool = this.tools.get(toolId);
+    if (tool) {
+      this.activeTool = tool;
+    }
+  }
+  getActive() {
+    return this.activeTool;
+  }
+  getActiveId() {
+    return this.activeTool?.id ?? null;
+  }
+  setBrushSize(size) {
+    this.brushSize = size;
+  }
+  getBrushSize() {
+    return this.brushSize;
+  }
+  getToolsByCategory(category) {
+    return Array.from(this.tools.values()).filter((tool) => tool.category === category);
+  }
+  getAllTools() {
+    return Array.from(this.tools.values());
+  }
+  getToolInfoList() {
+    return Array.from(this.tools.values()).map((tool) => ({
+      id: tool.id,
+      name: tool.name,
+      icon: tool.icon,
+      category: tool.category
+    }));
+  }
+  executeAt(x, y, world) {
+    if (this.activeTool) {
+      return this.activeTool.execute(x, y, this.brushSize, world);
+    }
+  }
+  setActiveColor(r, g, b) {
+    this.activeColor = [r, g, b];
+  }
+  getActiveColor() {
+    return this.activeColor;
+  }
+  setActiveAssetId(assetId) {
+    this.activeAssetId = assetId;
+  }
+  getActiveAssetId() {
+    return this.activeAssetId;
+  }
+};
+var toolRegistry = ToolRegistry.getInstance();
+
+// IsoGame/tools/terrainTools.ts
+var tilesActions = TilesActions.getInstance();
+var raiseTerrainTool = {
+  id: "raise_terrain",
+  name: "Raise Terrain",
+  icon: "\u2B06\uFE0F",
+  category: "terrain",
+  execute(x, y, brushSize, _world) {
+    if (brushSize <= 1) {
+      tilesActions.doAction({
+        func: "lvlUp",
+        x,
+        y,
+        lvl: 1
+      });
+    } else {
+      tilesActions.doAction({
+        func: "lvlUpSquare",
+        x,
+        y,
+        size: brushSize,
+        lvl: 1
+      });
+    }
+  }
+};
+var lowerTerrainTool = {
+  id: "lower_terrain",
+  name: "Lower Terrain",
+  icon: "\u2B07\uFE0F",
+  category: "terrain",
+  execute(x, y, brushSize, _world) {
+    if (brushSize <= 1) {
+      tilesActions.doAction({
+        func: "lvlUp",
+        x,
+        y,
+        lvl: -1
+      });
+    } else {
+      tilesActions.doAction({
+        func: "lvlUpSquare",
+        x,
+        y,
+        size: brushSize,
+        lvl: -1
+      });
+    }
+  }
+};
+var flattenTool = {
+  id: "flatten",
+  name: "Flatten",
+  icon: "\u23F9\uFE0F",
+  category: "terrain",
+  execute(x, y, brushSize, _world) {
+    tilesActions.doAction({
+      func: "lvlFlatSquare",
+      x,
+      y,
+      size: brushSize
+    });
+  }
+};
+var smoothTool = {
+  id: "smooth",
+  name: "Smooth",
+  icon: "\u3030\uFE0F",
+  category: "terrain",
+  execute(x, y, brushSize, _world) {
+    tilesActions.doAction({
+      func: "lvlAvgSquare",
+      x,
+      y,
+      size: brushSize
+    });
+  }
+};
+var plateauTargetLevel = null;
+var plateauStartPos = null;
+var plateauTool = {
+  id: "plateau",
+  name: "Plateau",
+  icon: "\u{1F3D4}\uFE0F",
+  category: "terrain",
+  execute(x, y, brushSize, _world) {
+    const fm = FactoryMap.getInstance();
+    if (plateauTargetLevel === null) {
+      const tile = fm.getTile(x, y);
+      plateauTargetLevel = tile.lvl;
+      plateauStartPos = { x, y };
+      console.log(`Plateau: Target level set to ${plateauTargetLevel}`);
+    } else {
+      tilesActions.doAction({
+        func: "lvlFlatSquare",
+        x,
+        y,
+        size: brushSize
+      });
+      tilesActions.doAction({
+        func: "lvlUpSquare",
+        x,
+        y,
+        size: brushSize,
+        lvl: plateauTargetLevel - fm.getTile(x, y).lvl
+      });
+      console.log(`Plateau: Flattened to level ${plateauTargetLevel}`);
+      plateauTargetLevel = null;
+      plateauStartPos = null;
+    }
+  }
+};
+var terrainTools = [
+  raiseTerrainTool,
+  lowerTerrainTool,
+  flattenTool,
+  smoothTool,
+  plateauTool
+];
+
+// IsoGame/tools/colorTools.ts
+var tilesActions2 = TilesActions.getInstance();
+var colorPickerTool = {
+  id: "color_picker",
+  name: "Color Picker",
+  icon: "\u{1F3A8}",
+  category: "color",
+  execute(x, y, brushSize, _world) {
+    console.log(`Color Picker active with color: ${toolRegistry.getActiveColor().join(", ")}`);
+  }
+};
+var paintColorTool = {
+  id: "paint_color",
+  name: "Paint Color",
+  icon: "\u{1F58C}\uFE0F",
+  category: "color",
+  execute(x, y, brushSize, _world) {
+    const color = toolRegistry.getActiveColor();
+    tilesActions2.doAction({
+      func: "colorSquare",
+      x,
+      y,
+      size: brushSize,
+      color
+    });
+  }
+};
+var eyedropperTool = {
+  id: "eyedropper",
+  name: "Eyedropper",
+  icon: "\u{1F489}",
+  category: "color",
+  execute(x, y, _brushSize, _world) {
+    const color = FactoryMap.getInstance().getTileColor(x, y);
+    if (color) {
+      const [r, g, b] = color;
+      toolRegistry.setActiveColor(r, g, b);
+      return { pickedColor: [r, g, b] };
+    }
+  }
+};
+var randomShadeTool = {
+  id: "random_shade",
+  name: "Random Shade",
+  icon: "\u{1F3B2}",
+  category: "color",
+  execute(x, y, brushSize, _world) {
+    const baseColor = toolRegistry.getActiveColor();
+    const variedColor = baseColor.map(
+      (c) => Math.max(0, Math.min(255, Math.round(c + (Math.random() - 0.5) * 60)))
+    );
+    tilesActions2.doAction({
+      func: "colorSquare",
+      x,
+      y,
+      size: brushSize,
+      color: variedColor
+    });
+  }
+};
+var colorTools = [
+  colorPickerTool,
+  paintColorTool,
+  eyedropperTool,
+  randomShadeTool
+];
+
+// IsoGame/tools/assetTools.ts
+var tilesActions3 = TilesActions.getInstance();
+var assetPickerTool = {
+  id: "asset_picker",
+  name: "Asset Picker",
+  icon: "\u{1F4C2}",
+  category: "asset",
+  execute(x, y, brushSize, _world) {
+    const activeAsset = toolRegistry.getActiveAssetId();
+    console.log(`Asset Picker active with asset: ${activeAsset}`);
+    return { activeAsset };
+  }
+};
+var placeAssetTool = {
+  id: "place_asset",
+  name: "Place Asset",
+  icon: "\u{1F5BC}\uFE0F",
+  category: "asset",
+  execute(x, y, _brushSize, _world) {
+    const assetId = toolRegistry.getActiveAssetId();
+    console.log(`Place Asset tool called with assetId: ${assetId}, x: ${x}, y: ${y}`);
+    if (assetId) {
+      console.log(`Placing asset ${assetId} at (${x}, ${y})`);
+      tilesActions3.doAction({
+        func: "itemAddKey",
+        x,
+        y,
+        assetKey: assetId
+      });
+    } else {
+      console.log("No asset selected!");
+    }
+  }
+};
+var clearItemsTool = {
+  id: "clear_items",
+  name: "Clear Items",
+  icon: "\u{1F9F9}",
+  category: "asset",
+  execute(x, y, brushSize, _world) {
+    tilesActions3.doAction({
+      func: "clearItemSquare",
+      x,
+      y,
+      size: brushSize
+    });
+  }
+};
+var assetTools = [
+  assetPickerTool,
+  placeAssetTool,
+  clearItemsTool
+];
+
 // web/js/worker/messageHandler.ts
 var HandelersMap = class extends Map {
   append(handler) {
@@ -10179,6 +10497,22 @@ var GameWorker = class {
     this.assetLoader = await AssetLoaderOpti.create();
     console.log("== Load Word");
     this.world.init();
+    console.log("== Register Tools");
+    terrainTools.forEach((tool) => toolRegistry.register(tool));
+    colorTools.forEach((tool) => toolRegistry.register(tool));
+    assetTools.forEach((tool) => toolRegistry.register(tool));
+    this.handler.send({
+      action: "toolList",
+      tools: toolRegistry.getToolInfoList()
+    });
+    const assetGroups = this.assetLoader.assetList.map((g) => ({
+      group: g.group,
+      images: g.images.map((i) => i.label)
+    }));
+    this.handler.send({
+      action: "assetGroups",
+      groups: assetGroups
+    });
     this.handler.send({ action: "callback_initWorker" });
   };
   // ============================================================================
@@ -10245,6 +10579,9 @@ var GameWorker = class {
     [
       "updatePlayerMovement",
       (data) => {
+        if (!this.canvasMapDrawer) {
+          return;
+        }
         const pm = data.playerMovement;
         const diffX = pm.up ? 1 : pm.down ? -1 : 0;
         const diffY = pm.left ? 1 : pm.right ? -1 : 0;
@@ -10266,6 +10603,10 @@ var GameWorker = class {
       }
     ],
     ["gridClick_Building", (data) => {
+      if (!this.canvasMapDrawer) {
+        console.warn("CanvasMapDrawer not initialized yet");
+        return;
+      }
       const x = this.x + Math.round(
         (data.x | 0) * this.canvasMapDrawer.conf.DRAW_TILE_COUNT / 30
       );
@@ -10319,6 +10660,55 @@ var GameWorker = class {
             data: tile.toJsonInfo()
           }
         );
+      }
+    ],
+    // Tool System Handlers
+    [
+      "setActiveTool",
+      (data) => {
+        toolRegistry.setActive(data.toolId);
+      }
+    ],
+    [
+      "setBrushSize",
+      (data) => {
+        toolRegistry.setBrushSize(data.size);
+      }
+    ],
+    [
+      "setColor",
+      (data) => {
+        toolRegistry.setActiveColor(data.r, data.g, data.b);
+      }
+    ],
+    [
+      "setActiveAsset",
+      (data) => {
+        console.log("setActiveAsset received:", data.assetId);
+        toolRegistry.setActiveAssetId(data.assetId);
+        console.log("Active asset set to:", toolRegistry.getActiveAssetId());
+      }
+    ],
+    [
+      "toolClick",
+      (data) => {
+        const x = data.gridX !== void 0 ? data.gridX + this.x - 1 : data.x !== void 0 ? data.x : this.x;
+        const y = data.gridY !== void 0 ? data.gridY + this.y - 1 : data.y !== void 0 ? data.y : this.y;
+        const result = toolRegistry.executeAt(x, y, this.world);
+        this.handler.send({
+          action: "toolExecuted",
+          toolId: toolRegistry.getActiveId(),
+          success: true
+        });
+        if (result && result.pickedColor) {
+          const [r, g, b] = result.pickedColor;
+          this.handler.send({
+            action: "pickedColor",
+            r,
+            g,
+            b
+          });
+        }
       }
     ]
   ]);

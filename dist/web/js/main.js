@@ -48,6 +48,374 @@ var initFlyMenu = (gameWorker2) => {
   });
 };
 
+// web/js/menu/toolMenu.ts
+var categories = ["terrain", "color", "asset", "structure", "inspect"];
+var brushSizes = [1, 3, 5, 9];
+var activeCategory = "terrain";
+var activeToolId = null;
+var activeBrushSize = 1;
+var activeColor = "#808080";
+var toolsByCategory = /* @__PURE__ */ new Map();
+var assetGroups = [];
+var activeAssetId = null;
+var selectedAssetGroup = null;
+var activeAssetSuffix = "_NE";
+var initToolMenu = (gameWorker2) => {
+  const toolMenuEl = document.getElementById("toolMenu");
+  if (!toolMenuEl)
+    return;
+  renderToolMenu(toolMenuEl, gameWorker2);
+};
+var assetSuffixes = ["_NE", "_NW", "_SW", "_SE"];
+function renderToolMenu(container, gameWorker2) {
+  container.innerHTML = `
+    <div id="toolMenuHeader">
+      <span id="toolMenuTitle">Tools</span>
+    </div>
+    <div id="toolCategoryTabs">
+      ${categories.map((cat) => `
+        <button class="category-tab ${cat === activeCategory ? "active" : ""}" data-category="${cat}">
+          ${capitalizeFirst(cat)}
+        </button>
+      `).join("")}
+    </div>
+    <div id="toolActiveDisplay">
+      <span id="activeToolLabel">No tool selected</span>
+    </div>
+    <div id="toolList"></div>
+    <div id="toolBrushSize">
+      <span>Brush:</span>
+      ${brushSizes.map((size) => `
+        <button class="brush-btn ${size === activeBrushSize ? "active" : ""}" data-size="${size}">
+          ${size}\xD7${size}
+        </button>
+      `).join("")}
+    </div>
+    <div id="toolColorPicker" style="display: ${activeCategory === "color" ? "flex" : "none"}">
+      <span>Color:</span>
+      <input type="color" id="colorPickerInput" value="${activeColor}">
+      <span id="colorHex">${activeColor}</span>
+    </div>
+    <div id="assetBrowser" style="display: ${activeCategory === "asset" ? "block" : "none"}">
+      <div id="suffixSelector">
+        <span>Direction:</span>
+        ${assetSuffixes.map((suffix) => `
+          <button class="suffix-btn ${suffix === activeAssetSuffix ? "active" : ""}" data-suffix="${suffix}">
+            ${suffix.replace("_", "")}
+          </button>
+        `).join("")}
+      </div>
+      <div id="selectedAssetCard" style="display: ${activeAssetId ? "block" : "none"}">
+        <div id="selectedAssetPreview"></div>
+        <span id="selectedAssetLabel">${activeAssetId || "No asset selected"}</span>
+      </div>
+      <div id="assetImageList"></div>
+      <div id="assetGroupList"></div>
+    </div>
+  `;
+  container.querySelectorAll(".category-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const category = tab.dataset.category;
+      setActiveCategory(category, container, gameWorker2);
+    });
+  });
+  const colorPickerInput = container.querySelector("#colorPickerInput");
+  if (colorPickerInput) {
+    colorPickerInput.addEventListener("input", (e) => {
+      const color = e.target.value;
+      setActiveColor(color, container, gameWorker2);
+    });
+  }
+  container.querySelectorAll(".brush-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const size = parseInt(btn.dataset.size);
+      setActiveBrushSize(size, container, gameWorker2);
+    });
+  });
+  container.querySelectorAll(".suffix-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const suffix = btn.dataset.suffix;
+      setActiveAssetSuffix(suffix, container, gameWorker2);
+    });
+  });
+}
+function setActiveCategory(category, container, gameWorker2) {
+  activeCategory = category;
+  container.querySelectorAll(".category-tab").forEach((tab) => {
+    const tabCat = tab.dataset.category;
+    tab.classList.toggle("active", tabCat === category);
+  });
+  const colorPickerEl = container.querySelector("#toolColorPicker");
+  if (colorPickerEl) {
+    colorPickerEl.style.display = category === "color" ? "flex" : "none";
+  }
+  const assetBrowserEl = container.querySelector("#assetBrowser");
+  if (assetBrowserEl) {
+    assetBrowserEl.style.display = category === "asset" ? "block" : "none";
+  }
+  const suffixSelectorEl = container.querySelector("#suffixSelector");
+  if (suffixSelectorEl) {
+    suffixSelectorEl.style.display = category === "asset" ? "flex" : "none";
+  }
+  renderToolList(container, gameWorker2);
+  if (category === "asset") {
+    renderAssetBrowser(container, gameWorker2);
+  }
+}
+function setActiveColor(color, container, gameWorker2) {
+  activeColor = color;
+  const colorHexEl = container.querySelector("#colorHex");
+  if (colorHexEl) {
+    colorHexEl.textContent = color;
+  }
+  const r = parseInt(color.slice(1, 3), 16);
+  const g = parseInt(color.slice(3, 5), 16);
+  const b = parseInt(color.slice(5, 7), 16);
+  gameWorker2.postMessage({
+    action: "setColor",
+    r,
+    g,
+    b
+  });
+}
+function setActiveBrushSize(size, container, gameWorker2) {
+  activeBrushSize = size;
+  container.querySelectorAll(".brush-btn").forEach((btn) => {
+    const btnSize = parseInt(btn.dataset.size);
+    btn.classList.toggle("active", btnSize === size);
+  });
+  gameWorker2.postMessage({
+    action: "setBrushSize",
+    size
+  });
+}
+function setActiveAssetSuffix(suffix, container, gameWorker2) {
+  activeAssetSuffix = suffix;
+  container.querySelectorAll(".suffix-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.suffix === suffix);
+  });
+  updateAssetPreview(container);
+  if (activeAssetId) {
+    gameWorker2.postMessage({
+      action: "setActiveAsset",
+      assetId: activeAssetId + activeAssetSuffix
+    });
+  }
+}
+function renderToolList(container, gameWorker2) {
+  const toolListEl = container.querySelector("#toolList");
+  if (!toolListEl)
+    return;
+  const tools = toolsByCategory.get(activeCategory) || [];
+  if (tools.length === 0) {
+    toolListEl.innerHTML = `<div class="tool-empty">No tools in this category</div>`;
+    return;
+  }
+  toolListEl.innerHTML = tools.map((tool) => `
+    <button class="tool-btn ${tool.id === activeToolId ? "active" : ""}" data-tool-id="${tool.id}">
+      <span class="tool-icon">${tool.icon}</span>
+      <span class="tool-name">${tool.name}</span>
+    </button>
+  `).join("");
+  toolListEl.querySelectorAll(".tool-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const toolId = btn.dataset.toolId;
+      setActiveTool(toolId, container, gameWorker2);
+    });
+  });
+}
+function setActiveTool(toolId, container, gameWorker2) {
+  activeToolId = toolId;
+  container.querySelectorAll(".tool-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.toolId === toolId);
+  });
+  gameWorker2.postMessage({
+    action: "setActiveTool",
+    toolId
+  });
+  updateActiveToolDisplay(container);
+}
+function updateActiveToolDisplay(container) {
+  const labelEl = container.querySelector("#activeToolLabel");
+  if (!labelEl)
+    return;
+  if (!activeToolId) {
+    labelEl.textContent = "No tool selected";
+    return;
+  }
+  const allTools = Array.from(toolsByCategory.values()).flat();
+  const tool = allTools.find((t) => t.id === activeToolId);
+  if (tool) {
+    labelEl.textContent = `${tool.icon} ${tool.name} (${activeBrushSize}\xD7${activeBrushSize})`;
+  }
+}
+function handleToolList(tools, container) {
+  toolsByCategory.clear();
+  for (const cat of categories) {
+    toolsByCategory.set(cat, []);
+  }
+  for (const tool of tools) {
+    const catTools = toolsByCategory.get(tool.category);
+    if (catTools) {
+      catTools.push(tool);
+    }
+  }
+  const toolMenuEl = container || document.getElementById("toolMenu");
+  if (toolMenuEl) {
+    renderToolList(toolMenuEl, self);
+  }
+}
+function handleToolExecuted(toolId, success) {
+  const toolMenuEl = document.getElementById("toolMenu");
+  if (!toolMenuEl)
+    return;
+  const activeBtn = toolMenuEl.querySelector(`.tool-btn[data-tool-id="${toolId}"]`);
+  if (activeBtn) {
+    activeBtn.classList.add("executed");
+    setTimeout(() => activeBtn.classList.remove("executed"), 200);
+  }
+}
+function handlePickedColor(r, g, b) {
+  const toolMenuEl = document.getElementById("toolMenu");
+  if (!toolMenuEl)
+    return;
+  const hex = "#" + [r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("");
+  const colorPickerInput = toolMenuEl.querySelector("#colorPickerInput");
+  if (colorPickerInput) {
+    colorPickerInput.value = hex;
+  }
+  const colorHexEl = toolMenuEl.querySelector("#colorHex");
+  if (colorHexEl) {
+    colorHexEl.textContent = hex;
+  }
+  activeColor = hex;
+}
+function capitalizeFirst(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+function renderAssetBrowser(container, gameWorker2) {
+  const assetGroupListEl = container.querySelector("#assetGroupList");
+  const assetImageListEl = container.querySelector("#assetImageList");
+  if (!assetGroupListEl || !assetImageListEl)
+    return;
+  if (assetGroups.length === 0) {
+    assetGroupListEl.innerHTML = '<div class="asset-empty">Loading assets...</div>';
+    assetImageListEl.innerHTML = "";
+    return;
+  }
+  assetGroupListEl.innerHTML = `
+    <div class="asset-group-header">Asset Groups</div>
+    ${assetGroups.map((group) => `
+      <button class="asset-group-btn ${group.group === selectedAssetGroup ? "active" : ""}" data-group="${group.group}">
+        ${group.group} (${group.images.length})
+      </button>
+    `).join("")}
+  `;
+  assetGroupListEl.querySelectorAll(".asset-group-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const group = btn.dataset.group;
+      selectedAssetGroup = group;
+      renderAssetBrowser(container, gameWorker2);
+    });
+  });
+  if (selectedAssetGroup) {
+    const group = assetGroups.find((g) => g.group === selectedAssetGroup);
+    if (group) {
+      assetImageListEl.innerHTML = `
+        <div class="asset-image-header">${group.group}</div>
+        <div class="asset-image-grid">
+          ${group.images.map((image) => `
+            <button class="asset-image-btn ${image === activeAssetId ? "active" : ""}" data-asset="${image}">
+              ${image}
+            </button>
+          `).join("")}
+        </div>
+      `;
+      assetImageListEl.querySelectorAll(".asset-image-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const assetId = btn.dataset.asset;
+          setActiveAsset(assetId, container, gameWorker2);
+        });
+      });
+    }
+  } else {
+    assetImageListEl.innerHTML = '<div class="asset-empty">Select a group</div>';
+  }
+}
+function setActiveAsset(assetId, container, gameWorker2) {
+  activeAssetId = assetId;
+  const selectedAssetCardEl = container.querySelector("#selectedAssetCard");
+  const selectedAssetLabelEl = container.querySelector("#selectedAssetLabel");
+  if (selectedAssetCardEl && selectedAssetLabelEl) {
+    selectedAssetCardEl.style.display = "block";
+    selectedAssetLabelEl.textContent = assetId;
+  }
+  updateAssetPreview(container);
+  container.querySelectorAll(".asset-image-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.asset === assetId);
+  });
+  gameWorker2.postMessage({
+    action: "setActiveAsset",
+    assetId: assetId + activeAssetSuffix
+  });
+}
+function updateAssetPreview(container) {
+  const previewEl = container.querySelector("#selectedAssetPreview");
+  if (!previewEl || !activeAssetId) {
+    if (previewEl)
+      previewEl.innerHTML = "";
+    return;
+  }
+  const fullAssetKey = activeAssetId + activeAssetSuffix;
+  const assetGroup = getAssetGroup(activeAssetId);
+  const assetIndex = getAssetIndex(activeAssetId);
+  const topOffset = assetIndex * 224;
+  const columnOffset = getColumnOffset(activeAssetSuffix);
+  previewEl.innerHTML = `
+    <div class="asset-preview-sprite" 
+         style="background-image: url('/img/asset_opti/${assetGroup}.png'); 
+                background-position: -${columnOffset}px -${topOffset}px;"
+         title="${fullAssetKey}">
+    </div>
+  `;
+}
+function getColumnOffset(suffix) {
+  const columns = {
+    "_NE": 0,
+    "_NW": 64,
+    "_SW": 128,
+    "_SE": 192
+  };
+  return columns[suffix] || 0;
+}
+function getAssetIndex(assetId) {
+  for (const group of assetGroups) {
+    const index = group.images.indexOf(assetId);
+    if (index !== -1) {
+      return index;
+    }
+  }
+  return 0;
+}
+function getAssetGroup(assetId) {
+  for (const group of assetGroups) {
+    if (group.images.includes(assetId)) {
+      return group.group;
+    }
+  }
+  return "Unknown";
+}
+function handleAssetGroups(groups, container) {
+  assetGroups = groups;
+  if (groups.length > 0 && !selectedAssetGroup) {
+    selectedAssetGroup = groups[0].group;
+  }
+  const toolMenuEl = container || document.getElementById("toolMenu");
+  if (toolMenuEl && activeCategory === "asset") {
+    renderAssetBrowser(toolMenuEl, self);
+  }
+}
+
 // web/js/menu/InfoMenu.ts
 var infoMenu = (gameWorker2) => {
   document.getElementById("infoMenu").innerHTML = `
@@ -439,6 +807,11 @@ var GridMapDrawers = class {
             gridX: clickX,
             gridY: clickY
           });
+          this.gameWorker.postMessage({
+            action: "toolClick",
+            gridX: clickX,
+            gridY: clickY
+          });
         });
       }
     }
@@ -560,6 +933,7 @@ var gameWorker = new Worker(
 );
 initKeyBoard(gameWorker);
 initFlyMenu(gameWorker);
+initToolMenu(gameWorker);
 infoMenu(gameWorker);
 var handlers = new MessageHandler(gameWorker);
 var canvasImageMap = document.getElementById(
@@ -642,6 +1016,18 @@ handlers.append([
   }],
   ["infoCell", (data) => {
     updateInfoCell(data);
+  }],
+  ["toolList", (data) => {
+    handleToolList(data.tools);
+  }],
+  ["toolExecuted", (data) => {
+    handleToolExecuted(data.toolId, data.success);
+  }],
+  ["pickedColor", (data) => {
+    handlePickedColor(data.r, data.g, data.b);
+  }],
+  ["assetGroups", (data) => {
+    handleAssetGroups(data.groups);
   }]
 ]);
 startLoop();

@@ -19,6 +19,7 @@ let toolsByCategory: Map<string, MapToolInfo[]> = new Map();
 let assetGroups: Array<{ group: string; images: string[] }> = [];
 let activeAssetId: string | null = null;
 let selectedAssetGroup: string | null = null;
+let activeAssetSuffix: string = "_NE"; // Default direction suffix
 
 export const initToolMenu = (gameWorker: Worker) => {
   const toolMenuEl = document.getElementById("toolMenu") as HTMLElement;
@@ -26,6 +27,8 @@ export const initToolMenu = (gameWorker: Worker) => {
 
   renderToolMenu(toolMenuEl, gameWorker);
 };
+
+const assetSuffixes = ["_NE", "_NW", "_SW", "_SE"] as const;
 
 function renderToolMenu(container: HTMLElement, gameWorker: Worker) {
   container.innerHTML = `
@@ -39,19 +42,10 @@ function renderToolMenu(container: HTMLElement, gameWorker: Worker) {
         </button>
       `).join('')}
     </div>
+    <div id="toolActiveDisplay">
+      <span id="activeToolLabel">No tool selected</span>
+    </div>
     <div id="toolList"></div>
-    <div id="assetBrowser" style="display: ${activeCategory === 'asset' ? 'block' : 'none'}">
-      <div id="assetGroupList"></div>
-      <div id="assetImageList"></div>
-    </div>
-    <div id="selectedAssetCard" style="display: ${activeAssetId ? 'block' : 'none'}">
-      <span id="selectedAssetLabel">${activeAssetId || 'No asset selected'}</span>
-    </div>
-    <div id="toolColorPicker" style="display: ${activeCategory === 'color' ? 'flex' : 'none'}">
-      <span>Color:</span>
-      <input type="color" id="colorPickerInput" value="${activeColor}">
-      <span id="colorHex">${activeColor}</span>
-    </div>
     <div id="toolBrushSize">
       <span>Brush:</span>
       ${brushSizes.map(size => `
@@ -60,8 +54,26 @@ function renderToolMenu(container: HTMLElement, gameWorker: Worker) {
         </button>
       `).join('')}
     </div>
-    <div id="toolActiveDisplay">
-      <span id="activeToolLabel">No tool selected</span>
+    <div id="toolColorPicker" style="display: ${activeCategory === 'color' ? 'flex' : 'none'}">
+      <span>Color:</span>
+      <input type="color" id="colorPickerInput" value="${activeColor}">
+      <span id="colorHex">${activeColor}</span>
+    </div>
+    <div id="assetBrowser" style="display: ${activeCategory === 'asset' ? 'block' : 'none'}">
+      <div id="suffixSelector">
+        <span>Direction:</span>
+        ${assetSuffixes.map(suffix => `
+          <button class="suffix-btn ${suffix === activeAssetSuffix ? 'active' : ''}" data-suffix="${suffix}">
+            ${suffix.replace('_', '')}
+          </button>
+        `).join('')}
+      </div>
+      <div id="selectedAssetCard" style="display: ${activeAssetId ? 'block' : 'none'}">
+        <div id="selectedAssetPreview"></div>
+        <span id="selectedAssetLabel">${activeAssetId || 'No asset selected'}</span>
+      </div>
+      <div id="assetImageList"></div>
+      <div id="assetGroupList"></div>
     </div>
   `;
 
@@ -89,6 +101,14 @@ function renderToolMenu(container: HTMLElement, gameWorker: Worker) {
       setActiveBrushSize(size, container, gameWorker);
     });
   });
+
+  // Suffix button click handlers
+  container.querySelectorAll('.suffix-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const suffix = (btn as HTMLElement).dataset.suffix!;
+      setActiveAssetSuffix(suffix, container, gameWorker);
+    });
+  });
 }
 
 function setActiveCategory(category: string, container: HTMLElement, gameWorker: Worker) {
@@ -110,6 +130,12 @@ function setActiveCategory(category: string, container: HTMLElement, gameWorker:
   const assetBrowserEl = container.querySelector('#assetBrowser') as HTMLElement;
   if (assetBrowserEl) {
     assetBrowserEl.style.display = category === 'asset' ? 'block' : 'none';
+  }
+
+  // Show/hide suffix selector
+  const suffixSelectorEl = container.querySelector('#suffixSelector') as HTMLElement;
+  if (suffixSelectorEl) {
+    suffixSelectorEl.style.display = category === 'asset' ? 'flex' : 'none';
   }
 
   // Re-render tool list for this category
@@ -157,6 +183,24 @@ function setActiveBrushSize(size: number, container: HTMLElement, gameWorker: Wo
     action: "setBrushSize",
     size: size,
   });
+}
+
+function setActiveAssetSuffix(suffix: string, container: HTMLElement, gameWorker: Worker) {
+  activeAssetSuffix = suffix;
+
+  // Update suffix button active state
+  container.querySelectorAll('.suffix-btn').forEach(btn => {
+    btn.classList.toggle('active', (btn as HTMLElement).dataset.suffix === suffix);
+  });
+
+  // Send updated asset to worker if an asset is selected
+  // Worker will respond with assetPreview message
+  if (activeAssetId) {
+    gameWorker.postMessage({
+      action: "setActiveAsset",
+      assetId: activeAssetId + activeAssetSuffix,
+    });
+  }
 }
 
 function renderToolList(container: HTMLElement, gameWorker: Worker) {
@@ -348,12 +392,12 @@ function renderAssetBrowser(container: HTMLElement, gameWorker: Worker) {
 function setActiveAsset(assetId: string, container: HTMLElement, gameWorker: Worker) {
   activeAssetId = assetId;
 
-  // Update selected asset card
+  // Update selected asset card display
   const selectedAssetCardEl = container.querySelector('#selectedAssetCard') as HTMLElement;
   const selectedAssetLabelEl = container.querySelector('#selectedAssetLabel') as HTMLElement;
   if (selectedAssetCardEl && selectedAssetLabelEl) {
     selectedAssetCardEl.style.display = 'block';
-    selectedAssetLabelEl.textContent = `📦 ${assetId}`;
+    selectedAssetLabelEl.textContent = assetId;
   }
 
   // Update asset image button active state
@@ -361,11 +405,26 @@ function setActiveAsset(assetId: string, container: HTMLElement, gameWorker: Wor
     btn.classList.toggle('active', (btn as HTMLElement).dataset.asset === assetId);
   });
 
-  // Send to worker
+  // Send to worker with suffix - worker will respond with assetPreview
   gameWorker.postMessage({
     action: "setActiveAsset",
-    assetId: assetId,
+    assetId: assetId + activeAssetSuffix,
   });
+}
+
+// Exported function called when worker sends asset preview blob URL
+export function handleAssetPreview(blobUrl: string) {
+  const previewEl = document.getElementById('selectedAssetPreview');
+  if (!previewEl) return;
+
+  // Revoke old blob URL to prevent memory leaks
+  const oldImg = previewEl.querySelector('img');
+  if (oldImg && oldImg.src.startsWith('blob:')) {
+    URL.revokeObjectURL(oldImg.src);
+  }
+
+  // Update preview with new image
+  previewEl.innerHTML = `<img src="${blobUrl}" class="asset-preview-img" alt="Asset Preview">`;
 }
 
 // Called when worker sends asset groups

@@ -247,11 +247,24 @@ export class CanvasMapDrawers {
     try {
       const key = itemConf.key;
       // Cyclically select asset key if an array is provided
-      const keySelect = Array.isArray(key)
+      let keySelect = Array.isArray(key)
         ? key[this.frameCount % key.length]
         : key;
         
-      const cimage = this.assetLoader.getAsset(keySelect);
+      let cimage = this.assetLoader.getAsset(keySelect);
+      
+      // If exact key not found, try appending directional suffix
+      if (!cimage) {
+        const directions = ["_NE", "_NW", "_SW", "_SE"];
+        for (const dir of directions) {
+          cimage = this.assetLoader.getAsset(keySelect + dir);
+          if (cimage) {
+            keySelect = keySelect + dir;
+            break;
+          }
+        }
+      }
+      
       if (cimage) {
         const off = itemConf.off ? itemConf.off : { x: 0, y: 0 };
         const lvl = currentlvl + (itemConf.lvl || 0) * this.conf.SCALE_SIZE;

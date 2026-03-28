@@ -1,7 +1,7 @@
 .vscode
 .DS_store
 .config.*
-/dist
+/dist*
 /node_modules*
 
 /img/save
