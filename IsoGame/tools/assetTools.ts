@@ -12,7 +12,9 @@ export const assetPickerTool: MapTool = {
   execute(x: number, y: number, brushSize: number, _world: World) {
     // Asset picker doesn't execute on click - it shows the asset browser
     // The actual placement is done by placeAssetTool
-    console.log(`Asset Picker active with asset: ${toolRegistry.getActiveAssetId()}`);
+    const activeAsset = toolRegistry.getActiveAssetId();
+    console.log(`Asset Picker active with asset: ${activeAsset}`);
+    return { activeAsset };
   },
 };
 
@@ -23,13 +25,17 @@ export const placeAssetTool: MapTool = {
   category: "asset",
   execute(x: number, y: number, _brushSize: number, _world: World) {
     const assetId = toolRegistry.getActiveAssetId();
+    console.log(`Place Asset tool called with assetId: ${assetId}, x: ${x}, y: ${y}`);
     if (assetId) {
+      console.log(`Placing asset ${assetId} at (${x}, ${y})`);
       tilesActions.doAction({
         func: "itemAddKey",
         x,
         y,
         assetKey: assetId,
       });
+    } else {
+      console.log("No asset selected!");
     }
   },
 };

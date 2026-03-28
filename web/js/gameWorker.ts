@@ -277,7 +277,9 @@ export class GameWorker {
     [
       "setActiveAsset",
       (data: GameHandlerData) => {
+        console.log("setActiveAsset received:", data.assetId);
         toolRegistry.setActiveAssetId(data.assetId);
+        console.log("Active asset set to:", toolRegistry.getActiveAssetId());
       },
     ],
     [
