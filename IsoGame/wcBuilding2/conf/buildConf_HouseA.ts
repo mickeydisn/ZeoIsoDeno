@@ -1,4 +1,4 @@
-import { AbstractWcBuildConf, WcConfTile } from "../AbstractBuildConf.ts";
+import { WcAbstractBuildConf, WcConfTile } from "../wcAbstractBuildConf.ts";
 import { wcAsset_Enter } from "./assetsCollection/wcAsset_Entrer.ts";
 import {
   FenceCollapseType,
@@ -9,7 +9,7 @@ import { WcAsset_WallHouse } from "./assetsCollection/wcAsset_WallHouse.ts";
 import { wcAsset_X } from "./assetsCollection/wcAsset_X.ts";
 import { actionsEmpty, applyGroup } from "./assetsCollection/wcUtils.ts";
 
-export class WcBuildConf_HouseA extends AbstractWcBuildConf {
+export class WcBuildConf_HouseA extends WcAbstractBuildConf {
   private colorConf: Record<string, string>;
 
   private enter: wcAsset_Enter;

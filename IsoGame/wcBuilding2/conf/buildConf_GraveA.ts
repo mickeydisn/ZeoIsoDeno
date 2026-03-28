@@ -1,4 +1,4 @@
-import { AbstractWcBuildConf, WcConfTile } from "../AbstractBuildConf.ts";
+import { WcAbstractBuildConf, WcConfTile } from "../wcAbstractBuildConf.ts";
 import { wcAsset_EnterSimple } from "./assetsCollection/wcAsset_Entrer.ts";
 import {
   FenceCollapseType,
@@ -12,7 +12,7 @@ import {
 import { wcAsset_X } from "./assetsCollection/wcAsset_X.ts";
 import { actionsEmpty, applyGroup } from "./assetsCollection/wcUtils.ts";
 
-export class WcBuildConf_GraveA extends AbstractWcBuildConf {
+export class WcBuildConf_GraveA extends WcAbstractBuildConf {
   private colorConf: Record<string, string>;
 
   private enter: wcAsset_EnterSimple;

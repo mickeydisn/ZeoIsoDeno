@@ -4,7 +4,7 @@ import {
   WcConfTile,
   WcConfTileAsset,
   WcConfTileFunction,
-} from "./AbstractBuildConf.ts";
+} from "./wcAbstractBuildConf.ts";
 import { WcFace } from "./wcBuildFace.ts";
 
 // ---------------------------------------------

@@ -1,15 +1,15 @@
 import {
-  AbstractWcBuildConf,
+  WcAbstractBuildConf,
   WcConfRawTile,
   WcConfTile,
-} from "../AbstractBuildConf.ts";
+} from "../wcAbstractBuildConf.ts";
 import { wcAsset_CoridorLab } from "./assetsCollection/wcAsset_CoridorLab.ts";
 import {
   WcAsset_FencePlatform,
   WcAsset_FenceSimple,
 } from "./assetsCollection/wcAsset_Fence2.ts";
 
-export class WcBuildConf_LabBorderA extends AbstractWcBuildConf {
+export class WcBuildConf_LabBorderA extends WcAbstractBuildConf {
   private colorConf: Record<string, string>;
 
   private fence: WcAsset_FenceSimple;

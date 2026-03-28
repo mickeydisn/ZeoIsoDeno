@@ -2,14 +2,14 @@
 import { Tile } from "../map/object/tile.ts";
 import { AXE_DIRECTION } from "../map/object/tileRaw.ts";
 import { World } from "../word.ts";
-import { WcConfTile } from "./AbstractBuildConf.ts";
+import { WcConfTile } from "./wcAbstractBuildConf.ts";
 import {
   equalFaceList,
   filterAxeFacesKey,
   WcFace,
   WcKeyFace,
 } from "./wcBuildFace.ts";
-import { WcBuildingFactory } from "./wcBuildingFactory.ts";
+import { WcBuildFactory } from "./wcBuildFactory.ts";
 import { WcBuildTileDrawer } from "./wcBuildTileDrawer.ts";
 import { pickRandomWeightedObject } from "./wcUtils.ts";
 
@@ -23,7 +23,7 @@ export type WcBuildTileInfo = {
 };
 
 export class WcBuildTile extends WcBuildTileDrawer {
-  public buildFactory: WcBuildingFactory;
+  public buildFactory: WcBuildFactory;
   public tile: Tile;
 
   public possibleFace: WcFace[];
@@ -37,7 +37,7 @@ export class WcBuildTile extends WcBuildTileDrawer {
 
   constructor(
     world: World,
-    buildFactory: WcBuildingFactory,
+    buildFactory: WcBuildFactory,
     x: number,
     y: number,
     _depth: number = 0,

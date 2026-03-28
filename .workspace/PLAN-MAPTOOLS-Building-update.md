@@ -47,10 +47,10 @@ This update focuses on code hygiene, configuration correctness, and UI consisten
 
 **Files**: `IsoGame/wcBuilding2/*.ts`
 
-- [ ] Standardize file naming: `wcBuild*` prefix pattern (e.g., `wcBuildAction.ts` → keep, `AbstractBuildConf.ts` → rename to `wcAbstractBuildConf.ts`)
-- [ ] Standardize class naming: ensure all classes follow `WcBuild*` pattern
-- [ ] Update all import paths after renames
-- [ ] Verify no broken imports after renaming
+- [x] Standardize file naming: `wcBuild*` prefix pattern (e.g., `wcBuildAction.ts` → keep, `AbstractBuildConf.ts` → renamed to `wcAbstractBuildConf.ts`)
+- [x] Standardize class naming: ensure all classes follow `WcBuild*` pattern (`AbstractWcBuildConf` → `WcAbstractBuildConf`, `WcBuildingFactory` → `WcBuildFactory`, `WcBuildingFactoryGenarator` → `WcBuildFactoryGenarator`)
+- [x] Update all import paths after renames
+- [x] Verify no broken imports after renaming
 
 ---
 

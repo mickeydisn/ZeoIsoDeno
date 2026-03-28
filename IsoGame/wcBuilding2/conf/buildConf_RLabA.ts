@@ -1,8 +1,8 @@
 import {
-  AbstractWcBuildConf,
+  WcAbstractBuildConf,
   WcConfRawTile,
   WcConfTile,
-} from "../AbstractBuildConf.ts";
+} from "../wcAbstractBuildConf.ts";
 import { WcFace } from "../wcBuildFace.ts";
 import { wcAsset_CoridorLab } from "./assetsCollection/wcAsset_CoridorLab.ts";
 import {
@@ -11,7 +11,7 @@ import {
 } from "./assetsCollection/wcAsset_Fence2.ts";
 import { WcAsset_WallRLab } from "./assetsCollection/wcAsset_WallRLab.ts";
 
-export class WcBuildConf_RLabA extends AbstractWcBuildConf {
+export class WcBuildConf_RLabA extends WcAbstractBuildConf {
   private colorConf: Record<string, string>;
 
   private fence: WcAsset_Fence2;

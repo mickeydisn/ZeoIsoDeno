@@ -1,4 +1,4 @@
-import { WcConfTile } from "../../AbstractBuildConf.ts";
+import { WcConfTile } from "../../wcAbstractBuildConf.ts";
 import { WcFace } from "../../wcBuildFace.ts";
 
 // --------------------------------------

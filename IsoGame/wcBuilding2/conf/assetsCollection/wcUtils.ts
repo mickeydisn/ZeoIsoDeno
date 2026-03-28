@@ -1,4 +1,4 @@
-import { WcConfRawTile, WcConfTile } from "../../AbstractBuildConf.ts";
+import { WcConfRawTile, WcConfTile } from "../../wcAbstractBuildConf.ts";
 
 export const actionsEmpty = [
   { func: "lvlAvgSquare", size: 5 },

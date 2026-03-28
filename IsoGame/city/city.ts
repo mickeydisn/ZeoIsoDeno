@@ -1,7 +1,7 @@
 import { FactoryMap } from "../map/factory/factoryMap.ts";
 import { TilesActions } from "../map/tileActions.ts";
 import { WcBuildActions } from "../wcBuilding2/wcBuildAction.ts";
-import { WcBuildingFactory } from "../wcBuilding2/wcBuildingFactory.ts";
+import { WcBuildFactory } from "../wcBuilding2/wcBuildFactory.ts";
 
 import { World } from "../word.ts";
 import { CityNode } from "./cityNode.ts";
@@ -37,7 +37,7 @@ export class City {
   gridNodes: CityNode[];
   pointNode: CityNode[];
   blockNodes: CityNode[];
-  buildingNodes: WcBuildingFactory[];
+  buildingNodes: WcBuildFactory[];
   // roads:
 
   constructor(

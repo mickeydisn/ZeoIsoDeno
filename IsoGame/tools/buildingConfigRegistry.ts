@@ -1,4 +1,4 @@
-import { AbstractWcBuildConf } from "../wcBuilding2/AbstractBuildConf.ts";
+import { WcAbstractBuildConf } from "../wcBuilding2/wcAbstractBuildConf.ts";
 import { WcBuildConf_GraveA } from "../wcBuilding2/conf/buildConf_GraveA.ts";
 import { WcBuildConf_HouseA } from "../wcBuilding2/conf/buildConf_HouseA.ts";
 import { WcBuildConf_ManorA } from "../wcBuilding2/conf/buildConf_ManorA.ts";
@@ -12,7 +12,7 @@ export interface BuildingConfigEntry {
   description: string;
   defaultGrowLoop: number;
   defaultEndLoop: number;
-  createConfig(options: { growLoopCount: number; endLoopMax: number }): AbstractWcBuildConf;
+  createConfig(options: { growLoopCount: number; endLoopMax: number }): WcAbstractBuildConf;
 }
 
 export interface BuildingConfigInfo {
@@ -103,7 +103,7 @@ export function getBuildingConfigList(): BuildingConfigInfo[] {
 export function createBuildingConfig(
   id: string,
   options: { growLoopCount: number; endLoopMax: number },
-): AbstractWcBuildConf | null {
+): WcAbstractBuildConf | null {
   const entry = buildingConfigRegistry.get(id);
   if (!entry) {
     console.error(`Building config not found: ${id}`);

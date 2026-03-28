@@ -1,18 +1,18 @@
 import { FactoryMap } from "../map/factory/factoryMap.ts";
 import { Tile } from "../map/object/tile.ts";
 import { World } from "../word.ts";
-import { AbstractWcBuildConf } from "./AbstractBuildConf.ts";
+import { WcAbstractBuildConf } from "./wcAbstractBuildConf.ts";
 import { WcBuildConf_HouseA } from "./conf/buildConf_HouseA.ts";
 import { WcBuildConf_LabBorderA } from "./conf/buildConf_LabBorderA.ts";
 import { WcBuildConf_ManorA } from "./conf/buildConf_ManorA.ts";
-import { WcBuildingFactoryGenarator } from "./wcBuildingFactory.ts";
+import { WcBuildFactoryGenarator } from "./wcBuildFactory.ts";
 import { WcBuildConf_RLabA } from "./conf/buildConf_RLabA.ts";
 import { WcBuildConf_GraveA } from "./conf/buildConf_GraveA.ts";
 import { WcBuildConf_LabPipeA } from "./conf/buildConf_LabPipeA.ts";
 
 /* -----------------*/
 
-const indexBuildingConfigClass: Record<string, typeof AbstractWcBuildConf> = {
+const indexBuildingConfigClass: Record<string, typeof WcAbstractBuildConf> = {
   "WcBuildConf_LabPipeA": WcBuildConf_LabPipeA,
   "WcBuildConf_LabBorderA": WcBuildConf_LabBorderA,
   "WcBuildConf_HouseA": WcBuildConf_HouseA,
@@ -84,14 +84,14 @@ export class WcBuildActions {
     this.index = {
       // doFunction: this.doFunction.bind(this),
       "createBuilding": (conf: TypeWcBuildsActionConfig_createBuilding) => {
-        const typeBuildingConf: typeof AbstractWcBuildConf =
+        const typeBuildingConf: typeof WcAbstractBuildConf =
           indexBuildingConfigClass[conf.buildingType];
 
         const buildingConf = new typeBuildingConf({
           growLoopCount: conf.growLoopCount ? conf.growLoopCount : 50,
           endLoopMax: conf.endLoopMax ? conf.endLoopMax : 200,
         });
-        const building = new WcBuildingFactoryGenarator(
+        const building = new WcBuildFactoryGenarator(
           this.world,
           buildingConf,
         );

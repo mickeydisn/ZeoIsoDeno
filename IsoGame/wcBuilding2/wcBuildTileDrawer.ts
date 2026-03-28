@@ -7,7 +7,7 @@ import {
   WcConfTile,
   WcConfTileAsset,
   WcConfTileFunction,
-} from "./AbstractBuildConf.ts";
+} from "./wcAbstractBuildConf.ts";
 
 export class WcBuildTileDrawer {
   protected world: World;

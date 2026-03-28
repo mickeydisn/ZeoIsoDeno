@@ -64,7 +64,7 @@ export interface WcConfTile extends WcConfRawTile {
   weight: number;
 }
 
-export class AbstractWcBuildConf {
+export class WcAbstractBuildConf {
   growLoopCount: number;
   endLoopMax: number;
 

@@ -1,7 +1,7 @@
 import { MapTool, toolRegistry } from "./toolRegistry.ts";
 import { World } from "../word.ts";
 import { createBuildingConfig } from "./buildingConfigRegistry.ts";
-import { WcBuildingFactoryGenarator } from "../wcBuilding2/wcBuildingFactory.ts";
+import { WcBuildFactoryGenarator } from "../wcBuilding2/wcBuildFactory.ts";
 
 /**
  * Place Building Tool
@@ -34,7 +34,7 @@ export const placeBuildingTool: MapTool = {
     }
 
     // Create and start building generator
-    const generator = new WcBuildingFactoryGenarator(world, buildingConf);
+    const generator = new WcBuildFactoryGenarator(world, buildingConf);
     const success = generator.start2(x, y);
 
     if (success) {

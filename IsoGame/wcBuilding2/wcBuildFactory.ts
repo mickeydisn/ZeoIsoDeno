@@ -18,14 +18,14 @@ import { WcBuildConf_Place3 } from "./buildConf_place3";
 */
 import { FactoryMap } from "../map/factory/factoryMap.ts";
 import { World } from "../word.ts";
-import { AbstractWcBuildConf, WcConfTile } from "./AbstractBuildConf.ts";
+import { WcAbstractBuildConf, WcConfTile } from "./wcAbstractBuildConf.ts";
 import { WcBuildTile } from "./wcBuildTile.ts";
 // ====================================================
 // ====================================================
 // ====================================================
 
-export abstract class WcBuildingFactory {
-  public configuration: AbstractWcBuildConf;
+export abstract class WcBuildFactory {
+  public configuration: WcAbstractBuildConf;
   public x: number = 0;
   public y: number = 0;
 
@@ -33,7 +33,7 @@ export abstract class WcBuildingFactory {
   protected fm: FactoryMap;
   protected allTiles: WcBuildTile[];
 
-  constructor(world: World, conf: AbstractWcBuildConf) {
+  constructor(world: World, conf: WcAbstractBuildConf) {
     this.world = world;
     this.fm = FactoryMap.getInstance();
     this.configuration = conf;
@@ -105,11 +105,11 @@ export abstract class WcBuildingFactory {
 // ====================================================
 // ====================================================
 
-export class WcBuildingFactoryGenarator extends WcBuildingFactory {
+export class WcBuildFactoryGenarator extends WcBuildFactory {
   protected mainTile!: WcBuildTile;
   protected mainLvl!: number;
 
-  constructor(world: World, conf: AbstractWcBuildConf) {
+  constructor(world: World, conf: WcAbstractBuildConf) {
     super(world, conf);
   }
 
