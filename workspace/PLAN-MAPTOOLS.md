@@ -55,11 +55,11 @@ export class ToolRegistry {
 }
 ```
 
-- [ ] Define `MapTool` interface with `id`, `name`, `icon`, `category`, `execute()`
-- [ ] Implement `ToolRegistry` class with `register()`, `setActive()`, `getActive()`, `setBrushSize()`, `executeAt()`
-- [ ] Implement `getToolsByCategory()` for UI rendering
-- [ ] Export singleton `toolRegistry` instance
-- [ ] Add `World` import from `IsoGame/word.ts`
+- [x] Define `MapTool` interface with `id`, `name`, `icon`, `category`, `execute()`
+- [x] Implement `ToolRegistry` class with `register()`, `setActive()`, `getActive()`, `setBrushSize()`, `executeAt()`
+- [x] Implement `getToolsByCategory()` for UI rendering
+- [x] Export singleton `toolRegistry` instance
+- [x] Add `World` import from `IsoGame/word.ts`
 
 ### Task 1.2: Create Tool Menu UI
 
