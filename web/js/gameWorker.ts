@@ -60,7 +60,7 @@ export class GameWorker {
     // Send tool list to main thread for UI rendering
     this.handler.send({
       action: "toolList",
-      tools: toolRegistry.getAllTools(),
+      tools: toolRegistry.getToolInfoList(),
     });
 
     this.handler.send({ action: "callback_initWorker" });

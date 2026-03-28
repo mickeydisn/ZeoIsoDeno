@@ -55,6 +55,15 @@ export class ToolRegistry {
     return Array.from(this.tools.values());
   }
 
+  getToolInfoList(): Array<{id: string; name: string; icon: string; category: string}> {
+    return Array.from(this.tools.values()).map(tool => ({
+      id: tool.id,
+      name: tool.name,
+      icon: tool.icon,
+      category: tool.category,
+    }));
+  }
+
   executeAt(x: number, y: number, world: World): Record<string, unknown> | void {
     if (this.activeTool) {
       return this.activeTool.execute(x, y, this.brushSize, world);
