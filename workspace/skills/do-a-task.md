@@ -9,4 +9,12 @@ You mission :
 - Read the plan , and take the fist task with unchecked items
 - Thing about task's items and make a deep code search to mesure the impact.
 - Code the task , and make sure the code work.
--
+- create a git commit with you change
+- update the plan : check the finish items in the task ,
+- The task must be done
+
+Rules:
+
+- do only one task
+- do all the items of the task
+- make sur you change are propagated into all the base code if need
