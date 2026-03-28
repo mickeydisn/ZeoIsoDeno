@@ -2,13 +2,14 @@ import { MapTool, toolRegistry } from "./toolRegistry.ts";
 import { World } from "../word.ts";
 import { createBuildingConfig } from "./buildingConfigRegistry.ts";
 import { WcBuildFactoryGenarator } from "../wcBuilding2/wcBuildFactory.ts";
+import { createTool } from "./toolBuilder.ts";
 
 /**
  * Place Building Tool
  * Generates a building structure at the clicked position using the active building configuration.
  * Building type and parameters can be configured via the building config registry and tool registry.
  */
-export const placeBuildingTool: MapTool = {
+export const placeBuildingTool = createTool({
   id: "place_building",
   name: "Place Building",
   icon: "🏠",
@@ -45,7 +46,7 @@ export const placeBuildingTool: MapTool = {
 
     return { success, configId, x, y };
   },
-};
+});
 
 /**
  * Export all structure tools for registration

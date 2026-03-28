@@ -2,10 +2,11 @@ import { TilesActions } from "../map/tileActions.ts";
 import { FactoryMap } from "../map/factory/factoryMap.ts";
 import { MapTool } from "./toolRegistry.ts";
 import { World } from "../word.ts";
+import { createTool } from "./toolBuilder.ts";
 
 const tilesActions = TilesActions.getInstance();
 
-export const raiseTerrainTool: MapTool = {
+export const raiseTerrainTool = createTool({
   id: "raise_terrain",
   name: "Raise Terrain",
   icon: "⬆️",
@@ -28,9 +29,9 @@ export const raiseTerrainTool: MapTool = {
       });
     }
   },
-};
+});
 
-export const lowerTerrainTool: MapTool = {
+export const lowerTerrainTool = createTool({
   id: "lower_terrain",
   name: "Lower Terrain",
   icon: "⬇️",
@@ -53,9 +54,9 @@ export const lowerTerrainTool: MapTool = {
       });
     }
   },
-};
+});
 
-export const flattenTool: MapTool = {
+export const flattenTool = createTool({
   id: "flatten",
   name: "Flatten",
   icon: "⏹️",
@@ -68,9 +69,9 @@ export const flattenTool: MapTool = {
       size: brushSize,
     });
   },
-};
+});
 
-export const smoothTool: MapTool = {
+export const smoothTool = createTool({
   id: "smooth",
   name: "Smooth",
   icon: "〰️",
@@ -83,13 +84,13 @@ export const smoothTool: MapTool = {
       size: brushSize,
     });
   },
-};
+});
 
 // Plateau tool uses two-click interaction
 let plateauTargetLevel: number | null = null;
 let _plateauStartPos: { x: number; y: number } | null = null;
 
-export const plateauTool: MapTool = {
+export const plateauTool = createTool({
   id: "plateau",
   name: "Plateau",
   icon: "🏔️",
@@ -124,7 +125,7 @@ export const plateauTool: MapTool = {
       _plateauStartPos = null;
     }
   },
-};
+});
 
 export function resetPlateauState() {
   plateauTargetLevel = null;

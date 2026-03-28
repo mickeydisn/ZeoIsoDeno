@@ -2,10 +2,11 @@ import { TilesActions } from "../map/tileActions.ts";
 import { FactoryMap } from "../map/factory/factoryMap.ts";
 import { MapTool, toolRegistry } from "./toolRegistry.ts";
 import { World } from "../word.ts";
+import { createTool } from "./toolBuilder.ts";
 
 const tilesActions = TilesActions.getInstance();
 
-export const colorPickerTool: MapTool = {
+export const colorPickerTool = createTool({
   id: "color_picker",
   name: "Color Picker",
   icon: "🎨",
@@ -15,9 +16,9 @@ export const colorPickerTool: MapTool = {
     // The actual painting is done by paintColorTool
     console.log(`Color Picker active with color: ${toolRegistry.getActiveColor().join(", ")}`);
   },
-};
+});
 
-export const paintColorTool: MapTool = {
+export const paintColorTool = createTool({
   id: "paint_color",
   name: "Paint Color",
   icon: "🖌️",
@@ -32,9 +33,9 @@ export const paintColorTool: MapTool = {
       color: color,
     });
   },
-};
+});
 
-export const eyedropperTool: MapTool = {
+export const eyedropperTool = createTool({
   id: "eyedropper",
   name: "Eyedropper",
   icon: "💉",
@@ -47,9 +48,9 @@ export const eyedropperTool: MapTool = {
       return { pickedColor: [r, g, b] };
     }
   },
-};
+});
 
-export const randomShadeTool: MapTool = {
+export const randomShadeTool = createTool({
   id: "random_shade",
   name: "Random Shade",
   icon: "🎲",
@@ -69,7 +70,7 @@ export const randomShadeTool: MapTool = {
       color: variedColor,
     });
   },
-};
+});
 
 export const colorTools: MapTool[] = [
   colorPickerTool,

@@ -166,9 +166,9 @@ Each tool file (`terrainTools.ts`, `colorTools.ts`, `assetTools.ts`, `structureT
 
 **Files**: `IsoGame/tools/terrainTools.ts`, `colorTools.ts`, `assetTools.ts`, `structureTools.ts`
 
-- [ ] Replace manual object literals with `createTool()` calls
-- [ ] Verify all tools still register correctly
-- [ ] Run TypeScript compiler to check for errors
+- [x] Replace manual object literals with `createTool()` calls
+- [x] Verify all tools still register correctly
+- [x] Run TypeScript compiler to check for errors
 
 ---
 

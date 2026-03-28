@@ -1,10 +1,11 @@
 import { TilesActions } from "../map/tileActions.ts";
 import { MapTool, toolRegistry } from "./toolRegistry.ts";
 import { World } from "../word.ts";
+import { createTool } from "./toolBuilder.ts";
 
 const tilesActions = TilesActions.getInstance();
 
-export const assetPickerTool: MapTool = {
+export const assetPickerTool = createTool({
   id: "asset_picker",
   name: "Asset Picker",
   icon: "📂",
@@ -16,9 +17,9 @@ export const assetPickerTool: MapTool = {
     console.log(`Asset Picker active with asset: ${activeAsset}`);
     return { activeAsset };
   },
-};
+});
 
-export const placeAssetTool: MapTool = {
+export const placeAssetTool = createTool({
   id: "place_asset",
   name: "Place Asset",
   icon: "🖼️",
@@ -38,9 +39,9 @@ export const placeAssetTool: MapTool = {
       console.log("No asset selected!");
     }
   },
-};
+});
 
-export const clearItemsTool: MapTool = {
+export const clearItemsTool = createTool({
   id: "clear_items",
   name: "Clear Items",
   icon: "🧹",
@@ -53,7 +54,7 @@ export const clearItemsTool: MapTool = {
       size: brushSize,
     });
   },
-};
+});
 
 export const assetTools: MapTool[] = [
   assetPickerTool,
