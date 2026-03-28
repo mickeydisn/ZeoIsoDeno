@@ -15,6 +15,7 @@ export class ToolRegistry {
   private activeTool: MapTool | null = null;
   private brushSize: number = 1;
   private activeColor: [number, number, number] = [128, 128, 128]; // Default gray
+  private activeAssetId: string | null = null;
 
   public static getInstance(): ToolRegistry {
     return ToolRegistry.instance ??= new ToolRegistry();
@@ -76,6 +77,14 @@ export class ToolRegistry {
 
   getActiveColor(): [number, number, number] {
     return this.activeColor;
+  }
+
+  setActiveAssetId(assetId: string): void {
+    this.activeAssetId = assetId;
+  }
+
+  getActiveAssetId(): string | null {
+    return this.activeAssetId;
   }
 }
 

@@ -9,6 +9,7 @@ import {
 import { toolRegistry } from "../../IsoGame/tools/toolRegistry.ts";
 import { terrainTools } from "../../IsoGame/tools/terrainTools.ts";
 import { colorTools } from "../../IsoGame/tools/colorTools.ts";
+import { assetTools } from "../../IsoGame/tools/assetTools.ts";
 import { WcBuildConf_GraveA } from "../../IsoGame/wcBuilding2/conf/buildConf_GraveA.ts";
 import { WcBuildingFactoryGenarator } from "../../IsoGame/wcBuilding2/wcBuildingFactory.ts";
 import { World } from "../../IsoGame/word.ts";
@@ -56,11 +57,22 @@ export class GameWorker {
     console.log("== Register Tools");
     terrainTools.forEach((tool) => toolRegistry.register(tool));
     colorTools.forEach((tool) => toolRegistry.register(tool));
+    assetTools.forEach((tool) => toolRegistry.register(tool));
 
     // Send tool list to main thread for UI rendering
     this.handler.send({
       action: "toolList",
       tools: toolRegistry.getToolInfoList(),
+    });
+
+    // Send asset groups to main thread for asset browser
+    const assetGroups = this.assetLoader.assetList.map((g) => ({
+      group: g.group,
+      images: g.images.map((i) => i.label),
+    }));
+    this.handler.send({
+      action: "assetGroups",
+      groups: assetGroups,
     });
 
     this.handler.send({ action: "callback_initWorker" });
@@ -260,6 +272,12 @@ export class GameWorker {
       "setColor",
       (data: GameHandlerData) => {
         toolRegistry.setActiveColor(data.r, data.g, data.b);
+      },
+    ],
+    [
+      "setActiveAsset",
+      (data: GameHandlerData) => {
+        toolRegistry.setActiveAssetId(data.assetId);
       },
     ],
     [

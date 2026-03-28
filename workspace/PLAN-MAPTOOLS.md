@@ -251,22 +251,22 @@ export const raiseTerrainTool: MapTool = {
 
 **File**: `IsoGame/tools/assetTools.ts`
 
-- [ ] Create `assetPickerTool` with `id: "asset_picker"`, icon `📂`
-- [ ] Send asset groups to main thread: read from `AssetLoaderOpti.assetList` config
-- [ ] Handler: `handler.send({ action: "assetGroups", groups: assetOptiConfig.map(g => ({ group: g.group, images: g.images.map(i => i.label) })) })`
+- [x] Create `assetPickerTool` with `id: "asset_picker"`, icon `📂`
+- [x] Send asset groups to main thread: read from `AssetLoaderOpti.assetList` config
+- [x] Handler: `handler.send({ action: "assetGroups", groups: assetOptiConfig.map(g => ({ group: g.group, images: g.images.map(i => i.label) })) })`
 
 ### Task 4.2: Implement Place Asset Tool
 
-- [ ] Create `placeAssetTool` with `id: "place_asset"`, icon `🖼️`
-- [ ] Use `TilesActions.getInstance().doAction({ func: "itemAddKey", x, y, assetKey: activeAssetId })`
-- [ ] Store `activeAssetId` in `ToolRegistry` state
-- [ ] Register tool in `ToolRegistry`
+- [x] Create `placeAssetTool` with `id: "place_asset"`, icon `🖼️`
+- [x] Use `TilesActions.getInstance().doAction({ func: "itemAddKey", x, y, assetKey: activeAssetId })`
+- [x] Store `activeAssetId` in `ToolRegistry` state
+- [x] Register tool in `ToolRegistry`
 
 ### Task 4.3: Implement Clear Items Tool
 
-- [ ] Create `clearItemsTool` with `id: "clear_items"`, icon `🧹`
-- [ ] Use `TilesActions.getInstance().doAction({ func: "clearItemSquare", x, y, size: brushSize })`
-- [ ] Register tool in `ToolRegistry`
+- [x] Create `clearItemsTool` with `id: "clear_items"`, icon `🧹`
+- [x] Use `TilesActions.getInstance().doAction({ func: "clearItemSquare", x, y, size: brushSize })`
+- [x] Register tool in `ToolRegistry`
 
 ### Task 4.4: Add Asset UI Elements
 
@@ -282,10 +282,10 @@ export const raiseTerrainTool: MapTool = {
 
 **File**: `web/js/gameWorker.ts`
 
-- [ ] Import asset tools from `IsoGame/tools/assetTools.ts`
-- [ ] Add `setActiveAsset` handler: store in `toolRegistry.activeAssetId`
-- [ ] Register all 3 asset tools in `initWorker`
-- [ ] Send `assetGroups` after asset loader is initialized
+- [x] Import asset tools from `IsoGame/tools/assetTools.ts`
+- [x] Add `setActiveAsset` handler: store in `toolRegistry.activeAssetId`
+- [x] Register all 3 asset tools in `initWorker`
+- [x] Send `assetGroups` after asset loader is initialized
 
 ---
 

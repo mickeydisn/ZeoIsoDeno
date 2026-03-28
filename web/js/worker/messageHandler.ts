@@ -86,6 +86,33 @@ export interface EventToolList extends BaseMessage {
   }>;
 }
 
+export interface EventAssetGroups extends BaseMessage {
+  action: "assetGroups";
+  groups: Array<{
+    group: string;
+    images: string[];
+  }>;
+}
+
+export interface EventSetColor extends BaseMessage {
+  action: "setColor";
+  r: number;
+  g: number;
+  b: number;
+}
+
+export interface EventSetActiveAsset extends BaseMessage {
+  action: "setActiveAsset";
+  assetId: string;
+}
+
+export interface EventPickedColor extends BaseMessage {
+  action: "pickedColor";
+  r: number;
+  g: number;
+  b: number;
+}
+
 // ----
 
 type ToMainMessage =
@@ -94,7 +121,9 @@ type ToMainMessage =
   | EventInfoCell
   | EventInfoFPS
   | EventToolExecuted
-  | EventToolList;
+  | EventToolList
+  | EventAssetGroups
+  | EventPickedColor;
 
 type WorkerInitMessage =
   | EventInitWorker
@@ -106,7 +135,9 @@ type WorkerInitMessage =
 type ToolMessage =
   | EventSetActiveTool
   | EventSetBrushSize
-  | EventToolClick;
+  | EventToolClick
+  | EventSetColor
+  | EventSetActiveAsset;
 
 type WorkerMessage = WorkerInitMessage | ToMainMessage | ToolMessage; // | GameMessage;
 
