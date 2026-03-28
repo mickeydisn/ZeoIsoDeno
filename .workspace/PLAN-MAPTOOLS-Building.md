@@ -32,7 +32,7 @@ This plan extends the existing tool system (Phases 1-4 completed) with a dedicat
 
 **File**: `IsoGame/tools/buildingConfigRegistry.ts` (NEW)
 
-- [ ] Define `BuildingConfigEntry` interface:
+- [x] Define `BuildingConfigEntry` interface:
   ```typescript
   interface BuildingConfigEntry {
     id: string;
@@ -43,26 +43,26 @@ This plan extends the existing tool system (Phases 1-4 completed) with a dedicat
     createConfig(options: { growLoopCount: number; endLoopMax: number }): AbstractWcBuildConf;
   }
   ```
-- [ ] Create `buildingConfigRegistry` Map with entries for all 6 building types:
+- [x] Create `buildingConfigRegistry` Map with entries for all 6 building types:
   - `grave_a` → `WcBuildConf_GraveA`
   - `house_a` → `WcBuildConf_HouseA`
   - `manor_a` → `WcBuildConf_ManorA`
   - `lab_border_a` → `WcBuildConf_LabBorderA`
   - `lab_pipe_a` → `WcBuildConf_LabPipeA`
   - `r_lab_a` → `WcBuildConf_RLabA`
-- [ ] Export `getBuildingConfigList()` function returning array of config info (id, name, description, defaults)
-- [ ] Export `createBuildingConfig(id, options)` factory function
+- [x] Export `getBuildingConfigList()` function returning array of config info (id, name, description, defaults)
+- [x] Export `createBuildingConfig(id, options)` factory function
 
 ### Task 1.2: Add Building State to ToolRegistry
 
 **File**: `IsoGame/tools/toolRegistry.ts` (MODIFY)
 
-- [ ] Add `activeBuildingConfigId: string` property (default: `"grave_a"`)
-- [ ] Add `buildingGrowLoop: number` property (default: `20`)
-- [ ] Add `buildingEndLoop: number` property (default: `100`)
-- [ ] Add `setBuildingConfig(id: string)` method
-- [ ] Add `setBuildingParams(growLoop: number, endLoop: number)` method
-- [ ] Add `getBuildingConfig()` method returning current config state
+- [x] Add `activeBuildingConfigId: string` property (default: `"grave_a"`)
+- [x] Add `buildingGrowLoop: number` property (default: `20`)
+- [x] Add `buildingEndLoop: number` property (default: `100`)
+- [x] Add `setBuildingConfig(id: string)` method
+- [x] Add `setBuildingParams(growLoop: number, endLoop: number)` method
+- [x] Add `getBuildingConfig()` method returning current config state
 
 ---
 
@@ -75,7 +75,7 @@ This plan extends the existing tool system (Phases 1-4 completed) with a dedicat
 
 **File**: `IsoGame/tools/structureTools.ts` (NEW)
 
-- [ ] Create `placeBuildingTool` implementing `MapTool` interface:
+- [x] Create `placeBuildingTool` implementing `MapTool` interface:
   ```typescript
   export const placeBuildingTool: MapTool = {
     id: "place_building",
@@ -89,34 +89,34 @@ This plan extends the existing tool system (Phases 1-4 completed) with a dedicat
     }
   }
   ```
-- [ ] Import `buildingConfigRegistry` to get current config
-- [ ] Import `WcBuildingFactoryGenarator` from `wcBuilding2/wcBuildingFactory.ts`
-- [ ] Import `toolRegistry` to get active building config/params
-- [ ] Export `structureTools` array containing `placeBuildingTool`
+- [x] Import `buildingConfigRegistry` to get current config
+- [x] Import `WcBuildingFactoryGenarator` from `wcBuilding2/wcBuildingFactory.ts`
+- [x] Import `toolRegistry` to get active building config/params
+- [x] Export `structureTools` array containing `placeBuildingTool`
 
 ### Task 2.2: Register Building Tools in Worker
 
 **File**: `web/js/gameWorker.ts` (MODIFY)
 
-- [ ] Import `structureTools` from `IsoGame/tools/structureTools.ts`
-- [ ] Import `buildingConfigRegistry` functions
-- [ ] Register `structureTools` in `initWorker` after asset tools:
+- [x] Import `structureTools` from `IsoGame/tools/structureTools.ts`
+- [x] Import `buildingConfigRegistry` functions
+- [x] Register `structureTools` in `initWorker` after asset tools:
   ```typescript
   structureTools.forEach((tool) => toolRegistry.register(tool));
   ```
-- [ ] Add `setBuildingConfig` handler:
+- [x] Add `setBuildingConfig` handler:
   ```typescript
   ["setBuildingConfig", (data) => {
     toolRegistry.setBuildingConfig(data.configId);
   }]
   ```
-- [ ] Add `setBuildingParams` handler:
+- [x] Add `setBuildingParams` handler:
   ```typescript
   ["setBuildingParams", (data) => {
     toolRegistry.setBuildingParams(data.growLoop, data.endLoop);
   }]
   ```
-- [ ] Send building config list to main thread after tool registration:
+- [x] Send building config list to main thread after tool registration:
   ```typescript
   this.handler.send({
     action: "buildingConfigList",
