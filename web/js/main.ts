@@ -1,6 +1,6 @@
 import { CanvasMapDrawersConf } from "../../IsoGame/mapIso/canvasMapDrawer.ts";
 import { initFlyMenu } from "./menu/flyMenu.ts";
-import { initToolMenu, handleToolList, handleToolExecuted, handlePickedColor } from "./menu/toolMenu.ts";
+import { initToolMenu, handleToolList, handleToolExecuted, handlePickedColor, handleAssetGroups } from "./menu/toolMenu.ts";
 import { infoMenu, updateInfoCell } from "./menu/InfoMenu.ts";
 import { GameHandlerData } from "./gameWorker.ts";
 import { GlobalState, initMenu, updatGlobalJSON } from "./gobalState.ts";
@@ -172,6 +172,9 @@ handlers.append([
   }],
   ["pickedColor", (data) => {
     handlePickedColor(data.r, data.g, data.b);
+  }],
+  ["assetGroups", (data) => {
+    handleAssetGroups(data.groups);
   }],
 ]);
 

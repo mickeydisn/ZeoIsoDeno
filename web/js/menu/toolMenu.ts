@@ -16,6 +16,9 @@ let activeToolId: string | null = null;
 let activeBrushSize: number = 1;
 let activeColor: string = "#808080"; // Default gray
 let toolsByCategory: Map<string, MapToolInfo[]> = new Map();
+let assetGroups: Array<{ group: string; images: string[] }> = [];
+let activeAssetId: string | null = null;
+let selectedAssetGroup: string | null = null;
 
 export const initToolMenu = (gameWorker: Worker) => {
   const toolMenuEl = document.getElementById("toolMenu") as HTMLElement;
@@ -37,6 +40,13 @@ function renderToolMenu(container: HTMLElement, gameWorker: Worker) {
       `).join('')}
     </div>
     <div id="toolList"></div>
+    <div id="assetBrowser" style="display: ${activeCategory === 'asset' ? 'block' : 'none'}">
+      <div id="assetGroupList"></div>
+      <div id="assetImageList"></div>
+    </div>
+    <div id="selectedAssetCard" style="display: ${activeAssetId ? 'block' : 'none'}">
+      <span id="selectedAssetLabel">${activeAssetId || 'No asset selected'}</span>
+    </div>
     <div id="toolColorPicker" style="display: ${activeCategory === 'color' ? 'flex' : 'none'}">
       <span>Color:</span>
       <input type="color" id="colorPickerInput" value="${activeColor}">
@@ -96,8 +106,19 @@ function setActiveCategory(category: string, container: HTMLElement, gameWorker:
     colorPickerEl.style.display = category === 'color' ? 'flex' : 'none';
   }
 
+  // Show/hide asset browser
+  const assetBrowserEl = container.querySelector('#assetBrowser') as HTMLElement;
+  if (assetBrowserEl) {
+    assetBrowserEl.style.display = category === 'asset' ? 'block' : 'none';
+  }
+
   // Re-render tool list for this category
   renderToolList(container, gameWorker);
+
+  // Render asset browser if in asset category
+  if (category === 'asset') {
+    renderAssetBrowser(container, gameWorker);
+  }
 }
 
 function setActiveColor(color: string, container: HTMLElement, gameWorker: Worker) {
@@ -261,4 +282,104 @@ export function handlePickedColor(r: number, g: number, b: number) {
 
 function capitalizeFirst(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// Render asset browser with tree of asset groups
+function renderAssetBrowser(container: HTMLElement, gameWorker: Worker) {
+  const assetGroupListEl = container.querySelector('#assetGroupList') as HTMLElement;
+  const assetImageListEl = container.querySelector('#assetImageList') as HTMLElement;
+  
+  if (!assetGroupListEl || !assetImageListEl) return;
+
+  if (assetGroups.length === 0) {
+    assetGroupListEl.innerHTML = '<div class="asset-empty">Loading assets...</div>';
+    assetImageListEl.innerHTML = '';
+    return;
+  }
+
+  // Render group list
+  assetGroupListEl.innerHTML = `
+    <div class="asset-group-header">Asset Groups</div>
+    ${assetGroups.map(group => `
+      <button class="asset-group-btn ${group.group === selectedAssetGroup ? 'active' : ''}" data-group="${group.group}">
+        ${group.group} (${group.images.length})
+      </button>
+    `).join('')}
+  `;
+
+  // Group button click handlers
+  assetGroupListEl.querySelectorAll('.asset-group-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const group = (btn as HTMLElement).dataset.group!;
+      selectedAssetGroup = group;
+      renderAssetBrowser(container, gameWorker);
+    });
+  });
+
+  // Render images for selected group
+  if (selectedAssetGroup) {
+    const group = assetGroups.find(g => g.group === selectedAssetGroup);
+    if (group) {
+      assetImageListEl.innerHTML = `
+        <div class="asset-image-header">${group.group}</div>
+        <div class="asset-image-grid">
+          ${group.images.map(image => `
+            <button class="asset-image-btn ${image === activeAssetId ? 'active' : ''}" data-asset="${image}">
+              ${image}
+            </button>
+          `).join('')}
+        </div>
+      `;
+
+      // Image button click handlers
+      assetImageListEl.querySelectorAll('.asset-image-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const assetId = (btn as HTMLElement).dataset.asset!;
+          setActiveAsset(assetId, container, gameWorker);
+        });
+      });
+    }
+  } else {
+    assetImageListEl.innerHTML = '<div class="asset-empty">Select a group</div>';
+  }
+}
+
+// Set active asset
+function setActiveAsset(assetId: string, container: HTMLElement, gameWorker: Worker) {
+  activeAssetId = assetId;
+
+  // Update selected asset card
+  const selectedAssetCardEl = container.querySelector('#selectedAssetCard') as HTMLElement;
+  const selectedAssetLabelEl = container.querySelector('#selectedAssetLabel') as HTMLElement;
+  if (selectedAssetCardEl && selectedAssetLabelEl) {
+    selectedAssetCardEl.style.display = 'block';
+    selectedAssetLabelEl.textContent = `📦 ${assetId}`;
+  }
+
+  // Update asset image button active state
+  container.querySelectorAll('.asset-image-btn').forEach(btn => {
+    btn.classList.toggle('active', (btn as HTMLElement).dataset.asset === assetId);
+  });
+
+  // Send to worker
+  gameWorker.postMessage({
+    action: "setActiveAsset",
+    assetId: assetId,
+  });
+}
+
+// Called when worker sends asset groups
+export function handleAssetGroups(groups: Array<{ group: string; images: string[] }>, container?: HTMLElement) {
+  assetGroups = groups;
+  
+  // Select first group by default
+  if (groups.length > 0 && !selectedAssetGroup) {
+    selectedAssetGroup = groups[0].group;
+  }
+
+  // Re-render asset browser if in asset category
+  const toolMenuEl = container || document.getElementById('toolMenu');
+  if (toolMenuEl && activeCategory === 'asset') {
+    renderAssetBrowser(toolMenuEl as HTMLElement, self as any);
+  }
 }

@@ -272,11 +272,11 @@ export const raiseTerrainTool: MapTool = {
 
 **File**: `web/js/menu/toolMenu.ts`
 
-- [ ] Handle `assetGroups` message to populate asset browser
-- [ ] Render asset group dropdown/tabs: Nature, Town, Items, Astro, Transport, User, Walls
-- [ ] Render asset thumbnails/names within selected group
-- [ ] On asset select: send `setActiveAsset { assetId }` to worker
-- [ ] Highlight selected asset
+- [x] Handle `assetGroups` message to populate asset browser
+- [x] Render asset group dropdown/tabs: Nature, Town, Items, Astro, Transport, User, Walls
+- [x] Render asset thumbnails/names within selected group
+- [x] On asset select: send `setActiveAsset { assetId }` to worker
+- [x] Highlight selected asset
 
 ### Task 4.5: Register Asset Tools in Worker
 
