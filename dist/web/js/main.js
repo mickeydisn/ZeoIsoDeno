@@ -144,7 +144,9 @@ function renderToolMenu(container, gameWorker2) {
       <div id="assetGroupList"></div>
     </div>
     <div id="buildingConfigPanel" style="display: ${activeCategory === "structure" ? "block" : "none"}">
-      <div class="building-config-header">Building Configuration</div>
+      <div id="buildingConfigHeader">
+        <span id="buildingConfigTitle">Building Config</span>
+      </div>
       <div id="buildingConfigSelector"></div>
       <div id="buildingParams">
         <div class="param-row">
@@ -154,7 +156,7 @@ function renderToolMenu(container, gameWorker2) {
         </div>
         <div class="param-row">
           <span>End Loop Max:</span>
-          <input type="range" min="50" max="5000" value="${buildingEndLoop}" id="endLoopSlider">
+          <input type="range" min="50" max="1000" value="${buildingEndLoop}" id="endLoopSlider">
           <span id="endLoopValue">${buildingEndLoop}</span>
         </div>
       </div>
@@ -525,11 +527,11 @@ function renderBuildingConfigSelector(container, gameWorker2) {
     return;
   }
   selectorEl.innerHTML = buildingConfigs.map((config) => `
-    <button class="building-config-btn ${config.id === activeBuildingConfigId ? "active" : ""}" data-config-id="${config.id}">
-      <span class="building-name">${config.name}</span>
+    <button class="tool-btn ${config.id === activeBuildingConfigId ? "active" : ""}" data-config-id="${config.id}">
+      <span class="tool-name">${config.name}</span>
     </button>
   `).join("");
-  selectorEl.querySelectorAll(".building-config-btn").forEach((btn) => {
+  selectorEl.querySelectorAll(".tool-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const configId = btn.dataset.configId;
       setActiveBuildingConfig(configId, container, gameWorker2);
@@ -558,7 +560,7 @@ function setActiveBuildingConfig(configId, container, gameWorker2) {
     endLoopValue.textContent = String(buildingEndLoop);
   if (descriptionEl)
     descriptionEl.textContent = getActiveBuildingDescription();
-  container.querySelectorAll(".building-config-btn").forEach((btn) => {
+  container.querySelectorAll("#buildingConfigSelector .tool-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.configId === configId);
   });
   gameWorker2.postMessage({

@@ -2239,8 +2239,8 @@ function pickRandomWeightedObject(array, rand = null) {
   return null;
 }
 
-// IsoGame/wcBuilding2/AbstractBuildConf.ts
-var AbstractWcBuildConf = class {
+// IsoGame/wcBuilding2/wcAbstractBuildConf.ts
+var WcAbstractBuildConf = class {
   growLoopCount;
   endLoopMax;
   faceLinkWeight;
@@ -3049,7 +3049,7 @@ var wcAsset_X = class {
 };
 
 // IsoGame/wcBuilding2/conf/buildConf_HouseA.ts
-var WcBuildConf_HouseA = class extends AbstractWcBuildConf {
+var WcBuildConf_HouseA = class extends WcAbstractBuildConf {
   colorConf;
   enter;
   faceX;
@@ -3333,7 +3333,7 @@ var wcAsset_CoridorLab = class {
 };
 
 // IsoGame/wcBuilding2/conf/buildConf_LabBorderA.ts
-var WcBuildConf_LabBorderA = class extends AbstractWcBuildConf {
+var WcBuildConf_LabBorderA = class extends WcAbstractBuildConf {
   colorConf;
   fence;
   fencePlatform;
@@ -3707,7 +3707,7 @@ var WcAsset_WallManor = class {
 };
 
 // IsoGame/wcBuilding2/conf/buildConf_ManorA.ts
-var WcBuildConf_ManorA = class extends AbstractWcBuildConf {
+var WcBuildConf_ManorA = class extends WcAbstractBuildConf {
   colorConf;
   fence;
   fencePlatform;
@@ -4318,8 +4318,8 @@ var WcBuildTile = class extends WcBuildTileDrawer {
   // --------------------------------------------------------------------------
 };
 
-// IsoGame/wcBuilding2/wcBuildingFactory.ts
-var WcBuildingFactory = class {
+// IsoGame/wcBuilding2/wcBuildFactory.ts
+var WcBuildFactory = class {
   configuration;
   x = 0;
   y = 0;
@@ -4379,7 +4379,7 @@ var WcBuildingFactory = class {
     });
   }
 };
-var WcBuildingFactoryGenarator = class extends WcBuildingFactory {
+var WcBuildFactoryGenarator = class extends WcBuildFactory {
   mainTile;
   mainLvl;
   constructor(world, conf) {
@@ -4752,7 +4752,7 @@ var WcAsset_WallRLab = class {
 };
 
 // IsoGame/wcBuilding2/conf/buildConf_RLabA.ts
-var WcBuildConf_RLabA = class extends AbstractWcBuildConf {
+var WcBuildConf_RLabA = class extends WcAbstractBuildConf {
   colorConf;
   fence;
   fencePlatform;
@@ -4953,7 +4953,7 @@ var WcBuildConf_RLabA = class extends AbstractWcBuildConf {
 };
 
 // IsoGame/wcBuilding2/conf/buildConf_GraveA.ts
-var WcBuildConf_GraveA = class extends AbstractWcBuildConf {
+var WcBuildConf_GraveA = class extends WcAbstractBuildConf {
   colorConf;
   enter;
   fenceEnter;
@@ -5381,7 +5381,7 @@ var wcAsset_CoridorPipe2 = class {
 };
 
 // IsoGame/wcBuilding2/conf/buildConf_LabPipeA.ts
-var WcBuildConf_LabPipeA = class extends AbstractWcBuildConf {
+var WcBuildConf_LabPipeA = class extends WcAbstractBuildConf {
   colorConf;
   enter;
   faceX;
@@ -5589,7 +5589,7 @@ var WcBuildActions = class _WcBuildActions {
           growLoopCount: conf.growLoopCount ? conf.growLoopCount : 50,
           endLoopMax: conf.endLoopMax ? conf.endLoopMax : 200
         });
-        const building = new WcBuildingFactoryGenarator(
+        const building = new WcBuildFactoryGenarator(
           this.world,
           buildingConf
         );
@@ -10495,7 +10495,23 @@ function createBuildingConfig(id, options) {
     console.error(`Building config not found: ${id}`);
     return null;
   }
-  return entry.createConfig(options);
+  let growLoopCount = options.growLoopCount;
+  if (growLoopCount < 5) {
+    console.warn(`growLoopCount ${growLoopCount} below minimum (5), clamping to 5`);
+    growLoopCount = 5;
+  } else if (growLoopCount > 100) {
+    console.warn(`growLoopCount ${growLoopCount} above maximum (100), clamping to 100`);
+    growLoopCount = 100;
+  }
+  let endLoopMax = options.endLoopMax;
+  if (endLoopMax < 50) {
+    console.warn(`endLoopMax ${endLoopMax} below minimum (50), clamping to 50`);
+    endLoopMax = 50;
+  } else if (endLoopMax > 1e3) {
+    console.warn(`endLoopMax ${endLoopMax} above maximum (1000), clamping to 1000`);
+    endLoopMax = 1e3;
+  }
+  return entry.createConfig({ growLoopCount, endLoopMax });
 }
 
 // IsoGame/tools/structureTools.ts
@@ -10518,7 +10534,7 @@ var placeBuildingTool = {
       console.error(`Failed to create building config: ${configId}`);
       return;
     }
-    const generator = new WcBuildingFactoryGenarator(world, buildingConf);
+    const generator = new WcBuildFactoryGenarator(world, buildingConf);
     const success = generator.start2(x, y);
     if (success) {
       console.log(`Building placed successfully at (${x}, ${y})`);
@@ -10730,29 +10746,6 @@ var GameWorker = class {
         }
       }
     ],
-    ["gridClick_Building", (data) => {
-      if (!this.canvasMapDrawer) {
-        console.warn("CanvasMapDrawer not initialized yet");
-        return;
-      }
-      const x = this.x + Math.round(
-        (data.x | 0) * this.canvasMapDrawer.conf.DRAW_TILE_COUNT / 30
-      );
-      const y = this.y + Math.round(
-        (data.y | 0) * this.canvasMapDrawer.conf.DRAW_TILE_COUNT / 30
-      );
-      console.log("####################### gridClick ");
-      console.log(data);
-      const buildingConf1 = new WcBuildConf_GraveA({
-        growLoopCount: data.growLoopCount === void 0 ? 20 : data.growLoopCount,
-        endLoopMax: data.endLoopMax === void 0 ? 100 : data.endLoopMax
-      });
-      const building1 = new WcBuildingFactoryGenarator(
-        this.world,
-        buildingConf1
-      );
-      building1.start2(x, y);
-    }],
     ["gridClick", (data) => {
       const x = data.x;
       const y = data.y;
