@@ -1,0 +1,75 @@
+import { TilesActions } from "../map/tileActions.ts";
+import { MapTool, toolRegistry } from "./toolRegistry.ts";
+import { World } from "../word.ts";
+
+const tilesActions = TilesActions.getInstance();
+
+export const colorPickerTool: MapTool = {
+  id: "color_picker",
+  name: "Color Picker",
+  icon: "🎨",
+  category: "color",
+  execute(x: number, y: number, brushSize: number, _world: World) {
+    // Color picker doesn't execute on click - it uses the active color from registry
+    // The actual painting is done by paintColorTool
+    console.log(`Color Picker active with color: ${toolRegistry.getActiveColor().join(", ")}`);
+  },
+};
+
+export const paintColorTool: MapTool = {
+  id: "paint_color",
+  name: "Paint Color",
+  icon: "🖌️",
+  category: "color",
+  execute(x: number, y: number, brushSize: number, _world: World) {
+    const color = toolRegistry.getActiveColor();
+    tilesActions.doAction({
+      func: "colorSquare",
+      x,
+      y,
+      size: brushSize,
+      color: color,
+    });
+  },
+};
+
+export const eyedropperTool: MapTool = {
+  id: "eyedropper",
+  name: "Eyedropper",
+  icon: "💉",
+  category: "color",
+  execute(x: number, y: number, _brushSize: number, _world: World) {
+    // Eyedropper reads tile color - this will be handled by sending message back to main
+    // For now, just log the action
+    console.log(`Eyedropper at (${x}, ${y}) - color pickup will be sent to main thread`);
+  },
+};
+
+export const randomShadeTool: MapTool = {
+  id: "random_shade",
+  name: "Random Shade",
+  icon: "🎲",
+  category: "color",
+  execute(x: number, y: number, brushSize: number, _world: World) {
+    const baseColor = toolRegistry.getActiveColor();
+    // Apply random variation to the active color
+    const variedColor = baseColor.map(c => 
+      Math.max(0, Math.min(255, Math.round(c + (Math.random() - 0.5) * 60)))
+    ) as [number, number, number];
+    
+    tilesActions.doAction({
+      func: "colorSquare",
+      x,
+      y,
+      size: brushSize,
+      color: variedColor,
+    });
+  },
+};
+
+export const colorTools: MapTool[] = [
+  colorPickerTool,
+  paintColorTool,
+  eyedropperTool,
+  randomShadeTool,
+];

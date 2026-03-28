@@ -14,6 +14,7 @@ const brushSizes = [1, 3, 5, 9] as const;
 let activeCategory: string = "terrain";
 let activeToolId: string | null = null;
 let activeBrushSize: number = 1;
+let activeColor: string = "#808080"; // Default gray
 let toolsByCategory: Map<string, MapToolInfo[]> = new Map();
 
 export const initToolMenu = (gameWorker: Worker) => {
@@ -36,6 +37,11 @@ function renderToolMenu(container: HTMLElement, gameWorker: Worker) {
       `).join('')}
     </div>
     <div id="toolList"></div>
+    <div id="toolColorPicker" style="display: ${activeCategory === 'color' ? 'flex' : 'none'}">
+      <span>Color:</span>
+      <input type="color" id="colorPickerInput" value="${activeColor}">
+      <span id="colorHex">${activeColor}</span>
+    </div>
     <div id="toolBrushSize">
       <span>Brush:</span>
       ${brushSizes.map(size => `
@@ -57,6 +63,15 @@ function renderToolMenu(container: HTMLElement, gameWorker: Worker) {
     });
   });
 
+  // Color picker handler
+  const colorPickerInput = container.querySelector('#colorPickerInput') as HTMLInputElement;
+  if (colorPickerInput) {
+    colorPickerInput.addEventListener('input', (e) => {
+      const color = (e.target as HTMLInputElement).value;
+      setActiveColor(color, container, gameWorker);
+    });
+  }
+
   // Brush size click handlers
   container.querySelectorAll('.brush-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -75,8 +90,36 @@ function setActiveCategory(category: string, container: HTMLElement, gameWorker:
     tab.classList.toggle('active', tabCat === category);
   });
 
+  // Show/hide color picker
+  const colorPickerEl = container.querySelector('#toolColorPicker') as HTMLElement;
+  if (colorPickerEl) {
+    colorPickerEl.style.display = category === 'color' ? 'flex' : 'none';
+  }
+
   // Re-render tool list for this category
   renderToolList(container, gameWorker);
+}
+
+function setActiveColor(color: string, container: HTMLElement, gameWorker: Worker) {
+  activeColor = color;
+
+  // Update color hex display
+  const colorHexEl = container.querySelector('#colorHex') as HTMLElement;
+  if (colorHexEl) {
+    colorHexEl.textContent = color;
+  }
+
+  // Convert hex to RGB and send to worker
+  const r = parseInt(color.slice(1, 3), 16);
+  const g = parseInt(color.slice(3, 5), 16);
+  const b = parseInt(color.slice(5, 7), 16);
+
+  gameWorker.postMessage({
+    action: "setColor",
+    r: r,
+    g: g,
+    b: b,
+  });
 }
 
 function setActiveBrushSize(size: number, container: HTMLElement, gameWorker: Worker) {

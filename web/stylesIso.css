@@ -346,6 +346,40 @@ pre {
   font-style: italic;
 }
 
+#toolColorPicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: #aaa;
+}
+
+#colorPickerInput {
+  width: 40px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+#colorPickerInput::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+#colorPickerInput::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+#colorHex {
+  font-family: monospace;
+  font-size: 10px;
+  color: #ccc;
+}
+
 #toolBrushSize {
   display: flex;
   align-items: center;

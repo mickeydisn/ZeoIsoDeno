@@ -199,46 +199,46 @@ export const raiseTerrainTool: MapTool = {
 
 **File**: `IsoGame/tools/colorTools.ts`
 
-- [ ] Create `colorPickerTool` with `id: "color_picker"`, icon `🎨`
-- [ ] Store selected color in `ToolRegistry` state (add `activeColor: [number, number, number]` property)
-- [ ] UI: render color picker input in tool menu when color category is active
-- [ ] On color change: send `setColor { r, g, b }` to worker
+- [x] Create `colorPickerTool` with `id: "color_picker"`, icon `🎨`
+- [x] Store selected color in `ToolRegistry` state (add `activeColor: [number, number, number]` property)
+- [x] UI: render color picker input in tool menu when color category is active
+- [x] On color change: send `setColor { r, g, b }` to worker
 
 ### Task 3.2: Implement Paint Color Tool
 
-- [ ] Create `paintColorTool` with `id: "paint_color"`, icon `🖌️`
-- [ ] Use `TilesActions.getInstance().doAction({ func: "colorSquare", x, y, size: brushSize, color: activeColor })`
-- [ ] Register tool in `ToolRegistry`
+- [x] Create `paintColorTool` with `id: "paint_color"`, icon `🖌️`
+- [x] Use `TilesActions.getInstance().doAction({ func: "colorSquare", x, y, size: brushSize, color: activeColor })`
+- [x] Register tool in `ToolRegistry`
 
 ### Task 3.3: Implement Eyedropper Tool
 
-- [ ] Create `eyedropperTool` with `id: "eyedropper"`, icon `💉`
+- [x] Create `eyedropperTool` with `id: "eyedropper"`, icon `💉`
 - [ ] Read tile color: `FactoryMap.getInstance().getTile(x, y).color`
 - [ ] Send color back to main: `handler.send({ action: "pickedColor", color: [...] })`
 - [ ] Main thread: update color picker UI and send `setColor` to worker
 
 ### Task 3.4: Implement Random Shade Tool
 
-- [ ] Create `randomShadeTool` with `id: "random_shade"`, icon `🎲`
-- [ ] Apply random variation of active color: `color = activeColor.map(c => Math.max(0, Math.min(255, c + (Math.random() - 0.5) * 60)))`
-- [ ] Use `TilesActions.getInstance().doAction({ func: "colorSquare", x, y, size: brushSize, color: variedColor })`
-- [ ] Register tool in `ToolRegistry`
+- [x] Create `randomShadeTool` with `id: "random_shade"`, icon `🎲`
+- [x] Apply random variation of active color: `color = activeColor.map(c => Math.max(0, Math.min(255, c + (Math.random() - 0.5) * 60)))`
+- [x] Use `TilesActions.getInstance().doAction({ func: "colorSquare", x, y, size: brushSize, color: variedColor })`
+- [x] Register tool in `ToolRegistry`
 
 ### Task 3.5: Add Color UI Elements
 
 **File**: `web/js/menu/toolMenu.ts`
 
-- [ ] Add color picker `<input type="color">` to color category tab
+- [x] Add color picker `<input type="color">` to color category tab
 - [ ] Handle `pickedColor` message from worker to update color picker value
-- [ ] On color change: send `setColor` message to worker
+- [x] On color change: send `setColor` message to worker
 
 ### Task 3.6: Register Color Tools in Worker
 
 **File**: `web/js/gameWorker.ts`
 
-- [ ] Import color tools from `IsoGame/tools/colorTools.ts`
-- [ ] Add `setColor` handler: store color in `toolRegistry.activeColor`
-- [ ] Register all 4 color tools in `initWorker`
+- [x] Import color tools from `IsoGame/tools/colorTools.ts`
+- [x] Add `setColor` handler: store color in `toolRegistry.activeColor`
+- [x] Register all 4 color tools in `initWorker`
 
 ---
 
