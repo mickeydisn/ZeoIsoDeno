@@ -133,12 +133,12 @@ This update focuses on code hygiene, configuration correctness, and UI consisten
 
 **File**: `web/js/menu/toolMenu.ts` (MODIFY)
 
-- [ ] Refactor building config panel HTML to reuse existing CSS classes:
+- [x] Refactor building config panel HTML to reuse existing CSS classes:
   - Use `.tool-btn` pattern for config buttons (not custom `.building-config-btn`)
-  - Use `.category-header` pattern for panel header
+  - Use `#buildingConfigHeader` / `#buildingConfigTitle` pattern for panel header (consistent with `#toolMenuHeader` / `#toolMenuTitle`)
   - Use existing slider/input patterns from other tool panels
-- [ ] Remove inline styles where CSS classes exist
-- [ ] Ensure consistent spacing, font sizes, and colors with rest of tool menu
+- [x] Remove inline styles where CSS classes exist
+- [x] Ensure consistent spacing, font sizes, and colors with rest of tool menu
 
 ---
 

@@ -118,7 +118,9 @@ function renderToolMenu(container: HTMLElement, gameWorker: Worker) {
       <div id="assetGroupList"></div>
     </div>
     <div id="buildingConfigPanel" style="display: ${activeCategory === 'structure' ? 'block' : 'none'}">
-      <div class="building-config-header">Building Configuration</div>
+      <div id="buildingConfigHeader">
+        <span id="buildingConfigTitle">Building Config</span>
+      </div>
       <div id="buildingConfigSelector"></div>
       <div id="buildingParams">
         <div class="param-row">
@@ -623,13 +625,13 @@ function renderBuildingConfigSelector(container: HTMLElement, gameWorker: Worker
   }
 
   selectorEl.innerHTML = buildingConfigs.map(config => `
-    <button class="building-config-btn ${config.id === activeBuildingConfigId ? 'active' : ''}" data-config-id="${config.id}">
-      <span class="building-name">${config.name}</span>
+    <button class="tool-btn ${config.id === activeBuildingConfigId ? 'active' : ''}" data-config-id="${config.id}">
+      <span class="tool-name">${config.name}</span>
     </button>
   `).join('');
 
   // Config button click handlers
-  selectorEl.querySelectorAll('.building-config-btn').forEach(btn => {
+  selectorEl.querySelectorAll('.tool-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const configId = (btn as HTMLElement).dataset.configId!;
       setActiveBuildingConfig(configId, container, gameWorker);
@@ -662,7 +664,7 @@ function setActiveBuildingConfig(configId: string, container: HTMLElement, gameW
   if (descriptionEl) descriptionEl.textContent = getActiveBuildingDescription();
 
   // Update button active state
-  container.querySelectorAll('.building-config-btn').forEach(btn => {
+  container.querySelectorAll('#buildingConfigSelector .tool-btn').forEach(btn => {
     btn.classList.toggle('active', (btn as HTMLElement).dataset.configId === configId);
   });
 
