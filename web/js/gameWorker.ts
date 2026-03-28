@@ -276,10 +276,33 @@ export class GameWorker {
     ],
     [
       "setActiveAsset",
-      (data: GameHandlerData) => {
+      async (data: GameHandlerData) => {
         console.log("setActiveAsset received:", data.assetId);
         toolRegistry.setActiveAssetId(data.assetId);
         console.log("Active asset set to:", toolRegistry.getActiveAssetId());
+
+        // Generate asset preview using AssetLoaderOpti
+        if (this.assetLoader && data.assetId) {
+          try {
+            const canvas = this.assetLoader.getAsset(data.assetId);
+            if (canvas) {
+              // Convert canvas to blob URL
+              const blob = await canvas.convertToBlob();
+              const blobUrl = URL.createObjectURL(blob);
+              
+              // Send preview to main thread
+              this.handler.send({
+                action: "assetPreview",
+                blobUrl: blobUrl,
+              });
+              console.log("Asset preview sent for:", data.assetId);
+            } else {
+              console.warn("Asset not found:", data.assetId);
+            }
+          } catch (error) {
+            console.error("Error generating asset preview:", error);
+          }
+        }
       },
     ],
     [

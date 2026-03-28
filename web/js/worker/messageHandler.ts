@@ -113,6 +113,11 @@ export interface EventPickedColor extends BaseMessage {
   b: number;
 }
 
+export interface EventAssetPreview extends BaseMessage {
+  action: "assetPreview";
+  blobUrl: string;
+}
+
 // ----
 
 type ToMainMessage =
@@ -123,7 +128,8 @@ type ToMainMessage =
   | EventToolExecuted
   | EventToolList
   | EventAssetGroups
-  | EventPickedColor;
+  | EventPickedColor
+  | EventAssetPreview;
 
 type WorkerInitMessage =
   | EventInitWorker
