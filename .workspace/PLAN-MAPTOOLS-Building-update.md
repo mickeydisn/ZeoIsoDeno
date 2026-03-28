@@ -149,26 +149,29 @@ This update focuses on code hygiene, configuration correctness, and UI consisten
 
 ### Task 4.1: Functional Testing
 
-- [ ] Test building placement with each of the 6 configurations
-- [ ] Test parameter sliders (grow loop 5-100, end loop 50-1000)
-- [ ] Test config switching preserves parameter values
-- [ ] Verify legacy `gridClick_Building` removal doesn't break anything
-- [ ] Check browser console for any import/definition errors
+- [x] Verify legacy `gridClick_Building` removal doesn't break anything (Phase 1)
+- [x] Verify `placeBuildingTool` is the sole building placement entry point (Phase 1)
+- [x] Verify building config registry returns correct configs (Phase 2)
+- [x] Verify configuration validation clamps out-of-range values (Phase 2)
+- [ ] Test building placement with each of the 6 configurations (manual browser test)
+- [ ] Test parameter sliders (grow loop 5-100, end loop 50-1000) (manual browser test)
+- [ ] Test config switching preserves parameter values (manual browser test)
+- [ ] Check browser console for any import/definition errors (manual browser test)
 
 ### Task 4.2: Visual Testing
 
-- [ ] Verify building config panel renders with correct styles
-- [ ] Verify panel shows/hides correctly with structure category
-- [ ] Verify active config button has visual feedback
-- [ ] Verify slider values display correctly
-- [ ] Compare building panel styling with other tool panels for consistency
+- [x] Verify building config panel renders with correct CSS classes (Phase 3)
+- [x] Verify panel shows/hides correctly with structure category (Phase 3)
+- [x] Verify active config button has visual feedback via .tool-btn.active (Phase 3)
+- [ ] Verify slider values display correctly (manual browser test)
+- [ ] Compare building panel styling with other tool panels for consistency (manual browser test)
 
 ### Task 4.3: Code Quality Check
 
-- [ ] Run TypeScript compiler — no errors
-- [ ] Run linter if configured — no warnings
-- [ ] Verify no unused imports remain after cleanup
-- [ ] Verify all renamed files have correct import paths
+- [x] Run TypeScript compiler — no errors
+- [x] Verify no unused imports remain after cleanup
+- [x] Verify all renamed files have correct import paths
+- [ ] Run linter if configured — no warnings (pending linter setup)
 
 ---
 
