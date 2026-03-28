@@ -141,52 +141,52 @@ export const raiseTerrainTool: MapTool = {
 };
 ```
 
-- [ ] Create `terrainTools.ts` with `raiseTerrainTool`
-- [ ] Use `TilesActions.getInstance().lvlUpSquare()` with `lvl: 1` for brush sizes > 1
-- [ ] Use `TilesActions.getInstance().lvlUp()` for 1×1 brush
-- [ ] Register tool in `ToolRegistry` during worker init
+- [x] Create `terrainTools.ts` with `raiseTerrainTool`
+- [x] Use `TilesActions.getInstance().lvlUpSquare()` with `lvl: 1` for brush sizes > 1
+- [x] Use `TilesActions.getInstance().lvlUp()` for 1×1 brush
+- [x] Register tool in `ToolRegistry` during worker init
 
 ### Task 2.2: Implement Lower Terrain Tool
 
-- [ ] Create `lowerTerrainTool` with `id: "lower_terrain"`, icon `⬇️`
-- [ ] Use `TilesActions.getInstance().lvlUpSquare()` with `lvl: -1`
-- [ ] Register tool in `ToolRegistry`
+- [x] Create `lowerTerrainTool` with `id: "lower_terrain"`, icon `⬇️`
+- [x] Use `TilesActions.getInstance().lvlUpSquare()` with `lvl: -1`
+- [x] Register tool in `ToolRegistry`
 
 ### Task 2.3: Implement Flatten Tool
 
-- [ ] Create `flattenTool` with `id: "flatten"`, icon `⏹️`
-- [ ] Wrap existing `TilesActions.getInstance().doAction({ func: "lvlFlatSquare", x, y, size: brushSize })`
-- [ ] Register tool in `ToolRegistry`
+- [x] Create `flattenTool` with `id: "flatten"`, icon `⏹️`
+- [x] Wrap existing `TilesActions.getInstance().doAction({ func: "lvlFlatSquare", x, y, size: brushSize })`
+- [x] Register tool in `ToolRegistry`
 
 ### Task 2.4: Implement Smooth Tool
 
-- [ ] Create `smoothTool` with `id: "smooth"`, icon `〰️`
-- [ ] Use `TilesActions.getInstance().doAction({ func: "lvlAvgSquare", x, y, size: brushSize })`
-- [ ] Register tool in `ToolRegistry`
+- [x] Create `smoothTool` with `id: "smooth"`, icon `〰️`
+- [x] Use `TilesActions.getInstance().doAction({ func: "lvlAvgSquare", x, y, size: brushSize })`
+- [x] Register tool in `ToolRegistry`
 
 ### Task 2.5: Implement Plateau Tool
 
-- [ ] Create `plateauTool` with `id: "plateau"`, icon `🏔️`
-- [ ] First click: store target level from clicked tile
-- [ ] Second click: flatten surrounding area to target level using `lvlFlatSquare`
-- [ ] Alternative: use `lvlSet` for each tile in brush area with stored level
-- [ ] Register tool in `ToolRegistry`
+- [x] Create `plateauTool` with `id: "plateau"`, icon `🏔️`
+- [x] First click: store target level from clicked tile
+- [x] Second click: flatten surrounding area to target level using `lvlFlatSquare`
+- [x] Alternative: use `lvlSet` for each tile in brush area with stored level
+- [x] Register tool in `ToolRegistry`
 
 ### Task 2.6: Register Terrain Tools in Worker Init
 
 **File**: `web/js/gameWorker.ts`
 
-- [ ] Import terrain tools from `IsoGame/tools/terrainTools.ts`
-- [ ] Register all 5 terrain tools in `initWorker` after `this.world.init()`
-- [ ] Send tool list to main thread for UI rendering: `handler.send({ action: "toolList", tools: [...] })`
+- [x] Import terrain tools from `IsoGame/tools/terrainTools.ts`
+- [x] Register all 5 terrain tools in `initWorker` after `this.world.init()`
+- [x] Send tool list to main thread for UI rendering: `handler.send({ action: "toolList", tools: [...] })`
 
 ### Task 2.7: Populate Terrain Tab in UI
 
 **File**: `web/js/menu/toolMenu.ts`
 
-- [ ] Handle `toolList` message from worker to populate tool buttons
-- [ ] Render terrain tools in `[Terrain]` tab with icons and names
-- [ ] Highlight active tool button with `.active` class
+- [x] Handle `toolList` message from worker to populate tool buttons
+- [x] Render terrain tools in `[Terrain]` tab with icons and names
+- [x] Highlight active tool button with `.active` class
 
 ---
 

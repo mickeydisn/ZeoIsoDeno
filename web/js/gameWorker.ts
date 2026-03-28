@@ -7,6 +7,7 @@ import {
   CanvasMapDrawersConf,
 } from "../../IsoGame/mapIso/canvasMapDrawer.ts";
 import { toolRegistry } from "../../IsoGame/tools/toolRegistry.ts";
+import { terrainTools } from "../../IsoGame/tools/terrainTools.ts";
 import { WcBuildConf_GraveA } from "../../IsoGame/wcBuilding2/conf/buildConf_GraveA.ts";
 import { WcBuildingFactoryGenarator } from "../../IsoGame/wcBuilding2/wcBuildingFactory.ts";
 import { World } from "../../IsoGame/word.ts";
@@ -50,6 +51,15 @@ export class GameWorker {
 
     console.log("== Load Word");
     this.world.init();
+
+    console.log("== Register Tools");
+    terrainTools.forEach((tool) => toolRegistry.register(tool));
+
+    // Send tool list to main thread for UI rendering
+    this.handler.send({
+      action: "toolList",
+      tools: toolRegistry.getAllTools(),
+    });
 
     this.handler.send({ action: "callback_initWorker" });
   };
