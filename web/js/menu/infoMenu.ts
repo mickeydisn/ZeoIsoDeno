@@ -1,15 +1,19 @@
 import { TileInfo } from "../../../IsoGame/map/object/tile.ts";
 import { WcBuildTileInfo } from "../../../IsoGame/wcBuilding2/wcBuildTile.ts";
 
+interface InfoMessage {
+  data: TileInfo;
+}
+
 // Main thread (e.g., main.ts)
-export const infoMenu = (gameWorker: Worker) => {
+export const infoMenu = (_gameWorker: Worker) => {
   (document.getElementById("infoMenu") as HTMLElement)
     .innerHTML = `
       <div id="infoCell"></div>
     `;
 };
 
-export const updateInfoCell = (message: any) => {
+export const updateInfoCell = (message: InfoMessage) => {
   const tileInfo: TileInfo = message.data;
 
   const s = `
@@ -31,8 +35,8 @@ export const updateInfoWcBuildTile = (infoWcBuild: WcBuildTileInfo | null) => {
   const table = pFaces === undefined ? "" : `
   <div class="gridFaces">
     ${
-    pFaces.map((face: any) =>
-      face.map((axe: any) => `<div>${axe}</div>`).join("")
+    pFaces.map((face: number[]) =>
+      face.map((axe: number) => `<div>${axe}</div>`).join("")
     ).join("")
   }
   </div>
@@ -43,8 +47,8 @@ export const updateInfoWcBuildTile = (infoWcBuild: WcBuildTileInfo | null) => {
   const ctable = cFaces === undefined ? "" : `
   <div class="gridFaces">
     ${
-    cFaces.map((face: any) =>
-      face.map((axe: any) => `<div>${axe}</div>`).join("")
+    cFaces.map((face: number[]) =>
+      face.map((axe: number) => `<div>${axe}</div>`).join("")
     ).join("")
   }
   </div>

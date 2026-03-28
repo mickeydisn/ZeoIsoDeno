@@ -87,7 +87,7 @@ export const smoothTool: MapTool = {
 
 // Plateau tool uses two-click interaction
 let plateauTargetLevel: number | null = null;
-let plateauStartPos: { x: number; y: number } | null = null;
+let _plateauStartPos: { x: number; y: number } | null = null;
 
 export const plateauTool: MapTool = {
   id: "plateau",
@@ -100,7 +100,7 @@ export const plateauTool: MapTool = {
       // First click: store target level
       const tile = fm.getTile(x, y);
       plateauTargetLevel = tile.lvl;
-      plateauStartPos = { x, y };
+      _plateauStartPos = { x, y };
       console.log(`Plateau: Target level set to ${plateauTargetLevel}`);
     } else {
       // Second click: flatten to target level
@@ -121,14 +121,14 @@ export const plateauTool: MapTool = {
       console.log(`Plateau: Flattened to level ${plateauTargetLevel}`);
       // Reset state
       plateauTargetLevel = null;
-      plateauStartPos = null;
+      _plateauStartPos = null;
     }
   },
 };
 
 export function resetPlateauState() {
   plateauTargetLevel = null;
-  plateauStartPos = null;
+  _plateauStartPos = null;
 }
 
 export const terrainTools: MapTool[] = [

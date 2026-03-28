@@ -15,7 +15,7 @@ import { getBuildingConfigList } from "../../IsoGame/tools/buildingConfigRegistr
 import { World } from "../../IsoGame/word.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
 
-export type GameHandlerData = any;
+export type GameHandlerData = unknown;
 
 export class GameWorker {
   private world = new World();
@@ -185,12 +185,12 @@ export class GameWorker {
     ],
 
     ["gridClick", (data: GameHandlerData) => {
-      const x = data.x;
-      const y = data.y;
+      const x = (data as Record<string, unknown>).x as number;
+      const y = (data as Record<string, unknown>).y as number;
       console.log("####################### gridClick CITY ");
       console.log(data);
 
-      const city = new City(this.world, x, y);
+      const _city = new City(this.world, x, y);
     }],
 
     [

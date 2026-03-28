@@ -9,7 +9,7 @@ export const assetPickerTool: MapTool = {
   name: "Asset Picker",
   icon: "📂",
   category: "asset",
-  execute(x: number, y: number, brushSize: number, _world: World) {
+  execute(_x: number, _y: number, _brushSize: number, _world: World) {
     // Asset picker doesn't execute on click - it shows the asset browser
     // The actual placement is done by placeAssetTool
     const activeAsset = toolRegistry.getActiveAssetId();

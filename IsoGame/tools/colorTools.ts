@@ -10,7 +10,7 @@ export const colorPickerTool: MapTool = {
   name: "Color Picker",
   icon: "🎨",
   category: "color",
-  execute(x: number, y: number, brushSize: number, _world: World) {
+  execute(_x: number, _y: number, _brushSize: number, _world: World) {
     // Color picker doesn't execute on click - it uses the active color from registry
     // The actual painting is done by paintColorTool
     console.log(`Color Picker active with color: ${toolRegistry.getActiveColor().join(", ")}`);
