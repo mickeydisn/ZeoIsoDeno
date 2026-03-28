@@ -63,14 +63,14 @@ This update focuses on code hygiene, configuration correctness, and UI consisten
 
 **File**: `web/js/menu/toolMenu.ts` (MODIFY)
 
-- [ ] Change `endLoopSlider` set default to `1000`
-- [ ] Update `defaultEndLoop` values in building configs if any exceed 1000
-- [ ] Verify `buildingConfigRegistry.ts` default values are within new range
+- [x] Change `endLoopSlider` set default to `1000`
+- [x] Update `defaultEndLoop` values in building configs if any exceed 1000
+- [x] Verify `buildingConfigRegistry.ts` default values are within new range
 
 **File**: `IsoGame/tools/buildingConfigRegistry.ts` (VERIFY)
 
-- [ ] Check all 6 building configs have `defaultEndLoop <= 1000`
-- [ ] Adjust any configs that exceed the new maximum
+- [x] Check all 6 building configs have `defaultEndLoop <= 1000`
+- [x] Adjust any configs that exceed the new maximum
 
 ### Task 2.2: Audit Building Configuration Properties
 

@@ -128,7 +128,7 @@ function renderToolMenu(container: HTMLElement, gameWorker: Worker) {
         </div>
         <div class="param-row">
           <span>End Loop Max:</span>
-          <input type="range" min="50" max="5000" value="${buildingEndLoop}" id="endLoopSlider">
+          <input type="range" min="50" max="1000" value="${buildingEndLoop}" id="endLoopSlider">
           <span id="endLoopValue">${buildingEndLoop}</span>
         </div>
       </div>
