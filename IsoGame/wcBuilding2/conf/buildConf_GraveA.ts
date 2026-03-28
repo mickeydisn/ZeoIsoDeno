@@ -1,5 +1,5 @@
 import { WcAbstractBuildConf, WcConfTile } from "../wcAbstractBuildConf.ts";
-import { wcAsset_EnterSimple } from "./assetsCollection/wcAsset_Entrer.ts";
+import { WcAsset_EnterSimple } from "./assetsCollection/wcAsset_Entrer.ts";
 import {
   FenceCollapseType,
   WcAsset_Fence2,
@@ -15,7 +15,7 @@ import { actionsEmpty, applyGroup } from "./assetsCollection/wcUtils.ts";
 export class WcBuildConf_GraveA extends WcAbstractBuildConf {
   private colorConf: Record<string, string>;
 
-  private enter: wcAsset_EnterSimple;
+  private enter: WcAsset_EnterSimple;
   private fenceEnter: WcAsset_FenceEnter;
 
   private faceX: wcAsset_X;
@@ -35,7 +35,7 @@ export class WcBuildConf_GraveA extends WcAbstractBuildConf {
       WALL_SUFFIX: `#H${rand}_S50_C150_B115`,
     };
 
-    this.enter = new wcAsset_EnterSimple();
+    this.enter = new WcAsset_EnterSimple();
     this.faceX = new wcAsset_X();
 
     this.fenceEnter = new WcAsset_FenceEnter({

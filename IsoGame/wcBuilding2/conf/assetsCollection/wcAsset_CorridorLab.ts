@@ -1,7 +1,7 @@
 import { WcConfTile } from "../../wcAbstractBuildConf.ts";
 import { WcFace } from "../../wcBuildFace.ts";
 
-export class wcAsset_CoridorLab {
+export class WcAsset_CorridorLab {
   WALL_SUFFIX: string; // '#H200_S20_C135_B105'
   PREFIX : string = "Lab5_"
   tag: string = "CL_";

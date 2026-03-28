@@ -3,7 +3,7 @@ import {
   WcConfRawTile,
   WcConfTile,
 } from "../wcAbstractBuildConf.ts";
-import { wcAsset_CoridorLab } from "./assetsCollection/wcAsset_CoridorLab.ts";
+import { WcAsset_CorridorLab } from "./assetsCollection/wcAsset_CorridorLab.ts";
 import {
   WcAsset_FencePlatform,
   WcAsset_FenceSimple,
@@ -14,7 +14,7 @@ export class WcBuildConf_LabBorderA extends WcAbstractBuildConf {
 
   private fence: WcAsset_FenceSimple;
   private fencePlatform: WcAsset_FencePlatform;
-  private corridor: wcAsset_CoridorLab;
+  private corridor: WcAsset_CorridorLab;
 
   constructor(conf = {}) {
     super(conf);
@@ -35,7 +35,7 @@ export class WcBuildConf_LabBorderA extends WcAbstractBuildConf {
       tag: "FP_",
       suffix: this.colorConf.FENCE_SUFFIX,
     });
-    this.corridor = new wcAsset_CoridorLab(this.colorConf.WALL_SUFFIX);
+    this.corridor = new WcAsset_CorridorLab(this.colorConf.WALL_SUFFIX);
 
     this.faceLinkWeight = {
       //

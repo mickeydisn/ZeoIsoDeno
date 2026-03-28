@@ -1,7 +1,7 @@
 import { WcAbstractBuildConf, WcConfTile } from "../wcAbstractBuildConf.ts";
-import { wcAsset_CoridorPipe } from "./assetsCollection/wcAsset_CoridorPipe.ts";
-import { wcAsset_CoridorPipe2 } from "./assetsCollection/wcAsset_CoridorPipe2.ts";
-import { wcAsset_Enter } from "./assetsCollection/wcAsset_Entrer.ts";
+import { WcAsset_CorridorPipe } from "./assetsCollection/wcAsset_CorridorPipe.ts";
+import { WcAsset_CorridorPipe2 } from "./assetsCollection/wcAsset_CorridorPipe2.ts";
+import { WcAsset_Enter } from "./assetsCollection/wcAsset_Entrer.ts";
 import {
   FenceCollapseType,
   WcAsset_Fence2,
@@ -16,13 +16,13 @@ import {
 export class WcBuildConf_LabPipeA extends WcAbstractBuildConf {
   private colorConf: Record<string, string>;
 
-  private enter: wcAsset_Enter;
+  private enter: WcAsset_Enter;
   private faceX: wcAsset_X;
 
   private fence: WcAsset_Fence2;
   // private fencePlatform: WcAsset_FencePlatform;
-  private corridor: wcAsset_CoridorPipe;
-  private corridor2: wcAsset_CoridorPipe2;
+  private corridor: WcAsset_CorridorPipe;
+  private corridor2: WcAsset_CorridorPipe2;
 
   constructor(conf = {}) {
     super(conf);
@@ -35,7 +35,7 @@ export class WcBuildConf_LabPipeA extends WcAbstractBuildConf {
       WALL_SUFFIX: `#H${rand}_S90_C140_B95`,
     };
 
-    this.enter = new wcAsset_Enter();
+    this.enter = new WcAsset_Enter();
     this.faceX = new wcAsset_X();
     this.fence = new WcAsset_Fence2({
       tag: "F2_",
@@ -43,8 +43,8 @@ export class WcBuildConf_LabPipeA extends WcAbstractBuildConf {
       collapseType: FenceCollapseType.NoSquare,
     });
     // this.fencePlatform = new WcAsset_FencePlatform(this.colorConf.WALL_SUFFIX);
-    this.corridor = new wcAsset_CoridorPipe(this.colorConf.WALL_SUFFIX);
-    this.corridor2 = new wcAsset_CoridorPipe2(this.colorConf.WALL_SUFFIX);
+    this.corridor = new WcAsset_CorridorPipe(this.colorConf.WALL_SUFFIX);
+    this.corridor2 = new WcAsset_CorridorPipe2(this.colorConf.WALL_SUFFIX);
 
     this.faceLinkWeight = {
       //

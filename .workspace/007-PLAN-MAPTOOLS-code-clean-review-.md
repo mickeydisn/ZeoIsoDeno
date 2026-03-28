@@ -185,22 +185,22 @@ The `wcBuilding2/` package has inconsistent class naming (`wc` vs `Wc` prefixes)
 
 **Files**: `IsoGame/wcBuilding2/wcAsset_*.ts`
 
-- [ ] Rename classes to use `WcAsset_*` pattern (uppercase W):
+- [x] Rename classes to use `WcAsset_*` pattern (uppercase W):
   - `wcAsset_CoridorLab` → `WcAsset_CorridorLab` (fix typo too)
   - `wcAsset_CoridorPipe` → `WcAsset_CorridorPipe`
   - `wcAsset_Enter` → `WcAsset_Enter`
   - `wcAsset_EnterSimple` → `WcAsset_EnterSimple`
-- [ ] Update all import references
-- [ ] Verify TypeScript compilation
+- [x] Update all import references
+- [x] Verify TypeScript compilation
 
 ### Task 4.2: Fix File Name Typos
 
 **Files**: `IsoGame/wcBuilding2/wcAsset_Coridor*.ts`
 
-- [ ] Rename `wcAsset_CoridorLab.ts` → `wcAsset_CorridorLab.ts`
-- [ ] Rename `wcAsset_CoridorPipe.ts` → `wcAsset_CorridorPipe.ts`
-- [ ] Update all import paths
-- [ ] Verify no broken references
+- [x] Rename `wcAsset_CoridorLab.ts` → `wcAsset_CorridorLab.ts`
+- [x] Rename `wcAsset_CoridorPipe.ts` → `wcAsset_CorridorPipe.ts`
+- [x] Update all import paths
+- [x] Verify no broken references
 
 ---
 

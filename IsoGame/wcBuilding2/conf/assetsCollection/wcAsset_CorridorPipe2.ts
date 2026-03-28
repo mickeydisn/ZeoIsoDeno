@@ -1,7 +1,7 @@
 import { WcConfTile } from "../../wcAbstractBuildConf.ts";
 import { WcFace } from "../../wcBuildFace.ts";
 
-export class wcAsset_CoridorPipe2 {
+export class WcAsset_CorridorPipe2 {
   WALL_SUFFIX: string; // '#H200_S20_C135_B105'
 
   tag: string = "CP2_";

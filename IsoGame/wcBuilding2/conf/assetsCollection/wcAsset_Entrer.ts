@@ -2,7 +2,7 @@ import { WcConfTile } from "../../wcAbstractBuildConf.ts";
 import { WcFace } from "../../wcBuildFace.ts";
 import { actionsEmpty, applyGroup } from "./wcUtils.ts";
 
-export class wcAsset_Enter {
+export class WcAsset_Enter {
   tag: string = "E_";
 
   constructor() {
@@ -88,7 +88,7 @@ export class wcAsset_Enter {
   // ==========================================================================
 }
 
-export class wcAsset_EnterSimple {
+export class WcAsset_EnterSimple {
   tag: string = "E_";
 
   constructor() {
