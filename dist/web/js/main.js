@@ -60,6 +60,10 @@ var assetGroups = [];
 var activeAssetId = null;
 var selectedAssetGroup = null;
 var activeAssetSuffix = "_NE";
+var activeHue = 0;
+var activeContrast = 100;
+var activeSaturation = 100;
+var activeBrightness = 100;
 var initToolMenu = (gameWorker2) => {
   const toolMenuEl = document.getElementById("toolMenu");
   if (!toolMenuEl)
@@ -105,6 +109,29 @@ function renderToolMenu(container, gameWorker2) {
           </button>
         `).join("")}
       </div>
+      <div id="assetFilterControls">
+        <div class="filter-row">
+          <span>Hue:</span>
+          <input type="range" min="0" max="360" value="${activeHue}" class="filter-slider" data-filter="hue">
+          <span class="filter-value">${activeHue}\xB0</span>
+        </div>
+        <div class="filter-row">
+          <span>Sat:</span>
+          <input type="range" min="5" max="250" value="${activeSaturation}" class="filter-slider" data-filter="saturation">
+          <span class="filter-value">${activeSaturation}</span>
+        </div>
+        <div class="filter-row">
+          <span>Con:</span>
+          <input type="range" min="5" max="250" value="${activeContrast}" class="filter-slider" data-filter="contrast">
+          <span class="filter-value">${activeContrast}</span>
+        </div>
+        <div class="filter-row">
+          <span>Brt:</span>
+          <input type="range" min="5" max="250" value="${activeBrightness}" class="filter-slider" data-filter="brightness">
+          <span class="filter-value">${activeBrightness}</span>
+        </div>
+        <button id="resetFiltersBtn" class="filter-reset-btn">Reset Filters</button>
+      </div>
       <div id="selectedAssetCard" style="display: ${activeAssetId ? "block" : "none"}">
         <div id="selectedAssetPreview"></div>
         <span id="selectedAssetLabel">${activeAssetId || "No asset selected"}</span>
@@ -138,6 +165,77 @@ function renderToolMenu(container, gameWorker2) {
       setActiveAssetSuffix(suffix, container, gameWorker2);
     });
   });
+  container.querySelectorAll(".filter-slider").forEach((slider) => {
+    slider.addEventListener("input", (e) => {
+      const input = e.target;
+      const filter = input.dataset.filter;
+      const value = parseInt(input.value);
+      switch (filter) {
+        case "hue":
+          activeHue = value;
+          break;
+        case "saturation":
+          activeSaturation = value;
+          break;
+        case "contrast":
+          activeContrast = value;
+          break;
+        case "brightness":
+          activeBrightness = value;
+          break;
+      }
+      const valueEl = input.nextElementSibling;
+      if (valueEl) {
+        valueEl.textContent = filter === "hue" ? `${value}\xB0` : `${value}`;
+      }
+      if (activeAssetId) {
+        const fullKey = activeAssetId + activeAssetSuffix + buildFilterSuffix();
+        gameWorker2.postMessage({
+          action: "setActiveAsset",
+          assetId: fullKey
+        });
+      }
+    });
+  });
+  const resetFiltersBtn = container.querySelector("#resetFiltersBtn");
+  if (resetFiltersBtn) {
+    resetFiltersBtn.addEventListener("click", () => {
+      activeHue = 0;
+      activeContrast = 100;
+      activeSaturation = 100;
+      activeBrightness = 100;
+      const hueSlider = container.querySelector('[data-filter="hue"]');
+      const satSlider = container.querySelector('[data-filter="saturation"]');
+      const conSlider = container.querySelector('[data-filter="contrast"]');
+      const brtSlider = container.querySelector('[data-filter="brightness"]');
+      if (hueSlider)
+        hueSlider.value = "0";
+      if (satSlider)
+        satSlider.value = "100";
+      if (conSlider)
+        conSlider.value = "100";
+      if (brtSlider)
+        brtSlider.value = "100";
+      const hueValue = hueSlider?.nextElementSibling;
+      const satValue = satSlider?.nextElementSibling;
+      const conValue = conSlider?.nextElementSibling;
+      const brtValue = brtSlider?.nextElementSibling;
+      if (hueValue)
+        hueValue.textContent = "0\xB0";
+      if (satValue)
+        satValue.textContent = "100";
+      if (conValue)
+        conValue.textContent = "100";
+      if (brtValue)
+        brtValue.textContent = "100";
+      if (activeAssetId) {
+        gameWorker2.postMessage({
+          action: "setActiveAsset",
+          assetId: activeAssetId + activeAssetSuffix
+        });
+      }
+    });
+  }
 }
 function setActiveCategory(category, container, gameWorker2) {
   activeCategory = category;
@@ -194,11 +292,11 @@ function setActiveAssetSuffix(suffix, container, gameWorker2) {
   container.querySelectorAll(".suffix-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.suffix === suffix);
   });
-  updateAssetPreview(container);
   if (activeAssetId) {
+    const fullKey = activeAssetId + activeAssetSuffix + buildFilterSuffix();
     gameWorker2.postMessage({
       action: "setActiveAsset",
-      assetId: activeAssetId + activeAssetSuffix
+      assetId: fullKey
     });
   }
 }
@@ -293,6 +391,12 @@ function handlePickedColor(r, g, b) {
 function capitalizeFirst(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
+function buildFilterSuffix() {
+  if (activeHue === 0 && activeContrast === 100 && activeSaturation === 100 && activeBrightness === 100) {
+    return "";
+  }
+  return `#H${activeHue}_C${activeContrast}_S${activeSaturation}_B${activeBrightness}`;
+}
 function renderAssetBrowser(container, gameWorker2) {
   const assetGroupListEl = container.querySelector("#assetGroupList");
   const assetImageListEl = container.querySelector("#assetImageList");
@@ -348,62 +452,27 @@ function setActiveAsset(assetId, container, gameWorker2) {
   const selectedAssetLabelEl = container.querySelector("#selectedAssetLabel");
   if (selectedAssetCardEl && selectedAssetLabelEl) {
     selectedAssetCardEl.style.display = "block";
-    selectedAssetLabelEl.textContent = assetId;
+    const fullKey2 = assetId + activeAssetSuffix + buildFilterSuffix();
+    selectedAssetLabelEl.textContent = fullKey2;
   }
-  updateAssetPreview(container);
   container.querySelectorAll(".asset-image-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.asset === assetId);
   });
+  const fullKey = assetId + activeAssetSuffix + buildFilterSuffix();
   gameWorker2.postMessage({
     action: "setActiveAsset",
-    assetId: assetId + activeAssetSuffix
+    assetId: fullKey
   });
 }
-function updateAssetPreview(container) {
-  const previewEl = container.querySelector("#selectedAssetPreview");
-  if (!previewEl || !activeAssetId) {
-    if (previewEl)
-      previewEl.innerHTML = "";
+function handleAssetPreview(blobUrl) {
+  const previewEl = document.getElementById("selectedAssetPreview");
+  if (!previewEl)
     return;
+  const oldImg = previewEl.querySelector("img");
+  if (oldImg && oldImg.src.startsWith("blob:")) {
+    URL.revokeObjectURL(oldImg.src);
   }
-  const fullAssetKey = activeAssetId + activeAssetSuffix;
-  const assetGroup = getAssetGroup(activeAssetId);
-  const assetIndex = getAssetIndex(activeAssetId);
-  const topOffset = assetIndex * 224;
-  const columnOffset = getColumnOffset(activeAssetSuffix);
-  previewEl.innerHTML = `
-    <div class="asset-preview-sprite" 
-         style="background-image: url('/img/asset_opti/${assetGroup}.png'); 
-                background-position: -${columnOffset}px -${topOffset}px;"
-         title="${fullAssetKey}">
-    </div>
-  `;
-}
-function getColumnOffset(suffix) {
-  const columns = {
-    "_NE": 0,
-    "_NW": 64,
-    "_SW": 128,
-    "_SE": 192
-  };
-  return columns[suffix] || 0;
-}
-function getAssetIndex(assetId) {
-  for (const group of assetGroups) {
-    const index = group.images.indexOf(assetId);
-    if (index !== -1) {
-      return index;
-    }
-  }
-  return 0;
-}
-function getAssetGroup(assetId) {
-  for (const group of assetGroups) {
-    if (group.images.includes(assetId)) {
-      return group.group;
-    }
-  }
-  return "Unknown";
+  previewEl.innerHTML = `<img src="${blobUrl}" class="asset-preview-img" alt="Asset Preview">`;
 }
 function handleAssetGroups(groups, container) {
   assetGroups = groups;
@@ -1028,6 +1097,9 @@ handlers.append([
   }],
   ["assetGroups", (data) => {
     handleAssetGroups(data.groups);
+  }],
+  ["assetPreview", (data) => {
+    handleAssetPreview(data.blobUrl);
   }]
 ]);
 startLoop();

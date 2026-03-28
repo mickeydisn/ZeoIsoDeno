@@ -10,6 +10,8 @@ import { toolRegistry } from "../../IsoGame/tools/toolRegistry.ts";
 import { terrainTools } from "../../IsoGame/tools/terrainTools.ts";
 import { colorTools } from "../../IsoGame/tools/colorTools.ts";
 import { assetTools } from "../../IsoGame/tools/assetTools.ts";
+import { structureTools } from "../../IsoGame/tools/structureTools.ts";
+import { getBuildingConfigList } from "../../IsoGame/tools/buildingConfigRegistry.ts";
 import { WcBuildConf_GraveA } from "../../IsoGame/wcBuilding2/conf/buildConf_GraveA.ts";
 import { WcBuildingFactoryGenarator } from "../../IsoGame/wcBuilding2/wcBuildingFactory.ts";
 import { World } from "../../IsoGame/word.ts";
@@ -58,11 +60,18 @@ export class GameWorker {
     terrainTools.forEach((tool) => toolRegistry.register(tool));
     colorTools.forEach((tool) => toolRegistry.register(tool));
     assetTools.forEach((tool) => toolRegistry.register(tool));
+    structureTools.forEach((tool) => toolRegistry.register(tool));
 
     // Send tool list to main thread for UI rendering
     this.handler.send({
       action: "toolList",
       tools: toolRegistry.getToolInfoList(),
+    });
+
+    // Send building config list to main thread for building UI
+    this.handler.send({
+      action: "buildingConfigList",
+      configs: getBuildingConfigList(),
     });
 
     // Send asset groups to main thread for asset browser
@@ -256,6 +265,20 @@ export class GameWorker {
     ],
 
     // Tool System Handlers
+    [
+      "setBuildingConfig",
+      (data: GameHandlerData) => {
+        console.log("setBuildingConfig received:", data.configId);
+        toolRegistry.setBuildingConfig(data.configId);
+      },
+    ],
+    [
+      "setBuildingParams",
+      (data: GameHandlerData) => {
+        console.log("setBuildingParams received:", data.growLoop, data.endLoop);
+        toolRegistry.setBuildingParams(data.growLoop, data.endLoop);
+      },
+    ],
     [
       "setActiveTool",
       (data: GameHandlerData) => {

@@ -118,6 +118,28 @@ export interface EventAssetPreview extends BaseMessage {
   blobUrl: string;
 }
 
+export interface EventBuildingConfigList extends BaseMessage {
+  action: "buildingConfigList";
+  configs: Array<{
+    id: string;
+    name: string;
+    description: string;
+    defaultGrowLoop: number;
+    defaultEndLoop: number;
+  }>;
+}
+
+export interface EventSetBuildingConfig extends BaseMessage {
+  action: "setBuildingConfig";
+  configId: string;
+}
+
+export interface EventSetBuildingParams extends BaseMessage {
+  action: "setBuildingParams";
+  growLoop: number;
+  endLoop: number;
+}
+
 // ----
 
 type ToMainMessage =
@@ -129,7 +151,8 @@ type ToMainMessage =
   | EventToolList
   | EventAssetGroups
   | EventPickedColor
-  | EventAssetPreview;
+  | EventAssetPreview
+  | EventBuildingConfigList;
 
 type WorkerInitMessage =
   | EventInitWorker
@@ -143,7 +166,9 @@ type ToolMessage =
   | EventSetBrushSize
   | EventToolClick
   | EventSetColor
-  | EventSetActiveAsset;
+  | EventSetActiveAsset
+  | EventSetBuildingConfig
+  | EventSetBuildingParams;
 
 type WorkerMessage = WorkerInitMessage | ToMainMessage | ToolMessage; // | GameMessage;
 

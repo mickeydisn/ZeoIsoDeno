@@ -10683,10 +10683,28 @@ var GameWorker = class {
     ],
     [
       "setActiveAsset",
-      (data) => {
+      async (data) => {
         console.log("setActiveAsset received:", data.assetId);
         toolRegistry.setActiveAssetId(data.assetId);
         console.log("Active asset set to:", toolRegistry.getActiveAssetId());
+        if (this.assetLoader && data.assetId) {
+          try {
+            const canvas = this.assetLoader.getAsset(data.assetId);
+            if (canvas) {
+              const blob = await canvas.convertToBlob();
+              const blobUrl = URL.createObjectURL(blob);
+              this.handler.send({
+                action: "assetPreview",
+                blobUrl
+              });
+              console.log("Asset preview sent for:", data.assetId);
+            } else {
+              console.warn("Asset not found:", data.assetId);
+            }
+          } catch (error) {
+            console.error("Error generating asset preview:", error);
+          }
+        }
       }
     ],
     [

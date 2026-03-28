@@ -17,6 +17,11 @@ export class ToolRegistry {
   private activeColor: [number, number, number] = [128, 128, 128]; // Default gray
   private activeAssetId: string | null = null;
 
+  // Building configuration state
+  private activeBuildingConfigId: string = "grave_a";
+  private buildingGrowLoop: number = 20;
+  private buildingEndLoop: number = 100;
+
   public static getInstance(): ToolRegistry {
     return ToolRegistry.instance ??= new ToolRegistry();
   }
@@ -85,6 +90,27 @@ export class ToolRegistry {
 
   getActiveAssetId(): string | null {
     return this.activeAssetId;
+  }
+
+  // Building configuration methods
+  setBuildingConfig(id: string): void {
+    this.activeBuildingConfigId = id;
+  }
+
+  getBuildingConfigId(): string {
+    return this.activeBuildingConfigId;
+  }
+
+  setBuildingParams(growLoop: number, endLoop: number): void {
+    this.buildingGrowLoop = growLoop;
+    this.buildingEndLoop = endLoop;
+  }
+
+  getBuildingParams(): { growLoop: number; endLoop: number } {
+    return {
+      growLoop: this.buildingGrowLoop,
+      endLoop: this.buildingEndLoop,
+    };
   }
 }
 
