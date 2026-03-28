@@ -12,8 +12,6 @@ import { colorTools } from "../../IsoGame/tools/colorTools.ts";
 import { assetTools } from "../../IsoGame/tools/assetTools.ts";
 import { structureTools } from "../../IsoGame/tools/structureTools.ts";
 import { getBuildingConfigList } from "../../IsoGame/tools/buildingConfigRegistry.ts";
-import { WcBuildConf_GraveA } from "../../IsoGame/wcBuilding2/conf/buildConf_GraveA.ts";
-import { WcBuildingFactoryGenarator } from "../../IsoGame/wcBuilding2/wcBuildingFactory.ts";
 import { World } from "../../IsoGame/word.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
 
@@ -186,34 +184,6 @@ export class GameWorker {
       },
     ],
 
-    ["gridClick_Building", (data: GameHandlerData) => {
-      if (!this.canvasMapDrawer) {
-        console.warn("CanvasMapDrawer not initialized yet");
-        return;
-      }
-      const x = this.x + Math.round(
-        (data.x | 0) * this.canvasMapDrawer.conf.DRAW_TILE_COUNT / 30,
-      );
-      const y = this.y + Math.round(
-        (data.y | 0) * this.canvasMapDrawer.conf.DRAW_TILE_COUNT / 30,
-      );
-      console.log("####################### gridClick ");
-      console.log(data);
-
-      const buildingConf1 = new WcBuildConf_GraveA({
-        growLoopCount: data.growLoopCount === undefined
-          ? 20
-          : data.growLoopCount,
-        endLoopMax: data.endLoopMax === undefined ? 100 : data.endLoopMax,
-      });
-      const building1 = new WcBuildingFactoryGenarator(
-        this.world,
-        buildingConf1,
-      );
-      building1.start2(x, y);
-
-      // const city = new City(this.world, this.x, this.y);
-    }],
     ["gridClick", (data: GameHandlerData) => {
       const x = data.x;
       const y = data.y;

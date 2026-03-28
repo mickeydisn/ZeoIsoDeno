@@ -28,10 +28,10 @@ This update focuses on code hygiene, configuration correctness, and UI consisten
 
 **File**: `web/js/gameWorker.ts` (MODIFY)
 
-- [ ] Remove the `gridClick_Building` handler block (hardcoded `WcBuildConf_GraveA`)
-- [ ] Verify no other code references `gridClick_Building` action
-- [ ] Remove unused `WcBuildConf_GraveA` direct import if only used in legacy handler
-- [ ] Confirm `placeBuildingTool` is the sole building placement entry point
+- [x] Remove the `gridClick_Building` handler block (hardcoded `WcBuildConf_GraveA`)
+- [x] Verify no other code references `gridClick_Building` action
+- [x] Remove unused `WcBuildConf_GraveA` direct import if only used in legacy handler
+- [x] Confirm `placeBuildingTool` is the sole building placement entry point
 
 ### Task 1.2: Audit wcBuilding2 Package Exports
 
