@@ -21,6 +21,12 @@ let activeAssetId: string | null = null;
 let selectedAssetGroup: string | null = null;
 let activeAssetSuffix: string = "_NE"; // Default direction suffix
 
+// Color filter state variables
+let activeHue: number = 0;
+let activeContrast: number = 100;
+let activeSaturation: number = 100;
+let activeBrightness: number = 100;
+
 export const initToolMenu = (gameWorker: Worker) => {
   const toolMenuEl = document.getElementById("toolMenu") as HTMLElement;
   if (!toolMenuEl) return;
@@ -68,6 +74,29 @@ function renderToolMenu(container: HTMLElement, gameWorker: Worker) {
           </button>
         `).join('')}
       </div>
+      <div id="assetFilterControls">
+        <div class="filter-row">
+          <span>Hue:</span>
+          <input type="range" min="0" max="360" value="${activeHue}" class="filter-slider" data-filter="hue">
+          <span class="filter-value">${activeHue}°</span>
+        </div>
+        <div class="filter-row">
+          <span>Sat:</span>
+          <input type="range" min="5" max="250" value="${activeSaturation}" class="filter-slider" data-filter="saturation">
+          <span class="filter-value">${activeSaturation}</span>
+        </div>
+        <div class="filter-row">
+          <span>Con:</span>
+          <input type="range" min="5" max="250" value="${activeContrast}" class="filter-slider" data-filter="contrast">
+          <span class="filter-value">${activeContrast}</span>
+        </div>
+        <div class="filter-row">
+          <span>Brt:</span>
+          <input type="range" min="5" max="250" value="${activeBrightness}" class="filter-slider" data-filter="brightness">
+          <span class="filter-value">${activeBrightness}</span>
+        </div>
+        <button id="resetFiltersBtn" class="filter-reset-btn">Reset Filters</button>
+      </div>
       <div id="selectedAssetCard" style="display: ${activeAssetId ? 'block' : 'none'}">
         <div id="selectedAssetPreview"></div>
         <span id="selectedAssetLabel">${activeAssetId || 'No asset selected'}</span>
@@ -109,6 +138,88 @@ function renderToolMenu(container: HTMLElement, gameWorker: Worker) {
       setActiveAssetSuffix(suffix, container, gameWorker);
     });
   });
+
+  // Filter slider event handlers
+  container.querySelectorAll('.filter-slider').forEach(slider => {
+    slider.addEventListener('input', (e) => {
+      const input = e.target as HTMLInputElement;
+      const filter = input.dataset.filter!;
+      const value = parseInt(input.value);
+      
+      // Update state based on filter type
+      switch (filter) {
+        case 'hue':
+          activeHue = value;
+          break;
+        case 'saturation':
+          activeSaturation = value;
+          break;
+        case 'contrast':
+          activeContrast = value;
+          break;
+        case 'brightness':
+          activeBrightness = value;
+          break;
+      }
+      
+      // Update the value display
+      const valueEl = input.nextElementSibling as HTMLElement;
+      if (valueEl) {
+        valueEl.textContent = filter === 'hue' ? `${value}°` : `${value}`;
+      }
+      
+      // Trigger preview update if an asset is selected
+      if (activeAssetId) {
+        const fullKey = activeAssetId + activeAssetSuffix + buildFilterSuffix();
+        gameWorker.postMessage({
+          action: "setActiveAsset",
+          assetId: fullKey,
+        });
+      }
+    });
+  });
+
+  // Reset filters button handler
+  const resetFiltersBtn = container.querySelector('#resetFiltersBtn') as HTMLButtonElement;
+  if (resetFiltersBtn) {
+    resetFiltersBtn.addEventListener('click', () => {
+      // Reset filter state
+      activeHue = 0;
+      activeContrast = 100;
+      activeSaturation = 100;
+      activeBrightness = 100;
+      
+      // Reset slider values
+      const hueSlider = container.querySelector('[data-filter="hue"]') as HTMLInputElement;
+      const satSlider = container.querySelector('[data-filter="saturation"]') as HTMLInputElement;
+      const conSlider = container.querySelector('[data-filter="contrast"]') as HTMLInputElement;
+      const brtSlider = container.querySelector('[data-filter="brightness"]') as HTMLInputElement;
+      
+      if (hueSlider) hueSlider.value = '0';
+      if (satSlider) satSlider.value = '100';
+      if (conSlider) conSlider.value = '100';
+      if (brtSlider) brtSlider.value = '100';
+      
+      // Reset value displays
+      const hueValue = hueSlider?.nextElementSibling as HTMLElement;
+      const satValue = satSlider?.nextElementSibling as HTMLElement;
+      const conValue = conSlider?.nextElementSibling as HTMLElement;
+      const brtValue = brtSlider?.nextElementSibling as HTMLElement;
+      
+      if (hueValue) hueValue.textContent = '0°';
+      if (satValue) satValue.textContent = '100';
+      if (conValue) conValue.textContent = '100';
+      if (brtValue) brtValue.textContent = '100';
+      
+      // Trigger preview update if an asset is selected
+      if (activeAssetId) {
+        gameWorker.postMessage({
+          action: "setActiveAsset",
+          assetId: activeAssetId + activeAssetSuffix,
+        });
+      }
+    });
+  }
 }
 
 function setActiveCategory(category: string, container: HTMLElement, gameWorker: Worker) {
@@ -196,9 +307,10 @@ function setActiveAssetSuffix(suffix: string, container: HTMLElement, gameWorker
   // Send updated asset to worker if an asset is selected
   // Worker will respond with assetPreview message
   if (activeAssetId) {
+    const fullKey = activeAssetId + activeAssetSuffix + buildFilterSuffix();
     gameWorker.postMessage({
       action: "setActiveAsset",
-      assetId: activeAssetId + activeAssetSuffix,
+      assetId: fullKey,
     });
   }
 }
@@ -328,6 +440,14 @@ function capitalizeFirst(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+// Build filter suffix from current filter state
+function buildFilterSuffix(): string {
+  if (activeHue === 0 && activeContrast === 100 && activeSaturation === 100 && activeBrightness === 100) {
+    return '';
+  }
+  return `#H${activeHue}_C${activeContrast}_S${activeSaturation}_B${activeBrightness}`;
+}
+
 // Render asset browser with tree of asset groups
 function renderAssetBrowser(container: HTMLElement, gameWorker: Worker) {
   const assetGroupListEl = container.querySelector('#assetGroupList') as HTMLElement;
@@ -397,7 +517,8 @@ function setActiveAsset(assetId: string, container: HTMLElement, gameWorker: Wor
   const selectedAssetLabelEl = container.querySelector('#selectedAssetLabel') as HTMLElement;
   if (selectedAssetCardEl && selectedAssetLabelEl) {
     selectedAssetCardEl.style.display = 'block';
-    selectedAssetLabelEl.textContent = assetId;
+    const fullKey = assetId + activeAssetSuffix + buildFilterSuffix();
+    selectedAssetLabelEl.textContent = fullKey;
   }
 
   // Update asset image button active state
@@ -405,10 +526,11 @@ function setActiveAsset(assetId: string, container: HTMLElement, gameWorker: Wor
     btn.classList.toggle('active', (btn as HTMLElement).dataset.asset === assetId);
   });
 
-  // Send to worker with suffix - worker will respond with assetPreview
+  // Send to worker with suffix and filter - worker will respond with assetPreview
+  const fullKey = assetId + activeAssetSuffix + buildFilterSuffix();
   gameWorker.postMessage({
     action: "setActiveAsset",
-    assetId: assetId + activeAssetSuffix,
+    assetId: fullKey,
   });
 }
 

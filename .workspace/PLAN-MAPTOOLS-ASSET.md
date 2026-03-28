@@ -158,14 +158,14 @@ Default values (no filter): `H0_C100_S100_B100` (can be omitted entirely)
 
 ### Items
 
-- [ ] Add filter state variables (`activeHue`, `activeContrast`, `activeSaturation`, `activeBrightness`)
-- [ ] Add `#assetFilterControls` HTML block in `renderToolMenu()` (inside `#assetBrowser`)
-- [ ] Add `buildFilterSuffix()` helper function
-- [ ] Add filter slider event handlers in `renderToolMenu()`
-- [ ] Add `resetFiltersBtn` click handler
-- [ ] Update `setActiveAsset()` to include filter suffix in worker message
-- [ ] Update `setActiveAssetSuffix()` to trigger preview update with filter
-- [ ] Export `handleAssetPreview(blobUrl: string)` function for worker callback
+- [x] Add filter state variables (`activeHue`, `activeContrast`, `activeSaturation`, `activeBrightness`)
+- [x] Add `#assetFilterControls` HTML block in `renderToolMenu()` (inside `#assetBrowser`)
+- [x] Add `buildFilterSuffix()` helper function
+- [x] Add filter slider event handlers in `renderToolMenu()`
+- [x] Add `resetFiltersBtn` click handler
+- [x] Update `setActiveAsset()` to include filter suffix in worker message
+- [x] Update `setActiveAssetSuffix()` to trigger preview update with filter
+- [x] Export `handleAssetPreview(blobUrl: string)` function for worker callback
 
 ---
 
@@ -175,11 +175,11 @@ Default values (no filter): `H0_C100_S100_B100` (can be omitted entirely)
 
 ### Changes Required
 
-- [ ] Add `#assetFilterControls` styles (padding, border, background)
-- [ ] Add `.filter-row` styles (flex row, gap, alignment)
-- [ ] Add `.filter-slider` styles (range input styling)
-- [ ] Add `.filter-value` styles (monospace, small font, fixed width)
-- [ ] Add `.filter-reset-btn` styles (matches existing button styles)
+- [x] Add `#assetFilterControls` styles (padding, border, background)
+- [x] Add `.filter-row` styles (flex row, gap, alignment)
+- [x] Add `.filter-slider` styles (range input styling)
+- [x] Add `.filter-value` styles (monospace, small font, fixed width)
+- [x] Add `.filter-reset-btn` styles (matches existing button styles)
 
 ---
 
