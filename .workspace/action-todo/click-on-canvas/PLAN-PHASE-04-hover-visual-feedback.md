@@ -18,12 +18,12 @@ Add hover highlighting rendered on the canvas and an optional coordinate tooltip
 
 ### Task 4.2: Implement hover overlay rendering in `CanvasMapDrawers`
 
-- [ ] Add `drawHoverOverlay()` private method
-- [ ] If `hoveredTile` is null, skip rendering
-- [ ] Convert hovered tile to display coordinates using `isoProject.translatePoint()`
-- [ ] Draw a semi-transparent colored overlay on the hovered tile
-- [ ] Use `Shape.SurfaceFlat()` with a highlight color (e.g., yellow with alpha 0.3)
-- [ ] Call `drawHoverOverlay()` at the end of `drawIso()` method
+- [x] Add `drawHoverOverlay()` private method
+- [x] If `hoveredTile` is null, skip rendering
+- [x] Convert hovered tile to display coordinates using `isoProject.translatePoint()`
+- [x] Draw a semi-transparent colored overlay on the hovered tile
+- [x] Use `Shape.SurfaceFlat()` with a highlight color (e.g., yellow with alpha 0.3)
+- [x] Call `drawHoverOverlay()` at the end of `drawIso()` method
 
 ### Task 4.3: Connect hover callback to canvas renderer
 

@@ -447,6 +447,56 @@ export class CanvasMapDrawers {
 
   }
 
+  /**
+   * Draws a semi-transparent overlay on the hovered tile for visual feedback.
+   */
+  private drawHoverOverlay(): void {
+    if (!this.hoveredTile) {
+      return;
+    }
+
+    const { x, y, z } = this.hoveredTile;
+    const size = this.conf.DRAW_TILE_COUNT;
+    
+    // Convert tile coordinates to grid indices (matching drawTile's coordinate system)
+    const xx = size - x - 1;
+    const yy = size - y - 1;
+    
+    // Bounds check
+    if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1) {
+      return;
+    }
+
+    // Get the tile's display level from the matrix
+    const metaTile = this.tilesMatrix.tiles[xx][yy];
+    const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+    const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
+    const height = 1;
+
+    // Create the flat surface shape at the tile position
+    const shape = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height);
+    
+    // Define semi-transparent yellow highlight color
+    const highlightColor = { r: 255, g: 220, b: 50, a: 0.35 };
+    
+    // Draw each path of the shape with semi-transparent fill
+    shape.orderedPaths().forEach((path) => {
+      const translatedPoints = path.points.map((p) => this.isomer.translatePoint(p));
+      
+      this.canvasCtx.beginPath();
+      translatedPoints.forEach((p, index) => {
+        if (index === 0) {
+          this.canvasCtx.moveTo(p.x, p.y);
+        } else {
+          this.canvasCtx.lineTo(p.x, p.y);
+        }
+      });
+      this.canvasCtx.closePath();
+      this.canvasCtx.fillStyle = `rgba(${highlightColor.r}, ${highlightColor.g}, ${highlightColor.b}, ${highlightColor.a})`;
+      this.canvasCtx.fill();
+    });
+  }
+
   drawIso() {
     const size = this.conf.DRAW_TILE_COUNT;
     this.canvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -458,6 +508,10 @@ export class CanvasMapDrawers {
         this.drawTile(x, y);
       }
     }
+    
+    // Draw hover overlay on top of all tiles
+    this.drawHoverOverlay();
+    
     // iso.addImage();
     this._cleanCache();
 
