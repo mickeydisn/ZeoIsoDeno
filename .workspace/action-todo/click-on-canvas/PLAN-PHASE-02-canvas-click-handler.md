@@ -12,8 +12,8 @@ Create a new `CanvasClickHandler` class that handles click and mouse move events
 
 ### Task 2.1: Create `canvasClickHandler.ts` file
 
-- [ ] Create new file `IsoGame/mapIso/canvasClickHandler.ts`
-- [ ] Define class `CanvasClickHandler` with required dependencies:
+- [x] Create new file `IsoGame/mapIso/canvasClickHandler.ts`
+- [x] Define class `CanvasClickHandler` with required dependencies:
   - `canvas: HTMLCanvasElement`
   - `projector: IsometricProjector`
   - `mapLvl: Float32Array`
@@ -23,38 +23,38 @@ Create a new `CanvasClickHandler` class that handles click and mouse move events
 
 ### Task 2.2: Implement click event handling
 
-- [ ] Add `setupEventListeners()` method called from constructor
-- [ ] Attach `click` event listener to canvas
-- [ ] In click handler: get canvas bounding rect via `getBoundingClientRect()`
-- [ ] Compute scale factors: `scaleX = canvas.width / rect.width`, `scaleY = canvas.height / rect.height`
-- [ ] Convert click coordinates: `screenX = (event.clientX - rect.left) * scaleX`, `screenY = (event.clientY - rect.top) * scaleY`
-- [ ] Extract `centerX` and `centerY` from `mapInfo` buffer
-- [ ] Call `projector.screenToTileWithHeight()` with screen coordinates
-- [ ] If tile is valid, post `query_infoCell` message to game worker
-- [ ] If tile is valid, post `toolClick` message to game worker
-- [ ] Log detected tile coordinates for debugging
+- [x] Add `setupEventListeners()` method called from constructor
+- [x] Attach `click` event listener to canvas
+- [x] In click handler: get canvas bounding rect via `getBoundingClientRect()`
+- [x] Compute scale factors: `scaleX = canvas.width / rect.width`, `scaleY = canvas.height / rect.height`
+- [x] Convert click coordinates: `screenX = (event.clientX - rect.left) * scaleX`, `screenY = (event.clientY - rect.top) * scaleY`
+- [x] Extract `centerX` and `centerY` from `mapInfo` buffer
+- [x] Call `projector.screenToTileWithHeight()` with screen coordinates
+- [x] If tile is valid, post `query_infoCell` message to game worker
+- [x] If tile is valid, post `toolClick` message to game worker
+- [x] Log detected tile coordinates for debugging
 
 ### Task 2.3: Implement mouse move event handling
 
-- [ ] Attach `mousemove` event listener to canvas
-- [ ] Track `lastHoveredTile: PointIso | null` state
-- [ ] On mouse move: convert coordinates same as click handler
-- [ ] Compare new tile with `lastHoveredTile` to detect changes
-- [ ] If tile changed, update `lastHoveredTile` and call hover callback
-- [ ] Attach `mouseleave` event listener to clear hover state
+- [x] Attach `mousemove` event listener to canvas
+- [x] Track `lastHoveredTile: PointIso | null` state
+- [x] On mouse move: convert coordinates same as click handler
+- [x] Compare new tile with `lastHoveredTile` to detect changes
+- [x] If tile changed, update `lastHoveredTile` and call hover callback
+- [x] Attach `mouseleave` event listener to clear hover state
 
 ### Task 2.4: Implement hover callback system
 
-- [ ] Add `hoverCallback?: (tile: PointIso | null) => void` property
-- [ ] Add `setHoverCallback(callback)` method
-- [ ] Call callback only when tile changes (not on every mouse move)
-- [ ] Provide `hasTileChanged()` helper comparing two `PointIso` values
+- [x] Add `hoverCallback?: (tile: PointIso | null) => void` property
+- [x] Add `setHoverCallback(callback)` method
+- [x] Call callback only when tile changes (not on every mouse move)
+- [x] Provide `hasTileChanged()` helper comparing two `PointIso` values
 
 ### Task 2.5: Implement data update methods
 
-- [ ] Add `updateMapData(mapLvl, mapInfo)` method to refresh shared buffer references
-- [ ] Add `destroy()` method to remove all event listeners
-- [ ] Ensure proper cleanup to prevent memory leaks
+- [x] Add `updateMapData(mapLvl, mapInfo)` method to refresh shared buffer references
+- [x] Add `destroy()` method to remove all event listeners
+- [x] Ensure proper cleanup to prevent memory leaks
 
 ## Files Modified
 
