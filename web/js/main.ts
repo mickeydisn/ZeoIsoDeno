@@ -84,7 +84,7 @@ const callback_initWorker = (_data: GameHandlerData): void => {
     action: "initCanvasMap",
     mapConf: DEFAULT_MAP_CONF,
   });
-
+  /* 
   handlers.send({
     action: "gridClick",
     x: -19,
