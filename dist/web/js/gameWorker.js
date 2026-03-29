@@ -9619,6 +9619,61 @@ var IsometricProjector = class {
     const y = this.conf.originY - xMap.y - yMap.y - point.z * ISO_LVL_SCALE2 / this.conf.SCALE_MOD;
     return new PointIso(x, y);
   }
+  /**
+   * Converts tile coordinates to screen coordinates.
+   * Wrapper around translatePoint for clarity in hover rendering and edge detection.
+   * @param tileX The tile X coordinate.
+   * @param tileY The tile Y coordinate.
+   * @param tileZ The tile Z (height) coordinate. Defaults to 0.
+   * @returns Screen coordinates as { x: number, y: number }.
+   */
+  tileToScreen(tileX, tileY, tileZ = 0) {
+    const point = this.translatePoint(new PointIso(tileX, tileY, tileZ));
+    return { x: point.x, y: point.y };
+  }
+  /**
+   * Converts 2D screen coordinates back to 3D tile coordinates (inverse projection).
+   * @param screenX The screen X coordinate.
+   * @param screenY The screen Y coordinate.
+   * @param tileZ The known tile Z (height) coordinate. Defaults to 0.
+   * @returns The tile coordinates as a PointIso, or null if computation fails.
+   */
+  screenToTile(screenX, screenY, tileZ = 0) {
+    const { originX, originY, offsetX, offsetY, SCALE_SIZE: SCALE_SIZE2, SCALE_MOD } = this.conf;
+    const sx = 32 * SCALE_SIZE2;
+    const sy = 16 * SCALE_SIZE2;
+    const adjustedDx = screenX - originX;
+    const adjustedDy = originY - screenY - tileZ * ISO_LVL_SCALE2 / SCALE_MOD;
+    const tileXRaw = (adjustedDx / sx + adjustedDy / sy) / 2;
+    const tileYRaw = (adjustedDy / sy - adjustedDx / sx) / 2;
+    const tileX = tileXRaw + offsetX;
+    const tileY = tileYRaw + offsetY;
+    return new PointIso(tileX, tileY, tileZ);
+  }
+  /**
+   * Converts screen coordinates to tile coordinates, automatically looking up tile height.
+   * First pass uses Z=0 to find approximate position, then looks up actual height for precise result.
+   * @param screenX The screen X coordinate.
+   * @param screenY The screen Y coordinate.
+   * @param mapLvl Float32Array containing tile height data.
+   * @param mapSize The size of the map grid (width and height).
+   * @param centerX The center X offset (unused but kept for API consistency).
+   * @param centerY The center Y offset (unused but kept for API consistency).
+   * @returns The tile coordinates with correct height, or null if out of bounds.
+   */
+  screenToTileWithHeight(screenX, screenY, mapLvl, mapSize, _centerX = 0, _centerY = 0) {
+    const approxTile = this.screenToTile(screenX, screenY, 0);
+    if (!approxTile)
+      return null;
+    const tileX = Math.round(approxTile.x);
+    const tileY = Math.round(approxTile.y);
+    if (tileX < 0 || tileX >= mapSize || tileY < 0 || tileY >= mapSize) {
+      return null;
+    }
+    const heightIndex = tileX * mapSize + tileY;
+    const actualHeight = mapLvl[heightIndex];
+    return this.screenToTile(screenX, screenY, actualHeight);
+  }
 };
 
 // IsoGame/mapIso/simpleIso/IsometricTileGenerator.ts
@@ -9839,6 +9894,8 @@ var CanvasMapDrawers = class {
   tileCache = /* @__PURE__ */ new Map();
   frameSubCount;
   frameCount;
+  // Hover state for visual feedback
+  hoveredTile = null;
   constructor(world, width, height, conf, assetLoadder, canvas) {
     this.world = world;
     this.fm = FactoryMap.getInstance();
@@ -9886,6 +9943,13 @@ var CanvasMapDrawers = class {
     console.log("=== GameContext- Init", this.tilesMatrix.rangeX);
   }
   // --------------------------------------
+  /**
+   * Sets the hovered tile for visual feedback rendering.
+   * @param tile The tile coordinates to highlight, or null to clear hover state.
+   */
+  setHoveredTile(tile) {
+    this.hoveredTile = tile;
+  }
   drawUpdate(centreX, centreY, offx = 0, offy = 0) {
     this.tilesMatrix.setCenter(centreX, centreY);
     this.isomer.SCALE_MOD = Math.max(1, 1 / 8);
@@ -10068,6 +10132,41 @@ var CanvasMapDrawers = class {
       items.sort((a, b) => (a.lvl || 0) - (b.lvl || 0)).forEach((item) => this.drawTileItem(xx, yy, metaTile, item, currentlvl));
     }
   }
+  /**
+   * Draws a semi-transparent overlay on the hovered tile for visual feedback.
+   */
+  drawHoverOverlay() {
+    if (!this.hoveredTile) {
+      return;
+    }
+    const { x, y, z } = this.hoveredTile;
+    const size = this.conf.DRAW_TILE_COUNT;
+    const xx = size - x - 1;
+    const yy = size - y - 1;
+    if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1) {
+      return;
+    }
+    const metaTile = this.tilesMatrix.tiles[xx][yy];
+    const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+    const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
+    const height = 1;
+    const shape = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height);
+    const highlightColor = { r: 255, g: 220, b: 50, a: 0.35 };
+    shape.orderedPaths().forEach((path) => {
+      const translatedPoints = path.points.map((p) => this.isomer.translatePoint(p));
+      this.canvasCtx.beginPath();
+      translatedPoints.forEach((p, index) => {
+        if (index === 0) {
+          this.canvasCtx.moveTo(p.x, p.y);
+        } else {
+          this.canvasCtx.lineTo(p.x, p.y);
+        }
+      });
+      this.canvasCtx.closePath();
+      this.canvasCtx.fillStyle = `rgba(${highlightColor.r}, ${highlightColor.g}, ${highlightColor.b}, ${highlightColor.a})`;
+      this.canvasCtx.fill();
+    });
+  }
   drawIso() {
     const size = this.conf.DRAW_TILE_COUNT;
     this.canvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -10076,6 +10175,7 @@ var CanvasMapDrawers = class {
         this.drawTile(x, y);
       }
     }
+    this.drawHoverOverlay();
     this._cleanCache();
   }
   /**

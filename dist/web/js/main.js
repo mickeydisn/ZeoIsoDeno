@@ -155,11 +155,14 @@ function getColorFilterState() {
 function areColorFiltersDefault() {
   return activeHue === 0 && activeContrast === 100 && activeSaturation === 100 && activeBrightness === 100;
 }
-function getBuildingConfigs2() {
+function getBuildingConfigs() {
   return buildingConfigs;
 }
 function setBuildingConfigs(configs) {
   buildingConfigs = configs;
+}
+function getActiveBuildingConfigId() {
+  return activeBuildingConfigId;
 }
 function setActiveBuildingConfigId(configId) {
   activeBuildingConfigId = configId;
@@ -807,7 +810,7 @@ function renderBuildingConfigSelectorDOM(container, gameWorker2) {
 }
 function handleBuildingConfigSelect(configId, container, gameWorker2) {
   setActiveBuildingConfigId(configId);
-  const configs = getBuildingConfigs2();
+  const configs = getBuildingConfigs();
   const config = configs.find((c) => c.id === configId);
   if (config) {
     setBuildingParams(config.defaultGrowLoop, config.defaultEndLoop);
@@ -1145,22 +1148,362 @@ function initMenu() {
   }
 }
 
+// IsoGame/mapIso/simpleIso/IsometricProjector.ts
+var ISO_LVL_SCALE = 39;
+var PointIso = class _PointIso {
+  x;
+  y;
+  z;
+  static ORIGIN = new _PointIso(0, 0, 0);
+  constructor(x = 0, y = 0, z = 0) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+  }
+  /** Translate a point from a given dx, dy, and dz */
+  translate(dx = 0, dy = 0, dz = 0) {
+    return new _PointIso(this.x + dx, this.y + dy, this.z + dz);
+  }
+  // NOTE: Other Point methods (scale, rotateX/Y/Z, depth) are omitted for simplicity 
+  // as they were not directly used in the projection logic, but can be added back if needed.
+  depth() {
+    return this.x + this.y - 2 * this.z;
+  }
+};
+var IsometricConfDefaults = {
+  SCALE_SIZE: 1,
+  // Base scale for 1x1 tile size
+  SCALE_MOD: 1,
+  // Scale modifier (often unused in projection)
+  ISO_LVL_SCALE: 39,
+  // Z-axis scale factor (from original isomer.ts)
+  originX: 0,
+  // X-offset for the map origin
+  originY: 660,
+  // Fixed Y-offset for the map origin (from original isomer.ts)
+  offsetX: 0,
+  // Panning offset X
+  offsetY: 0
+  // Panning offset Y
+};
+var IsometricProjector = class {
+  conf;
+  transformation;
+  /**
+   * Initializes the projector.
+   * @param overrides Optional partial configuration to override defaults.
+   */
+  constructor(overrides = {}) {
+    this.conf = { ...IsometricConfDefaults, ...overrides };
+    this.updateConf();
+  }
+  updateConf(overrides = {}) {
+    this.conf = { ...this.conf, ...overrides };
+    this.transformation = [
+      [32 * this.conf.SCALE_SIZE, 16 * this.conf.SCALE_SIZE],
+      // ISOSCALE * Math.cos(this.angle), ISOSCALE * Math.sin(this.angle)
+      [-32 * this.conf.SCALE_SIZE, 16 * this.conf.SCALE_SIZE]
+      // ISOSCALE * Math.cos(Math.PI - this.angle), ISOSCALE * Math.sin(Math.PI - this.angle)
+    ];
+  }
+  /**
+   * Projects a 3D Point to 2D screen coordinates.
+   * This is the core 3D -> 2D isometric translation function.
+   * * @param point The 3D Point object to translate.
+   * @returns An object containing the projected screen coordinates { x: number, y: number }.
+   */
+  /**
+   * Translates a 3D point to a 2D isometric projection.
+   */
+  translatePoint(_point) {
+    const point = _point.translate(-this.conf.offsetX, -this.conf.offsetY, 0);
+    const xMap = new PointIso(
+      point.x * this.transformation[0][0],
+      point.x * this.transformation[0][1]
+    );
+    const yMap = new PointIso(
+      point.y * this.transformation[1][0],
+      point.y * this.transformation[1][1]
+    );
+    const x = this.conf.originX + xMap.x + yMap.x;
+    const y = this.conf.originY - xMap.y - yMap.y - point.z * ISO_LVL_SCALE / this.conf.SCALE_MOD;
+    return new PointIso(x, y);
+  }
+  /**
+   * Converts tile coordinates to screen coordinates.
+   * Wrapper around translatePoint for clarity in hover rendering and edge detection.
+   * @param tileX The tile X coordinate.
+   * @param tileY The tile Y coordinate.
+   * @param tileZ The tile Z (height) coordinate. Defaults to 0.
+   * @returns Screen coordinates as { x: number, y: number }.
+   */
+  tileToScreen(tileX, tileY, tileZ = 0) {
+    const point = this.translatePoint(new PointIso(tileX, tileY, tileZ));
+    return { x: point.x, y: point.y };
+  }
+  /**
+   * Converts 2D screen coordinates back to 3D tile coordinates (inverse projection).
+   * @param screenX The screen X coordinate.
+   * @param screenY The screen Y coordinate.
+   * @param tileZ The known tile Z (height) coordinate. Defaults to 0.
+   * @returns The tile coordinates as a PointIso, or null if computation fails.
+   */
+  screenToTile(screenX, screenY, tileZ = 0) {
+    const { originX, originY, offsetX, offsetY, SCALE_SIZE, SCALE_MOD } = this.conf;
+    const sx = 32 * SCALE_SIZE;
+    const sy = 16 * SCALE_SIZE;
+    const adjustedDx = screenX - originX;
+    const adjustedDy = originY - screenY - tileZ * ISO_LVL_SCALE / SCALE_MOD;
+    const tileXRaw = (adjustedDx / sx + adjustedDy / sy) / 2;
+    const tileYRaw = (adjustedDy / sy - adjustedDx / sx) / 2;
+    const tileX = tileXRaw + offsetX;
+    const tileY = tileYRaw + offsetY;
+    return new PointIso(tileX, tileY, tileZ);
+  }
+  /**
+   * Converts screen coordinates to tile coordinates, automatically looking up tile height.
+   * First pass uses Z=0 to find approximate position, then looks up actual height for precise result.
+   * @param screenX The screen X coordinate.
+   * @param screenY The screen Y coordinate.
+   * @param mapLvl Float32Array containing tile height data.
+   * @param mapSize The size of the map grid (width and height).
+   * @param centerX The center X offset (unused but kept for API consistency).
+   * @param centerY The center Y offset (unused but kept for API consistency).
+   * @returns The tile coordinates with correct height, or null if out of bounds.
+   */
+  screenToTileWithHeight(screenX, screenY, mapLvl, mapSize, _centerX = 0, _centerY = 0) {
+    const approxTile = this.screenToTile(screenX, screenY, 0);
+    if (!approxTile)
+      return null;
+    const tileX = Math.round(approxTile.x);
+    const tileY = Math.round(approxTile.y);
+    if (tileX < 0 || tileX >= mapSize || tileY < 0 || tileY >= mapSize) {
+      return null;
+    }
+    const heightIndex = tileX * mapSize + tileY;
+    const actualHeight = mapLvl[heightIndex];
+    return this.screenToTile(screenX, screenY, actualHeight);
+  }
+};
+
+// IsoGame/mapIso/canvasClickHandler.ts
+var CanvasClickHandler = class {
+  // Dependencies
+  canvas;
+  mapLvl;
+  mapInfo;
+  gameWorker;
+  // Inverse projection
+  projector;
+  mapSize;
+  // Hover state
+  lastHoveredTile = null;
+  hoverCallback;
+  // Bound event handlers for cleanup
+  boundClickHandler;
+  boundMouseMoveHandler;
+  boundMouseLeaveHandler;
+  constructor(deps) {
+    this.canvas = deps.canvas;
+    this.mapLvl = deps.mapLvl;
+    this.mapInfo = deps.mapInfo;
+    this.gameWorker = deps.gameWorker;
+    this.mapSize = deps.conf.DRAW_TILE_COUNT;
+    this.projector = new IsometricProjector({
+      originX: this.canvas.width / 2,
+      originY: this.canvas.height / 2 + this.mapSize * 16 * deps.conf.SCALE_SIZE,
+      SCALE_SIZE: deps.conf.SCALE_SIZE,
+      SCALE_MOD: deps.conf.SCALE_MOD
+    });
+    this.boundClickHandler = this.handleClick.bind(this);
+    this.boundMouseMoveHandler = this.handleMouseMove.bind(this);
+    this.boundMouseLeaveHandler = this.handleMouseLeave.bind(this);
+    this.setupEventListeners();
+    console.log("[CanvasClickHandler] Initialized with config:", deps.conf);
+  }
+  // ============================================================================
+  // Event Listener Setup
+  // ============================================================================
+  setupEventListeners() {
+    this.canvas.addEventListener("click", this.boundClickHandler);
+    this.canvas.addEventListener("mousemove", this.boundMouseMoveHandler);
+    this.canvas.addEventListener("mouseleave", this.boundMouseLeaveHandler);
+    this.canvas.style.cursor = "pointer";
+    console.log("[CanvasClickHandler] Event listeners attached");
+  }
+  // ============================================================================
+  // Coordinate Conversion
+  // ============================================================================
+  /**
+   * Converts mouse event coordinates to canvas-relative screen coordinates.
+   * Accounts for CSS scaling of the canvas element.
+   */
+  eventToScreenCoords(event) {
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const screenX = (event.clientX - rect.left) * scaleX;
+    const screenY = (event.clientY - rect.top) * scaleY;
+    return { screenX, screenY };
+  }
+  /**
+   * Converts screen coordinates to tile coordinates using inverse projection.
+   * Uses the shared mapLvl buffer to look up tile heights.
+   */
+  screenToTile(screenX, screenY) {
+    const centerX = this.mapInfo[0];
+    const centerY = this.mapInfo[1];
+    const tile = this.projector.screenToTileWithHeight(
+      screenX,
+      screenY,
+      this.mapLvl,
+      this.mapSize,
+      centerX,
+      centerY
+    );
+    return tile;
+  }
+  // ============================================================================
+  // Event Handlers
+  // ============================================================================
+  handleClick(event) {
+    const { screenX, screenY } = this.eventToScreenCoords(event);
+    const tile = this.screenToTile(screenX, screenY);
+    if (!tile) {
+      console.log("[CanvasClickHandler] Click outside map bounds");
+      return;
+    }
+    const tileX = Math.round(tile.x);
+    const tileY = Math.round(tile.y);
+    console.log(`[CanvasClickHandler] Click at tile (${tileX}, ${tileY}), height: ${tile.z}`);
+    const gridX = tileX - this.mapSize / 2;
+    const gridY = tileY - this.mapSize / 2;
+    this.gameWorker.postMessage({
+      action: "query_infoCell",
+      gridX,
+      gridY
+    });
+    this.gameWorker.postMessage({
+      action: "toolClick",
+      gridX,
+      gridY
+    });
+  }
+  handleMouseMove(event) {
+    const { screenX, screenY } = this.eventToScreenCoords(event);
+    const tile = this.screenToTile(screenX, screenY);
+    if (this.hasTileChanged(tile)) {
+      this.lastHoveredTile = tile;
+      if (this.hoverCallback) {
+        this.hoverCallback(tile);
+      }
+      if (tile) {
+        const tileX = Math.round(tile.x);
+        const tileY = Math.round(tile.y);
+        console.log(`[CanvasClickHandler] Hover at tile (${tileX}, ${tileY})`);
+      }
+    }
+  }
+  handleMouseLeave() {
+    if (this.lastHoveredTile !== null) {
+      this.lastHoveredTile = null;
+      if (this.hoverCallback) {
+        this.hoverCallback(null);
+      }
+      console.log("[CanvasClickHandler] Mouse left canvas");
+    }
+  }
+  // ============================================================================
+  // Helper Methods
+  // ============================================================================
+  /**
+   * Compares two tile coordinates to detect changes.
+   * Returns true if tiles are different.
+   */
+  hasTileChanged(newTile) {
+    if (this.lastHoveredTile === null && newTile === null) {
+      return false;
+    }
+    if (this.lastHoveredTile === null || newTile === null) {
+      return true;
+    }
+    const lastX = Math.round(this.lastHoveredTile.x);
+    const lastY = Math.round(this.lastHoveredTile.y);
+    const newX = Math.round(newTile.x);
+    const newY = Math.round(newTile.y);
+    return lastX !== newX || lastY !== newY;
+  }
+  // ============================================================================
+  // Public API
+  // ============================================================================
+  /**
+   * Sets a callback function to be called when the hovered tile changes.
+   * @param callback Function that receives the new tile or null if no tile is hovered.
+   */
+  setHoverCallback(callback) {
+    this.hoverCallback = callback;
+    console.log("[CanvasClickHandler] Hover callback set");
+  }
+  /**
+   * Updates the shared buffer references.
+   * Call this if the buffers are recreated or swapped.
+   */
+  updateMapData(mapLvl, mapInfo) {
+    this.mapLvl = mapLvl;
+    this.mapInfo = mapInfo;
+    console.log("[CanvasClickHandler] Map data updated");
+  }
+  /**
+   * Updates the projector configuration.
+   * Call this if SCALE_SIZE or SCALE_MOD changes.
+   */
+  updateConfig(conf) {
+    this.mapSize = conf.DRAW_TILE_COUNT;
+    this.projector.updateConf({
+      originX: this.canvas.width / 2,
+      originY: this.canvas.height / 2 + this.mapSize * 16 * conf.SCALE_SIZE,
+      SCALE_SIZE: conf.SCALE_SIZE,
+      SCALE_MOD: conf.SCALE_MOD
+    });
+    console.log("[CanvasClickHandler] Config updated:", conf);
+  }
+  /**
+   * Returns the current hovered tile coordinates.
+   */
+  getLastHoveredTile() {
+    return this.lastHoveredTile;
+  }
+  /**
+   * Removes all event listeners and cleans up resources.
+   * Call this before destroying the handler.
+   */
+  destroy() {
+    this.canvas.removeEventListener("click", this.boundClickHandler);
+    this.canvas.removeEventListener("mousemove", this.boundMouseMoveHandler);
+    this.canvas.removeEventListener("mouseleave", this.boundMouseLeaveHandler);
+    this.canvas.style.cursor = "";
+    this.hoverCallback = void 0;
+    this.lastHoveredTile = null;
+    console.log("[CanvasClickHandler] Destroyed and cleaned up");
+  }
+};
+
 // IsoGame/mapIso/grid.ts
-var MAP_WIDTH = 1600;
-var MAP_HEIGHT = 800;
-var globalScale = 2;
 var GridMapDrawers = class {
+  // Dependencies
   gameWorker;
   bufferMapLvl;
   bufferMapInfo;
   mapLvl;
   mapInfo;
+  // Configuration
   mapSize;
   gridSize;
   mod;
-  _mapGrid;
-  _heightScall;
-  divTableGrid;
+  // Canvas click handler (created when canvas is available)
+  clickHandler = null;
+  canvas = null;
+  conf = null;
   constructor(gameWorker2, bufferMapLvl, bufferMapInfo) {
     this.gameWorker = gameWorker2;
     this.bufferMapLvl = bufferMapLvl;
@@ -1170,105 +1513,87 @@ var GridMapDrawers = class {
     this.mapSize = 40;
     this.gridSize = 40;
     this.mod = 1;
-    this._heightScall = 55;
-    this._mapGrid = [...Array(this.gridSize)].map(
-      (x) => Array(this.gridSize).fill(null)
-    );
-    this._init_grid_contener();
-    this._init_gridMatrix();
   }
-  _init_grid_contener() {
-    const mapRelative = document.getElementById("mapRelative");
-    if (mapRelative) {
-      mapRelative.style.cssText = [
-        ["width", MAP_WIDTH + "px"],
-        ["height", MAP_HEIGHT + "px"],
-        ["display", "flex"],
-        ["justify-content", "center"],
-        ["align-items", "top"],
-        ["position", "relative"],
-        ["overflow", "hidden"]
-      ].map((s) => `${s[0]}:${s[1]}`).join(";");
+  /**
+   * Sets the canvas element and configuration for click handling.
+   * This should be called after construction when the canvas is available.
+   * 
+   * @param canvas The canvas element to attach click handlers to
+   * @param conf Configuration for the click handler
+   */
+  setCanvas(canvas, conf) {
+    this.canvas = canvas;
+    this.conf = conf;
+    this.initClickHandler();
+  }
+  /**
+   * Initializes the click handler if all dependencies are available.
+   */
+  initClickHandler() {
+    if (!this.canvas || !this.conf) {
+      return;
     }
-    const size = globalScale * 30.2 * (30 / this.gridSize) * this.gridSize;
-    const topPos = -455 * (globalScale - 0.885);
-    const divMapGrid = document.getElementById("mapGrid");
-    if (!divMapGrid)
-      return;
-    divMapGrid.innerHTML = "";
-    divMapGrid.style.cssText = [
-      ["width", size + "px"],
-      ["height", size + "px"],
-      ["left", -size / 2 + "px"],
-      ["top", Math.round(topPos) + "px"],
-      [
-        "grid-template-columns",
-        `repeat(${this.gridSize}, ${100 / this.gridSize}%)`
-      ]
-    ].map((s) => `${s[0]}:${s[1]}`).join(";");
-    this.divTableGrid = divMapGrid;
+    if (this.clickHandler) {
+      this.clickHandler.destroy();
+    }
+    const deps = {
+      canvas: this.canvas,
+      mapLvl: this.mapLvl,
+      mapInfo: this.mapInfo,
+      gameWorker: this.gameWorker,
+      conf: this.conf
+    };
+    this.clickHandler = new CanvasClickHandler(deps);
+    console.log("[GridMapDrawers] CanvasClickHandler initialized");
   }
-  /// -----------------------------
-  // Add a Div - Iso Grid on top of the IsoCanvaMap .
-  _init_gridMatrix() {
-    if (!this.divTableGrid)
-      return;
-    this.divTableGrid.innerHTML = "";
-    for (let i = 0; i < this.gridSize; i++) {
-      for (let j = 0; j < this.gridSize; j++) {
-        const cell = document.createElement("div");
-        cell.classList.add("tileActionBase");
-        this.divTableGrid.appendChild(cell);
-        this._mapGrid[i][j] = cell;
-        if (i > 0 && i < this.gridSize - 1 && j > 0 && j < this.gridSize - 1) {
-          const hitcell = document.createElement("div");
-          hitcell.classList.add("hit");
-          cell.appendChild(hitcell);
-          if (i == this.gridSize / 2 && j == this.gridSize / 2) {
-            cell.classList.add("tileCenter");
-          }
-        }
-        cell.addEventListener("click", (event) => {
-          const target = event.target;
-          if (!target)
-            return;
-          console.log(target);
-          const clickX = this.mod * (-i + this.gridSize / 2);
-          const clickY = this.mod * (-j + this.gridSize / 2);
-          console.log("click :", this.mod, clickX, clickY);
-          this.gameWorker.postMessage({
-            action: "query_infoCell",
-            gridX: clickX,
-            gridY: clickY
-          });
-          this.gameWorker.postMessage({
-            action: "toolClick",
-            gridX: clickX,
-            gridY: clickY
-          });
-        });
-      }
+  /**
+   * Sets a callback function to be called when the hovered tile changes.
+   * Delegates to the internal CanvasClickHandler.
+   */
+  setHoverCallback(callback) {
+    if (this.clickHandler) {
+      this.clickHandler.setHoverCallback(callback);
     }
   }
+  /**
+   * Updates the grid state.
+   * With the new canvas-based approach, this only updates the shared buffer references.
+   * No DOM manipulation is needed.
+   */
   updateGrid = () => {
-    const divMapGrid = document.getElementById("mapGrid");
-    if (divMapGrid == null)
-      return;
-    const size = globalScale * 30.2 * (30 / this.gridSize);
-    const offX = this.mapInfo[2] * size;
-    const offY = this.mapInfo[3] * size;
-    divMapGrid.style.transform = `rotateX(60deg) rotateY(0deg) rotateZ(45deg) translate(${offY}px, ${offX}px)`;
-    for (let i = 0; i < this.gridSize; i++) {
-      for (let j = 0; j < this.gridSize; j++) {
-        const x = (this.gridSize - 1 - i) * this.mod;
-        const y = (this.gridSize - 1 - j) * this.mod;
-        const tileLvl = this.mapLvl[x * this.gridSize * this.mod + y];
-        const topAline = Math.round(-(tileLvl * this._heightScall));
-        const leftAline = Math.round(-(tileLvl * this._heightScall));
-        this._mapGrid[i][j].style.transform = `translate(${topAline}px, ${leftAline}px)`;
-      }
+    this.mapLvl = new Float32Array(this.bufferMapLvl);
+    this.mapInfo = new Float32Array(this.bufferMapInfo);
+    if (this.clickHandler) {
+      this.clickHandler.updateMapData(this.mapLvl, this.mapInfo);
     }
   };
+  /**
+   * Updates the click handler configuration.
+   * Call this if SCALE_SIZE or SCALE_MOD changes.
+   */
+  updateConfig(conf) {
+    this.conf = conf;
+    if (this.clickHandler) {
+      this.clickHandler.updateConfig(conf);
+    }
+  }
+  /**
+   * Returns the current hovered tile coordinates.
+   */
+  getLastHoveredTile() {
+    return this.clickHandler?.getLastHoveredTile() ?? null;
+  }
+  /**
+   * Cleans up resources and removes event listeners.
+   */
+  destroy() {
+    if (this.clickHandler) {
+      this.clickHandler.destroy();
+      this.clickHandler = null;
+    }
+    this.canvas = null;
+    this.conf = null;
+  }
 };
 
 // web/js/keyboad.ts
@@ -1374,8 +1699,17 @@ var canvasImageMap = document.getElementById(
   "map-image"
 );
 var gridMapDrawer = null;
+var DEFAULT_MAP_CONF = {
+  DRAW_TILE_COUNT: 40,
+  SCALE_SIZE: 1,
+  SCALE_MOD: 1
+};
 var callback_initWorker = (_data) => {
   console.log("\u2705 Game Worker initialized!");
+  if (gridMapDrawer) {
+    gridMapDrawer.setCanvas(canvasImageMap, DEFAULT_MAP_CONF);
+    console.log("[main] Canvas click handler attached before offscreen transfer");
+  }
   const offscreen = canvasImageMap.transferControlToOffscreen();
   handlers.sendDataSync({
     action: "setCanvasMap",
@@ -1385,11 +1719,7 @@ var callback_initWorker = (_data) => {
   ]);
   handlers.send({
     action: "initCanvasMap",
-    mapConf: {
-      DRAW_TILE_COUNT: 40,
-      SCALE_SIZE: 1,
-      SCALE_MOD: 1
-    }
+    mapConf: DEFAULT_MAP_CONF
   });
   handlers.send({
     action: "gridClick",
@@ -1405,6 +1735,11 @@ var callback_initCanvasMap = (data) => {
   console.log("===== Call BackRender");
   gridMapDrawer = new GridMapDrawers(gameWorker, bufferMapLvl, bufferMapInfo);
   gridMapDrawer.mod = mapconf.DRAW_TILE_COUNT / 40;
+  gridMapDrawer.setCanvas(canvasImageMap, {
+    DRAW_TILE_COUNT: mapconf.DRAW_TILE_COUNT,
+    SCALE_SIZE: mapconf.SCALE_SIZE,
+    SCALE_MOD: mapconf.SCALE_MOD
+  });
 };
 handlers.append([
   ["callback_initWorker", callback_initWorker],
