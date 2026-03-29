@@ -468,14 +468,26 @@ export class CanvasMapDrawers {
     }
 
     const { x, y, z } = this.hoveredTile;
+    
+    // Validate coordinates are numbers
+    if (typeof x !== 'number' || typeof y !== 'number' || isNaN(x) || isNaN(y)) {
+      return;
+    }
+    
     const size = this.conf.DRAW_TILE_COUNT;
     
     // Convert tile coordinates to grid indices (matching drawTile's coordinate system)
-    const xx = size - x - 1;
-    const yy = size - y - 1;
+    const xx = Math.round(size - x - 1);
+    const yy = Math.round(size - y - 1);
     
-    // Bounds check
+    // Bounds check - ensure indices are within valid range for tilesMatrix
     if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1) {
+      return;
+    }
+
+    // Check if tilesMatrix and the tile exist
+    if (!this.tilesMatrix || !this.tilesMatrix.tiles || 
+        !this.tilesMatrix.tiles[xx] || !this.tilesMatrix.tiles[xx][yy]) {
       return;
     }
 
