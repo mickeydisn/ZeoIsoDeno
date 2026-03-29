@@ -20,35 +20,35 @@ Extend `IsometricProjector` with `screenToTile()` and `screenToTileWithHeight()`
 
 ### Task 1.1: Add `screenToTile` method to `IsometricProjector`
 
-- [ ] Add method signature `screenToTile(screenX: number, screenY: number, tileZ: number = 0): PointIso | null`
-- [ ] Implement offset adjustment: subtract `originX` from screenX, subtract screenY from `originY`
-- [ ] Account for Z offset: subtract `tileZ * ISO_LVL_SCALE / SCALE_MOD` from adjusted Y
-- [ ] Solve the linear system: `tileX = (dx + dy) / (2 * scale_x) + offsetX`, `tileY = (dy - dx) / (2 * scale_x) + offsetY`
-- [ ] Return `PointIso` with computed tile coordinates
-- [ ] Export `ISO_LVL_SCALE` constant if not already exported (needed by callers)
+- [x] Add method signature `screenToTile(screenX: number, screenY: number, tileZ: number = 0): PointIso | null`
+- [x] Implement offset adjustment: subtract `originX` from screenX, subtract screenY from `originY`
+- [x] Account for Z offset: subtract `tileZ * ISO_LVL_SCALE / SCALE_MOD` from adjusted Y
+- [x] Solve the linear system: `tileX = (dx + dy) / (2 * scale_x) + offsetX`, `tileY = (dy - dx) / (2 * scale_x) + offsetY`
+- [x] Return `PointIso` with computed tile coordinates
+- [x] Export `ISO_LVL_SCALE` constant if not already exported (needed by callers)
 
 ### Task 1.2: Add `screenToTileWithHeight` method to `IsometricProjector`
 
-- [ ] Add method signature accepting `mapLvl: Float32Array`, `mapSize: number`, `centerX: number`, `centerY: number`
-- [ ] First pass: call `screenToTile` with `tileZ = 0` to get approximate tile position
-- [ ] Round to nearest integer tile coordinates
-- [ ] Validate bounds: check `tileX >= 0 && tileX < mapSize && tileY >= 0 && tileY < mapSize`
-- [ ] Look up actual height from `mapLvl` array using index `tileX * mapSize + tileY`
-- [ ] Second pass: call `screenToTile` again with the correct height for precise coordinates
-- [ ] Return final `PointIso` or `null` if out of bounds
+- [x] Add method signature accepting `mapLvl: Float32Array`, `mapSize: number`, `centerX: number`, `centerY: number`
+- [x] First pass: call `screenToTile` with `tileZ = 0` to get approximate tile position
+- [x] Round to nearest integer tile coordinates
+- [x] Validate bounds: check `tileX >= 0 && tileX < mapSize && tileY >= 0 && tileY < mapSize`
+- [x] Look up actual height from `mapLvl` array using index `tileX * mapSize + tileY`
+- [x] Second pass: call `screenToTile` again with the correct height for precise coordinates
+- [x] Return final `PointIso` or `null` if out of bounds
 
 ### Task 1.3: Add `tileToScreen` helper method (optional but useful)
 
-- [ ] Add method that wraps `translatePoint` for clarity
-- [ ] Returns screen coordinates `{ x: number, y: number }` for a given tile
-- [ ] Useful for hover rendering and edge detection features
+- [x] Add method that wraps `translatePoint` for clarity
+- [x] Returns screen coordinates `{ x: number, y: number }` for a given tile
+- [x] Useful for hover rendering and edge detection features
 
 ### Task 1.4: Unit validation of inverse projection
 
-- [ ] Verify that `screenToTile(translatePoint(tile))` returns the original tile coordinates
-- [ ] Test with various `SCALE_SIZE` values (0.5, 1, 2)
-- [ ] Test with various `tileZ` values (0, 1, 5)
-- [ ] Test with different `originX`/`originY` configurations
+- [x] Verify that `screenToTile(translatePoint(tile))` returns the original tile coordinates
+- [x] Test with various `SCALE_SIZE` values (0.5, 1, 2)
+- [x] Test with various `tileZ` values (0, 1, 5)
+- [x] Test with different `originX`/`originY` configurations
 
 ## Files Modified
 
