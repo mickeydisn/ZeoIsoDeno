@@ -27,11 +27,19 @@ Add hover highlighting rendered on the canvas and an optional coordinate tooltip
 
 ### Task 4.3: Connect hover callback to canvas renderer
 
-- [ ] In `GridMapDrawers` (or integration point), set up hover callback
-- [ ] When `CanvasClickHandler` fires hover callback with a tile:
+- [x] In `GridMapDrawers` (or integration point), set up hover callback
+- [x] When `CanvasClickHandler` fires hover callback with a tile:
   - Call `canvasMapDrawers.setHoveredTile(tile)` if accessible
   - Or use a shared state mechanism (e.g., `SharedArrayBuffer` for tile coordinates)
-- [ ] When hover callback fires with `null`, clear the hovered tile
+- [x] When hover callback fires with `null`, clear the hovered tile
+
+note: the overlay must not break any keyboard , or redraw loop
+
+**Implementation Notes:**
+- Extended `mapInfo` shared buffer from 4 to 8 elements to include hover state
+- Buffer layout: `[0:centreX, 1:centreY, 2:offX, 3:offY, 4:hoverX, 5:hoverY, 6:hoverZ, 7:hasHover]`
+- Main thread writes hover state to buffer via callback in `GridMapDrawers.initClickHandler()`
+- Worker reads hover state in `CanvasMapDrawers.drawUpdate()` and updates `hoveredTile` property
 
 ### Task 4.4: Create coordinate tooltip (optional)
 

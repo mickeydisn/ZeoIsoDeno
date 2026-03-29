@@ -85,7 +85,23 @@ export class GridMapDrawers {
     };
 
     this.clickHandler = new CanvasClickHandler(deps);
-    console.log("[GridMapDrawers] CanvasClickHandler initialized");
+    
+    // Set up hover callback to write to shared buffer for worker communication
+    this.clickHandler.setHoverCallback((tile: PointIso | null) => {
+      if (tile) {
+        // Write hover state to shared buffer
+        // mapInfo layout: [0:centreX, 1:centreY, 2:offX, 3:offY, 4:hoverX, 5:hoverY, 6:hoverZ, 7:hasHover]
+        this.mapInfo[4] = tile.x;
+        this.mapInfo[5] = tile.y;
+        this.mapInfo[6] = tile.z;
+        this.mapInfo[7] = 1; // hasHover = true
+      } else {
+        // Clear hover state
+        this.mapInfo[7] = 0; // hasHover = false
+      }
+    });
+    
+    console.log("[GridMapDrawers] CanvasClickHandler initialized with hover callback");
   }
 
   /**

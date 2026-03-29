@@ -103,9 +103,9 @@ export class CanvasMapDrawers {
     this.bufferMapLvl = new SharedArrayBuffer(bufferSize);
     this.mapLvl = new Float32Array(this.bufferMapLvl);
 
-    // Init the Worker-Shared Matrix : [ 0:X , 1:Y, 2:offX, 3:offY ]
+    // Init the Worker-Shared Matrix : [ 0:X , 1:Y, 2:offX, 3:offY, 4:hoverX, 5:hoverY, 6:hoverZ, 7:hasHover ]
     this.bufferMapInfo = new SharedArrayBuffer(
-      4 * Float32Array.BYTES_PER_ELEMENT,
+      8 * Float32Array.BYTES_PER_ELEMENT,
     );
     this.mapInfo = new Float32Array(this.bufferMapInfo);
 
@@ -179,6 +179,18 @@ export class CanvasMapDrawers {
     this.mapInfo[1] = centreY;
     this.mapInfo[2] = offx;
     this.mapInfo[3] = offy;
+
+    // Read hover state from shared buffer
+    const hasHover = this.mapInfo[7] === 1;
+    if (hasHover) {
+      this.hoveredTile = {
+        x: this.mapInfo[4],
+        y: this.mapInfo[5],
+        z: this.mapInfo[6],
+      };
+    } else {
+      this.hoveredTile = null;
+    }
 
     this.drawIso();
   }
