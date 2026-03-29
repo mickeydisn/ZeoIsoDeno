@@ -2378,7 +2378,7 @@ function tagFaces(conf, tags) {
 }
 
 // IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_Entrer.ts
-var wcAsset_Enter = class {
+var WcAsset_Enter = class {
   tag = "E_";
   constructor() {
   }
@@ -2447,7 +2447,7 @@ var wcAsset_Enter = class {
   }
   // ==========================================================================
 };
-var wcAsset_EnterSimple = class {
+var WcAsset_EnterSimple = class {
   tag = "E_";
   constructor() {
   }
@@ -3063,7 +3063,7 @@ var WcBuildConf_HouseA = class extends WcAbstractBuildConf {
       FENCE_SUFFIX: `#H${rand + 10}_S50_C150_B115`,
       WALL_SUFFIX: `#H${rand}_S20_C150_B115`
     };
-    this.enter = new wcAsset_Enter();
+    this.enter = new WcAsset_Enter();
     this.faceX = new wcAsset_X();
     this.fence = new WcAsset_FenceSimple({
       tag: "F_",
@@ -3200,8 +3200,8 @@ var WcBuildConf_HouseA = class extends WcAbstractBuildConf {
   }
 };
 
-// IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_CoridorLab.ts
-var wcAsset_CoridorLab = class {
+// IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_CorridorLab.ts
+var WcAsset_CorridorLab = class {
   WALL_SUFFIX;
   // '#H200_S20_C135_B105'
   PREFIX = "Lab5_";
@@ -3354,7 +3354,7 @@ var WcBuildConf_LabBorderA = class extends WcAbstractBuildConf {
       tag: "FP_",
       suffix: this.colorConf.FENCE_SUFFIX
     });
-    this.corridor = new wcAsset_CoridorLab(this.colorConf.WALL_SUFFIX);
+    this.corridor = new WcAsset_CorridorLab(this.colorConf.WALL_SUFFIX);
     this.faceLinkWeight = {
       //
       "X": 0,
@@ -4775,7 +4775,7 @@ var WcBuildConf_RLabA = class extends WcAbstractBuildConf {
       suffix: this.colorConf.FENCE_SUFFIX
     });
     this.wallRLab = new WcAsset_WallRLab(this.colorConf.WALL_SUFFIX);
-    this.corridorLab = new wcAsset_CoridorLab(this.colorConf.WALL_SUFFIX);
+    this.corridorLab = new WcAsset_CorridorLab(this.colorConf.WALL_SUFFIX);
     this.faceLinkWeight = {
       "X": 0,
       // F
@@ -4969,7 +4969,7 @@ var WcBuildConf_GraveA = class extends WcAbstractBuildConf {
       FENCE_SUFFIX: `#H${rand + 10}_S50_C150_B115`,
       WALL_SUFFIX: `#H${rand}_S50_C150_B115`
     };
-    this.enter = new wcAsset_EnterSimple();
+    this.enter = new WcAsset_EnterSimple();
     this.faceX = new wcAsset_X();
     this.fenceEnter = new WcAsset_FenceEnter({
       tag: "FE_",
@@ -5104,8 +5104,8 @@ var WcBuildConf_GraveA = class extends WcAbstractBuildConf {
   }
 };
 
-// IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_CoridorPipe.ts
-var wcAsset_CoridorPipe = class {
+// IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_CorridorPipe.ts
+var WcAsset_CorridorPipe = class {
   WALL_SUFFIX;
   // '#H200_S20_C135_B105'
   tag = "CP_";
@@ -5237,8 +5237,8 @@ var wcAsset_CoridorPipe = class {
   // ==========================================================================
 };
 
-// IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_CoridorPipe2.ts
-var wcAsset_CoridorPipe2 = class {
+// IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_CorridorPipe2.ts
+var WcAsset_CorridorPipe2 = class {
   WALL_SUFFIX;
   // '#H200_S20_C135_B105'
   tag = "CP2_";
@@ -5397,15 +5397,15 @@ var WcBuildConf_LabPipeA = class extends WcAbstractBuildConf {
       FENCE_PLATFORM_SUFFIX: `#H${(rand + -120) % 360}_S10_C150_B115`,
       WALL_SUFFIX: `#H${rand}_S90_C140_B95`
     };
-    this.enter = new wcAsset_Enter();
+    this.enter = new WcAsset_Enter();
     this.faceX = new wcAsset_X();
     this.fence = new WcAsset_Fence2({
       tag: "F2_",
       suffix: this.colorConf.FENCE_PLATFORM_SUFFIX,
       collapseType: 1 /* NoSquare */
     });
-    this.corridor = new wcAsset_CoridorPipe(this.colorConf.WALL_SUFFIX);
-    this.corridor2 = new wcAsset_CoridorPipe2(this.colorConf.WALL_SUFFIX);
+    this.corridor = new WcAsset_CorridorPipe(this.colorConf.WALL_SUFFIX);
+    this.corridor2 = new WcAsset_CorridorPipe2(this.colorConf.WALL_SUFFIX);
     this.faceLinkWeight = {
       //
       ...this.faceX.faceLinkWeight(),
@@ -10189,9 +10189,20 @@ var ToolRegistry = class _ToolRegistry {
 };
 var toolRegistry = ToolRegistry.getInstance();
 
+// IsoGame/tools/toolBuilder.ts
+function createTool(config) {
+  return {
+    id: config.id,
+    name: config.name,
+    icon: config.icon,
+    category: config.category,
+    execute: config.execute
+  };
+}
+
 // IsoGame/tools/terrainTools.ts
 var tilesActions = TilesActions.getInstance();
-var raiseTerrainTool = {
+var raiseTerrainTool = createTool({
   id: "raise_terrain",
   name: "Raise Terrain",
   icon: "\u2B06\uFE0F",
@@ -10214,8 +10225,8 @@ var raiseTerrainTool = {
       });
     }
   }
-};
-var lowerTerrainTool = {
+});
+var lowerTerrainTool = createTool({
   id: "lower_terrain",
   name: "Lower Terrain",
   icon: "\u2B07\uFE0F",
@@ -10238,8 +10249,8 @@ var lowerTerrainTool = {
       });
     }
   }
-};
-var flattenTool = {
+});
+var flattenTool = createTool({
   id: "flatten",
   name: "Flatten",
   icon: "\u23F9\uFE0F",
@@ -10252,8 +10263,8 @@ var flattenTool = {
       size: brushSize
     });
   }
-};
-var smoothTool = {
+});
+var smoothTool = createTool({
   id: "smooth",
   name: "Smooth",
   icon: "\u3030\uFE0F",
@@ -10266,10 +10277,10 @@ var smoothTool = {
       size: brushSize
     });
   }
-};
+});
 var plateauTargetLevel = null;
-var plateauStartPos = null;
-var plateauTool = {
+var _plateauStartPos = null;
+var plateauTool = createTool({
   id: "plateau",
   name: "Plateau",
   icon: "\u{1F3D4}\uFE0F",
@@ -10279,7 +10290,7 @@ var plateauTool = {
     if (plateauTargetLevel === null) {
       const tile = fm.getTile(x, y);
       plateauTargetLevel = tile.lvl;
-      plateauStartPos = { x, y };
+      _plateauStartPos = { x, y };
       console.log(`Plateau: Target level set to ${plateauTargetLevel}`);
     } else {
       tilesActions.doAction({
@@ -10297,10 +10308,10 @@ var plateauTool = {
       });
       console.log(`Plateau: Flattened to level ${plateauTargetLevel}`);
       plateauTargetLevel = null;
-      plateauStartPos = null;
+      _plateauStartPos = null;
     }
   }
-};
+});
 var terrainTools = [
   raiseTerrainTool,
   lowerTerrainTool,
@@ -10311,16 +10322,16 @@ var terrainTools = [
 
 // IsoGame/tools/colorTools.ts
 var tilesActions2 = TilesActions.getInstance();
-var colorPickerTool = {
+var colorPickerTool = createTool({
   id: "color_picker",
   name: "Color Picker",
   icon: "\u{1F3A8}",
   category: "color",
-  execute(x, y, brushSize, _world) {
+  execute(_x, _y, _brushSize, _world) {
     console.log(`Color Picker active with color: ${toolRegistry.getActiveColor().join(", ")}`);
   }
-};
-var paintColorTool = {
+});
+var paintColorTool = createTool({
   id: "paint_color",
   name: "Paint Color",
   icon: "\u{1F58C}\uFE0F",
@@ -10335,8 +10346,8 @@ var paintColorTool = {
       color
     });
   }
-};
-var eyedropperTool = {
+});
+var eyedropperTool = createTool({
   id: "eyedropper",
   name: "Eyedropper",
   icon: "\u{1F489}",
@@ -10349,8 +10360,8 @@ var eyedropperTool = {
       return { pickedColor: [r, g, b] };
     }
   }
-};
-var randomShadeTool = {
+});
+var randomShadeTool = createTool({
   id: "random_shade",
   name: "Random Shade",
   icon: "\u{1F3B2}",
@@ -10368,7 +10379,7 @@ var randomShadeTool = {
       color: variedColor
     });
   }
-};
+});
 var colorTools = [
   colorPickerTool,
   paintColorTool,
@@ -10378,18 +10389,18 @@ var colorTools = [
 
 // IsoGame/tools/assetTools.ts
 var tilesActions3 = TilesActions.getInstance();
-var assetPickerTool = {
+var assetPickerTool = createTool({
   id: "asset_picker",
   name: "Asset Picker",
   icon: "\u{1F4C2}",
   category: "asset",
-  execute(x, y, brushSize, _world) {
+  execute(_x, _y, _brushSize, _world) {
     const activeAsset = toolRegistry.getActiveAssetId();
     console.log(`Asset Picker active with asset: ${activeAsset}`);
     return { activeAsset };
   }
-};
-var placeAssetTool = {
+});
+var placeAssetTool = createTool({
   id: "place_asset",
   name: "Place Asset",
   icon: "\u{1F5BC}\uFE0F",
@@ -10409,8 +10420,8 @@ var placeAssetTool = {
       console.log("No asset selected!");
     }
   }
-};
-var clearItemsTool = {
+});
+var clearItemsTool = createTool({
   id: "clear_items",
   name: "Clear Items",
   icon: "\u{1F9F9}",
@@ -10423,7 +10434,7 @@ var clearItemsTool = {
       size: brushSize
     });
   }
-};
+});
 var assetTools = [
   assetPickerTool,
   placeAssetTool,
@@ -10515,7 +10526,7 @@ function createBuildingConfig(id, options) {
 }
 
 // IsoGame/tools/structureTools.ts
-var placeBuildingTool = {
+var placeBuildingTool = createTool({
   id: "place_building",
   name: "Place Building",
   icon: "\u{1F3E0}",
@@ -10543,7 +10554,7 @@ var placeBuildingTool = {
     }
     return { success, configId, x, y };
   }
-};
+});
 var structureTools = [
   placeBuildingTool
 ];
@@ -10751,7 +10762,7 @@ var GameWorker = class {
       const y = data.y;
       console.log("####################### gridClick CITY ");
       console.log(data);
-      const city = new City(this.world, x, y);
+      const _city = new City(this.world, x, y);
     }],
     [
       "init_test",

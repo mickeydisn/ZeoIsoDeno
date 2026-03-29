@@ -48,9 +48,10 @@ var initFlyMenu = (gameWorker2) => {
   });
 };
 
-// web/js/menu/toolMenu.ts
+// web/js/menu/toolMenuState.ts
 var categories = ["terrain", "color", "asset", "structure", "inspect"];
 var brushSizes = [1, 3, 5, 9];
+var assetSuffixes = ["_NE", "_NW", "_SW", "_SE"];
 var activeCategory = "terrain";
 var activeToolId = null;
 var activeBrushSize = 1;
@@ -68,332 +69,388 @@ var buildingConfigs = [];
 var activeBuildingConfigId = "grave_a";
 var buildingGrowLoop = 20;
 var buildingEndLoop = 100;
-var initToolMenu = (gameWorker2) => {
-  const toolMenuEl = document.getElementById("toolMenu");
-  if (!toolMenuEl)
-    return;
-  renderToolMenu(toolMenuEl, gameWorker2);
-};
-var assetSuffixes = ["_NE", "_NW", "_SW", "_SE"];
-function renderToolMenu(container, gameWorker2) {
+function getActiveCategory() {
+  return activeCategory;
+}
+function setActiveCategory(category) {
+  activeCategory = category;
+}
+function getActiveToolId() {
+  return activeToolId;
+}
+function setActiveToolId(toolId) {
+  activeToolId = toolId;
+}
+function getActiveBrushSize() {
+  return activeBrushSize;
+}
+function setActiveBrushSize(size) {
+  activeBrushSize = size;
+}
+function getActiveColor() {
+  return activeColor;
+}
+function setActiveColor(color) {
+  activeColor = color;
+}
+function getToolsByCategory() {
+  return toolsByCategory;
+}
+function setToolsByCategory(tools) {
+  toolsByCategory = tools;
+}
+function clearToolsByCategory() {
+  toolsByCategory.clear();
+}
+function getAssetGroups() {
+  return assetGroups;
+}
+function setAssetGroups(groups) {
+  assetGroups = groups;
+}
+function getActiveAssetId() {
+  return activeAssetId;
+}
+function setActiveAssetId(assetId) {
+  activeAssetId = assetId;
+}
+function getSelectedAssetGroup() {
+  return selectedAssetGroup;
+}
+function setSelectedAssetGroup(group) {
+  selectedAssetGroup = group;
+}
+function getActiveAssetSuffix() {
+  return activeAssetSuffix;
+}
+function setActiveAssetSuffix(suffix) {
+  activeAssetSuffix = suffix;
+}
+function setActiveHue(hue) {
+  activeHue = hue;
+}
+function setActiveContrast(contrast) {
+  activeContrast = contrast;
+}
+function setActiveSaturation(saturation) {
+  activeSaturation = saturation;
+}
+function setActiveBrightness(brightness) {
+  activeBrightness = brightness;
+}
+function resetColorFilters() {
+  activeHue = 0;
+  activeContrast = 100;
+  activeSaturation = 100;
+  activeBrightness = 100;
+}
+function getColorFilterState() {
+  return {
+    hue: activeHue,
+    contrast: activeContrast,
+    saturation: activeSaturation,
+    brightness: activeBrightness
+  };
+}
+function areColorFiltersDefault() {
+  return activeHue === 0 && activeContrast === 100 && activeSaturation === 100 && activeBrightness === 100;
+}
+function getBuildingConfigs2() {
+  return buildingConfigs;
+}
+function setBuildingConfigs(configs) {
+  buildingConfigs = configs;
+}
+function setActiveBuildingConfigId(configId) {
+  activeBuildingConfigId = configId;
+}
+function getBuildingGrowLoop() {
+  return buildingGrowLoop;
+}
+function getBuildingEndLoop() {
+  return buildingEndLoop;
+}
+function setBuildingParams(growLoop, endLoop) {
+  buildingGrowLoop = growLoop;
+  buildingEndLoop = endLoop;
+}
+function getActiveBuildingDescription() {
+  const config = buildingConfigs.find((c) => c.id === activeBuildingConfigId);
+  return config?.description || "Select a building configuration";
+}
+function buildFilterSuffix() {
+  if (areColorFiltersDefault()) {
+    return "";
+  }
+  return `#H${activeHue}_C${activeContrast}_S${activeSaturation}_B${activeBrightness}`;
+}
+function buildFullAssetKey(assetId) {
+  return assetId + activeAssetSuffix + buildFilterSuffix();
+}
+
+// web/js/menu/toolMenuRender.ts
+function renderToolMenu(container) {
   container.innerHTML = `
+    ${renderHeader()}
+    ${renderCategoryTabs()}
+    ${renderActiveDisplay()}
+    <div id="toolList"></div>
+    ${renderBrushSelector()}
+    ${renderColorPanel()}
+    ${renderAssetPanel()}
+    ${renderBuildingPanel()}
+  `;
+}
+function renderHeader() {
+  return `
     <div id="toolMenuHeader">
       <span id="toolMenuTitle">Tools</span>
     </div>
+  `;
+}
+function renderCategoryTabs() {
+  const activeCategory2 = getActiveCategory();
+  return `
     <div id="toolCategoryTabs">
       ${categories.map((cat) => `
-        <button class="category-tab ${cat === activeCategory ? "active" : ""}" data-category="${cat}">
+        <button class="category-tab ${cat === activeCategory2 ? "active" : ""}" data-category="${cat}">
           ${capitalizeFirst(cat)}
         </button>
       `).join("")}
     </div>
+  `;
+}
+function renderActiveDisplay() {
+  const activeToolId2 = getActiveToolId();
+  const activeBrushSize2 = getActiveBrushSize();
+  const toolsByCategory2 = getToolsByCategory();
+  let labelText = "No tool selected";
+  if (activeToolId2) {
+    const allTools = Array.from(toolsByCategory2.values()).flat();
+    const tool = allTools.find((t) => t.id === activeToolId2);
+    if (tool) {
+      labelText = `${tool.icon} ${tool.name} (${activeBrushSize2}\xD7${activeBrushSize2})`;
+    }
+  }
+  return `
     <div id="toolActiveDisplay">
-      <span id="activeToolLabel">No tool selected</span>
-    </div>
-    <div id="toolList"></div>
-    <div id="toolBrushSize">
-      <span>Brush:</span>
-      ${brushSizes.map((size) => `
-        <button class="brush-btn ${size === activeBrushSize ? "active" : ""}" data-size="${size}">
-          ${size}\xD7${size}
-        </button>
-      `).join("")}
-    </div>
-    <div id="toolColorPicker" style="display: ${activeCategory === "color" ? "flex" : "none"}">
-      <span>Color:</span>
-      <input type="color" id="colorPickerInput" value="${activeColor}">
-      <span id="colorHex">${activeColor}</span>
-    </div>
-    <div id="assetBrowser" style="display: ${activeCategory === "asset" ? "block" : "none"}">
-      <div id="suffixSelector">
-        <span>Direction:</span>
-        ${assetSuffixes.map((suffix) => `
-          <button class="suffix-btn ${suffix === activeAssetSuffix ? "active" : ""}" data-suffix="${suffix}">
-            ${suffix.replace("_", "")}
-          </button>
-        `).join("")}
-      </div>
-      <div id="assetFilterControls">
-        <div class="filter-row">
-          <span>Hue:</span>
-          <input type="range" min="0" max="360" value="${activeHue}" class="filter-slider" data-filter="hue">
-          <span class="filter-value">${activeHue}\xB0</span>
-        </div>
-        <div class="filter-row">
-          <span>Sat:</span>
-          <input type="range" min="5" max="250" value="${activeSaturation}" class="filter-slider" data-filter="saturation">
-          <span class="filter-value">${activeSaturation}</span>
-        </div>
-        <div class="filter-row">
-          <span>Con:</span>
-          <input type="range" min="5" max="250" value="${activeContrast}" class="filter-slider" data-filter="contrast">
-          <span class="filter-value">${activeContrast}</span>
-        </div>
-        <div class="filter-row">
-          <span>Brt:</span>
-          <input type="range" min="5" max="250" value="${activeBrightness}" class="filter-slider" data-filter="brightness">
-          <span class="filter-value">${activeBrightness}</span>
-        </div>
-        <button id="resetFiltersBtn" class="filter-reset-btn">Reset Filters</button>
-      </div>
-      <div id="selectedAssetCard" style="display: ${activeAssetId ? "block" : "none"}">
-        <div id="selectedAssetPreview"></div>
-        <span id="selectedAssetLabel">${activeAssetId || "No asset selected"}</span>
-      </div>
-      <div id="assetImageList"></div>
-      <div id="assetGroupList"></div>
-    </div>
-    <div id="buildingConfigPanel" style="display: ${activeCategory === "structure" ? "block" : "none"}">
-      <div id="buildingConfigHeader">
-        <span id="buildingConfigTitle">Building Config</span>
-      </div>
-      <div id="buildingConfigSelector"></div>
-      <div id="buildingParams">
-        <div class="param-row">
-          <span>Grow Loop:</span>
-          <input type="range" min="5" max="100" value="${buildingGrowLoop}" id="growLoopSlider">
-          <span id="growLoopValue">${buildingGrowLoop}</span>
-        </div>
-        <div class="param-row">
-          <span>End Loop Max:</span>
-          <input type="range" min="50" max="1000" value="${buildingEndLoop}" id="endLoopSlider">
-          <span id="endLoopValue">${buildingEndLoop}</span>
-        </div>
-      </div>
-      <div id="buildingDescription">${getActiveBuildingDescription()}</div>
+      <span id="activeToolLabel">${labelText}</span>
     </div>
   `;
-  container.querySelectorAll(".category-tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-      const category = tab.dataset.category;
-      setActiveCategory(category, container, gameWorker2);
-    });
-  });
-  const colorPickerInput = container.querySelector("#colorPickerInput");
-  if (colorPickerInput) {
-    colorPickerInput.addEventListener("input", (e) => {
-      const color = e.target.value;
-      setActiveColor(color, container, gameWorker2);
-    });
-  }
-  container.querySelectorAll(".brush-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const size = parseInt(btn.dataset.size);
-      setActiveBrushSize(size, container, gameWorker2);
-    });
-  });
-  container.querySelectorAll(".suffix-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const suffix = btn.dataset.suffix;
-      setActiveAssetSuffix(suffix, container, gameWorker2);
-    });
-  });
-  container.querySelectorAll(".filter-slider").forEach((slider) => {
-    slider.addEventListener("input", (e) => {
-      const input = e.target;
-      const filter = input.dataset.filter;
-      const value = parseInt(input.value);
-      switch (filter) {
-        case "hue":
-          activeHue = value;
-          break;
-        case "saturation":
-          activeSaturation = value;
-          break;
-        case "contrast":
-          activeContrast = value;
-          break;
-        case "brightness":
-          activeBrightness = value;
-          break;
-      }
-      const valueEl = input.nextElementSibling;
-      if (valueEl) {
-        valueEl.textContent = filter === "hue" ? `${value}\xB0` : `${value}`;
-      }
-      if (activeAssetId) {
-        const fullKey = activeAssetId + activeAssetSuffix + buildFilterSuffix();
-        gameWorker2.postMessage({
-          action: "setActiveAsset",
-          assetId: fullKey
-        });
-      }
-    });
-  });
-  const resetFiltersBtn = container.querySelector("#resetFiltersBtn");
-  if (resetFiltersBtn) {
-    resetFiltersBtn.addEventListener("click", () => {
-      activeHue = 0;
-      activeContrast = 100;
-      activeSaturation = 100;
-      activeBrightness = 100;
-      const hueSlider = container.querySelector('[data-filter="hue"]');
-      const satSlider = container.querySelector('[data-filter="saturation"]');
-      const conSlider = container.querySelector('[data-filter="contrast"]');
-      const brtSlider = container.querySelector('[data-filter="brightness"]');
-      if (hueSlider)
-        hueSlider.value = "0";
-      if (satSlider)
-        satSlider.value = "100";
-      if (conSlider)
-        conSlider.value = "100";
-      if (brtSlider)
-        brtSlider.value = "100";
-      const hueValue = hueSlider?.nextElementSibling;
-      const satValue = satSlider?.nextElementSibling;
-      const conValue = conSlider?.nextElementSibling;
-      const brtValue = brtSlider?.nextElementSibling;
-      if (hueValue)
-        hueValue.textContent = "0\xB0";
-      if (satValue)
-        satValue.textContent = "100";
-      if (conValue)
-        conValue.textContent = "100";
-      if (brtValue)
-        brtValue.textContent = "100";
-      if (activeAssetId) {
-        gameWorker2.postMessage({
-          action: "setActiveAsset",
-          assetId: activeAssetId + activeAssetSuffix
-        });
-      }
-    });
-  }
 }
-function setActiveCategory(category, container, gameWorker2) {
-  activeCategory = category;
-  container.querySelectorAll(".category-tab").forEach((tab) => {
-    const tabCat = tab.dataset.category;
-    tab.classList.toggle("active", tabCat === category);
-  });
-  const colorPickerEl = container.querySelector("#toolColorPicker");
-  if (colorPickerEl) {
-    colorPickerEl.style.display = category === "color" ? "flex" : "none";
-  }
-  const assetBrowserEl = container.querySelector("#assetBrowser");
-  if (assetBrowserEl) {
-    assetBrowserEl.style.display = category === "asset" ? "block" : "none";
-  }
-  const suffixSelectorEl = container.querySelector("#suffixSelector");
-  if (suffixSelectorEl) {
-    suffixSelectorEl.style.display = category === "asset" ? "flex" : "none";
-  }
-  const buildingConfigEl = container.querySelector("#buildingConfigPanel");
-  if (buildingConfigEl) {
-    buildingConfigEl.style.display = category === "structure" ? "block" : "none";
-  }
-  renderToolList(container, gameWorker2);
-  if (category === "asset") {
-    renderAssetBrowser(container, gameWorker2);
-  }
-  if (category === "structure") {
-    initBuildingConfigHandlers(container, gameWorker2);
-  }
-}
-function setActiveColor(color, container, gameWorker2) {
-  activeColor = color;
-  const colorHexEl = container.querySelector("#colorHex");
-  if (colorHexEl) {
-    colorHexEl.textContent = color;
-  }
-  const r = parseInt(color.slice(1, 3), 16);
-  const g = parseInt(color.slice(3, 5), 16);
-  const b = parseInt(color.slice(5, 7), 16);
-  gameWorker2.postMessage({
-    action: "setColor",
-    r,
-    g,
-    b
-  });
-}
-function setActiveBrushSize(size, container, gameWorker2) {
-  activeBrushSize = size;
-  container.querySelectorAll(".brush-btn").forEach((btn) => {
-    const btnSize = parseInt(btn.dataset.size);
-    btn.classList.toggle("active", btnSize === size);
-  });
-  gameWorker2.postMessage({
-    action: "setBrushSize",
-    size
-  });
-}
-function setActiveAssetSuffix(suffix, container, gameWorker2) {
-  activeAssetSuffix = suffix;
-  container.querySelectorAll(".suffix-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.suffix === suffix);
-  });
-  if (activeAssetId) {
-    const fullKey = activeAssetId + activeAssetSuffix + buildFilterSuffix();
-    gameWorker2.postMessage({
-      action: "setActiveAsset",
-      assetId: fullKey
-    });
-  }
-}
-function renderToolList(container, gameWorker2) {
-  const toolListEl = container.querySelector("#toolList");
-  if (!toolListEl)
-    return;
-  const tools = toolsByCategory.get(activeCategory) || [];
+function renderToolList() {
+  const activeCategory2 = getActiveCategory();
+  const activeToolId2 = getActiveToolId();
+  const toolsByCategory2 = getToolsByCategory();
+  const tools = toolsByCategory2.get(activeCategory2) || [];
   if (tools.length === 0) {
-    toolListEl.innerHTML = `<div class="tool-empty">No tools in this category</div>`;
-    return;
+    return `<div class="tool-empty">No tools in this category</div>`;
   }
-  toolListEl.innerHTML = tools.map((tool) => `
-    <button class="tool-btn ${tool.id === activeToolId ? "active" : ""}" data-tool-id="${tool.id}">
+  return tools.map((tool) => `
+    <button class="tool-btn ${tool.id === activeToolId2 ? "active" : ""}" data-tool-id="${tool.id}">
       <span class="tool-icon">${tool.icon}</span>
       <span class="tool-name">${tool.name}</span>
     </button>
   `).join("");
-  toolListEl.querySelectorAll(".tool-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const toolId = btn.dataset.toolId;
-      setActiveTool(toolId, container, gameWorker2);
-    });
-  });
 }
-function setActiveTool(toolId, container, gameWorker2) {
-  activeToolId = toolId;
-  container.querySelectorAll(".tool-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.toolId === toolId);
-  });
-  gameWorker2.postMessage({
-    action: "setActiveTool",
-    toolId
-  });
-  updateActiveToolDisplay(container);
+function renderBrushSelector() {
+  const activeBrushSize2 = getActiveBrushSize();
+  return `
+    <div id="toolBrushSize">
+      <span>Brush:</span>
+      ${brushSizes.map((size) => `
+        <button class="brush-btn ${size === activeBrushSize2 ? "active" : ""}" data-size="${size}">
+          ${size}\xD7${size}
+        </button>
+      `).join("")}
+    </div>
+  `;
 }
-function updateActiveToolDisplay(container) {
-  const labelEl = container.querySelector("#activeToolLabel");
-  if (!labelEl)
-    return;
-  if (!activeToolId) {
-    labelEl.textContent = "No tool selected";
-    return;
+function renderColorPanel() {
+  const activeCategory2 = getActiveCategory();
+  const activeColor2 = getActiveColor();
+  const display = activeCategory2 === "color" ? "flex" : "none";
+  return `
+    <div id="toolColorPicker" style="display: ${display}">
+      <span>Color:</span>
+      <input type="color" id="colorPickerInput" value="${activeColor2}">
+      <span id="colorHex">${activeColor2}</span>
+    </div>
+  `;
+}
+function renderAssetPanel() {
+  const activeCategory2 = getActiveCategory();
+  const activeAssetId2 = getActiveAssetId();
+  const activeAssetSuffix2 = getActiveAssetSuffix();
+  const filterState = getColorFilterState();
+  const display = activeCategory2 === "asset" ? "block" : "none";
+  return `
+    <div id="assetBrowser" style="display: ${display}">
+      ${renderSuffixSelector(activeAssetSuffix2)}
+      ${renderFilterControls(filterState)}
+      ${renderSelectedAssetCard(activeAssetId2, activeAssetSuffix2)}
+      <div id="assetImageList"></div>
+      ${renderAssetGroupList()}
+    </div>
+  `;
+}
+function renderSuffixSelector(activeSuffix) {
+  return `
+    <div id="suffixSelector">
+      <span>Direction:</span>
+      ${assetSuffixes.map((suffix) => `
+        <button class="suffix-btn ${suffix === activeSuffix ? "active" : ""}" data-suffix="${suffix}">
+          ${suffix.replace("_", "")}
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+function renderFilterControls(filterState) {
+  return `
+    <div id="assetFilterControls">
+      <div class="filter-row">
+        <span>Hue:</span>
+        <input type="range" min="0" max="360" value="${filterState.hue}" class="filter-slider" data-filter="hue">
+        <span class="filter-value">${filterState.hue}\xB0</span>
+      </div>
+      <div class="filter-row">
+        <span>Sat:</span>
+        <input type="range" min="5" max="250" value="${filterState.saturation}" class="filter-slider" data-filter="saturation">
+        <span class="filter-value">${filterState.saturation}</span>
+      </div>
+      <div class="filter-row">
+        <span>Con:</span>
+        <input type="range" min="5" max="250" value="${filterState.contrast}" class="filter-slider" data-filter="contrast">
+        <span class="filter-value">${filterState.contrast}</span>
+      </div>
+      <div class="filter-row">
+        <span>Brt:</span>
+        <input type="range" min="5" max="250" value="${filterState.brightness}" class="filter-slider" data-filter="brightness">
+        <span class="filter-value">${filterState.brightness}</span>
+      </div>
+      <button id="resetFiltersBtn" class="filter-reset-btn">Reset Filters</button>
+    </div>
+  `;
+}
+function renderSelectedAssetCard(activeAssetId2, activeAssetSuffix2) {
+  const display = activeAssetId2 ? "block" : "none";
+  const label = activeAssetId2 ? activeAssetId2 + activeAssetSuffix2 + buildFilterSuffix() : "No asset selected";
+  return `
+    <div id="selectedAssetCard" style="display: ${display}">
+      <div id="selectedAssetPreview"></div>
+      <span id="selectedAssetLabel">${label}</span>
+    </div>
+  `;
+}
+function renderAssetGroupList() {
+  const assetGroups2 = getAssetGroups();
+  const selectedAssetGroup2 = getSelectedAssetGroup();
+  if (assetGroups2.length === 0) {
+    return '<div class="asset-empty">Loading assets...</div>';
   }
-  const allTools = Array.from(toolsByCategory.values()).flat();
-  const tool = allTools.find((t) => t.id === activeToolId);
-  if (tool) {
-    labelEl.textContent = `${tool.icon} ${tool.name} (${activeBrushSize}\xD7${activeBrushSize})`;
-  }
+  return `
+    <div id="assetGroupList">
+      <div class="asset-group-header">Asset Groups</div>
+      ${assetGroups2.map((group) => `
+        <button class="asset-group-btn ${group.group === selectedAssetGroup2 ? "active" : ""}" data-group="${group.group}">
+          ${group.group} (${group.images.length})
+        </button>
+      `).join("")}
+    </div>
+  `;
 }
+function renderAssetImageList() {
+  const assetGroups2 = getAssetGroups();
+  const selectedAssetGroup2 = getSelectedAssetGroup();
+  const activeAssetId2 = getActiveAssetId();
+  if (!selectedAssetGroup2) {
+    return '<div class="asset-empty">Select a group</div>';
+  }
+  const group = assetGroups2.find((g) => g.group === selectedAssetGroup2);
+  if (!group) {
+    return '<div class="asset-empty">Select a group</div>';
+  }
+  return `
+    <div class="asset-image-header">${group.group}</div>
+    <div class="asset-image-grid">
+      ${group.images.map((image) => `
+        <button class="asset-image-btn ${image === activeAssetId2 ? "active" : ""}" data-asset="${image}">
+          ${image}
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+function renderBuildingPanel() {
+  const activeCategory2 = getActiveCategory();
+  const buildingGrowLoop2 = getBuildingGrowLoop();
+  const buildingEndLoop2 = getBuildingEndLoop();
+  const description = getActiveBuildingDescription();
+  const display = activeCategory2 === "structure" ? "block" : "none";
+  return `
+    <div id="buildingConfigPanel" style="display: ${display}">
+      <div id="buildingConfigHeader">
+        <span id="buildingConfigTitle">Building Config</span>
+      </div>
+      <div id="buildingConfigSelector"></div>
+      ${renderBuildingParams(buildingGrowLoop2, buildingEndLoop2)}
+      <div id="buildingDescription">${description}</div>
+    </div>
+  `;
+}
+function renderBuildingParams(growLoop, endLoop) {
+  return `
+    <div id="buildingParams">
+      <div class="param-row">
+        <span>Grow Loop:</span>
+        <input type="range" min="5" max="100" value="${growLoop}" id="growLoopSlider">
+        <span id="growLoopValue">${growLoop}</span>
+      </div>
+      <div class="param-row">
+        <span>End Loop Max:</span>
+        <input type="range" min="50" max="1000" value="${endLoop}" id="endLoopSlider">
+        <span id="endLoopValue">${endLoop}</span>
+      </div>
+    </div>
+  `;
+}
+function renderBuildingConfigSelector() {
+  const buildingConfigs2 = getBuildingConfigs();
+  const activeBuildingConfigId2 = getActiveBuildingConfigId();
+  if (buildingConfigs2.length === 0) {
+    return '<div class="building-empty">Loading building configs...</div>';
+  }
+  return buildingConfigs2.map((config) => `
+    <button class="tool-btn ${config.id === activeBuildingConfigId2 ? "active" : ""}" data-config-id="${config.id}">
+      <span class="tool-name">${config.name}</span>
+    </button>
+  `).join("");
+}
+function capitalizeFirst(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// web/js/menu/toolMenuHandlers.ts
 function handleToolList(tools, container) {
-  toolsByCategory.clear();
-  for (const cat of categories) {
-    toolsByCategory.set(cat, []);
+  clearToolsByCategory();
+  const toolsByCategory2 = /* @__PURE__ */ new Map();
+  for (const cat of ["terrain", "color", "asset", "structure", "inspect"]) {
+    toolsByCategory2.set(cat, []);
   }
   for (const tool of tools) {
-    const catTools = toolsByCategory.get(tool.category);
+    const catTools = toolsByCategory2.get(tool.category);
     if (catTools) {
       catTools.push(tool);
     }
   }
+  setToolsByCategory(toolsByCategory2);
   const toolMenuEl = container || document.getElementById("toolMenu");
   if (toolMenuEl) {
-    renderToolList(toolMenuEl, self);
+    updateToolListDOM(toolMenuEl);
   }
 }
-function handleToolExecuted(toolId, success) {
+function handleToolExecuted(toolId, _success) {
   const toolMenuEl = document.getElementById("toolMenu");
   if (!toolMenuEl)
     return;
@@ -416,83 +473,7 @@ function handlePickedColor(r, g, b) {
   if (colorHexEl) {
     colorHexEl.textContent = hex;
   }
-  activeColor = hex;
-}
-function capitalizeFirst(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-function buildFilterSuffix() {
-  if (activeHue === 0 && activeContrast === 100 && activeSaturation === 100 && activeBrightness === 100) {
-    return "";
-  }
-  return `#H${activeHue}_C${activeContrast}_S${activeSaturation}_B${activeBrightness}`;
-}
-function renderAssetBrowser(container, gameWorker2) {
-  const assetGroupListEl = container.querySelector("#assetGroupList");
-  const assetImageListEl = container.querySelector("#assetImageList");
-  if (!assetGroupListEl || !assetImageListEl)
-    return;
-  if (assetGroups.length === 0) {
-    assetGroupListEl.innerHTML = '<div class="asset-empty">Loading assets...</div>';
-    assetImageListEl.innerHTML = "";
-    return;
-  }
-  assetGroupListEl.innerHTML = `
-    <div class="asset-group-header">Asset Groups</div>
-    ${assetGroups.map((group) => `
-      <button class="asset-group-btn ${group.group === selectedAssetGroup ? "active" : ""}" data-group="${group.group}">
-        ${group.group} (${group.images.length})
-      </button>
-    `).join("")}
-  `;
-  assetGroupListEl.querySelectorAll(".asset-group-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const group = btn.dataset.group;
-      selectedAssetGroup = group;
-      renderAssetBrowser(container, gameWorker2);
-    });
-  });
-  if (selectedAssetGroup) {
-    const group = assetGroups.find((g) => g.group === selectedAssetGroup);
-    if (group) {
-      assetImageListEl.innerHTML = `
-        <div class="asset-image-header">${group.group}</div>
-        <div class="asset-image-grid">
-          ${group.images.map((image) => `
-            <button class="asset-image-btn ${image === activeAssetId ? "active" : ""}" data-asset="${image}">
-              ${image}
-            </button>
-          `).join("")}
-        </div>
-      `;
-      assetImageListEl.querySelectorAll(".asset-image-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const assetId = btn.dataset.asset;
-          setActiveAsset(assetId, container, gameWorker2);
-        });
-      });
-    }
-  } else {
-    assetImageListEl.innerHTML = '<div class="asset-empty">Select a group</div>';
-  }
-}
-function setActiveAsset(assetId, container, gameWorker2) {
-  activeAssetId = assetId;
-  const selectedAssetCardEl = container.querySelector("#selectedAssetCard");
-  const selectedAssetLabelEl = container.querySelector("#selectedAssetLabel");
-  if (selectedAssetCardEl && selectedAssetLabelEl) {
-    selectedAssetCardEl.style.display = "block";
-    const fullKey2 = assetId + activeAssetSuffix + buildFilterSuffix();
-    selectedAssetLabelEl.textContent = fullKey2;
-  }
-  container.querySelectorAll(".asset-image-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.asset === assetId);
-  });
-  const fullKey = assetId + activeAssetSuffix + buildFilterSuffix();
-  gameWorker2.postMessage({
-    action: "setActiveAsset",
-    assetId: fullKey
-  });
+  setActiveColor(hex);
 }
 function handleAssetPreview(blobUrl) {
   const previewEl = document.getElementById("selectedAssetPreview");
@@ -505,126 +486,372 @@ function handleAssetPreview(blobUrl) {
   previewEl.innerHTML = `<img src="${blobUrl}" class="asset-preview-img" alt="Asset Preview">`;
 }
 function handleAssetGroups(groups, container) {
-  assetGroups = groups;
-  if (groups.length > 0 && !selectedAssetGroup) {
-    selectedAssetGroup = groups[0].group;
+  setAssetGroups(groups);
+  if (groups.length > 0) {
+    setSelectedAssetGroup(groups[0].group);
   }
   const toolMenuEl = container || document.getElementById("toolMenu");
-  if (toolMenuEl && activeCategory === "asset") {
-    renderAssetBrowser(toolMenuEl, self);
+  if (toolMenuEl && getActiveCategory() === "asset") {
+    updateAssetBrowserDOM(toolMenuEl);
   }
 }
-function getActiveBuildingDescription() {
-  const config = buildingConfigs.find((c) => c.id === activeBuildingConfigId);
-  return config?.description || "Select a building configuration";
+function handleBuildingConfigList(configs, container) {
+  setBuildingConfigs(configs);
+  if (configs.length > 0) {
+    setActiveBuildingConfigId(configs[0].id);
+    setBuildingParams(configs[0].defaultGrowLoop, configs[0].defaultEndLoop);
+  }
+  const toolMenuEl = container || document.getElementById("toolMenu");
+  if (toolMenuEl) {
+    updateBuildingConfigDOM(toolMenuEl);
+  }
 }
-function renderBuildingConfigSelector(container, gameWorker2) {
+function updateToolListDOM(container) {
+  const toolListEl = container.querySelector("#toolList");
+  if (!toolListEl)
+    return;
+  toolListEl.innerHTML = renderToolList();
+}
+function updateAssetBrowserDOM(container) {
+  const assetGroupListEl = container.querySelector("#assetGroupList");
+  const assetImageListEl = container.querySelector("#assetImageList");
+  if (assetGroupListEl) {
+    assetGroupListEl.innerHTML = renderAssetGroupList();
+  }
+  if (assetImageListEl) {
+    assetImageListEl.innerHTML = renderAssetImageList();
+  }
+}
+function updateBuildingConfigDOM(container) {
   const selectorEl = container.querySelector("#buildingConfigSelector");
   if (!selectorEl)
     return;
-  if (buildingConfigs.length === 0) {
-    selectorEl.innerHTML = '<div class="building-empty">Loading building configs...</div>';
+  selectorEl.innerHTML = renderBuildingConfigSelector();
+}
+
+// web/js/menu/toolMenu.ts
+var initToolMenu = (gameWorker2) => {
+  const toolMenuEl = document.getElementById("toolMenu");
+  if (!toolMenuEl)
     return;
+  renderToolMenu(toolMenuEl);
+  wireEventHandlers(toolMenuEl, gameWorker2);
+};
+function wireEventHandlers(container, gameWorker2) {
+  container.querySelectorAll(".category-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const category = tab.dataset.category;
+      handleCategoryChange(category, container, gameWorker2);
+    });
+  });
+  const colorPickerInput = container.querySelector("#colorPickerInput");
+  if (colorPickerInput) {
+    colorPickerInput.addEventListener("input", (e) => {
+      const color = e.target.value;
+      handleColorChange(color, container, gameWorker2);
+    });
   }
-  selectorEl.innerHTML = buildingConfigs.map((config) => `
-    <button class="tool-btn ${config.id === activeBuildingConfigId ? "active" : ""}" data-config-id="${config.id}">
-      <span class="tool-name">${config.name}</span>
-    </button>
-  `).join("");
-  selectorEl.querySelectorAll(".tool-btn").forEach((btn) => {
+  container.querySelectorAll(".brush-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const configId = btn.dataset.configId;
-      setActiveBuildingConfig(configId, container, gameWorker2);
+      const size = parseInt(btn.dataset.size);
+      handleBrushSizeChange(size, container, gameWorker2);
+    });
+  });
+  container.querySelectorAll(".suffix-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const suffix = btn.dataset.suffix;
+      handleSuffixChange(suffix, container, gameWorker2);
+    });
+  });
+  container.querySelectorAll(".filter-slider").forEach((slider) => {
+    slider.addEventListener("input", (e) => {
+      const input = e.target;
+      handleFilterChange(input, container, gameWorker2);
+    });
+  });
+  const resetFiltersBtn = container.querySelector("#resetFiltersBtn");
+  if (resetFiltersBtn) {
+    resetFiltersBtn.addEventListener("click", () => {
+      handleFilterReset(container, gameWorker2);
+    });
+  }
+  renderToolListDOM(container, gameWorker2);
+}
+function handleCategoryChange(category, container, gameWorker2) {
+  setActiveCategory(category);
+  container.querySelectorAll(".category-tab").forEach((tab) => {
+    const tabCat = tab.dataset.category;
+    tab.classList.toggle("active", tabCat === category);
+  });
+  updatePanelVisibility(container, category);
+  renderToolListDOM(container, gameWorker2);
+  if (category === "asset") {
+    renderAssetBrowserDOM(container, gameWorker2);
+  }
+  if (category === "structure") {
+    initBuildingConfigHandlers(container, gameWorker2);
+  }
+}
+function handleColorChange(color, container, gameWorker2) {
+  setActiveColor(color);
+  const colorHexEl = container.querySelector("#colorHex");
+  if (colorHexEl) {
+    colorHexEl.textContent = color;
+  }
+  const r = parseInt(color.slice(1, 3), 16);
+  const g = parseInt(color.slice(3, 5), 16);
+  const b = parseInt(color.slice(5, 7), 16);
+  gameWorker2.postMessage({
+    action: "setColor",
+    r,
+    g,
+    b
+  });
+}
+function handleBrushSizeChange(size, container, gameWorker2) {
+  setActiveBrushSize(size);
+  container.querySelectorAll(".brush-btn").forEach((btn) => {
+    const btnSize = parseInt(btn.dataset.size);
+    btn.classList.toggle("active", btnSize === size);
+  });
+  gameWorker2.postMessage({
+    action: "setBrushSize",
+    size
+  });
+}
+function handleSuffixChange(suffix, container, gameWorker2) {
+  setActiveAssetSuffix(suffix);
+  container.querySelectorAll(".suffix-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.suffix === suffix);
+  });
+  const activeAssetId2 = getActiveAssetId();
+  if (activeAssetId2) {
+    const fullKey = buildFullAssetKey(activeAssetId2);
+    gameWorker2.postMessage({
+      action: "setActiveAsset",
+      assetId: fullKey
+    });
+  }
+}
+function handleFilterChange(input, _container, gameWorker2) {
+  const filter = input.dataset.filter;
+  const value = parseInt(input.value);
+  switch (filter) {
+    case "hue":
+      setActiveHue(value);
+      break;
+    case "saturation":
+      setActiveSaturation(value);
+      break;
+    case "contrast":
+      setActiveContrast(value);
+      break;
+    case "brightness":
+      setActiveBrightness(value);
+      break;
+  }
+  const valueEl = input.nextElementSibling;
+  if (valueEl) {
+    valueEl.textContent = filter === "hue" ? `${value}\xB0` : `${value}`;
+  }
+  const activeAssetId2 = getActiveAssetId();
+  if (activeAssetId2) {
+    const fullKey = buildFullAssetKey(activeAssetId2);
+    gameWorker2.postMessage({
+      action: "setActiveAsset",
+      assetId: fullKey
+    });
+  }
+}
+function handleFilterReset(container, gameWorker2) {
+  resetColorFilters();
+  const hueSlider = container.querySelector('[data-filter="hue"]');
+  const satSlider = container.querySelector('[data-filter="saturation"]');
+  const conSlider = container.querySelector('[data-filter="contrast"]');
+  const brtSlider = container.querySelector('[data-filter="brightness"]');
+  if (hueSlider)
+    hueSlider.value = "0";
+  if (satSlider)
+    satSlider.value = "100";
+  if (conSlider)
+    conSlider.value = "100";
+  if (brtSlider)
+    brtSlider.value = "100";
+  const hueValue = hueSlider?.nextElementSibling;
+  const satValue = satSlider?.nextElementSibling;
+  const conValue = conSlider?.nextElementSibling;
+  const brtValue = brtSlider?.nextElementSibling;
+  if (hueValue)
+    hueValue.textContent = "0\xB0";
+  if (satValue)
+    satValue.textContent = "100";
+  if (conValue)
+    conValue.textContent = "100";
+  if (brtValue)
+    brtValue.textContent = "100";
+  const activeAssetId2 = getActiveAssetId();
+  if (activeAssetId2) {
+    gameWorker2.postMessage({
+      action: "setActiveAsset",
+      assetId: activeAssetId2 + getActiveAssetSuffix()
+    });
+  }
+}
+function updatePanelVisibility(container, category) {
+  const colorPickerEl = container.querySelector("#toolColorPicker");
+  if (colorPickerEl) {
+    colorPickerEl.style.display = category === "color" ? "flex" : "none";
+  }
+  const assetBrowserEl = container.querySelector("#assetBrowser");
+  if (assetBrowserEl) {
+    assetBrowserEl.style.display = category === "asset" ? "block" : "none";
+  }
+  const suffixSelectorEl = container.querySelector("#suffixSelector");
+  if (suffixSelectorEl) {
+    suffixSelectorEl.style.display = category === "asset" ? "flex" : "none";
+  }
+  const buildingConfigEl = container.querySelector("#buildingConfigPanel");
+  if (buildingConfigEl) {
+    buildingConfigEl.style.display = category === "structure" ? "block" : "none";
+  }
+}
+function renderToolListDOM(container, gameWorker2) {
+  const toolListEl = container.querySelector("#toolList");
+  if (!toolListEl)
+    return;
+  toolListEl.innerHTML = renderToolList();
+  toolListEl.querySelectorAll(".tool-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const toolId = btn.dataset.toolId;
+      handleToolSelect(toolId, container, gameWorker2);
     });
   });
 }
-function setActiveBuildingConfig(configId, container, gameWorker2) {
-  activeBuildingConfigId = configId;
-  const config = buildingConfigs.find((c) => c.id === configId);
-  if (config) {
-    buildingGrowLoop = config.defaultGrowLoop;
-    buildingEndLoop = config.defaultEndLoop;
+function handleToolSelect(toolId, container, gameWorker2) {
+  setActiveToolId(toolId);
+  container.querySelectorAll(".tool-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.toolId === toolId);
+  });
+  gameWorker2.postMessage({
+    action: "setActiveTool",
+    toolId
+  });
+}
+function renderAssetBrowserDOM(container, gameWorker2) {
+  const assetGroupListEl = container.querySelector("#assetGroupList");
+  const assetImageListEl = container.querySelector("#assetImageList");
+  if (!assetGroupListEl || !assetImageListEl)
+    return;
+  assetGroupListEl.innerHTML = renderAssetGroupList();
+  assetGroupListEl.querySelectorAll(".asset-group-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const group = btn.dataset.group;
+      setSelectedAssetGroup(group);
+      renderAssetBrowserDOM(container, gameWorker2);
+    });
+  });
+  assetImageListEl.innerHTML = renderAssetImageList();
+  assetImageListEl.querySelectorAll(".asset-image-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const assetId = btn.dataset.asset;
+      handleAssetSelect(assetId, container, gameWorker2);
+    });
+  });
+}
+function handleAssetSelect(assetId, container, gameWorker2) {
+  setActiveAssetId(assetId);
+  const selectedAssetCardEl = container.querySelector("#selectedAssetCard");
+  const selectedAssetLabelEl = container.querySelector("#selectedAssetLabel");
+  if (selectedAssetCardEl && selectedAssetLabelEl) {
+    selectedAssetCardEl.style.display = "block";
+    const fullKey2 = buildFullAssetKey(assetId);
+    selectedAssetLabelEl.textContent = fullKey2;
   }
-  const growLoopSlider = container.querySelector("#growLoopSlider");
-  const endLoopSlider = container.querySelector("#endLoopSlider");
-  const growLoopValue = container.querySelector("#growLoopValue");
-  const endLoopValue = container.querySelector("#endLoopValue");
-  const descriptionEl = container.querySelector("#buildingDescription");
-  if (growLoopSlider)
-    growLoopSlider.value = String(buildingGrowLoop);
-  if (endLoopSlider)
-    endLoopSlider.value = String(buildingEndLoop);
-  if (growLoopValue)
-    growLoopValue.textContent = String(buildingGrowLoop);
-  if (endLoopValue)
-    endLoopValue.textContent = String(buildingEndLoop);
-  if (descriptionEl)
-    descriptionEl.textContent = getActiveBuildingDescription();
-  container.querySelectorAll("#buildingConfigSelector .tool-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.configId === configId);
+  container.querySelectorAll(".asset-image-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.asset === assetId);
   });
+  const fullKey = buildFullAssetKey(assetId);
   gameWorker2.postMessage({
-    action: "setBuildingConfig",
-    configId
-  });
-  gameWorker2.postMessage({
-    action: "setBuildingParams",
-    growLoop: buildingGrowLoop,
-    endLoop: buildingEndLoop
+    action: "setActiveAsset",
+    assetId: fullKey
   });
 }
 function initBuildingConfigHandlers(container, gameWorker2) {
-  renderBuildingConfigSelector(container, gameWorker2);
+  renderBuildingConfigSelectorDOM(container, gameWorker2);
   const growLoopSlider = container.querySelector("#growLoopSlider");
   if (growLoopSlider) {
     growLoopSlider.addEventListener("input", (e) => {
       const value = parseInt(e.target.value);
-      buildingGrowLoop = value;
-      const valueEl = container.querySelector("#growLoopValue");
-      if (valueEl)
-        valueEl.textContent = String(value);
-      gameWorker2.postMessage({
-        action: "setBuildingParams",
-        growLoop: buildingGrowLoop,
-        endLoop: buildingEndLoop
-      });
+      handleBuildingParamChange("growLoop", value, container, gameWorker2);
     });
   }
   const endLoopSlider = container.querySelector("#endLoopSlider");
   if (endLoopSlider) {
     endLoopSlider.addEventListener("input", (e) => {
       const value = parseInt(e.target.value);
-      buildingEndLoop = value;
-      const valueEl = container.querySelector("#endLoopValue");
-      if (valueEl)
-        valueEl.textContent = String(value);
-      gameWorker2.postMessage({
-        action: "setBuildingParams",
-        growLoop: buildingGrowLoop,
-        endLoop: buildingEndLoop
-      });
+      handleBuildingParamChange("endLoop", value, container, gameWorker2);
     });
   }
 }
-function handleBuildingConfigList(configs, container) {
-  buildingConfigs = configs;
-  if (configs.length > 0 && !activeBuildingConfigId) {
-    activeBuildingConfigId = configs[0].id;
-    buildingGrowLoop = configs[0].defaultGrowLoop;
-    buildingEndLoop = configs[0].defaultEndLoop;
+function renderBuildingConfigSelectorDOM(container, gameWorker2) {
+  const selectorEl = container.querySelector("#buildingConfigSelector");
+  if (!selectorEl)
+    return;
+  selectorEl.innerHTML = renderBuildingConfigSelector();
+  selectorEl.querySelectorAll(".tool-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const configId = btn.dataset.configId;
+      handleBuildingConfigSelect(configId, container, gameWorker2);
+    });
+  });
+}
+function handleBuildingConfigSelect(configId, container, gameWorker2) {
+  setActiveBuildingConfigId(configId);
+  const configs = getBuildingConfigs2();
+  const config = configs.find((c) => c.id === configId);
+  if (config) {
+    setBuildingParams(config.defaultGrowLoop, config.defaultEndLoop);
+    const growLoopSlider = container.querySelector("#growLoopSlider");
+    const endLoopSlider = container.querySelector("#endLoopSlider");
+    const growLoopValue = container.querySelector("#growLoopValue");
+    const endLoopValue = container.querySelector("#endLoopValue");
+    if (growLoopSlider)
+      growLoopSlider.value = String(config.defaultGrowLoop);
+    if (endLoopSlider)
+      endLoopSlider.value = String(config.defaultEndLoop);
+    if (growLoopValue)
+      growLoopValue.textContent = String(config.defaultGrowLoop);
+    if (endLoopValue)
+      endLoopValue.textContent = String(config.defaultEndLoop);
   }
-  const toolMenuEl = container || document.getElementById("toolMenu");
-  if (toolMenuEl) {
-    const gameWorker2 = self.__gameWorker;
-    if (gameWorker2) {
-      renderBuildingConfigSelector(toolMenuEl, gameWorker2);
-      initBuildingConfigHandlers(toolMenuEl, gameWorker2);
-    }
+  gameWorker2.postMessage({
+    action: "setBuildingConfig",
+    configId
+  });
+  container.querySelectorAll("#buildingConfigSelector .tool-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.configId === configId);
+  });
+  const descriptionEl = container.querySelector("#buildingDescription");
+  if (descriptionEl) {
+    descriptionEl.textContent = getActiveBuildingDescription();
   }
+}
+function handleBuildingParamChange(param, value, container, gameWorker2) {
+  const growLoop = param === "growLoop" ? value : getBuildingGrowLoop();
+  const endLoop = param === "endLoop" ? value : getBuildingEndLoop();
+  setBuildingParams(growLoop, endLoop);
+  const valueEl = container.querySelector(`#${param === "growLoop" ? "growLoopValue" : "endLoopValue"}`);
+  if (valueEl)
+    valueEl.textContent = String(value);
+  gameWorker2.postMessage({
+    action: "setBuildingParams",
+    growLoop,
+    endLoop
+  });
 }
 
 // web/js/menu/InfoMenu.ts
-var infoMenu = (gameWorker2) => {
+var infoMenu = (_gameWorker) => {
   document.getElementById("infoMenu").innerHTML = `
       <div id="infoCell"></div>
     `;
