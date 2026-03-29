@@ -1,25 +1,35 @@
-/// ---------------------------------------------------------------------
-/// ---------------------------------------------------------------------
-/// ---------------------------------------------------------------------
-const MAP_WIDTH = 1600;
-const MAP_HEIGHT = 800;
-const globalScale = 2;
-/// ---------------------------------------------------------------------
+import { CanvasClickHandler, CanvasClickHandlerConf, CanvasClickHandlerDependencies } from "./canvasClickHandler.ts";
+import { PointIso } from "./simpleIso/IsometricProjector.ts";
 
+// ============================================================================
+// GridMapDrawers - Thin wrapper around CanvasClickHandler
+// ============================================================================
+
+/**
+ * GridMapDrawers is now a thin wrapper around CanvasClickHandler.
+ * It maintains the same constructor signature for backward compatibility
+ * while delegating all click/hover functionality to CanvasClickHandler.
+ * 
+ * The canvas element can be provided via setCanvas() method after construction,
+ * which is necessary when the canvas is transferred to an offscreen worker.
+ */
 export class GridMapDrawers {
+  // Dependencies
   gameWorker: Worker;
   bufferMapLvl: SharedArrayBuffer;
   bufferMapInfo: SharedArrayBuffer;
   mapLvl: Float32Array;
   mapInfo: Float32Array;
 
+  // Configuration
   mapSize: number;
   gridSize: number;
   mod: number;
-  _mapGrid: any[];
-  _heightScall: number;
 
-  divTableGrid?: HTMLElement;
+  // Canvas click handler (created when canvas is available)
+  private clickHandler: CanvasClickHandler | null = null;
+  private canvas: HTMLCanvasElement | null = null;
+  private conf: CanvasClickHandlerConf | null = null;
 
   constructor(
     gameWorker: Worker,
@@ -35,159 +45,102 @@ export class GridMapDrawers {
     this.mapSize = 40;
     this.gridSize = 40;
     this.mod = 1;
-    this._heightScall = 55;
-
-    this._mapGrid = [...Array(this.gridSize)].map((x) =>
-      Array(this.gridSize).fill(null)
-    );
-
-    this._init_grid_contener();
-    this._init_gridMatrix();
   }
 
-  _init_grid_contener() {
-    const mapRelative = document.getElementById("mapRelative");
-    if (mapRelative) {
-      mapRelative.style.cssText = [
-        ["width", MAP_WIDTH + "px"],
-        ["height", MAP_HEIGHT + "px"],
-        ["display", "flex"],
-        ["justify-content", "center"],
-        ["align-items", "top"],
-        ["position", "relative"],
-        ["overflow", "hidden"],
-      ].map((s) => `${s[0]}:${s[1]}`).join(";");
+  /**
+   * Sets the canvas element and configuration for click handling.
+   * This should be called after construction when the canvas is available.
+   * 
+   * @param canvas The canvas element to attach click handlers to
+   * @param conf Configuration for the click handler
+   */
+  setCanvas(canvas: HTMLCanvasElement, conf: CanvasClickHandlerConf): void {
+    this.canvas = canvas;
+    this.conf = conf;
+    
+    // Create click handler if we have all dependencies
+    this.initClickHandler();
+  }
+
+  /**
+   * Initializes the click handler if all dependencies are available.
+   */
+  private initClickHandler(): void {
+    if (!this.canvas || !this.conf) {
+      return;
     }
-    // Div for grid
-    const size = (globalScale * 30.20) * (30 / this.gridSize) * this.gridSize;
-    const topPos = -455 * (globalScale - 0.885); // -52;
-    // -142.4
 
-    const divMapGrid = document.getElementById("mapGrid");
-    if (!divMapGrid) return;
-    divMapGrid.innerHTML = "";
-    divMapGrid.style.cssText = [
-      ["width", size + "px"],
-      ["height", size + "px"],
-      ["left", -size / 2 + "px"],
-      ["top", Math.round(topPos) + "px"],
-      [
-        "grid-template-columns",
-        `repeat(${this.gridSize}, ${100 / this.gridSize}%)`,
-      ],
-    ].map((s) => `${s[0]}:${s[1]}`).join(";");
+    // Clean up existing handler if any
+    if (this.clickHandler) {
+      this.clickHandler.destroy();
+    }
 
-    this.divTableGrid = divMapGrid;
+    // Create dependencies for CanvasClickHandler
+    const deps: CanvasClickHandlerDependencies = {
+      canvas: this.canvas,
+      mapLvl: this.mapLvl,
+      mapInfo: this.mapInfo,
+      gameWorker: this.gameWorker,
+      conf: this.conf,
+    };
+
+    this.clickHandler = new CanvasClickHandler(deps);
+    console.log("[GridMapDrawers] CanvasClickHandler initialized");
   }
 
-  /// -----------------------------
-  // Add a Div - Iso Grid on top of the IsoCanvaMap .
-  _init_gridMatrix() {
-    if (!this.divTableGrid) return;
-    this.divTableGrid.innerHTML = "";
-
-    for (let i = 0; i < this.gridSize; i++) {
-      for (let j = 0; j < this.gridSize; j++) {
-        const cell = document.createElement("div");
-        cell.classList.add("tileActionBase");
-        this.divTableGrid.appendChild(cell);
-        this._mapGrid[i][j] = cell;
-
-        if (i > 0 && i < this.gridSize - 1 && j > 0 && j < this.gridSize - 1) {
-          const hitcell = document.createElement("div");
-          hitcell.classList.add("hit");
-          cell.appendChild(hitcell);
-
-          if (i == this.gridSize / 2 && j == this.gridSize / 2) {
-            // cell.style.backgroundColor = "#00F3";
-            cell.classList.add("tileCenter");
-          }
-
-        }
-        
-
-          cell.addEventListener("click", (event) => {
-            const target = event.target as HTMLElement;
-            if (!target) return;
-            console.log(target);
-            // const i = Number(target.getAttribute("i")) || 0;
-            // const j = Number(target.getAttribute("j")) || 0;
-            const clickX = this.mod * (-i + this.gridSize / 2);
-            const clickY = this.mod * (-j + this.gridSize / 2);
-
-            // updateXY(clickX + GlobalState.x, clickY + GlobalState.y);
-            console.log("click :", this.mod, clickX, clickY);
-
-            // Send info query
-            this.gameWorker.postMessage({
-              action: "query_infoCell",
-              gridX: clickX,
-              gridY: clickY,
-            });
-
-            // Send tool click
-            this.gameWorker.postMessage({
-              action: "toolClick",
-              gridX: clickX,
-              gridY: clickY,
-            });
-          });
-
-      }
+  /**
+   * Sets a callback function to be called when the hovered tile changes.
+   * Delegates to the internal CanvasClickHandler.
+   */
+  setHoverCallback(callback: (tile: PointIso | null) => void): void {
+    if (this.clickHandler) {
+      this.clickHandler.setHoverCallback(callback);
     }
   }
 
-  updateGrid = () => {
-    // Aline Grid with a player offset
-    const divMapGrid = document.getElementById("mapGrid");
-    if (divMapGrid == null) return;
-    const size = (globalScale * 30.20) * (30 / this.gridSize);
-    const offX = this.mapInfo[2] * size;
-    const offY = this.mapInfo[3] * size;
-    divMapGrid.style.transform =
-      `rotateX(60deg) rotateY(0deg) rotateZ(45deg) translate(${offY}px, ${offX}px)`;
+  /**
+   * Updates the grid state.
+   * With the new canvas-based approach, this only updates the shared buffer references.
+   * No DOM manipulation is needed.
+   */
+  updateGrid = (): void => {
+    // Update the Float32Array views in case buffers were swapped
+    this.mapLvl = new Float32Array(this.bufferMapLvl);
+    this.mapInfo = new Float32Array(this.bufferMapInfo);
 
-    // Aline the grid with the lvl of the each Cell
-    for (let i = 0; i < this.gridSize; i++) {
-      for (let j = 0; j < this.gridSize; j++) {
-        const x = (this.gridSize - 1 - i) * this.mod;
-        const y = (this.gridSize - 1 - j) * this.mod;
-        const tileLvl = this.mapLvl[x * this.gridSize * this.mod + y];
-        // console.log(tileLvl , gcm._heightScall)
-        const topAline = Math.round(-(tileLvl * this._heightScall));
-        const leftAline = Math.round(-(tileLvl * this._heightScall));
-        // this._mapGrid[i][j].style.top = topAline + "px";
-        // this._mapGrid[i][j].style.left = leftAline + "px";
-        this._mapGrid[i][j].style.transform = `translate(${topAline}px, ${leftAline}px)`;
-
-      }
+    // Update click handler with new buffer references
+    if (this.clickHandler) {
+      this.clickHandler.updateMapData(this.mapLvl, this.mapInfo);
     }
   };
-}
 
-/*
-/// -----------------------------
-// Set the size of the Grid.
-export const initMapGridSize = () => {
-  const gcm = GlobalConf.mapGrid;
-  const gjm = GlobalState.map;
-
-  // Update Div Grid if definition size change .
-  const mapSize = gjm.definition;
-  if (mapSize != gcm.mapSize) {
-    gcm.mapSize = mapSize;
-    gcm.gridSize = mapSize;
-    while (gcm.gridSize > 40) gcm.gridSize /= 2;
-    gcm.mod = gcm.mapSize / gcm.gridSize;
-    gcm._mapGrid = [...Array(gcm.gridSize)].map((x) =>
-      Array(gcm.gridSize).fill(null)
-    );
-    init_gridMatrix();
+  /**
+   * Updates the click handler configuration.
+   * Call this if SCALE_SIZE or SCALE_MOD changes.
+   */
+  updateConfig(conf: CanvasClickHandlerConf): void {
+    this.conf = conf;
+    if (this.clickHandler) {
+      this.clickHandler.updateConfig(conf);
+    }
   }
-  // Update the Height Scale of the Cell ( Def * ScaleMod )
-  const tileScaleMod = gjm.tileScaleMod / 8 >= 1 ? gjm.tileScaleMod / 8 : 1;
-  console.log("TILE SCALE MOD ", tileScaleMod);
-  gcm._heightScall = (globalScale * 12.20) *
-    (30 / (gjm.definition * tileScaleMod)); //  * GlobalConf.mapGrid.mod ;
-};
-*/
+
+  /**
+   * Returns the current hovered tile coordinates.
+   */
+  getLastHoveredTile(): PointIso | null {
+    return this.clickHandler?.getLastHoveredTile() ?? null;
+  }
+
+  /**
+   * Cleans up resources and removes event listeners.
+   */
+  destroy(): void {
+    if (this.clickHandler) {
+      this.clickHandler.destroy();
+      this.clickHandler = null;
+    }
+    this.canvas = null;
+    this.conf = null;
+  }
+}

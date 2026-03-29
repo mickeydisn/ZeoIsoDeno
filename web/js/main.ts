@@ -53,9 +53,24 @@ let gridMapDrawer: GridMapDrawers | null = null;
 // == INIT
 // ============================================================================
 
+// Default map configuration (matches what's sent to worker)
+const DEFAULT_MAP_CONF = {
+  DRAW_TILE_COUNT: 40,
+  SCALE_SIZE: 1,
+  SCALE_MOD: 1,
+};
+
 // After The Game worker Initialiser . we cant send Shared Array
 const callback_initWorker = (_data: GameHandlerData): void => {
   console.log("✅ Game Worker initialized!");
+  
+  // IMPORTANT: Attach click handlers to the original canvas BEFORE transferring control
+  // This ensures click events work after the canvas is transferred to offscreen
+  if (gridMapDrawer) {
+    gridMapDrawer.setCanvas(canvasImageMap, DEFAULT_MAP_CONF);
+    console.log("[main] Canvas click handler attached before offscreen transfer");
+  }
+  
   const offscreen = canvasImageMap.transferControlToOffscreen();
 
   handlers.sendDataSync({
@@ -67,11 +82,7 @@ const callback_initWorker = (_data: GameHandlerData): void => {
 
   handlers.send({
     action: "initCanvasMap",
-    mapConf: {
-      DRAW_TILE_COUNT: 40,
-      SCALE_SIZE: 1,
-      SCALE_MOD: 1,
-    },
+    mapConf: DEFAULT_MAP_CONF,
   });
 
   handlers.send({
@@ -92,6 +103,14 @@ const callback_initCanvasMap = (data: GameHandlerData): void => {
 
   gridMapDrawer = new GridMapDrawers(gameWorker, bufferMapLvl, bufferMapInfo);
   gridMapDrawer.mod = mapconf.DRAW_TILE_COUNT / 40;
+  
+  // If worker was already initialized, set canvas now
+  // (This handles the case where initCanvasMap comes after initWorker)
+  gridMapDrawer.setCanvas(canvasImageMap, {
+    DRAW_TILE_COUNT: mapconf.DRAW_TILE_COUNT,
+    SCALE_SIZE: mapconf.SCALE_SIZE,
+    SCALE_MOD: mapconf.SCALE_MOD,
+  });
 };
 
 // ============================================================================
