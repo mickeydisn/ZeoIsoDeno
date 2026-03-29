@@ -12,9 +12,9 @@ Add hover highlighting rendered on the canvas and an optional coordinate tooltip
 
 ### Task 4.1: Add hover state to `CanvasMapDrawers`
 
-- [ ] Add `hoveredTile: PointIso | null` property to `CanvasMapDrawers`
-- [ ] Add `setHoveredTile(tile: PointIso | null)` method
-- [ ] Store the hovered tile for use during rendering
+- [x] Add `hoveredTile: PointIso | null` property to `CanvasMapDrawers`
+- [x] Add `setHoveredTile(tile: PointIso | null)` method
+- [x] Store the hovered tile for use during rendering
 
 ### Task 4.2: Implement hover overlay rendering in `CanvasMapDrawers`
 

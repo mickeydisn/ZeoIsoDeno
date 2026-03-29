@@ -77,6 +77,9 @@ export class CanvasMapDrawers {
   frameSubCount: number;
   frameCount: number;
 
+  // Hover state for visual feedback
+  hoveredTile: PointIso | null = null;
+
   constructor(
     world: World,
     width: number,
@@ -144,6 +147,14 @@ export class CanvasMapDrawers {
   }
 
   // --------------------------------------
+
+  /**
+   * Sets the hovered tile for visual feedback rendering.
+   * @param tile The tile coordinates to highlight, or null to clear hover state.
+   */
+  setHoveredTile(tile: PointIso | null): void {
+    this.hoveredTile = tile;
+  }
 
   drawUpdate(
     centreX: number,
