@@ -21,6 +21,7 @@ import { IsometricProjector, PointIso } from "./simpleIso/IsometricProjector.ts"
 import { IsometricTileGenerator } from "./simpleIso/IsometricTileGenerator.ts";
 import { ColorIso } from "./simpleIso/Color.ts";
 import { Tile } from "../map/object/tile.ts";
+import { text } from "node:stream/consumers";
 
 // --- Constants for Readability and Maintenance ---
 // The factor used to scale the tile level (z-axis) difference for isometric rendering.
@@ -105,7 +106,7 @@ export class CanvasMapDrawers {
 
     // Init the Worker-Shared Matrix : [ 0:X , 1:Y, 2:offX, 3:offY, 4:hoverX, 5:hoverY, 6:hoverZ, 7:hasHover ]
     this.bufferMapInfo = new SharedArrayBuffer(
-      8 * Float32Array.BYTES_PER_ELEMENT,
+      10 * Float32Array.BYTES_PER_ELEMENT,
     );
     this.mapInfo = new Float32Array(this.bufferMapInfo);
 
@@ -173,21 +174,23 @@ export class CanvasMapDrawers {
       offsetY : offy, 
   
     })
-  
     // Update Shared Info Buffer
     this.mapInfo[0] = centreX;
     this.mapInfo[1] = centreY;
     this.mapInfo[2] = offx;
     this.mapInfo[3] = offy;
+    this.mapInfo[8] = this.tilesMatrix.avgLvl;
+    
 
     // Read hover state from shared buffer
+    // Hover coordinates are now in grid space (0 to DRAW_TILE_COUNT-1)
     const hasHover = this.mapInfo[7] === 1;
     if (hasHover) {
-      this.hoveredTile = {
-        x: this.mapInfo[4],
-        y: this.mapInfo[5],
-        z: this.mapInfo[6],
-      };
+      this.hoveredTile = new PointIso(
+        this.mapInfo[4],  // gridX
+        this.mapInfo[5],  // gridY
+        this.mapInfo[6],  // height
+      );
     } else {
       this.hoveredTile = null;
     }
@@ -206,7 +209,7 @@ export class CanvasMapDrawers {
         // Type assertion is safe here as we control what goes into the Map
         return this.tileCache.get(key) as OffscreenCanvas | ImageBitmap; 
     }
-    console.log('tileGen');
+    console.log(`Generating tile image for (${tile.x}, ${tile.y}) with color [${tile.color.join(",")}] and level differences SE:${diffLvlSE}, SW:${diffLvlSW}`);
     const colorIso = new ColorIso(tile.color[0], tile.color[1], tile.color[2]);
     const canvas : OffscreenCanvas | ImageBitmap  = this.isoGenerator.createTile(colorIso, diffLvlSE, diffLvlSW);
 
@@ -459,53 +462,19 @@ export class CanvasMapDrawers {
 
   }
 
+  //- -------------------------------------
+
   /**
-   * Draws a semi-transparent overlay on the hovered tile for visual feedback.
+   * Draws a shape's paths on the canvas using isometric projection.
+   * Handles translation of points and path rendering (stroke and optional fill).
+   * @param shape The shape to draw
+   * @param fillColor Optional fill color string (e.g., 'rgba(255, 0, 0, 0.5)')
    */
-  private drawHoverOverlay(): void {
-    if (!this.hoveredTile) {
-      return;
-    }
-
-    const { x, y, z } = this.hoveredTile;
-    
-    // Validate coordinates are numbers
-    if (typeof x !== 'number' || typeof y !== 'number' || isNaN(x) || isNaN(y)) {
-      return;
-    }
-    
-    const size = this.conf.DRAW_TILE_COUNT;
-    
-    // Convert tile coordinates to grid indices (matching drawTile's coordinate system)
-    const xx = Math.round(size - x - 1);
-    const yy = Math.round(size - y - 1);
-    
-    // Bounds check - ensure indices are within valid range for tilesMatrix
-    if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1) {
-      return;
-    }
-
-    // Check if tilesMatrix and the tile exist
-    if (!this.tilesMatrix || !this.tilesMatrix.tiles || 
-        !this.tilesMatrix.tiles[xx] || !this.tilesMatrix.tiles[xx][yy]) {
-      return;
-    }
-
-    // Get the tile's display level from the matrix
-    const metaTile = this.tilesMatrix.tiles[xx][yy];
-    const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
-    const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
-    const height = 1;
-
-    // Create the flat surface shape at the tile position
-    const shape = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height);
-    
-    // Define semi-transparent yellow highlight color
-    const highlightColor = { r: 255, g: 220, b: 50, a: 0.35 };
-    
-    // Draw each path of the shape with semi-transparent fill
+  private drawShapePaths2(shape: Shape, fillColor?: string): void {
     shape.orderedPaths().forEach((path) => {
-      const translatedPoints = path.points.map((p) => this.isomer.translatePoint(p));
+      const translatedPoints = path.points.map((p) => 
+        this.isoProject.translatePoint(new PointIso(p.x, p.y, p.z))
+      );
       
       this.canvasCtx.beginPath();
       translatedPoints.forEach((p, index) => {
@@ -516,9 +485,214 @@ export class CanvasMapDrawers {
         }
       });
       this.canvasCtx.closePath();
-      this.canvasCtx.fillStyle = `rgba(${highlightColor.r}, ${highlightColor.g}, ${highlightColor.b}, ${highlightColor.a})`;
-      this.canvasCtx.fill();
+      
+      if (fillColor) {
+        this.canvasCtx.fillStyle = fillColor;
+        this.canvasCtx.fill();
+      }
+      this.canvasCtx.stroke();
     });
+  }
+
+  /**
+ * Draws a shape's paths and optional centered text.
+ * @param shape The shape to draw
+ * @param fillColor Optional fill color
+ * @param text Optional text to display in the center
+ */
+private drawShapePaths(shape: Shape, fillColor?: string, text?: string): void {
+  const allProjectedPoints: { x: number; y: number }[] = [];
+
+  shape.orderedPaths().forEach((path) => {
+    const translatedPoints = path.points.map((p) => 
+      this.isoProject.translatePoint(new PointIso(p.x, p.y, p.z))
+    );
+    
+    // Store points to calculate the center later
+    allProjectedPoints.push(...translatedPoints);
+
+    this.canvasCtx.beginPath();
+    translatedPoints.forEach((p, index) => {
+      if (index === 0) {
+        this.canvasCtx.moveTo(p.x, p.y);
+      } else {
+        this.canvasCtx.lineTo(p.x, p.y);
+      }
+    });
+    this.canvasCtx.closePath();
+    
+    if (fillColor) {
+      this.canvasCtx.fillStyle = fillColor;
+      this.canvasCtx.fill();
+    }
+    this.canvasCtx.stroke();
+  });
+
+  // --- Draw Centered Text ---
+  if (text && allProjectedPoints.length > 0) {
+    // 1. Calculate the average X and Y (Centroid)
+    const centerX = allProjectedPoints.reduce((sum, p) => sum + p.x, 0) / allProjectedPoints.length;
+    const centerY = allProjectedPoints.reduce((sum, p) => sum + p.y, 0) / allProjectedPoints.length;
+
+    // 2. Set text styles
+    this.canvasCtx.fillStyle = '#ffffff'; // Set your desired text color
+    this.canvasCtx.font = '14px sans-serif'; 
+    this.canvasCtx.textAlign = 'center';     // Horizontal centering
+    this.canvasCtx.textBaseline = 'middle';  // Vertical centering
+
+    // 3. Render
+    this.canvasCtx.fillText(text, centerX, centerY);
+  }
+}
+
+  /**
+   * Draws a bishop line (diagonal) aligned with the mouse position.
+   * @param direction The diagonal direction: 'NW-SE' (x+y constant) or 'NE-SW' (x-y constant)
+   * Shows a red-blue gradient to indicate the direction of movement.
+   */
+  private drawBishopLine(direction: 'NW-SE' | 'NE-SW' = 'NE-SW'): void {
+    if (!this.hoveredTile) return;
+
+    const size = this.conf.DRAW_TILE_COUNT;
+    
+    // The hoveredTile is already in grid coordinates (0 to size-1)
+    // directly use these coordinates without additional transformation
+    const xx = Math.round(this.hoveredTile.x);
+    const yy = Math.round(this.hoveredTile.y);
+
+    if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1) return;
+
+    const gridHeight = 0;
+    const height = 1;
+    const lineLength = 15;
+
+    // Bishop line color - cyan
+    this.canvasCtx.strokeStyle = 'rgba(0, 200, 200, 0.7)';
+    this.canvasCtx.lineWidth = 2;
+
+    // Function to interpolate color from red to blue based on position along line
+    // t ranges from 0 (red) to 1 (blue)
+    const getGradientColor = (t: number): string => {
+      const r = Math.round(255 * (1 - t));
+      const g = 0;
+      const b = Math.round(255 * t);
+      return `rgba(${r}, ${g}, ${b}, 0.7)`;
+    };
+
+    if (direction === 'NW-SE') {
+      // Use x + y diagonal (NW-SE direction for top-to-bottom in isometric view)
+      const hoveredDiag = xx + yy;
+
+      // Draw bishop line along x + y = constant
+      for (let dx = -lineLength; dx <= lineLength; dx++) {
+        const gx = xx + dx;
+        const gy = hoveredDiag - gx;
+
+        if (gx < 1 || gx >= size - 1 || gy < 1 || gy >= size - 1) continue;
+        if (!this.tilesMatrix?.tiles?.[gx]?.[gy]) continue;
+
+        // Calculate gradient position: t=0 at -lineLength (red), t=1 at +lineLength (blue)
+        const t = (dx + lineLength) / (2 * lineLength);
+        
+        // Create tile shape at average height with gradient color
+        const shape = Shape.SurfaceFlat(new Point(gx, gy, gridHeight - height), 1, 1, height);
+        this.drawShapePaths(shape, getGradientColor(t));
+      }
+    } else if (direction === 'NE-SW') {
+      // Use x - y diagonal (NE-SW direction)
+      const hoveredDiag = xx - yy;
+
+      // Draw bishop line along x - y = constant
+      for (let dx = -lineLength; dx <= lineLength; dx++) {
+        const gx = xx + dx;
+        const gy = gx - hoveredDiag;
+
+        if (gx < 1 || gx >= size - 1 || gy < 1 || gy >= size - 1) continue;
+        if (!this.tilesMatrix?.tiles?.[gx]?.[gy]) continue;
+
+        // Calculate gradient position: t=0 at -lineLength (red), t=1 at +lineLength (blue)
+        const t = (dx + lineLength) / (2 * lineLength);
+        
+        // Create tile shape at average height with gradient color
+        const shape = Shape.SurfaceFlat(new Point(gx, gy, gridHeight - height), 1, 1, height);
+        this.drawShapePaths(shape, getGradientColor(t));
+      }
+    }
+  }
+
+  /**
+   * Draws a grid overlay showing tile boundaries.
+   * Grid is drawn at the average height (plan) of the grid, not aligned with individual tile heights.
+   */
+  private drawGridOverlay(): void {
+    const size = this.conf.DRAW_TILE_COUNT;
+    
+    // Grid line color - semi-transparent red
+    const gridColor = 'rgba(255, 0, 255, 0.9)';
+    const gridColor2 = 'rgba(0, 0, 255, 1)';
+    this.canvasCtx.lineWidth = 1;
+
+    // Draw grid lines at average height (plan of the grid)
+    // Use fixed height of 0 (average level) for all grid lines
+    const gridHeight = 0;
+    const height = 1;
+
+    // Draw grid lines for each tile
+    for (let x = 1; x < size - 1; x++) {
+      for (let y = 1; y < size - 1; y++) {
+        const xx = size - x - 1;
+        const yy = size - y - 1;
+        
+        if (!this.tilesMatrix?.tiles?.[xx]?.[yy]) continue;
+        // Get the Matrix to display
+        const metaTile = this.tilesMatrix.tiles[xx][yy];
+        // Factor applied to raw level difference to get display level
+        const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+        // Calculate the tile's current display level (Z coordinate)
+        const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
+
+        
+        // Create tile shape at average height (not individual tile height)
+        const shape2 = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height);
+        this.canvasCtx.strokeStyle = gridColor2;
+        this.drawShapePaths(shape2);
+        
+        // Create tile shape at average height (not individual tile height)
+        const shape = Shape.SurfaceFlat(new Point(xx, yy, 0 - height), 1, 1, height);
+        this.canvasCtx.strokeStyle = gridColor;
+        // this.drawShapePaths(shape, undefined, `${metaTile.x},${metaTile.y}`); // Display grid coordinates for debugging
+        // this.drawShapePaths(shape, undefined, `${xx}.${yy}`); // No text, just grid lines
+      }
+    }
+  }
+
+  /**
+   * Draws a semi-transparent overlay on the hovered tile for visual feedback.
+   */
+  private drawHoverOverlay(): void {
+    if (!this.hoveredTile) return;
+
+    const size = this.conf.DRAW_TILE_COUNT;
+    
+    // The hoveredTile is already in grid coordinates (0 to size-1)
+    // directly use these coordinates without additional transformation
+    const xx = Math.round(this.hoveredTile.x);
+    const yy = Math.round(this.hoveredTile.y);
+    // console.log(`[HoverOverlay] Hovered tile at grid coordinates (${xx}, ${yy}), height: ${this.hoveredTile.z}`);
+    // Bounds check
+    if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1) return;
+
+    // Check if tilesMatrix and the tile exist
+    if (!this.tilesMatrix?.tiles?.[xx]?.[yy]) return;
+
+    // Get the tile's display level from the matrix
+    const metaTile = this.tilesMatrix.tiles[xx][yy];
+    const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+    const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
+    const height = 1;
+    // Create the flat surface shape at the tile position
+    const shape = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height);
+    this.drawShapePaths(shape, 'rgba(255, 220, 50, 0.35)', `${xx},${yy}`); // Display hover coordinates for debugging
   }
 
   drawIso() {
@@ -532,6 +706,12 @@ export class CanvasMapDrawers {
         this.drawTile(x, y);
       }
     }
+    
+    // Draw grid overlay to show tile boundaries
+    this.drawGridOverlay();
+    
+    // Draw bishop line aligned with mouse position
+    // this.drawBishopLine();
     
     // Draw hover overlay on top of all tiles
     this.drawHoverOverlay();

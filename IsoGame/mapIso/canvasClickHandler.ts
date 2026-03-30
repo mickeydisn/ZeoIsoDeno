@@ -35,6 +35,8 @@ export class CanvasClickHandler {
   
   // Hover state
   private lastHoveredTile: PointIso | null = null;
+  private lastHoveredGridTile: PointIso | null = null;
+  
   private hoverCallback?: (tile: PointIso | null) => void;
   
   // Bound event handlers for cleanup
@@ -111,22 +113,22 @@ export class CanvasClickHandler {
    * Converts screen coordinates to tile coordinates using inverse projection.
    * Uses the shared mapLvl buffer to look up tile heights.
    */
-  private screenToTile(screenX: number, screenY: number): PointIso | null {
-    // Get center offsets from mapInfo buffer
-    const centerX = this.mapInfo[0];
-    const centerY = this.mapInfo[1];
-    
+  private screenToTile(screenX: number, screenY: number):  PointIso | null  {
     // Use inverse projection with height lookup
-    const tile = this.projector.screenToTileWithHeight(
+    const result = this.projector.screenToTileWithHeight(
       screenX,
       screenY,
       this.mapLvl,
       this.mapSize,
-      centerX,
-      centerY
-    );
+      this.mapInfo
+  );
     
-    return tile;
+    // Check if result is null before destructuring
+    if (result === null) {
+      return null;
+    }
+    
+    return result;
   }
 
   // ============================================================================
@@ -142,15 +144,11 @@ export class CanvasClickHandler {
       return;
     }
     
-    // Round to integer tile coordinates
-    const tileX = Math.round(tile.x);
-    const tileY = Math.round(tile.y);
+    // tile coordinates are already in grid space (0 to mapSize-1)
+    const gridX = Math.round(tile.x);
+    const gridY = Math.round(tile.y);
     
-    console.log(`[CanvasClickHandler] Click at tile (${tileX}, ${tileY}), height: ${tile.z}`);
-    
-    // Convert to grid coordinates (relative to center)
-    const gridX = tileX - this.mapSize / 2;
-    const gridY = tileY - this.mapSize / 2;
+    console.log(`[CanvasClickHandler] Click at tile (${gridX}, ${gridY}), height: ${tile.z}`);
     
     // Send query for cell info
     this.gameWorker.postMessage({
@@ -171,20 +169,16 @@ export class CanvasClickHandler {
     const { screenX, screenY } = this.eventToScreenCoords(event);
     const tile = this.screenToTile(screenX, screenY);
     
-    // Check if tile changed
-    if (this.hasTileChanged(tile)) {
-      this.lastHoveredTile = tile;
-      
-      // Call hover callback if set
-      if (this.hoverCallback) {
-        this.hoverCallback(tile);
-      }
-      
-      // Log for debugging (can be removed in production)
-      if (tile) {
-        const tileX = Math.round(tile.x);
-        const tileY = Math.round(tile.y);
-        console.log(`[CanvasClickHandler] Hover at tile (${tileX}, ${tileY})`);
+    if (tile) {
+      // Check if tile changed
+      if (this.hasTileChanged(tile)) {
+        this.lastHoveredTile = tile;
+        
+        // Call hover callback if set
+        if (this.hoverCallback) {
+          this.hoverCallback(tile);
+        }
+        console.log(`[CanvasClickHandler] Hovering tile (${tile.x.toFixed(2)}, ${tile.y.toFixed(2)}), height: ${tile.z.toFixed(2)})`);
       }
     }
   }
@@ -240,7 +234,7 @@ export class CanvasClickHandler {
    */
   setHoverCallback(callback: (tile: PointIso | null) => void): void {
     this.hoverCallback = callback;
-    console.log("[CanvasClickHandler] Hover callback set");
+    // console.log("[CanvasClickHandler] Hover callback set");
   }
 
   /**
@@ -250,7 +244,7 @@ export class CanvasClickHandler {
   updateMapData(mapLvl: Float32Array, mapInfo: Float32Array): void {
     this.mapLvl = mapLvl;
     this.mapInfo = mapInfo;
-    console.log("[CanvasClickHandler] Map data updated");
+    // console.log("[CanvasClickHandler] Map data updated");
   }
 
   /**
@@ -265,7 +259,7 @@ export class CanvasClickHandler {
       SCALE_SIZE: conf.SCALE_SIZE,
       SCALE_MOD: conf.SCALE_MOD,
     });
-    console.log("[CanvasClickHandler] Config updated:", conf);
+    // console.log("[CanvasClickHandler] Config updated:", conf);
   }
 
   /**
@@ -288,6 +282,6 @@ export class CanvasClickHandler {
     this.hoverCallback = undefined;
     this.lastHoveredTile = null;
     
-    console.log("[CanvasClickHandler] Destroyed and cleaned up");
+    // console.log("[CanvasClickHandler] Destroyed and cleaned up");
   }
 }

@@ -2,6 +2,7 @@
 
 // Configure the main LVL Diff factor display on the grid ( Transform real Lvl Diff to Pixel Diff)
 export const ISO_LVL_SCALE = 39;
+const LVL_Z_SCALE_FACTOR = 1 / 3;
 
 /**
  * Represents a 3D point (x, y, z) in the isometric space.
@@ -116,8 +117,8 @@ export class PointIso {
      * @param tileZ The tile Z (height) coordinate. Defaults to 0.
      * @returns Screen coordinates as { x: number, y: number }.
      */
-    tileToScreen(tileX: number, tileY: number, tileZ: number = 0): { x: number; y: number } {
-        const point = this.translatePoint(new PointIso(tileX, tileY, tileZ));
+    tileToScreen(isoPoint: PointIso): { x: number; y: number } {
+        const point = this.translatePoint(isoPoint);
         return { x: point.x, y: point.y };
     }
 
@@ -145,49 +146,264 @@ export class PointIso {
         const tileYRaw = (adjustedDy / sy - adjustedDx / sx) / 2;
 
         // Add back the panning offsets
-        const tileX = tileXRaw + offsetX;
-        const tileY = tileYRaw + offsetY;
+        const tileX = Math.floor(tileXRaw  + offsetX);
+        const tileY = Math.floor(tileYRaw  + offsetY);
 
         return new PointIso(tileX, tileY, tileZ);
     }
 
+
     /**
-     * Converts screen coordinates to tile coordinates, automatically looking up tile height.
-     * First pass uses Z=0 to find approximate position, then looks up actual height for precise result.
-     * @param screenX The screen X coordinate.
-     * @param screenY The screen Y coordinate.
-     * @param mapLvl Float32Array containing tile height data.
-     * @param mapSize The size of the map grid (width and height).
-     * @param centerX The center X offset (unused but kept for API consistency).
-     * @param centerY The center Y offset (unused but kept for API consistency).
-     * @returns The tile coordinates with correct height, or null if out of bounds.
+     * Pour un tile candidat, retourne le screenY le plus haut
+     * sur le bord du losange à un screenX précis.
+     * Utile pour savoir si la souris est "au-dessus" du tile à cet X.
      */
+    _getTileTopScreenYAtX(tile: PointIso, screenX: number): number | null {
+        const { x: tx, y: ty, z } = tile;
+
+        // Les 4 coins du losange
+        const top   = this.translatePoint(new PointIso(tx,     ty,     z));
+        const right = this.translatePoint(new PointIso(tx + 1, ty,     z));
+        const left  = this.translatePoint(new PointIso(tx,     ty + 1, z));
+
+        // Le losange est symétrique — le bord "haut" va de top→right et top→left
+        // On cherche le Y interpolé sur ces deux segments au screenX donné
+
+        const interpY = (ax: number, ay: number, bx: number, by: number): number | null => {
+            const dx = bx - ax;
+            if (Math.abs(dx) < 0.001) return null;
+            const t = (screenX - ax) / dx;
+            if (t < 0 || t > 1) return null;
+            return ay + t * (by - ay);
+        };
+
+        // Bord top→right (côté NE)
+        const y1 = interpY(top.x, top.y, right.x, right.y);
+        // Bord top→left (côté NW)
+        const y2 = interpY(top.x, top.y, left.x,  left.y);
+
+        // On prend le plus haut (plus petit Y) des deux bords visibles
+        const candidates = [y1, y2].filter(y => y !== null) as number[];
+        if (candidates.length === 0) return null;
+
+        return Math.min(...candidates);
+    }
+
+    screenToTileWithHeight2(
+        screenX: number,
+        screenY: number,
+        mapLvl: Float32Array,
+        mapSize: number,
+        mapInfo: Float32Array,
+    ): PointIso | null {
+
+        const { originX, originY, offsetX, offsetY, SCALE_SIZE, SCALE_MOD } = this.conf;
+        const sx = 32 * SCALE_SIZE;
+        const sy = 16 * SCALE_SIZE;
+        const avgLvl = mapInfo[8]; // Assuming avgLvl is stored at index 8 in mapInfo, adjust if needed
+
+        console.log(avgLvl)
+        // Tous les tiles candidats, triés du plus haut visuellement
+        // au plus bas (depth croissant = rendu d'abord = derrière)
+        // Un tile (tx, ty, z) a une depth screen = tx + ty - 2*z*ratio
+        // On veut d'abord les tiles qui sont "devant" (rendu en dernier)
+
+        const candidates: PointIso[] = [];
+        const ratio = ISO_LVL_SCALE / SCALE_MOD / (2 * sy); // z→screen ratio
+
+        // Pré-filtrer : on ne regarde que les tiles dont le screenX
+        // du centre du losange est proche de notre screenX
+        for (let ty = 0; ty < mapSize; ty++) {
+            for (let tx = 0; tx < mapSize; tx++) {
+                const z = mapLvl[ty * mapSize + tx];
+                
+                const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+                // Calculate the tile's current display level (Z coordinate)
+                const currentlvl = (z - avgLvl) * LVL_DISPLAY_SCALE;
+
+                // Centre du losange en screen
+                const cx = originX + sx * ((tx - offsetX) - (ty - offsetY));
+                // Filtre rapide : le losange fait ±sx en X
+                if (Math.abs(screenX - cx) > sx) continue;
+
+                candidates.push(new PointIso(tx, ty, z));
+            }
+        }
+
+        // Trier : le tile "devant" (visuellement au-dessus) en premier.
+        // Même logique que le painter's algorithm mais inversé :
+        // depth = tx + ty - 2 * z * ratio → plus petit = devant
+        candidates.sort((a, b) => {
+            const da = a.x + a.y - 2 * a.z * ratio;
+            const db = b.x + b.y - 2 * b.z * ratio;
+            return da - db; // plus petit depth = rendu en dernier = devant
+        });
+
+
+
+        // Les 4 coins du losange (top face) en screen :
+        // top    = projection de (tx,   ty,   z)
+        // right  = projection de (tx+1, ty,   z)
+        // bottom = projection de (tx+1, ty+1, z)
+        // left   = projection de (tx,   ty+1, z)
+        const project = (px: number, py: number, z) => {
+            const p = this.translatePoint(new PointIso(px, py, z));
+            return { x: p.x, y: p.y };
+        };
+
+        // Pour chaque tile candidat (du plus devant au plus derrière),
+        // tester si (screenX, screenY) est à l'intérieur du losange projeté
+        for (const tile of candidates) {
+            // Dans la boucle de screenToTileWithHeight :
+            const topY = this._getTileTopScreenYAtX(tile, screenX);
+            if (topY !== null && screenY >= topY) {
+                console.log(`Tile (${tile.x}, ${tile.y}, z=${tile.z}) has topY at screenX=${screenY}: ${topY}`);
+                return tile;
+            }
+            
+        }
+
+        return null;
+    }
+
+    private _isPointInTileFace(tile: PointIso, screenX: number, screenY: number): boolean {
+        const { x: tx, y: ty, z } = tile;
+
+        const top    = this.translatePoint(new PointIso(tx,     ty,     z));
+        const right  = this.translatePoint(new PointIso(tx + 1, ty,     z));
+        const bottom = this.translatePoint(new PointIso(tx + 1, ty + 1, z));
+        const left   = this.translatePoint(new PointIso(tx,     ty + 1, z));
+
+        // Diamond center and half-extents (top face only)
+        const cx   = (top.x + bottom.x) / 2;
+        const topY = top.y;
+        const botY = bottom.y;
+        const halfW = (right.x - left.x) / 2;
+
+        // if (halfW <= 0 || botY <= topY) return false;
+
+        // Normalized coords relative to diamond center
+        const cy = (topY + botY) / 2;
+        const halfH = (botY - topY) / 2;
+
+        const u = (screenX - cx) / halfW;
+        const v = (screenY - cy) / halfH;
+
+        // Standard rhombus test for top face
+        if (Math.abs(u) + Math.abs(v) <= 1.0) return true;
+
+        // Also accept clicks on the visible side walls (below the top face).
+        // The walls extend downward from the left/right edges.
+        // Allow a pixel slop of one tile-height downward.
+        const wallHeight = halfH; // roughly the height of one side face in screen pixels
+        if (
+            Math.abs(u) <= 1.0 &&
+            v > 1.0 &&
+            v <= 1.0 + wallHeight / halfH
+        ) return true;
+
+        return false;
+    }
     screenToTileWithHeight(
         screenX: number,
         screenY: number,
         mapLvl: Float32Array,
         mapSize: number,
-        _centerX: number = 0,
-        _centerY: number = 0
+        mapInfo: Float32Array,
     ): PointIso | null {
-        // First pass: assume Z=0 to get approximate tile position
-        const approxTile = this.screenToTile(screenX, screenY, 0);
-        if (!approxTile) return null;
 
-        // Round to nearest integer tile coordinates
-        const tileX = Math.round(approxTile.x);
-        const tileY = Math.round(approxTile.y);
+        const { originX, offsetX, offsetY, SCALE_SIZE, SCALE_MOD } = this.conf;
+        const sx = 32 * SCALE_SIZE;
+        const avgLvl = mapInfo[8];
+        const ratio = ISO_LVL_SCALE / SCALE_MOD / (2 * 16 * SCALE_SIZE);
 
-        // Validate bounds
-        if (tileX < 0 || tileX >= mapSize || tileY < 0 || tileY >= mapSize) {
-            return null;
+        const candidates: PointIso[] = [];
+
+        for (let ty = 0; ty < mapSize; ty++) {
+            for (let tx = 0; tx < mapSize; tx++) {
+                const z = mapLvl[tx * mapSize + ty];
+
+                // Fast pre-filter on X: the rhombus spans ±sx around its center X
+                const cx = originX + sx * ((tx - offsetX) - (ty - offsetY));
+                if (Math.abs(screenX - cx) > sx) continue;
+
+                candidates.push(new PointIso(tx, ty, z));
+            }
         }
 
-        // Look up actual height from mapLvl array
-        const heightIndex = tileX * mapSize + tileY;
-        const actualHeight = mapLvl[heightIndex];
+        // Sort front-to-back: lower depth value = rendered last = visually on top
+        candidates.sort((a, b) => {
+            const da = a.x + a.y - 2 * a.z * ratio;
+            const db = b.x + b.y - 2 * b.z * ratio;
+            return db - da;
+        });
 
-        // Second pass: use actual height for precise coordinates
-        return this.screenToTile(screenX, screenY, actualHeight);
+        // Return the first (frontmost) tile whose top face contains the point
+        for (const tile of candidates) {
+            if (this._isPointInTileFace(tile, screenX, screenY)) {
+                return tile;
+            }
+        }
+
+        return null;
     }
-  }
+
+
+
+    /**
+     * Gets the list of tile coordinates along a NE-SW diagonal (x - y = constant) 
+     * passing through a given mouse position.
+     * @param screenX The screen X coordinate of the mouse.
+     * @param screenY The screen Y coordinate of the mouse.
+     * @param mapSize The size of the map grid (width and height).
+     * @returns An array of PointIso objects representing the tile coordinates along the diagonal.
+     */
+    getNESWDiagonalCoords(
+        screenX: number,
+        screenY: number,
+        mapSize: number
+    ): PointIso[] {
+        const coords: PointIso[] = [];
+
+        // Convert screen coordinates to tile coordinates
+        const tile = this.screenToTile(screenX, screenY, 0);
+        if (!tile) return coords;
+
+        const xx = Math.round(tile.x);
+        const yy = Math.round(tile.y);
+
+        // Calculate the NE-SW diagonal constant: x - y = constant
+        const diagConstant = xx - yy;
+
+        // Calculate bounds based on tile position to extend to grid edges
+        // For NE-SW diagonal: gy = gx - diagConstant
+        // Need: 0 <= gx < mapSize and 0 <= gy < mapSize
+        
+        // Max dx when gx is at max (mapSize-1)
+        const maxDx = (mapSize - 1) - xx;
+        // Min dx when gx is at min (0)
+        const minDx = -xx;
+        
+        // Also need to ensure gy stays in bounds
+        // gy = (xx + dx) - diagConstant = yy + dx
+        // So gy is in bounds when: 0 <= yy + dx < mapSize
+        // This means: -yy <= dx < mapSize - yy
+        
+        // Combine both constraints
+        const minDxGy = -yy;
+        const maxDxGy = (mapSize - 1) - yy;
+        
+        const finalMinDx = Math.max(minDx, minDxGy);
+        const finalMaxDx = Math.min(maxDx, maxDxGy);
+
+        // Collect all tiles along the diagonal within the bounds
+        for (let dx = finalMinDx + 1; dx < finalMaxDx; dx++) {
+            const gx = xx + dx;
+            const gy = yy + dx; // Since gy = yy + dx (from gy = gx - diagConstant and diagConstant = xx - yy)
+
+            coords.push(new PointIso(gx, gy));
+        }
+
+        return coords;
+    }
+}

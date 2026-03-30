@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARD Custom Building Generator (v3)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+:root {
+  --bg:#09090e; --surface:#111118; --surface2:#1a1a26; --border:#252535;
+  --accent:#00ff88; --accent2:#ff4060; --accent3:#4488ff; --accent4:#ffaa00;
+  --text:#dde0f0; --muted:#5a5a80;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Space Mono',monospace;font-size:11px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:center;gap:16px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;letter-spacing:-0.5px}
+.logo em{color:var(--accent);font-style:normal}
+.app{display:flex;flex:1;min-height:0}
+
+/* TAB NAVIGATION */
+.lpanel{width:320px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.lpanel-tabs{display:flex;background:var(--surface2);border-bottom:1px solid var(--border);flex-shrink:0}
+.ltab{flex:1;padding:10px;text-align:center;font-size:9px;font-weight:700;color:var(--muted);cursor:pointer;border-right:1px solid var(--border);text-transform:uppercase;transition:.1s}
+.ltab:hover{color:var(--text)}
+.ltab.active{background:var(--surface);color:var(--accent);border-bottom:2px solid var(--accent)}
+
+.lpanel-scroll{flex:1;overflow-y:auto;display:none}
+.lpanel-scroll.active{display:block}
+
+.sec{border-bottom:1px solid var(--border);padding:12px 14px}
+.sec-title{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;}
+.btn-small {background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:3px 6px; font-size:8px; cursor:pointer;}
+.btn-small:hover {border-color:var(--accent); color:var(--accent);}
+
+/* Dynamic Config UI */
+.cfg-item {background:var(--surface2); border:1px solid var(--border); padding:6px; margin-bottom:6px; position:relative;}
+.cfg-row {display:flex; gap:4px; margin-bottom:4px; align-items:center;}
+.cfg-input {background:var(--bg); border:1px solid var(--border); color:var(--text); font-family:inherit; font-size:9px; padding:3px; flex:1; min-width:0;}
+.cfg-select {background:var(--bg); border:1px solid var(--border); color:var(--accent); font-family:inherit; font-size:9px; padding:3px; flex:1; min-width:0; cursor:pointer;}
+.cfg-color {width:20px; height:20px; border:1px solid var(--border); padding:0; cursor:pointer;}
+.cfg-del {background:transparent; border:none; color:var(--accent2); cursor:pointer; font-size:10px; padding:0 4px;}
+.locked-tag {font-size:7px; color:var(--accent3); border:1px solid var(--accent3); padding:1px 3px; border-radius:2px; text-transform:uppercase;}
+
+.ctrl{display:flex;flex-direction:column;gap:3px;margin-bottom:9px}
+.clabel{display:flex;justify-content:space-between;color:var(--muted);font-size:9px}
+.clabel b{color:var(--text)}
+input[type=range]{-webkit-appearance:none;width:100%;height:2px;background:var(--border);cursor:pointer;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;background:var(--accent);cursor:pointer}
+.crow{display:flex;align-items:center;gap:7px;margin-bottom:7px;cursor:pointer}
+.crow input{accent-color:var(--accent);cursor:pointer;width:11px;height:11px}
+.genbtn{margin:10px 14px;padding:12px;background:var(--accent);color:#000;font-family:'Syne',sans-serif;font-weight:800;font-size:12px;letter-spacing:2px;text-transform:uppercase;border:none;cursor:pointer;transition:.12s all;flex-shrink:0}
+.genbtn:hover{background:#00ffaa}
+.genbtn.running{background:var(--accent3);animation:blink .5s ease-in-out infinite alternate}
+@keyframes blink{to{opacity:.6}}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.canvasarea{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;background:var(--bg)}
+canvas{display:block;cursor:crosshair;image-rendering:pixelated; background:#050508}
+
+.bottombar{display:flex;align-items:center;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.phase-strip{display:flex;flex-shrink:0}
+.phase{padding:7px 10px;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);border-right:1px solid var(--border);transition:.2s}
+.phase.active{color:var(--accent);background:rgba(0,255,136,.05)}
+.bstat{padding:7px 10px;font-size:9px;color:var(--muted);border-right:1px solid var(--border);white-space:nowrap}
+.bstat b{color:var(--text)}
+
+.rpanel{width:200px;flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;padding:12px}
+.fi-grid{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr;gap:2px;height:84px;margin:7px 0}
+.ficell{background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--muted);text-align:center}
+.ficenter{grid-column:2;grid-row:2;background:rgba(0,255,136,.1);border-color:var(--accent);color:var(--accent);font-size:8px;font-weight:700}
+.tooltip{position:fixed;background:var(--surface);border:1px solid var(--border);padding:7px 9px;font-size:8px;color:var(--text);pointer-events:none;z-index:200;display:none;max-width:220px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">ARD <em>CUSTOM WFC</em></div>
+  <div class="hpill" style="margin-left:auto">Grid: 40x40</div>
+</header>
+<div class="app">
+<!-- LEFT PANEL -->
+<div class="lpanel">
+  <div class="lpanel-tabs">
+    <div class="ltab active" onclick="setTab('t-edges')">Edges</div>
+    <div class="ltab" onclick="setTab('t-tiles')">Tiles</div>
+    <div class="ltab" onclick="setTab('t-links')">Links</div>
+    <div class="ltab" onclick="setTab('t-settings')">Setup</div>
+  </div>
+
+  <!-- EDGES TAB -->
+  <div id="t-edges" class="lpanel-scroll active">
+    <div class="sec">
+      <div class="sec-title"><span>Edge Sockets</span><button class="btn-small" onclick="addEdge()">+ ADD</button></div>
+      <div id="edgeList"></div>
+    </div>
+  </div>
+
+  <!-- TILES TAB -->
+  <div id="t-tiles" class="lpanel-scroll">
+    <div class="sec">
+      <div class="sec-title"><span>Tile Set</span><button class="btn-small" onclick="addTile()">+ ADD</button></div>
+      <div id="tileList"></div>
+    </div>
+  </div>
+
+  <!-- LINKS TAB -->
+  <div id="t-links" class="lpanel-scroll">
+    <div class="sec">
+      <div class="sec-title"><span>Constraints</span><button class="btn-small" onclick="addLink()">+ ADD</button></div>
+      <div id="linkList"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS TAB -->
+  <div id="t-settings" class="lpanel-scroll">
+    <div class="sec">
+      <div class="sec-title">Growth Logic</div>
+      <div class="ctrl">
+        <div class="clabel">Grow Iterations <b id="vGrow">300</b></div>
+        <input type="range" id="sGrow" min="10" max="1000" value="300" oninput="document.getElementById('vGrow').textContent=this.value">
+      </div>
+      <div class="ctrl">
+        <div class="clabel">Weight Ponderation <b id="vPond">5.0</b></div>
+        <input type="range" id="sPond" min="0" max="20" step="0.5" value="5" oninput="document.getElementById('vPond').textContent=this.value">
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-title">Visuals</div>
+      <div class="crow"><input type="checkbox" id="chkGrid" checked><label for="chkGrid">Grid lines</label></div>
+      <div class="ctrl">
+        <div class="clabel">Tile size <b id="vTile">20</b>px</div>
+        <input type="range" id="sTile" min="12" max="64" value="20" oninput="document.getElementById('vTile').textContent=this.value;render()">
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-title">Seed</div>
+      <div class="seed-row" style="display:flex; gap:5px">
+        <input class="cfg-input" id="seedIn" type="text" value="9999">
+        <button class="btn-small" onclick="document.getElementById('seedIn').value=Math.floor(Math.random()*999999)">🎲</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="genbtn" id="genbtn" onclick="generate()">▶ START GENERATION</button>
+</div>
+
+<!-- CANVAS -->
+<div class="main">
+  <div class="canvasarea"><canvas id="cv"></canvas></div>
+  <div class="bottombar">
+    <div class="phase-strip">
+      <div class="phase" id="ph-idle">IDLE</div>
+      <div class="phase" id="ph-grow">GROW</div>
+      <div class="phase" id="ph-done">DONE</div>
+    </div>
+    <div class="bstat">Tiles: <b id="bsCfg">0</b></div>
+    <div class="bstat">Step: <b id="bsStep">0</b></div>
+    <div class="speedctl" style="display:flex; align-items:center; gap:10px; padding:0 15px">
+      <span style="font-size:9px; color:var(--muted)">SPEED</span>
+      <input type="range" id="sSpeed" min="1" max="50" value="10">
+    </div>
+  </div>
+</div>
+
+<!-- INSPECTOR -->
+<div class="rpanel">
+  <div class="sec-title">Face Inspector (+)</div>
+  <div class="fi-grid">
+    <div class="ficell" style="border:none"></div>
+    <div class="ficell" id="fi-0">N</div>
+    <div class="ficell" style="border:none"></div>
+    <div class="ficell" id="fi-3">W</div>
+    <div class="ficell ficenter" id="fi-ctr">?</div>
+    <div class="ficell" id="fi-1">E</div>
+    <div class="ficell" style="border:none"></div>
+    <div class="ficell" id="fi-2">S</div>
+    <div class="ficell" style="border:none"></div>
+  </div>
+  <div id="fiDetail" style="font-size:8px; color:var(--muted); margin-top:10px">Select a tile to inspect connectivity.</div>
+</div>
+</div>
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+let customEdges = [
+  { key: 'X', label: 'Boundary', color: '#000000', width: 2, locked: true },
+  { key: 'G', label: 'Grass', color: '#1a3828', width: 4 },
+  { key: 'P', label: 'Path',  color: '#ffaa00', width: 6 },
+  { key: 'W', label: 'Wall',  color: '#334466', width: 5 }
+];
+
+let customTiles = [
+  { id:'t1', label:'Grass',   n:'G', e:'G', s:'G', w:'G', weight:100, color:'#0d140f' },
+  { id:'t2', label:'Path-H',  n:'G', e:'P', s:'G', w:'P', weight:10,  color:'#0d140f' },
+  { id:'t3', label:'Wall-S',  n:'W', e:'W', s:'W', w:'W', weight:5,   color:'#1a1a24' },
+  { id:'t4', label:'Exit',    n:'W', e:'X', s:'W', w:'W', weight:2,   color:'#1a1a24' }
+];
+
+let customLinks = [{ a:'G', b:'G' }, { a:'P', b:'P' }, { a:'W', b:'W' }, { a:'X', b:'X' }];
+
+const GRID_W=40, GRID_H=40;
+let grid=[], conf=null, allTiles=[], phase='idle', stepCount=0, rng=null;
+
+// ── UI TABS ────────────────────────────────────────────────────────────────
+function setTab(tabId) {
+  document.querySelectorAll('.ltab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.lpanel-scroll').forEach(s => s.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+// ── CONFIG UI ──────────────────────────────────────────────────────────────
+function renderConfigUI() {
+  document.getElementById('edgeList').innerHTML = customEdges.map((e, i) => `
+    <div class="cfg-item">
+      <div class="cfg-row">
+        <input type="text" class="cfg-input" style="width:30px" value="${e.key}" ${e.locked?'disabled':''} onchange="updateEdge(${i},'key',this.value)">
+        <input type="text" class="cfg-input" value="${e.label}" onchange="updateEdge(${i},'label',this.value)">
+        <input type="color" class="cfg-color" value="${e.color}" onchange="updateEdge(${i},'color',this.value)">
+        ${e.locked ? '<span class="locked-tag">System</span>' : `<button class="cfg-del" onclick="delEdge(${i})">✖</button>`}
+      </div>
+      <div class="cfg-row"><span style="font-size:8px">Inner Width:</span><input type="number" class="cfg-input" value="${e.width}" onchange="updateEdge(${i},'width',this.value)"></div>
+    </div>`).join('');
+
+  const opt = () => customEdges.map(e => `<option value="${e.key}">${e.key}</option>`).join('');
+  
+  document.getElementById('tileList').innerHTML = customTiles.map((t, i) => `
+    <div class="cfg-item">
+      <div class="cfg-row"><b>${t.label}</b><input type="color" class="cfg-color" value="${t.color}" onchange="customTiles[${i}].color=this.value" style="margin-left:auto"> <button class="cfg-del" onclick="customTiles.splice(${i},1);renderConfigUI()">✖</button></div>
+      <div class="cfg-row">N:<select class="cfg-select" onchange="customTiles[${i}].n=this.value">${opt().replace(`value="${t.n}"`,`value="${t.n}" selected`)}</select> E:<select class="cfg-select" onchange="customTiles[${i}].e=this.value">${opt().replace(`value="${t.e}"`,`value="${t.e}" selected`)}</select></div>
+      <div class="cfg-row">S:<select class="cfg-select" onchange="customTiles[${i}].s=this.value">${opt().replace(`value="${t.s}"`,`value="${t.s}" selected`)}</select> W:<select class="cfg-select" onchange="customTiles[${i}].w=this.value">${opt().replace(`value="${t.w}"`,`value="${t.w}" selected`)}</select></div>
+      <div class="cfg-row">Weight:<input type="number" class="cfg-input" value="${t.weight}" onchange="customTiles[${i}].weight=Number(this.value)"></div>
+    </div>`).join('');
+
+  document.getElementById('linkList').innerHTML = customLinks.map((l, i) => `
+    <div class="cfg-row">
+      <select class="cfg-select" onchange="customLinks[${i}].a=this.value">${opt().replace(`value="${l.a}"`,`value="${l.a}" selected`)}</select>
+      <span>↔</span>
+      <select class="cfg-select" onchange="customLinks[${i}].b=this.value">${opt().replace(`value="${l.b}"`,`value="${l.b}" selected`)}</select>
+      <button class="cfg-del" onclick="customLinks.splice(${i},1);renderConfigUI()">✖</button>
+    </div>`).join('');
+}
+
+function updateEdge(i,f,v){ customEdges[i][f]=f==='width'?Number(v):v; renderConfigUI(); }
+function addEdge(){ customEdges.push({key:'?', label:'New', color:'#444', width:4}); renderConfigUI(); }
+function addTile(){ customTiles.push({id:Date.now(), label:'Tile', n:'X',e:'X',s:'X',w:'X', weight:10, color:'#222'}); renderConfigUI(); }
+function addLink(){ customLinks.push({a:'X', b:'X'}); renderConfigUI(); }
+function delEdge(i){ if(!customEdges[i].locked){customEdges.splice(i,1); renderConfigUI();}}
+
+// ── WFC LOGIC ───────────────────────────────────────────────────────────────
+function expand(t){
+  let res=[]; let f=[t.n, t.e, t.s, t.w];
+  for(let r=0;r<4;r++){
+    res.push({face:[...f], weight:t.weight, label:t.label, color:t.color});
+    f=[f[3], f[0], f[1], f[2]];
+  }
+  return res;
+}
+
+function getScore(tile){
+  const pond = parseFloat(document.getElementById('sPond').value);
+  const options = (tile.possible || []).length;
+  if(options === 0) return -1;
+  // entropy + weight ponderation bias
+  return (1000 - options) + (tile.weightSum * pond);
+}
+
+// ── ENGINE ─────────────────────────────────────────────────────────────────
+function makeGrid(){
+  grid=[];
+  for(let y=0;y<GRID_H;y++){
+    grid[y]=[];
+    for(let x=0;x<GRID_W;x++) grid[y][x] = {x,y, possible:null, collapsed:null, touched:false};
+  }
+}
+
+function generate(){
+  phase = 'grow';
+  stepCount = 0;
+  const seed = parseInt(document.getElementById('seedIn').value) || 123;
+  let s = seed; rng = () => { s = Math.imul(1664525, s) + 1013904223 >>> 0; return s / 0x100000000; };
+  
+  // Build Tileset
+  const allChoices = customTiles.flatMap(t => expand(t));
+  const links = customLinks.flatMap(l => [[l.a,l.b],[l.b,l.a]]);
+  
+  conf = { 
+    choices: allChoices, 
+    faces: [...new Set(allChoices.map(c => c.face.join('|')))],
+    links: links
+  };
+
+  makeGrid();
+  const cx=20, cy=20;
+  grid[cy][cx].touched = true;
+  grid[cy][cx].possible = allChoices;
+  
+  if(anim) clearInterval(anim);
+  anim = setInterval(step, 1000/parseInt(document.getElementById('sSpeed').value));
+  document.getElementById('genbtn').classList.add('running');
+}
+
+let anim = null;
+function step(){
+  const frontier = [];
+  for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
+    if(grid[y][x].touched && !grid[y][x].collapsed) {
+      grid[y][x].weightSum = (grid[y][x].possible||[]).reduce((a,b)=>a+b.weight,0);
+      frontier.push(grid[y][x]);
+    }
+  }
+
+  if(!frontier.length || stepCount > parseInt(document.getElementById('sGrow').value)){
+    phase='done'; clearInterval(anim); 
+    document.getElementById('genbtn').classList.remove('running');
+    render(); return;
+  }
+
+  frontier.sort((a,b) => getScore(b) - getScore(a));
+  const target = frontier[0];
+  
+  // Collapse
+  const totalW = target.possible.reduce((a,b)=>a+b.weight,0);
+  let r = rng() * totalW, acc = 0;
+  for(let p of target.possible){
+    acc += p.weight;
+    if(acc >= r){ target.collapsed = p; break; }
+  }
+  
+  // Propagate
+  propagate(target);
+  stepCount++;
+  render();
+  updateUI();
+}
+
+function propagate(start){
+  const stack = [start];
+  const ds = [[0,-1],[1,0],[0,1],[-1,0]];
+  
+  while(stack.length){
+    const curr = stack.pop();
+    ds.forEach(([dx,dy], i) => {
+      const nx=curr.x+dx, ny=curr.y+dy;
+      if(nx<0||nx>=GRID_W||ny<0||ny>=GRID_H) return;
+      const next = grid[ny][nx];
+      
+      if(!next.collapsed){
+        const allowed = new Set();
+        const currentPossibleEdges = curr.collapsed ? [curr.collapsed.face[i]] : curr.possible.map(p => p.face[i]);
+        
+        currentPossibleEdges.forEach(e => {
+          conf.links.forEach(([a,b]) => { if(a===e) allowed.add(b); });
+        });
+
+        const opp = (i+2)%4;
+        const nextPossible = (next.possible || conf.choices).filter(p => allowed.has(p.face[opp]));
+        
+        if(!next.touched || nextPossible.length < (next.possible||[]).length){
+          next.touched = true;
+          next.possible = nextPossible;
+          stack.push(next);
+        }
+      }
+    });
+  }
+}
+
+// ── RENDER ──────────────────────────────────────────────────────────────────
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+function render(){
+  const T = parseInt(document.getElementById('sTile').value);
+  cv.width = GRID_W*T; cv.height = GRID_H*T;
+  ctx.clearRect(0,0,cv.width,cv.height);
+
+  for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
+    const t = grid[y][x];
+    if(!t.touched) continue;
+    const px = x*T, py = y*T;
+
+    if(t.collapsed){
+      ctx.fillStyle = t.collapsed.color;
+      ctx.fillRect(px,py,T,T);
+      // Draw Edges
+      t.collapsed.face.forEach((fKey, i) => {
+        const e = customEdges.find(ed => ed.key === fKey);
+        if(!e || e.key === 'X') return;
+        ctx.fillStyle = e.color;
+        const w = e.width;
+        ctx.beginPath();
+        if(i===0){ ctx.moveTo(px,py); ctx.lineTo(px+T,py); ctx.lineTo(px+T-w,py+w); ctx.lineTo(px+w,py+w); }
+        if(i===1){ ctx.moveTo(px+T,py); ctx.lineTo(px+T,py+T); ctx.lineTo(px+T-w,py+T-w); ctx.lineTo(px+T-w,py+w); }
+        if(i===2){ ctx.moveTo(px+T,py+T); ctx.lineTo(px,py+T); ctx.lineTo(px+w,py+T-w); ctx.lineTo(px+T-w,py+T-w); }
+        if(i===3){ ctx.moveTo(px,py+T); ctx.lineTo(px,py); ctx.lineTo(px+w,py+w); ctx.lineTo(px+w,py+T-w); }
+        ctx.fill();
+      });
+    } else {
+      ctx.fillStyle = '#111118'; ctx.fillRect(px,py,T,T);
+      ctx.strokeStyle = '#222'; ctx.strokeRect(px,py,T,T);
+    }
+  }
+}
+
+function updateUI(){
+  document.getElementById('bsStep').textContent = stepCount;
+  document.getElementById('bsCfg').textContent = grid.flat().filter(t=>t.collapsed).length;
+  document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+  document.getElementById('ph-'+phase).classList.add('active');
+}
+
+cv.onclick = (e) => {
+  const rect = cv.getBoundingClientRect();
+  const T = parseInt(document.getElementById('sTile').value);
+  const x = Math.floor((e.clientX - rect.left)/T);
+  const y = Math.floor((e.clientY - rect.top)/T);
+  const t = grid[y][x];
+  if(t && t.touched){
+    document.getElementById('fi-ctr').textContent = t.collapsed ? t.collapsed.label.substring(0,2) : '?';
+    const faces = t.collapsed ? t.collapsed.face : (t.possible[0]?.face || ['?','?','?','?']);
+    faces.forEach((f,i) => document.getElementById('fi-'+i).textContent = f);
+  }
+};
+
+renderConfigUI();
+makeGrid();
+render();
+updateUI();
+</script>
+</body>
+</html>

@@ -380,7 +380,7 @@ export class GameWorker {
     this.framId = (this.framId + 1) % 1024;
     if (this.framId % 4 == 0) {
       this.updateFPS();
-      console.log("Draw");
+      // console.log("Draw");
 
       this.world.tick();
 

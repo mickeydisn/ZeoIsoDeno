@@ -9540,6 +9540,7 @@ var Isomer = class {
 
 // IsoGame/mapIso/simpleIso/IsometricProjector.ts
 var ISO_LVL_SCALE2 = 39;
+var LVL_Z_SCALE_FACTOR = 1 / 3;
 var PointIso = class _PointIso {
   x;
   y;
@@ -9627,8 +9628,8 @@ var IsometricProjector = class {
    * @param tileZ The tile Z (height) coordinate. Defaults to 0.
    * @returns Screen coordinates as { x: number, y: number }.
    */
-  tileToScreen(tileX, tileY, tileZ = 0) {
-    const point = this.translatePoint(new PointIso(tileX, tileY, tileZ));
+  tileToScreen(isoPoint) {
+    const point = this.translatePoint(isoPoint);
     return { x: point.x, y: point.y };
   }
   /**
@@ -9646,33 +9647,149 @@ var IsometricProjector = class {
     const adjustedDy = originY - screenY - tileZ * ISO_LVL_SCALE2 / SCALE_MOD;
     const tileXRaw = (adjustedDx / sx + adjustedDy / sy) / 2;
     const tileYRaw = (adjustedDy / sy - adjustedDx / sx) / 2;
-    const tileX = tileXRaw + offsetX;
-    const tileY = tileYRaw + offsetY;
+    const tileX = Math.floor(tileXRaw + offsetX);
+    const tileY = Math.floor(tileYRaw + offsetY);
     return new PointIso(tileX, tileY, tileZ);
   }
   /**
-   * Converts screen coordinates to tile coordinates, automatically looking up tile height.
-   * First pass uses Z=0 to find approximate position, then looks up actual height for precise result.
-   * @param screenX The screen X coordinate.
-   * @param screenY The screen Y coordinate.
-   * @param mapLvl Float32Array containing tile height data.
-   * @param mapSize The size of the map grid (width and height).
-   * @param centerX The center X offset (unused but kept for API consistency).
-   * @param centerY The center Y offset (unused but kept for API consistency).
-   * @returns The tile coordinates with correct height, or null if out of bounds.
+   * Pour un tile candidat, retourne le screenY le plus haut
+   * sur le bord du losange à un screenX précis.
+   * Utile pour savoir si la souris est "au-dessus" du tile à cet X.
    */
-  screenToTileWithHeight(screenX, screenY, mapLvl, mapSize, _centerX = 0, _centerY = 0) {
-    const approxTile = this.screenToTile(screenX, screenY, 0);
-    if (!approxTile)
+  _getTileTopScreenYAtX(tile, screenX) {
+    const { x: tx, y: ty, z } = tile;
+    const top = this.translatePoint(new PointIso(tx, ty, z));
+    const right = this.translatePoint(new PointIso(tx + 1, ty, z));
+    const left = this.translatePoint(new PointIso(tx, ty + 1, z));
+    const interpY = (ax, ay, bx, by) => {
+      const dx = bx - ax;
+      if (Math.abs(dx) < 1e-3)
+        return null;
+      const t = (screenX - ax) / dx;
+      if (t < 0 || t > 1)
+        return null;
+      return ay + t * (by - ay);
+    };
+    const y1 = interpY(top.x, top.y, right.x, right.y);
+    const y2 = interpY(top.x, top.y, left.x, left.y);
+    const candidates = [y1, y2].filter((y) => y !== null);
+    if (candidates.length === 0)
       return null;
-    const tileX = Math.round(approxTile.x);
-    const tileY = Math.round(approxTile.y);
-    if (tileX < 0 || tileX >= mapSize || tileY < 0 || tileY >= mapSize) {
-      return null;
+    return Math.min(...candidates);
+  }
+  screenToTileWithHeight2(screenX, screenY, mapLvl, mapSize, mapInfo) {
+    const { originX, originY, offsetX, offsetY, SCALE_SIZE: SCALE_SIZE2, SCALE_MOD } = this.conf;
+    const sx = 32 * SCALE_SIZE2;
+    const sy = 16 * SCALE_SIZE2;
+    const avgLvl = mapInfo[8];
+    console.log(avgLvl);
+    const candidates = [];
+    const ratio = ISO_LVL_SCALE2 / SCALE_MOD / (2 * sy);
+    for (let ty = 0; ty < mapSize; ty++) {
+      for (let tx = 0; tx < mapSize; tx++) {
+        const z = mapLvl[ty * mapSize + tx];
+        const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+        const currentlvl = (z - avgLvl) * LVL_DISPLAY_SCALE;
+        const cx = originX + sx * (tx - offsetX - (ty - offsetY));
+        if (Math.abs(screenX - cx) > sx)
+          continue;
+        candidates.push(new PointIso(tx, ty, z));
+      }
     }
-    const heightIndex = tileX * mapSize + tileY;
-    const actualHeight = mapLvl[heightIndex];
-    return this.screenToTile(screenX, screenY, actualHeight);
+    candidates.sort((a, b) => {
+      const da = a.x + a.y - 2 * a.z * ratio;
+      const db = b.x + b.y - 2 * b.z * ratio;
+      return da - db;
+    });
+    const project = (px, py, z) => {
+      const p = this.translatePoint(new PointIso(px, py, z));
+      return { x: p.x, y: p.y };
+    };
+    for (const tile of candidates) {
+      const topY = this._getTileTopScreenYAtX(tile, screenX);
+      if (topY !== null && screenY >= topY) {
+        console.log(`Tile (${tile.x}, ${tile.y}, z=${tile.z}) has topY at screenX=${screenY}: ${topY}`);
+        return tile;
+      }
+    }
+    return null;
+  }
+  _isPointInTileFace(tile, screenX, screenY) {
+    const { x: tx, y: ty, z } = tile;
+    const top = this.translatePoint(new PointIso(tx, ty, z));
+    const right = this.translatePoint(new PointIso(tx + 1, ty, z));
+    const bottom = this.translatePoint(new PointIso(tx + 1, ty + 1, z));
+    const left = this.translatePoint(new PointIso(tx, ty + 1, z));
+    const cx = (top.x + bottom.x) / 2;
+    const topY = top.y;
+    const botY = bottom.y;
+    const halfW = (right.x - left.x) / 2;
+    const cy = (topY + botY) / 2;
+    const halfH = (botY - topY) / 2;
+    const u = (screenX - cx) / halfW;
+    const v = (screenY - cy) / halfH;
+    if (Math.abs(u) + Math.abs(v) <= 1)
+      return true;
+    const wallHeight = halfH;
+    if (Math.abs(u) <= 1 && v > 1 && v <= 1 + wallHeight / halfH)
+      return true;
+    return false;
+  }
+  screenToTileWithHeight(screenX, screenY, mapLvl, mapSize, mapInfo) {
+    const { originX, offsetX, offsetY, SCALE_SIZE: SCALE_SIZE2, SCALE_MOD } = this.conf;
+    const sx = 32 * SCALE_SIZE2;
+    const avgLvl = mapInfo[8];
+    const ratio = ISO_LVL_SCALE2 / SCALE_MOD / (2 * 16 * SCALE_SIZE2);
+    const candidates = [];
+    for (let ty = 0; ty < mapSize; ty++) {
+      for (let tx = 0; tx < mapSize; tx++) {
+        const z = mapLvl[tx * mapSize + ty];
+        const cx = originX + sx * (tx - offsetX - (ty - offsetY));
+        if (Math.abs(screenX - cx) > sx)
+          continue;
+        candidates.push(new PointIso(tx, ty, z));
+      }
+    }
+    candidates.sort((a, b) => {
+      const da = a.x + a.y - 2 * a.z * ratio;
+      const db = b.x + b.y - 2 * b.z * ratio;
+      return db - da;
+    });
+    for (const tile of candidates) {
+      if (this._isPointInTileFace(tile, screenX, screenY)) {
+        return tile;
+      }
+    }
+    return null;
+  }
+  /**
+   * Gets the list of tile coordinates along a NE-SW diagonal (x - y = constant) 
+   * passing through a given mouse position.
+   * @param screenX The screen X coordinate of the mouse.
+   * @param screenY The screen Y coordinate of the mouse.
+   * @param mapSize The size of the map grid (width and height).
+   * @returns An array of PointIso objects representing the tile coordinates along the diagonal.
+   */
+  getNESWDiagonalCoords(screenX, screenY, mapSize) {
+    const coords = [];
+    const tile = this.screenToTile(screenX, screenY, 0);
+    if (!tile)
+      return coords;
+    const xx = Math.round(tile.x);
+    const yy = Math.round(tile.y);
+    const diagConstant = xx - yy;
+    const maxDx = mapSize - 1 - xx;
+    const minDx = -xx;
+    const minDxGy = -yy;
+    const maxDxGy = mapSize - 1 - yy;
+    const finalMinDx = Math.max(minDx, minDxGy);
+    const finalMaxDx = Math.min(maxDx, maxDxGy);
+    for (let dx = finalMinDx + 1; dx < finalMaxDx; dx++) {
+      const gx = xx + dx;
+      const gy = yy + dx;
+      coords.push(new PointIso(gx, gy));
+    }
+    return coords;
   }
 };
 
@@ -9864,7 +9981,7 @@ var ColorIso = class _ColorIso {
 function createCanvas2(width, height) {
   return new OffscreenCanvas(width, height);
 }
-var LVL_Z_SCALE_FACTOR = 1 / 3;
+var LVL_Z_SCALE_FACTOR2 = 1 / 3;
 var ASSET_WIDTH = 128;
 var ASSET_OFFSET_X = -127 + 64;
 var ASSET_OFFSET_Y = -172 + 64 - 1;
@@ -9906,7 +10023,7 @@ var CanvasMapDrawers = class {
     this.bufferMapLvl = new SharedArrayBuffer(bufferSize);
     this.mapLvl = new Float32Array(this.bufferMapLvl);
     this.bufferMapInfo = new SharedArrayBuffer(
-      4 * Float32Array.BYTES_PER_ELEMENT
+      10 * Float32Array.BYTES_PER_ELEMENT
     );
     this.mapInfo = new Float32Array(this.bufferMapInfo);
     this.isomer = new Isomer(
@@ -9963,6 +10080,20 @@ var CanvasMapDrawers = class {
     this.mapInfo[1] = centreY;
     this.mapInfo[2] = offx;
     this.mapInfo[3] = offy;
+    this.mapInfo[8] = this.tilesMatrix.avgLvl;
+    const hasHover = this.mapInfo[7] === 1;
+    if (hasHover) {
+      this.hoveredTile = new PointIso(
+        this.mapInfo[4],
+        // gridX
+        this.mapInfo[5],
+        // gridY
+        this.mapInfo[6]
+        // height
+      );
+    } else {
+      this.hoveredTile = null;
+    }
     this.drawIso();
   }
   getTileImage(tile, diffLvlSE, diffLvlSW) {
@@ -9970,7 +10101,7 @@ var CanvasMapDrawers = class {
     if (this.tileCache.has(key)) {
       return this.tileCache.get(key);
     }
-    console.log("tileGen");
+    console.log(`Generating tile image for (${tile.x}, ${tile.y}) with color [${tile.color.join(",")}] and level differences SE:${diffLvlSE}, SW:${diffLvlSW}`);
     const colorIso = new ColorIso(tile.color[0], tile.color[1], tile.color[2]);
     const canvas = this.isoGenerator.createTile(colorIso, diffLvlSE, diffLvlSW);
     createImageBitmap(canvas).then((optimizedDrawSource) => {
@@ -10103,7 +10234,7 @@ var CanvasMapDrawers = class {
     const xx = size - x - 1;
     const yy = size - y - 1;
     const metaTile = this.tilesMatrix.tiles[xx][yy];
-    const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+    const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR2 * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
     const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
     this.mapLvl[xx * size + yy] = currentlvl;
     const height = 1;
@@ -10132,28 +10263,18 @@ var CanvasMapDrawers = class {
       items.sort((a, b) => (a.lvl || 0) - (b.lvl || 0)).forEach((item) => this.drawTileItem(xx, yy, metaTile, item, currentlvl));
     }
   }
+  //- -------------------------------------
   /**
-   * Draws a semi-transparent overlay on the hovered tile for visual feedback.
+   * Draws a shape's paths on the canvas using isometric projection.
+   * Handles translation of points and path rendering (stroke and optional fill).
+   * @param shape The shape to draw
+   * @param fillColor Optional fill color string (e.g., 'rgba(255, 0, 0, 0.5)')
    */
-  drawHoverOverlay() {
-    if (!this.hoveredTile) {
-      return;
-    }
-    const { x, y, z } = this.hoveredTile;
-    const size = this.conf.DRAW_TILE_COUNT;
-    const xx = size - x - 1;
-    const yy = size - y - 1;
-    if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1) {
-      return;
-    }
-    const metaTile = this.tilesMatrix.tiles[xx][yy];
-    const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
-    const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
-    const height = 1;
-    const shape = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height);
-    const highlightColor = { r: 255, g: 220, b: 50, a: 0.35 };
+  drawShapePaths2(shape, fillColor) {
     shape.orderedPaths().forEach((path) => {
-      const translatedPoints = path.points.map((p) => this.isomer.translatePoint(p));
+      const translatedPoints = path.points.map(
+        (p) => this.isoProject.translatePoint(new PointIso(p.x, p.y, p.z))
+      );
       this.canvasCtx.beginPath();
       translatedPoints.forEach((p, index) => {
         if (index === 0) {
@@ -10163,9 +10284,150 @@ var CanvasMapDrawers = class {
         }
       });
       this.canvasCtx.closePath();
-      this.canvasCtx.fillStyle = `rgba(${highlightColor.r}, ${highlightColor.g}, ${highlightColor.b}, ${highlightColor.a})`;
-      this.canvasCtx.fill();
+      if (fillColor) {
+        this.canvasCtx.fillStyle = fillColor;
+        this.canvasCtx.fill();
+      }
+      this.canvasCtx.stroke();
     });
+  }
+  /**
+  * Draws a shape's paths and optional centered text.
+  * @param shape The shape to draw
+  * @param fillColor Optional fill color
+  * @param text Optional text to display in the center
+  */
+  drawShapePaths(shape, fillColor, text) {
+    const allProjectedPoints = [];
+    shape.orderedPaths().forEach((path) => {
+      const translatedPoints = path.points.map(
+        (p) => this.isoProject.translatePoint(new PointIso(p.x, p.y, p.z))
+      );
+      allProjectedPoints.push(...translatedPoints);
+      this.canvasCtx.beginPath();
+      translatedPoints.forEach((p, index) => {
+        if (index === 0) {
+          this.canvasCtx.moveTo(p.x, p.y);
+        } else {
+          this.canvasCtx.lineTo(p.x, p.y);
+        }
+      });
+      this.canvasCtx.closePath();
+      if (fillColor) {
+        this.canvasCtx.fillStyle = fillColor;
+        this.canvasCtx.fill();
+      }
+      this.canvasCtx.stroke();
+    });
+    if (text && allProjectedPoints.length > 0) {
+      const centerX = allProjectedPoints.reduce((sum, p) => sum + p.x, 0) / allProjectedPoints.length;
+      const centerY = allProjectedPoints.reduce((sum, p) => sum + p.y, 0) / allProjectedPoints.length;
+      this.canvasCtx.fillStyle = "#ffffff";
+      this.canvasCtx.font = "14px sans-serif";
+      this.canvasCtx.textAlign = "center";
+      this.canvasCtx.textBaseline = "middle";
+      this.canvasCtx.fillText(text, centerX, centerY);
+    }
+  }
+  /**
+   * Draws a bishop line (diagonal) aligned with the mouse position.
+   * @param direction The diagonal direction: 'NW-SE' (x+y constant) or 'NE-SW' (x-y constant)
+   * Shows a red-blue gradient to indicate the direction of movement.
+   */
+  drawBishopLine(direction = "NE-SW") {
+    if (!this.hoveredTile)
+      return;
+    const size = this.conf.DRAW_TILE_COUNT;
+    const xx = Math.round(this.hoveredTile.x);
+    const yy = Math.round(this.hoveredTile.y);
+    if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1)
+      return;
+    const gridHeight = 0;
+    const height = 1;
+    const lineLength = 15;
+    this.canvasCtx.strokeStyle = "rgba(0, 200, 200, 0.7)";
+    this.canvasCtx.lineWidth = 2;
+    const getGradientColor = (t) => {
+      const r = Math.round(255 * (1 - t));
+      const g = 0;
+      const b = Math.round(255 * t);
+      return `rgba(${r}, ${g}, ${b}, 0.7)`;
+    };
+    if (direction === "NW-SE") {
+      const hoveredDiag = xx + yy;
+      for (let dx = -lineLength; dx <= lineLength; dx++) {
+        const gx = xx + dx;
+        const gy = hoveredDiag - gx;
+        if (gx < 1 || gx >= size - 1 || gy < 1 || gy >= size - 1)
+          continue;
+        if (!this.tilesMatrix?.tiles?.[gx]?.[gy])
+          continue;
+        const t = (dx + lineLength) / (2 * lineLength);
+        const shape = Shape.SurfaceFlat(new Point(gx, gy, gridHeight - height), 1, 1, height);
+        this.drawShapePaths(shape, getGradientColor(t));
+      }
+    } else if (direction === "NE-SW") {
+      const hoveredDiag = xx - yy;
+      for (let dx = -lineLength; dx <= lineLength; dx++) {
+        const gx = xx + dx;
+        const gy = gx - hoveredDiag;
+        if (gx < 1 || gx >= size - 1 || gy < 1 || gy >= size - 1)
+          continue;
+        if (!this.tilesMatrix?.tiles?.[gx]?.[gy])
+          continue;
+        const t = (dx + lineLength) / (2 * lineLength);
+        const shape = Shape.SurfaceFlat(new Point(gx, gy, gridHeight - height), 1, 1, height);
+        this.drawShapePaths(shape, getGradientColor(t));
+      }
+    }
+  }
+  /**
+   * Draws a grid overlay showing tile boundaries.
+   * Grid is drawn at the average height (plan) of the grid, not aligned with individual tile heights.
+   */
+  drawGridOverlay() {
+    const size = this.conf.DRAW_TILE_COUNT;
+    const gridColor = "rgba(255, 0, 255, 0.9)";
+    const gridColor2 = "rgba(0, 0, 255, 1)";
+    this.canvasCtx.lineWidth = 1;
+    const gridHeight = 0;
+    const height = 1;
+    for (let x = 1; x < size - 1; x++) {
+      for (let y = 1; y < size - 1; y++) {
+        const xx = size - x - 1;
+        const yy = size - y - 1;
+        if (!this.tilesMatrix?.tiles?.[xx]?.[yy])
+          continue;
+        const metaTile = this.tilesMatrix.tiles[xx][yy];
+        const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR2 * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+        const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
+        const shape2 = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height);
+        this.canvasCtx.strokeStyle = gridColor2;
+        this.drawShapePaths(shape2);
+        const shape = Shape.SurfaceFlat(new Point(xx, yy, 0 - height), 1, 1, height);
+        this.canvasCtx.strokeStyle = gridColor;
+      }
+    }
+  }
+  /**
+   * Draws a semi-transparent overlay on the hovered tile for visual feedback.
+   */
+  drawHoverOverlay() {
+    if (!this.hoveredTile)
+      return;
+    const size = this.conf.DRAW_TILE_COUNT;
+    const xx = Math.round(this.hoveredTile.x);
+    const yy = Math.round(this.hoveredTile.y);
+    if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1)
+      return;
+    if (!this.tilesMatrix?.tiles?.[xx]?.[yy])
+      return;
+    const metaTile = this.tilesMatrix.tiles[xx][yy];
+    const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR2 * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+    const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
+    const height = 1;
+    const shape = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height);
+    this.drawShapePaths(shape, "rgba(255, 220, 50, 0.35)", `${xx},${yy}`);
   }
   drawIso() {
     const size = this.conf.DRAW_TILE_COUNT;
@@ -10175,6 +10437,7 @@ var CanvasMapDrawers = class {
         this.drawTile(x, y);
       }
     }
+    this.drawGridOverlay();
     this.drawHoverOverlay();
     this._cleanCache();
   }
@@ -11014,7 +11277,6 @@ var GameWorker = class {
     this.framId = (this.framId + 1) % 1024;
     if (this.framId % 4 == 0) {
       this.updateFPS();
-      console.log("Draw");
       this.world.tick();
       this.canvasMapDrawer.drawUpdate(
         this.x,

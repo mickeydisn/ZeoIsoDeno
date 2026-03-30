@@ -1150,6 +1150,7 @@ function initMenu() {
 
 // IsoGame/mapIso/simpleIso/IsometricProjector.ts
 var ISO_LVL_SCALE = 39;
+var LVL_Z_SCALE_FACTOR = 1 / 3;
 var PointIso = class _PointIso {
   x;
   y;
@@ -1237,8 +1238,8 @@ var IsometricProjector = class {
    * @param tileZ The tile Z (height) coordinate. Defaults to 0.
    * @returns Screen coordinates as { x: number, y: number }.
    */
-  tileToScreen(tileX, tileY, tileZ = 0) {
-    const point = this.translatePoint(new PointIso(tileX, tileY, tileZ));
+  tileToScreen(isoPoint) {
+    const point = this.translatePoint(isoPoint);
     return { x: point.x, y: point.y };
   }
   /**
@@ -1256,33 +1257,149 @@ var IsometricProjector = class {
     const adjustedDy = originY - screenY - tileZ * ISO_LVL_SCALE / SCALE_MOD;
     const tileXRaw = (adjustedDx / sx + adjustedDy / sy) / 2;
     const tileYRaw = (adjustedDy / sy - adjustedDx / sx) / 2;
-    const tileX = tileXRaw + offsetX;
-    const tileY = tileYRaw + offsetY;
+    const tileX = Math.floor(tileXRaw + offsetX);
+    const tileY = Math.floor(tileYRaw + offsetY);
     return new PointIso(tileX, tileY, tileZ);
   }
   /**
-   * Converts screen coordinates to tile coordinates, automatically looking up tile height.
-   * First pass uses Z=0 to find approximate position, then looks up actual height for precise result.
-   * @param screenX The screen X coordinate.
-   * @param screenY The screen Y coordinate.
-   * @param mapLvl Float32Array containing tile height data.
-   * @param mapSize The size of the map grid (width and height).
-   * @param centerX The center X offset (unused but kept for API consistency).
-   * @param centerY The center Y offset (unused but kept for API consistency).
-   * @returns The tile coordinates with correct height, or null if out of bounds.
+   * Pour un tile candidat, retourne le screenY le plus haut
+   * sur le bord du losange à un screenX précis.
+   * Utile pour savoir si la souris est "au-dessus" du tile à cet X.
    */
-  screenToTileWithHeight(screenX, screenY, mapLvl, mapSize, _centerX = 0, _centerY = 0) {
-    const approxTile = this.screenToTile(screenX, screenY, 0);
-    if (!approxTile)
+  _getTileTopScreenYAtX(tile, screenX) {
+    const { x: tx, y: ty, z } = tile;
+    const top = this.translatePoint(new PointIso(tx, ty, z));
+    const right = this.translatePoint(new PointIso(tx + 1, ty, z));
+    const left = this.translatePoint(new PointIso(tx, ty + 1, z));
+    const interpY = (ax, ay, bx, by) => {
+      const dx = bx - ax;
+      if (Math.abs(dx) < 1e-3)
+        return null;
+      const t = (screenX - ax) / dx;
+      if (t < 0 || t > 1)
+        return null;
+      return ay + t * (by - ay);
+    };
+    const y1 = interpY(top.x, top.y, right.x, right.y);
+    const y2 = interpY(top.x, top.y, left.x, left.y);
+    const candidates = [y1, y2].filter((y) => y !== null);
+    if (candidates.length === 0)
       return null;
-    const tileX = Math.round(approxTile.x);
-    const tileY = Math.round(approxTile.y);
-    if (tileX < 0 || tileX >= mapSize || tileY < 0 || tileY >= mapSize) {
-      return null;
+    return Math.min(...candidates);
+  }
+  screenToTileWithHeight2(screenX, screenY, mapLvl, mapSize, mapInfo) {
+    const { originX, originY, offsetX, offsetY, SCALE_SIZE, SCALE_MOD } = this.conf;
+    const sx = 32 * SCALE_SIZE;
+    const sy = 16 * SCALE_SIZE;
+    const avgLvl = mapInfo[8];
+    console.log(avgLvl);
+    const candidates = [];
+    const ratio = ISO_LVL_SCALE / SCALE_MOD / (2 * sy);
+    for (let ty = 0; ty < mapSize; ty++) {
+      for (let tx = 0; tx < mapSize; tx++) {
+        const z = mapLvl[ty * mapSize + tx];
+        const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+        const currentlvl = (z - avgLvl) * LVL_DISPLAY_SCALE;
+        const cx = originX + sx * (tx - offsetX - (ty - offsetY));
+        if (Math.abs(screenX - cx) > sx)
+          continue;
+        candidates.push(new PointIso(tx, ty, z));
+      }
     }
-    const heightIndex = tileX * mapSize + tileY;
-    const actualHeight = mapLvl[heightIndex];
-    return this.screenToTile(screenX, screenY, actualHeight);
+    candidates.sort((a, b) => {
+      const da = a.x + a.y - 2 * a.z * ratio;
+      const db = b.x + b.y - 2 * b.z * ratio;
+      return da - db;
+    });
+    const project = (px, py, z) => {
+      const p = this.translatePoint(new PointIso(px, py, z));
+      return { x: p.x, y: p.y };
+    };
+    for (const tile of candidates) {
+      const topY = this._getTileTopScreenYAtX(tile, screenX);
+      if (topY !== null && screenY >= topY) {
+        console.log(`Tile (${tile.x}, ${tile.y}, z=${tile.z}) has topY at screenX=${screenY}: ${topY}`);
+        return tile;
+      }
+    }
+    return null;
+  }
+  _isPointInTileFace(tile, screenX, screenY) {
+    const { x: tx, y: ty, z } = tile;
+    const top = this.translatePoint(new PointIso(tx, ty, z));
+    const right = this.translatePoint(new PointIso(tx + 1, ty, z));
+    const bottom = this.translatePoint(new PointIso(tx + 1, ty + 1, z));
+    const left = this.translatePoint(new PointIso(tx, ty + 1, z));
+    const cx = (top.x + bottom.x) / 2;
+    const topY = top.y;
+    const botY = bottom.y;
+    const halfW = (right.x - left.x) / 2;
+    const cy = (topY + botY) / 2;
+    const halfH = (botY - topY) / 2;
+    const u = (screenX - cx) / halfW;
+    const v = (screenY - cy) / halfH;
+    if (Math.abs(u) + Math.abs(v) <= 1)
+      return true;
+    const wallHeight = halfH;
+    if (Math.abs(u) <= 1 && v > 1 && v <= 1 + wallHeight / halfH)
+      return true;
+    return false;
+  }
+  screenToTileWithHeight(screenX, screenY, mapLvl, mapSize, mapInfo) {
+    const { originX, offsetX, offsetY, SCALE_SIZE, SCALE_MOD } = this.conf;
+    const sx = 32 * SCALE_SIZE;
+    const avgLvl = mapInfo[8];
+    const ratio = ISO_LVL_SCALE / SCALE_MOD / (2 * 16 * SCALE_SIZE);
+    const candidates = [];
+    for (let ty = 0; ty < mapSize; ty++) {
+      for (let tx = 0; tx < mapSize; tx++) {
+        const z = mapLvl[tx * mapSize + ty];
+        const cx = originX + sx * (tx - offsetX - (ty - offsetY));
+        if (Math.abs(screenX - cx) > sx)
+          continue;
+        candidates.push(new PointIso(tx, ty, z));
+      }
+    }
+    candidates.sort((a, b) => {
+      const da = a.x + a.y - 2 * a.z * ratio;
+      const db = b.x + b.y - 2 * b.z * ratio;
+      return db - da;
+    });
+    for (const tile of candidates) {
+      if (this._isPointInTileFace(tile, screenX, screenY)) {
+        return tile;
+      }
+    }
+    return null;
+  }
+  /**
+   * Gets the list of tile coordinates along a NE-SW diagonal (x - y = constant) 
+   * passing through a given mouse position.
+   * @param screenX The screen X coordinate of the mouse.
+   * @param screenY The screen Y coordinate of the mouse.
+   * @param mapSize The size of the map grid (width and height).
+   * @returns An array of PointIso objects representing the tile coordinates along the diagonal.
+   */
+  getNESWDiagonalCoords(screenX, screenY, mapSize) {
+    const coords = [];
+    const tile = this.screenToTile(screenX, screenY, 0);
+    if (!tile)
+      return coords;
+    const xx = Math.round(tile.x);
+    const yy = Math.round(tile.y);
+    const diagConstant = xx - yy;
+    const maxDx = mapSize - 1 - xx;
+    const minDx = -xx;
+    const minDxGy = -yy;
+    const maxDxGy = mapSize - 1 - yy;
+    const finalMinDx = Math.max(minDx, minDxGy);
+    const finalMaxDx = Math.min(maxDx, maxDxGy);
+    for (let dx = finalMinDx + 1; dx < finalMaxDx; dx++) {
+      const gx = xx + dx;
+      const gy = yy + dx;
+      coords.push(new PointIso(gx, gy));
+    }
+    return coords;
   }
 };
 
@@ -1298,6 +1415,7 @@ var CanvasClickHandler = class {
   mapSize;
   // Hover state
   lastHoveredTile = null;
+  lastHoveredGridTile = null;
   hoverCallback;
   // Bound event handlers for cleanup
   boundClickHandler;
@@ -1351,17 +1469,17 @@ var CanvasClickHandler = class {
    * Uses the shared mapLvl buffer to look up tile heights.
    */
   screenToTile(screenX, screenY) {
-    const centerX = this.mapInfo[0];
-    const centerY = this.mapInfo[1];
-    const tile = this.projector.screenToTileWithHeight(
+    const result = this.projector.screenToTileWithHeight(
       screenX,
       screenY,
       this.mapLvl,
       this.mapSize,
-      centerX,
-      centerY
+      this.mapInfo
     );
-    return tile;
+    if (result === null) {
+      return null;
+    }
+    return result;
   }
   // ============================================================================
   // Event Handlers
@@ -1373,11 +1491,9 @@ var CanvasClickHandler = class {
       console.log("[CanvasClickHandler] Click outside map bounds");
       return;
     }
-    const tileX = Math.round(tile.x);
-    const tileY = Math.round(tile.y);
-    console.log(`[CanvasClickHandler] Click at tile (${tileX}, ${tileY}), height: ${tile.z}`);
-    const gridX = tileX - this.mapSize / 2;
-    const gridY = tileY - this.mapSize / 2;
+    const gridX = Math.round(tile.x);
+    const gridY = Math.round(tile.y);
+    console.log(`[CanvasClickHandler] Click at tile (${gridX}, ${gridY}), height: ${tile.z}`);
     this.gameWorker.postMessage({
       action: "query_infoCell",
       gridX,
@@ -1392,15 +1508,13 @@ var CanvasClickHandler = class {
   handleMouseMove(event) {
     const { screenX, screenY } = this.eventToScreenCoords(event);
     const tile = this.screenToTile(screenX, screenY);
-    if (this.hasTileChanged(tile)) {
-      this.lastHoveredTile = tile;
-      if (this.hoverCallback) {
-        this.hoverCallback(tile);
-      }
-      if (tile) {
-        const tileX = Math.round(tile.x);
-        const tileY = Math.round(tile.y);
-        console.log(`[CanvasClickHandler] Hover at tile (${tileX}, ${tileY})`);
+    if (tile) {
+      if (this.hasTileChanged(tile)) {
+        this.lastHoveredTile = tile;
+        if (this.hoverCallback) {
+          this.hoverCallback(tile);
+        }
+        console.log(`[CanvasClickHandler] Hovering tile (${tile.x.toFixed(2)}, ${tile.y.toFixed(2)}), height: ${tile.z.toFixed(2)})`);
       }
     }
   }
@@ -1442,7 +1556,6 @@ var CanvasClickHandler = class {
    */
   setHoverCallback(callback) {
     this.hoverCallback = callback;
-    console.log("[CanvasClickHandler] Hover callback set");
   }
   /**
    * Updates the shared buffer references.
@@ -1451,7 +1564,6 @@ var CanvasClickHandler = class {
   updateMapData(mapLvl, mapInfo) {
     this.mapLvl = mapLvl;
     this.mapInfo = mapInfo;
-    console.log("[CanvasClickHandler] Map data updated");
   }
   /**
    * Updates the projector configuration.
@@ -1465,7 +1577,6 @@ var CanvasClickHandler = class {
       SCALE_SIZE: conf.SCALE_SIZE,
       SCALE_MOD: conf.SCALE_MOD
     });
-    console.log("[CanvasClickHandler] Config updated:", conf);
   }
   /**
    * Returns the current hovered tile coordinates.
@@ -1484,7 +1595,6 @@ var CanvasClickHandler = class {
     this.canvas.style.cursor = "";
     this.hoverCallback = void 0;
     this.lastHoveredTile = null;
-    console.log("[CanvasClickHandler] Destroyed and cleaned up");
   }
 };
 
@@ -1544,7 +1654,17 @@ var GridMapDrawers = class {
       conf: this.conf
     };
     this.clickHandler = new CanvasClickHandler(deps);
-    console.log("[GridMapDrawers] CanvasClickHandler initialized");
+    this.clickHandler.setHoverCallback((tile) => {
+      if (tile) {
+        this.mapInfo[4] = tile.x;
+        this.mapInfo[5] = tile.y;
+        this.mapInfo[6] = tile.z;
+        this.mapInfo[7] = 1;
+      } else {
+        this.mapInfo[7] = 0;
+      }
+    });
+    console.log("[GridMapDrawers] CanvasClickHandler initialized with hover callback");
   }
   /**
    * Sets a callback function to be called when the hovered tile changes.
@@ -1720,11 +1840,6 @@ var callback_initWorker = (_data) => {
   handlers.send({
     action: "initCanvasMap",
     mapConf: DEFAULT_MAP_CONF
-  });
-  handlers.send({
-    action: "gridClick",
-    x: -19,
-    y: 70
   });
   handlers.send({ action: "startRender" });
 };

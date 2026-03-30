@@ -17,20 +17,22 @@ Replace the CSS-based grid overlay with a mathematically precise **inverse proje
 
 The plan is divided into **12 phases**, each building upon the previous:
 
-| Phase | File | Description |
-|-------|------|-------------|
-| 1 | `PLAN-PHASE-01-inverse-projection.md` | Add inverse projection methods to `IsometricProjector` |
-| 2 | `PLAN-PHASE-02-canvas-click-handler.md` | Create `CanvasClickHandler` class for click/mouse events |
-| 3 | `PLAN-PHASE-03-integration-grid-replacement.md` | Integrate with canvas renderer and replace grid system |
-| 4 | `PLAN-PHASE-04-hover-visual-feedback.md` | Add hover highlighting and coordinate tooltip |
-| 5 | `PLAN-PHASE-05-edge-detection.md` | Detect clicks near tile edges for precise placement |
-| 6 | `PLAN-PHASE-06-multi-tile-selection.md` | Drag-to-select multiple tiles with Shift key |
-| 7 | `PLAN-PHASE-07-context-menu.md` | Right-click context menu with tile actions |
-| 8 | `PLAN-PHASE-08-keyboard-modifiers.md` | Keyboard modifiers for different click actions |
-| 9 | `PLAN-PHASE-09-distance-measurement.md` | Measure distance between two tiles |
-| 10 | `PLAN-PHASE-10-path-visualization.md` | Draw path lines connecting tile waypoints |
-| 11 | `PLAN-PHASE-11-tile-history-undo-redo.md` | Undo/redo system for tile changes |
-| 12 | `PLAN-PHASE-12-performance-optimizations.md` | Spatial indexing and rendering optimizations |
+| Phase | File | Description | Status |
+|-------|------|-------------|--------|
+| 1 | `PLAN-PHASE-01-inverse-projection.md` | Add inverse projection methods to `IsometricProjector` | ✓ Completed |
+| 2 | `PLAN-PHASE-02-canvas-click-handler.md` | Create `CanvasClickHandler` class for click/mouse events | ✓ Completed |
+| 3 | `PLAN-PHASE-03-integration-grid-replacement.md` | Integrate with canvas renderer and replace grid system | ✓ Completed |
+| 4 | `PLAN-PHASE-04-hover-visual-feedback.md` | Add hover highlighting and coordinate tooltip | ✓ Completed |
+| 4b | `PLAN-PHASE-04b-height-aware-overlay.md` | Height-aware overlay with diagonal search | ✓ Completed |
+| 4c | `PLAN-PHASE-04c-height-aware-overlay-final.md` | Simplified height-aware overlay with direct tile lookup | ✓ Completed |
+| 5 | `PLAN-PHASE-05-edge-detection.md` | Detect clicks near tile edges for precise placement | Pending |
+| 6 | `PLAN-PHASE-06-multi-tile-selection.md` | Drag-to-select multiple tiles with Shift key | Pending |
+| 7 | `PLAN-PHASE-07-context-menu.md` | Right-click context menu with tile actions | Pending |
+| 8 | `PLAN-PHASE-08-keyboard-modifiers.md` | Keyboard modifiers for different click actions | Pending |
+| 9 | `PLAN-PHASE-09-distance-measurement.md` | Measure distance between two tiles | Pending |
+| 10 | `PLAN-PHASE-10-path-visualization.md` | Draw path lines connecting tile waypoints | Pending |
+| 11 | `PLAN-PHASE-11-tile-history-undo-redo.md` | Undo/redo system for tile changes | Pending |
+| 12 | `PLAN-PHASE-12-performance-optimizations.md` | Spatial indexing and rendering optimizations | Pending |
 
 ## Key Technical Decisions
 
