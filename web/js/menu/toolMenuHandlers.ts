@@ -108,9 +108,9 @@ export function handleAssetGroups(groups: Array<{ group: string; images: string[
     setSelectedAssetGroup(groups[0].group);
   }
 
-  // Re-render asset browser if in asset category
+  // Always re-render asset browser DOM so assets are visible when switching to asset category
   const toolMenuEl = container || document.getElementById('toolMenu');
-  if (toolMenuEl && getActiveCategory() === 'asset') {
+  if (toolMenuEl) {
     updateAssetBrowserDOM(toolMenuEl as HTMLElement);
   }
 }

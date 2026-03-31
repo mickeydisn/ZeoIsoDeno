@@ -59,6 +59,9 @@ export class AssetLoaderOpti {
 
     async function loadImage(url: string): Promise<ImageBitmap> {
       const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to load image: ${url} (status: ${response.status})`);
+      }
       return createImageBitmap(await response.blob()); // No <img>, direct GPU data
     }
     /*
@@ -72,14 +75,21 @@ export class AssetLoaderOpti {
     }
     */
 
+    // Use absolute path from origin to ensure correct resolution in web worker context
+    const baseUrl = typeof self !== 'undefined' && self.location ? self.location.origin : '';
+
     const promises = assList.map(
       async (assetInfo: TypeAssetGroupConfig): Promise<void> => {
         this.countLoad++;
         try {
-          const image: ImageBitmap = await loadImage("../../" + assetInfo.src);
+          // Remove leading "./" from src and build absolute path
+          const cleanSrc = assetInfo.src.replace(/^\.\//, '');
+          const url = `${baseUrl}/${cleanSrc}`;
+          console.log(`Loading asset: ${url}`);
+          const image: ImageBitmap = await loadImage(url);
           this.loadAssetImage(assetInfo, image);
         } catch (e) {
-          console.error(e);
+          console.error(`Failed to load asset ${assetInfo.src}:`, e);
         }
         return;
       },

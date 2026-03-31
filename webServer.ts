@@ -24,24 +24,25 @@ export const serveStatic = async (context: Context) => {
 
 export const serveStatic2 = async (ctx: Context) => {
   let filename = ctx.request.url.pathname;
-  console.log(filename);
+  console.log("serveStatic2:", filename);
   if (filename === "./") filename = "./index.html";
 
   if (filename.endsWith(".ts")) {
     console.log("TS", filename);
-    const jsFilename = filename.replace(".ts", ".js");
     const result = await esbuild.build({
       plugins: [...denoPlugins()],
-      entryPoints: ["./" + filename],
-      outfile: "./dist" + jsFilename,
+      entryPoints: ["." + filename],
+      write: false,
       bundle: true,
       format: "esm",
     });
     ctx.response.headers.set("Content-Type", "application/javascript");
-    ctx.response.body = await Deno.readFile("./dist" + jsFilename);
+    ctx.response.body = result.outputFiles[0].text;
     ctx.response.status = 200;
   } else {
-    await send(ctx, filename, { root: Deno.cwd() });
+    // Remove leading slash for send() to work correctly with root
+    const cleanPath = filename.replace(/^\//, '');
+    await send(ctx, cleanPath, { root: Deno.cwd() });
   }
 };
 
@@ -58,6 +59,9 @@ const port = 8081;
 app.use(async (ctx: Context, next) => {
   ctx.response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   ctx.response.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
+  // Add CORS headers for resource loading in workers
+  ctx.response.headers.set("Access-Control-Allow-Origin", "*");
+  ctx.response.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
   await next();
 });
 
