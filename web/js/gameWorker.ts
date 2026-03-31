@@ -312,6 +312,7 @@ export class GameWorker {
           ? data.y
           : this.y;
 
+        console.log(`Tool click at (${x}, ${y}) with active tool: ${toolRegistry.getActiveId()}`);
         const result = toolRegistry.executeAt(x, y, this.world);
 
         this.handler.send({

@@ -178,7 +178,7 @@ export class CanvasClickHandler {
         if (this.hoverCallback) {
           this.hoverCallback(tile);
         }
-        console.log(`[CanvasClickHandler] Hovering tile (${tile.x.toFixed(2)}, ${tile.y.toFixed(2)}), height: ${tile.z.toFixed(2)})`);
+        // console.log(`[CanvasClickHandler] Hovering tile (${tile.x.toFixed(2)}, ${tile.y.toFixed(2)}), height: ${tile.z.toFixed(2)})`);
       }
     }
   }
@@ -192,7 +192,7 @@ export class CanvasClickHandler {
         this.hoverCallback(null);
       }
       
-      console.log("[CanvasClickHandler] Mouse left canvas");
+      // console.log("[CanvasClickHandler] Mouse left canvas");
     }
   }
 

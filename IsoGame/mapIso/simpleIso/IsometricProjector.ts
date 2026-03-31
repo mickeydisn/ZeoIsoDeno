@@ -240,17 +240,6 @@ export class PointIso {
         });
 
 
-
-        // Les 4 coins du losange (top face) en screen :
-        // top    = projection de (tx,   ty,   z)
-        // right  = projection de (tx+1, ty,   z)
-        // bottom = projection de (tx+1, ty+1, z)
-        // left   = projection de (tx,   ty+1, z)
-        const project = (px: number, py: number, z) => {
-            const p = this.translatePoint(new PointIso(px, py, z));
-            return { x: p.x, y: p.y };
-        };
-
         // Pour chaque tile candidat (du plus devant au plus derrière),
         // tester si (screenX, screenY) est à l'intérieur du losange projeté
         for (const tile of candidates) {

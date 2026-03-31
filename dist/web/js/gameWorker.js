@@ -9701,10 +9701,6 @@ var IsometricProjector = class {
       const db = b.x + b.y - 2 * b.z * ratio;
       return da - db;
     });
-    const project = (px, py, z) => {
-      const p = this.translatePoint(new PointIso(px, py, z));
-      return { x: p.x, y: p.y };
-    };
     for (const tile of candidates) {
       const topY = this._getTileTopScreenYAtX(tile, screenX);
       if (topY !== null && screenY >= topY) {
@@ -11221,6 +11217,7 @@ var GameWorker = class {
       (data) => {
         const x = data.gridX !== void 0 ? data.gridX + this.x - 1 : data.x !== void 0 ? data.x : this.x;
         const y = data.gridY !== void 0 ? data.gridY + this.y - 1 : data.y !== void 0 ? data.y : this.y;
+        console.log(`Tool click at (${x}, ${y}) with active tool: ${toolRegistry.getActiveId()}`);
         const result = toolRegistry.executeAt(x, y, this.world);
         this.handler.send({
           action: "toolExecuted",

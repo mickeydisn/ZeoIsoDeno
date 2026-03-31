@@ -1311,10 +1311,6 @@ var IsometricProjector = class {
       const db = b.x + b.y - 2 * b.z * ratio;
       return da - db;
     });
-    const project = (px, py, z) => {
-      const p = this.translatePoint(new PointIso(px, py, z));
-      return { x: p.x, y: p.y };
-    };
     for (const tile of candidates) {
       const topY = this._getTileTopScreenYAtX(tile, screenX);
       if (topY !== null && screenY >= topY) {
@@ -1514,7 +1510,6 @@ var CanvasClickHandler = class {
         if (this.hoverCallback) {
           this.hoverCallback(tile);
         }
-        console.log(`[CanvasClickHandler] Hovering tile (${tile.x.toFixed(2)}, ${tile.y.toFixed(2)}), height: ${tile.z.toFixed(2)})`);
       }
     }
   }
@@ -1524,7 +1519,6 @@ var CanvasClickHandler = class {
       if (this.hoverCallback) {
         this.hoverCallback(null);
       }
-      console.log("[CanvasClickHandler] Mouse left canvas");
     }
   }
   // ============================================================================
