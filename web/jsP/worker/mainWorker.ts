@@ -1,5 +1,5 @@
 
-import { GridMapDrawers } from "../../IsoGame/mapIso/grid.ts";
+import { GridMapDrawers } from "../../../IsoGame/mapIso/grid.ts";
 
 // ============================================================================
 // CREATE WORKER

@@ -1,6 +1,6 @@
-import { GridMapDrawers } from "../../IsoGame/mapIso/grid.ts";
-import { GlobalState, initMenu, updatGlobalJSON } from "../js/gobalState.ts";
-import { MenuIconModule } from "../jsP/pallet/MenuIconModule.ts";
+import { GridMapDrawers } from "../../../IsoGame/mapIso/grid.ts";
+import { GlobalState, initMenu, updatGlobalJSON } from "../../js/gobalState.ts";
+import { MenuIconModule } from "../pallet/MenuIconModule.ts";
 
 
 
