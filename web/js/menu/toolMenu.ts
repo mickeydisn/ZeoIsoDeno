@@ -110,8 +110,71 @@ function wireEventHandlers(container: HTMLElement, gameWorker: Worker): void {
     });
   }
 
-  // Initialize tool list for default category
+  // Use event delegation for tool buttons so handlers survive DOM updates
+  // (handleToolList replaces #toolList innerHTML, destroying previously attached listeners)
+  const toolListEl = container.querySelector('#toolList') as HTMLElement;
+  if (toolListEl) {
+    toolListEl.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.tool-btn') as HTMLElement;
+      if (btn && btn.dataset.toolId) {
+        handleToolSelect(btn.dataset.toolId, container, gameWorker);
+      }
+    });
+  }
+
+  // Use event delegation for asset group buttons
+  const assetGroupListEl = container.querySelector('#assetGroupList') as HTMLElement;
+  if (assetGroupListEl) {
+    assetGroupListEl.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.asset-group-btn') as HTMLElement;
+      if (btn && btn.dataset.group) {
+        setSelectedAssetGroup(btn.dataset.group);
+        renderAssetBrowserDOM(container, gameWorker);
+      }
+    });
+  }
+
+  // Use event delegation for asset image buttons
+  const assetImageListEl = container.querySelector('#assetImageList') as HTMLElement;
+  if (assetImageListEl) {
+    assetImageListEl.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.asset-image-btn') as HTMLElement;
+      if (btn && btn.dataset.asset) {
+        handleAssetSelect(btn.dataset.asset, container, gameWorker);
+      }
+    });
+  }
+
+  // Use event delegation for building config buttons
+  const buildingConfigSelector = container.querySelector('#buildingConfigSelector') as HTMLElement;
+  if (buildingConfigSelector) {
+    buildingConfigSelector.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.tool-btn') as HTMLElement;
+      if (btn && btn.dataset.configId) {
+        handleBuildingConfigSelect(btn.dataset.configId, container, gameWorker);
+      }
+    });
+  }
+
+  // Building config grow loop slider - use event delegation on buildingConfigPanel
+  const buildingConfigPanel = container.querySelector('#buildingConfigPanel') as HTMLElement;
+  if (buildingConfigPanel) {
+    buildingConfigPanel.addEventListener('input', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.id === 'growLoopSlider') {
+        const value = parseInt((target as HTMLInputElement).value);
+        handleBuildingParamChange('growLoop', value, container, gameWorker);
+      } else if (target.id === 'endLoopSlider') {
+        const value = parseInt((target as HTMLInputElement).value);
+        handleBuildingParamChange('endLoop', value, container, gameWorker);
+      }
+    });
+  }
+
+  // Initialize tool list and asset browser for default category
   renderToolListDOM(container, gameWorker);
+  renderAssetBrowserDOM(container, gameWorker);
+  renderBuildingConfigSelectorDOM(container, gameWorker);
 }
 
 // ============================================================================
@@ -138,10 +201,6 @@ function handleCategoryChange(category: string, container: HTMLElement, gameWork
     renderAssetBrowserDOM(container, gameWorker);
   }
 
-  // Initialize building config handlers if in structure category
-  if (category === 'structure') {
-    initBuildingConfigHandlers(container, gameWorker);
-  }
 }
 
 function handleColorChange(color: string, container: HTMLElement, gameWorker: Worker): void {
@@ -309,14 +368,7 @@ function renderToolListDOM(container: HTMLElement, gameWorker: Worker): void {
   if (!toolListEl) return;
 
   toolListEl.innerHTML = renderToolList();
-
-  // Tool button click handlers
-  toolListEl.querySelectorAll('.tool-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const toolId = (btn as HTMLElement).dataset.toolId!;
-      handleToolSelect(toolId, container, gameWorker);
-    });
-  });
+  // Click handlers are managed via event delegation in wireEventHandlers
 }
 
 function handleToolSelect(toolId: string, container: HTMLElement, gameWorker: Worker): void {
@@ -343,25 +395,10 @@ function renderAssetBrowserDOM(container: HTMLElement, gameWorker: Worker): void
   // Render group list
   assetGroupListEl.innerHTML = renderAssetGroupList();
 
-  // Group button click handlers
-  assetGroupListEl.querySelectorAll('.asset-group-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const group = (btn as HTMLElement).dataset.group!;
-      setSelectedAssetGroup(group);
-      renderAssetBrowserDOM(container, gameWorker);
-    });
-  });
-
   // Render images for selected group
   assetImageListEl.innerHTML = renderAssetImageList();
 
-  // Image button click handlers
-  assetImageListEl.querySelectorAll('.asset-image-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const assetId = (btn as HTMLElement).dataset.asset!;
-      handleAssetSelect(assetId, container, gameWorker);
-    });
-  });
+  // Click handlers are managed via event delegation in wireEventHandlers
 }
 
 function handleAssetSelect(assetId: string, container: HTMLElement, gameWorker: Worker): void {
@@ -393,42 +430,12 @@ function handleAssetSelect(assetId: string, container: HTMLElement, gameWorker: 
 // Building Configuration Handlers
 // ============================================================================
 
-function initBuildingConfigHandlers(container: HTMLElement, gameWorker: Worker): void {
-  // Render building config selector
-  renderBuildingConfigSelectorDOM(container, gameWorker);
-
-  // Grow loop slider handler
-  const growLoopSlider = container.querySelector('#growLoopSlider') as HTMLInputElement;
-  if (growLoopSlider) {
-    growLoopSlider.addEventListener('input', (e) => {
-      const value = parseInt((e.target as HTMLInputElement).value);
-      handleBuildingParamChange('growLoop', value, container, gameWorker);
-    });
-  }
-
-  // End loop slider handler
-  const endLoopSlider = container.querySelector('#endLoopSlider') as HTMLInputElement;
-  if (endLoopSlider) {
-    endLoopSlider.addEventListener('input', (e) => {
-      const value = parseInt((e.target as HTMLInputElement).value);
-      handleBuildingParamChange('endLoop', value, container, gameWorker);
-    });
-  }
-}
-
 function renderBuildingConfigSelectorDOM(container: HTMLElement, gameWorker: Worker): void {
   const selectorEl = container.querySelector('#buildingConfigSelector') as HTMLElement;
   if (!selectorEl) return;
 
   selectorEl.innerHTML = renderBuildingConfigSelector();
-
-  // Config button click handlers
-  selectorEl.querySelectorAll('.tool-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const configId = (btn as HTMLElement).dataset.configId!;
-      handleBuildingConfigSelect(configId, container, gameWorker);
-    });
-  });
+  // Click handlers are managed via event delegation in wireEventHandlers
 }
 
 function handleBuildingConfigSelect(configId: string, container: HTMLElement, gameWorker: Worker): void {

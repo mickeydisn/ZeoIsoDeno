@@ -109,7 +109,6 @@ export class GridMapDrawers {
           cell.addEventListener("click", (event) => {
             const target = event.target as HTMLElement;
             if (!target) return;
-            console.log(target);
             // const i = Number(target.getAttribute("i")) || 0;
             // const j = Number(target.getAttribute("j")) || 0;
             const clickX = this.mod * (-i + this.gridSize / 2);

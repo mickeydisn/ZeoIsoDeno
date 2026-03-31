@@ -155,11 +155,14 @@ function getColorFilterState() {
 function areColorFiltersDefault() {
   return activeHue === 0 && activeContrast === 100 && activeSaturation === 100 && activeBrightness === 100;
 }
-function getBuildingConfigs2() {
+function getBuildingConfigs() {
   return buildingConfigs;
 }
 function setBuildingConfigs(configs) {
   buildingConfigs = configs;
+}
+function getActiveBuildingConfigId() {
+  return activeBuildingConfigId;
 }
 function setActiveBuildingConfigId(configId) {
   activeBuildingConfigId = configId;
@@ -575,7 +578,59 @@ function wireEventHandlers(container, gameWorker2) {
       handleFilterReset(container, gameWorker2);
     });
   }
+  const toolListEl = container.querySelector("#toolList");
+  if (toolListEl) {
+    toolListEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".tool-btn");
+      if (btn && btn.dataset.toolId) {
+        handleToolSelect(btn.dataset.toolId, container, gameWorker2);
+      }
+    });
+  }
+  const assetGroupListEl = container.querySelector("#assetGroupList");
+  if (assetGroupListEl) {
+    assetGroupListEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".asset-group-btn");
+      if (btn && btn.dataset.group) {
+        setSelectedAssetGroup(btn.dataset.group);
+        renderAssetBrowserDOM(container, gameWorker2);
+      }
+    });
+  }
+  const assetImageListEl = container.querySelector("#assetImageList");
+  if (assetImageListEl) {
+    assetImageListEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".asset-image-btn");
+      if (btn && btn.dataset.asset) {
+        handleAssetSelect(btn.dataset.asset, container, gameWorker2);
+      }
+    });
+  }
+  const buildingConfigSelector = container.querySelector("#buildingConfigSelector");
+  if (buildingConfigSelector) {
+    buildingConfigSelector.addEventListener("click", (e) => {
+      const btn = e.target.closest(".tool-btn");
+      if (btn && btn.dataset.configId) {
+        handleBuildingConfigSelect(btn.dataset.configId, container, gameWorker2);
+      }
+    });
+  }
+  const buildingConfigPanel = container.querySelector("#buildingConfigPanel");
+  if (buildingConfigPanel) {
+    buildingConfigPanel.addEventListener("input", (e) => {
+      const target = e.target;
+      if (target.id === "growLoopSlider") {
+        const value = parseInt(target.value);
+        handleBuildingParamChange("growLoop", value, container, gameWorker2);
+      } else if (target.id === "endLoopSlider") {
+        const value = parseInt(target.value);
+        handleBuildingParamChange("endLoop", value, container, gameWorker2);
+      }
+    });
+  }
   renderToolListDOM(container, gameWorker2);
+  renderAssetBrowserDOM(container, gameWorker2);
+  renderBuildingConfigSelectorDOM(container, gameWorker2);
 }
 function handleCategoryChange(category, container, gameWorker2) {
   setActiveCategory(category);
@@ -587,9 +642,6 @@ function handleCategoryChange(category, container, gameWorker2) {
   renderToolListDOM(container, gameWorker2);
   if (category === "asset") {
     renderAssetBrowserDOM(container, gameWorker2);
-  }
-  if (category === "structure") {
-    initBuildingConfigHandlers(container, gameWorker2);
   }
 }
 function handleColorChange(color, container, gameWorker2) {
@@ -720,12 +772,6 @@ function renderToolListDOM(container, gameWorker2) {
   if (!toolListEl)
     return;
   toolListEl.innerHTML = renderToolList();
-  toolListEl.querySelectorAll(".tool-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const toolId = btn.dataset.toolId;
-      handleToolSelect(toolId, container, gameWorker2);
-    });
-  });
 }
 function handleToolSelect(toolId, container, gameWorker2) {
   setActiveToolId(toolId);
@@ -743,20 +789,7 @@ function renderAssetBrowserDOM(container, gameWorker2) {
   if (!assetGroupListEl || !assetImageListEl)
     return;
   assetGroupListEl.innerHTML = renderAssetGroupList();
-  assetGroupListEl.querySelectorAll(".asset-group-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const group = btn.dataset.group;
-      setSelectedAssetGroup(group);
-      renderAssetBrowserDOM(container, gameWorker2);
-    });
-  });
   assetImageListEl.innerHTML = renderAssetImageList();
-  assetImageListEl.querySelectorAll(".asset-image-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const assetId = btn.dataset.asset;
-      handleAssetSelect(assetId, container, gameWorker2);
-    });
-  });
 }
 function handleAssetSelect(assetId, container, gameWorker2) {
   setActiveAssetId(assetId);
@@ -776,38 +809,15 @@ function handleAssetSelect(assetId, container, gameWorker2) {
     assetId: fullKey
   });
 }
-function initBuildingConfigHandlers(container, gameWorker2) {
-  renderBuildingConfigSelectorDOM(container, gameWorker2);
-  const growLoopSlider = container.querySelector("#growLoopSlider");
-  if (growLoopSlider) {
-    growLoopSlider.addEventListener("input", (e) => {
-      const value = parseInt(e.target.value);
-      handleBuildingParamChange("growLoop", value, container, gameWorker2);
-    });
-  }
-  const endLoopSlider = container.querySelector("#endLoopSlider");
-  if (endLoopSlider) {
-    endLoopSlider.addEventListener("input", (e) => {
-      const value = parseInt(e.target.value);
-      handleBuildingParamChange("endLoop", value, container, gameWorker2);
-    });
-  }
-}
 function renderBuildingConfigSelectorDOM(container, gameWorker2) {
   const selectorEl = container.querySelector("#buildingConfigSelector");
   if (!selectorEl)
     return;
   selectorEl.innerHTML = renderBuildingConfigSelector();
-  selectorEl.querySelectorAll(".tool-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const configId = btn.dataset.configId;
-      handleBuildingConfigSelect(configId, container, gameWorker2);
-    });
-  });
 }
 function handleBuildingConfigSelect(configId, container, gameWorker2) {
   setActiveBuildingConfigId(configId);
-  const configs = getBuildingConfigs2();
+  const configs = getBuildingConfigs();
   const config = configs.find((c) => c.id === configId);
   if (config) {
     setBuildingParams(config.defaultGrowLoop, config.defaultEndLoop);
@@ -1232,7 +1242,6 @@ var GridMapDrawers = class {
           const target = event.target;
           if (!target)
             return;
-          console.log(target);
           const clickX = this.mod * (-i + this.gridSize / 2);
           const clickY = this.mod * (-j + this.gridSize / 2);
           console.log("click :", this.mod, clickX, clickY);
