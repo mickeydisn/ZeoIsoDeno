@@ -2078,6 +2078,7 @@ var TilesActions = class _TilesActions {
     });
   }
   lvlFlatSquare(conf) {
+    console.log(`AAA Flattening terrain at (${conf.x}, ${conf.y}) with size ${conf.size}`);
     const tile = this.fm.getTile(conf.x, conf.y);
     const box = new TilesMatrix(conf.size, conf.x, conf.y);
     box.tiles.forEach((row) => {
@@ -10513,6 +10514,7 @@ var ToolRegistry = class _ToolRegistry {
   }
   executeAt(x, y, world) {
     if (this.activeTool) {
+      console.log(`[ToolRegistry] Executing tool '${this.activeTool.name}' at (${x}, ${y}) with brush size ${this.brushSize}`);
       return this.activeTool.execute(x, y, this.brushSize, world);
     }
   }
@@ -10615,6 +10617,7 @@ var flattenTool = createTool({
   icon: "\u23F9\uFE0F",
   category: "terrain",
   execute(x, y, brushSize, _world) {
+    console.log(`Flattening terrain at (${x}, ${y}) with brush size ${brushSize}`);
     tilesActions.doAction({
       func: "lvlFlatSquare",
       x,

@@ -271,6 +271,7 @@ export class TilesActions {
   }
 
   lvlFlatSquare(conf: TypeTileActionConfig) {
+    console.log(`AAA Flattening terrain at (${conf.x}, ${conf.y}) with size ${conf.size}`);
     const tile = this.fm.getTile(conf.x, conf.y);
     const box = new TilesMatrix(conf.size, conf.x, conf.y);
     box.tiles.forEach((row) => {

@@ -62,6 +62,7 @@ export const flattenTool = createTool({
   icon: "⏹️",
   category: "terrain",
   execute(x: number, y: number, brushSize: number, _world: World) {
+     console.log(`Flattening terrain at (${x}, ${y}) with brush size ${brushSize}`);
     tilesActions.doAction({
       func: "lvlFlatSquare",
       x,

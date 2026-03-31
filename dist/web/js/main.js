@@ -578,6 +578,47 @@ function wireEventHandlers(container, gameWorker2) {
       handleFilterReset(container, gameWorker2);
     });
   }
+  const toolListEl = container.querySelector("#toolList");
+  if (toolListEl) {
+    toolListEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".tool-btn");
+      if (btn) {
+        const toolId = btn.dataset.toolId;
+        handleToolSelect(toolId, container, gameWorker2);
+      }
+    });
+  }
+  const assetGroupListEl = container.querySelector("#assetGroupList");
+  if (assetGroupListEl) {
+    assetGroupListEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".asset-group-btn");
+      if (btn) {
+        const group = btn.dataset.group;
+        setSelectedAssetGroup(group);
+        renderAssetBrowserDOM(container, gameWorker2);
+      }
+    });
+  }
+  const assetImageListEl = container.querySelector("#assetImageList");
+  if (assetImageListEl) {
+    assetImageListEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".asset-image-btn");
+      if (btn) {
+        const assetId = btn.dataset.asset;
+        handleAssetSelect(assetId, container, gameWorker2);
+      }
+    });
+  }
+  const buildingConfigSelectorEl = container.querySelector("#buildingConfigSelector");
+  if (buildingConfigSelectorEl) {
+    buildingConfigSelectorEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".tool-btn[data-config-id]");
+      if (btn) {
+        const configId = btn.dataset.configId;
+        handleBuildingConfigSelect(configId, container, gameWorker2);
+      }
+    });
+  }
   renderToolListDOM(container, gameWorker2);
 }
 function handleCategoryChange(category, container, gameWorker2) {
@@ -723,12 +764,6 @@ function renderToolListDOM(container, gameWorker2) {
   if (!toolListEl)
     return;
   toolListEl.innerHTML = renderToolList();
-  toolListEl.querySelectorAll(".tool-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const toolId = btn.dataset.toolId;
-      handleToolSelect(toolId, container, gameWorker2);
-    });
-  });
 }
 function handleToolSelect(toolId, container, gameWorker2) {
   setActiveToolId(toolId);
@@ -746,20 +781,7 @@ function renderAssetBrowserDOM(container, gameWorker2) {
   if (!assetGroupListEl || !assetImageListEl)
     return;
   assetGroupListEl.innerHTML = renderAssetGroupList();
-  assetGroupListEl.querySelectorAll(".asset-group-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const group = btn.dataset.group;
-      setSelectedAssetGroup(group);
-      renderAssetBrowserDOM(container, gameWorker2);
-    });
-  });
   assetImageListEl.innerHTML = renderAssetImageList();
-  assetImageListEl.querySelectorAll(".asset-image-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const assetId = btn.dataset.asset;
-      handleAssetSelect(assetId, container, gameWorker2);
-    });
-  });
 }
 function handleAssetSelect(assetId, container, gameWorker2) {
   setActiveAssetId(assetId);
@@ -801,12 +823,6 @@ function renderBuildingConfigSelectorDOM(container, gameWorker2) {
   if (!selectorEl)
     return;
   selectorEl.innerHTML = renderBuildingConfigSelector();
-  selectorEl.querySelectorAll(".tool-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const configId = btn.dataset.configId;
-      handleBuildingConfigSelect(configId, container, gameWorker2);
-    });
-  });
 }
 function handleBuildingConfigSelect(configId, container, gameWorker2) {
   setActiveBuildingConfigId(configId);

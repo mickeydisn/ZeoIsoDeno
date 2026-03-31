@@ -110,6 +110,56 @@ function wireEventHandlers(container: HTMLElement, gameWorker: Worker): void {
     });
   }
 
+  // TOOL BUTTONS - Use event delegation on #toolList container
+  // This ensures handlers work even after HTML is dynamically replaced by handleToolList
+  const toolListEl = container.querySelector('#toolList') as HTMLElement;
+  if (toolListEl) {
+    toolListEl.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.tool-btn');
+      if (btn) {
+        const toolId = (btn as HTMLElement).dataset.toolId!;
+        handleToolSelect(toolId, container, gameWorker);
+      }
+    });
+  }
+
+  // ASSET GROUP BUTTONS - Use event delegation on #assetGroupList container
+  const assetGroupListEl = container.querySelector('#assetGroupList') as HTMLElement;
+  if (assetGroupListEl) {
+    assetGroupListEl.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.asset-group-btn');
+      if (btn) {
+        const group = (btn as HTMLElement).dataset.group!;
+        setSelectedAssetGroup(group);
+        renderAssetBrowserDOM(container, gameWorker);
+      }
+    });
+  }
+
+  // ASSET IMAGE BUTTONS - Use event delegation on #assetImageList container
+  const assetImageListEl = container.querySelector('#assetImageList') as HTMLElement;
+  if (assetImageListEl) {
+    assetImageListEl.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.asset-image-btn');
+      if (btn) {
+        const assetId = (btn as HTMLElement).dataset.asset!;
+        handleAssetSelect(assetId, container, gameWorker);
+      }
+    });
+  }
+
+  // BUILDING CONFIG BUTTONS - Use event delegation on #buildingConfigSelector container
+  const buildingConfigSelectorEl = container.querySelector('#buildingConfigSelector') as HTMLElement;
+  if (buildingConfigSelectorEl) {
+    buildingConfigSelectorEl.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.tool-btn[data-config-id]');
+      if (btn) {
+        const configId = (btn as HTMLElement).dataset.configId!;
+        handleBuildingConfigSelect(configId, container, gameWorker);
+      }
+    });
+  }
+
   // Initialize tool list for default category
   renderToolListDOM(container, gameWorker);
 }
@@ -309,14 +359,8 @@ function renderToolListDOM(container: HTMLElement, gameWorker: Worker): void {
   if (!toolListEl) return;
 
   toolListEl.innerHTML = renderToolList();
-
-  // Tool button click handlers
-  toolListEl.querySelectorAll('.tool-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const toolId = (btn as HTMLElement).dataset.toolId!;
-      handleToolSelect(toolId, container, gameWorker);
-    });
-  });
+  // Note: Click handlers are now handled via event delegation in wireEventHandlers()
+  // This ensures handlers work even after HTML is dynamically replaced
 }
 
 function handleToolSelect(toolId: string, container: HTMLElement, gameWorker: Worker): void {
@@ -343,25 +387,10 @@ function renderAssetBrowserDOM(container: HTMLElement, gameWorker: Worker): void
   // Render group list
   assetGroupListEl.innerHTML = renderAssetGroupList();
 
-  // Group button click handlers
-  assetGroupListEl.querySelectorAll('.asset-group-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const group = (btn as HTMLElement).dataset.group!;
-      setSelectedAssetGroup(group);
-      renderAssetBrowserDOM(container, gameWorker);
-    });
-  });
-
   // Render images for selected group
   assetImageListEl.innerHTML = renderAssetImageList();
 
-  // Image button click handlers
-  assetImageListEl.querySelectorAll('.asset-image-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const assetId = (btn as HTMLElement).dataset.asset!;
-      handleAssetSelect(assetId, container, gameWorker);
-    });
-  });
+  // Note: Click handlers are now handled via event delegation in wireEventHandlers()
 }
 
 function handleAssetSelect(assetId: string, container: HTMLElement, gameWorker: Worker): void {
@@ -422,13 +451,7 @@ function renderBuildingConfigSelectorDOM(container: HTMLElement, gameWorker: Wor
 
   selectorEl.innerHTML = renderBuildingConfigSelector();
 
-  // Config button click handlers
-  selectorEl.querySelectorAll('.tool-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const configId = (btn as HTMLElement).dataset.configId!;
-      handleBuildingConfigSelect(configId, container, gameWorker);
-    });
-  });
+  // Note: Click handlers are now handled via event delegation in wireEventHandlers()
 }
 
 function handleBuildingConfigSelect(configId: string, container: HTMLElement, gameWorker: Worker): void {

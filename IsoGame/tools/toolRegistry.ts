@@ -72,6 +72,7 @@ export class ToolRegistry {
 
   executeAt(x: number, y: number, world: World): Record<string, unknown> | void {
     if (this.activeTool) {
+      console.log(`[ToolRegistry] Executing tool '${this.activeTool.name}' at (${x}, ${y}) with brush size ${this.brushSize}`); 
       return this.activeTool.execute(x, y, this.brushSize, world);
     }
   }
