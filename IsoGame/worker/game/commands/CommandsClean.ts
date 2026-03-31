@@ -4,8 +4,7 @@ import { FactoryMap } from "../../../map/factory/factoryMap.ts";
 import { Tile } from "../../../map/object/tile.ts";
 import { 
     IComMessage,
-    ILocatedComMessage,
-    ICommandStatic,
+   ../../../../IsoGame/map/tileActions.tsommandStatic,
     TComMessageParams,
     BaseCommand
 } from "../../shared/actions/TypeCommand.ts";

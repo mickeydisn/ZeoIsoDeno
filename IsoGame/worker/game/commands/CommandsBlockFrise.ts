@@ -2,7 +2,7 @@
 import { iterateSquare } from "../../../map/action/TileUtil.ts";
 import { FactoryMap } from "../../../map/factory/factoryMap.ts";
 import { Tile } from "../../../map/object/tile.ts";
-import { ILocatedComMessage, ICommand, ICommandStatic, TComMessageParams, BaseCommand } from "../../shared/actions/TypeCommand.ts";
+import { ILocatedComMessage, I../../../../IsoGame/map/tileActions.tsomMessageParams, BaseCommand } from "../../shared/actions/TypeCommand.ts";
 
 // ----------------------------------------------------------------------
 // Action Config Definitions (for Command Context)

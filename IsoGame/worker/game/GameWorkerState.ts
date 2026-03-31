@@ -1,9 +1,9 @@
 import {
   CanvasMapDrawers,
   CanvasMapDrawersConf,
-} from "../../mapIso/canvasMapDrawer.ts";
-import { AssetLoaderOpti } from "../../mapIso/asset/assetLoaderOpti.ts";
-import { World } from "../../word.ts";
+} from "../../../IsoGame/mapIso/canvasMapDrawer.ts";
+import { AssetLoaderOpti } from "../../../IsoGame/mapIso/asset/assetLoaderOpti.ts";
+import { World } from "../../../IsoGame/word.ts";
 
 export class GameWorker {
   private world = new World();

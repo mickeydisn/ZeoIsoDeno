@@ -82,18 +82,6 @@ function stopLoop() {
   _shouldRun = false;
 }
 
-/*
-// Attach Active Page listeners
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") {
-    handlers.send({ action: "startRender" });
-    startLoop();
-  } else {
-    handlers.send({ action: "stopRender" });
-    stopLoop();
-  }
-});
-*/
 
 // ============================================================================
 // == Start Drawing and Worker Loop
@@ -103,42 +91,3 @@ startLoop();
 
 
 
-
-// ============================================================================
-// == Event Handeler
-// ============================================================================
-
-/*
-MessageHandler.initialize(gameWorker)
-  .registerCommands(AllCommandClasses);
-*/
-// Later, anywhere in your code:
-// const handler = MessageHandler.getInstance();
-// handler.send({ func: "myFunction", id: "tile-1", value: 42 });
-
-
-
-
-// ============================================================================
-// == Interface Responce Handlers.
-// ============================================================================
-
-/*
-handlers.append([
-  ["FPS", (data) => {
-    const fpsDisplay = document.getElementById("fps")!;
-    fpsDisplay.textContent = `FPS: ${data.fps}`;
-  }],
-  ["infoCell", (data) => {
-    updateInfoCell(data);
-  }],
-]);
-*/
-
-
-
-/*
-initKeyBoard(gameWorker);
-initFlyMenu(gameWorker);
-infoMenu(gameWorker);
-*/

@@ -73,7 +73,7 @@ const callback_initWorker = (_data: GameHandlerData): void => {
       SCALE_MOD: 1,
     },
   });
-
+  /* CITY
   handlers.send({
     action: "gridClick",
     x: -19,
