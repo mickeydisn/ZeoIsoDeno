@@ -144,7 +144,7 @@ export function renderAssetPanel(): string {
       ${renderSuffixSelector(activeAssetSuffix)}
       ${renderFilterControls(filterState)}
       ${renderSelectedAssetCard(activeAssetId, activeAssetSuffix)}
-      <div id="assetImageList"></div>
+      <div id="assetImageList">${renderAssetImageList()}</div>
       ${renderAssetGroupList()}
     </div>
   `;
@@ -208,7 +208,11 @@ export function renderAssetGroupList(): string {
   const selectedAssetGroup = getSelectedAssetGroup();
 
   if (assetGroups.length === 0) {
-    return '<div class="asset-empty">Loading assets...</div>';
+    return `
+      <div id="assetGroupList">
+        <div class="asset-empty">Loading assets...</div>
+      </div>
+    `;
   }
 
   return `
