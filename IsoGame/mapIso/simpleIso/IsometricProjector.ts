@@ -107,4 +107,192 @@ export class PointIso {
 
         return new PointIso(x, y);
     }
+
+
+
+        /**
+     * Converts tile coordinates to screen coordinates.
+     * Wrapper around translatePoint for clarity in hover rendering and edge detection.
+     * @param tileX The tile X coordinate.
+     * @param tileY The tile Y coordinate.
+     * @param tileZ The tile Z (height) coordinate. Defaults to 0.
+     * @returns Screen coordinates as { x: number, y: number }.
+     */
+    tileToScreen(isoPoint: PointIso): { x: number; y: number } {
+        const point = this.translatePoint(isoPoint);
+        return { x: point.x, y: point.y };
+    }
+
+    /**
+     * Converts 2D screen coordinates back to 3D tile coordinates (inverse projection).
+     * @param screenX The screen X coordinate.
+     * @param screenY The screen Y coordinate.
+     * @param tileZ The known tile Z (height) coordinate. Defaults to 0.
+     * @returns The tile coordinates as a PointIso, or null if computation fails.
+     */
+    screenToTile(screenX: number, screenY: number, tileZ: number = 0): PointIso | null {
+        const { originX, originY, offsetX, offsetY, SCALE_SIZE, SCALE_MOD } = this.conf;
+
+        const sx = 32 * SCALE_SIZE;
+        const sy = 16 * SCALE_SIZE;
+
+        // Adjust for origin and Z offset
+        const adjustedDx = screenX - originX;
+        const adjustedDy = originY - screenY - (tileZ * ISO_LVL_SCALE / SCALE_MOD);
+
+        // Solve the linear system for tile coordinates
+        // dx = sx * (tileX - tileY) => tileX - tileY = dx / sx
+        // dy = sy * (tileX + tileY) => tileX + tileY = dy / sy
+        const tileXRaw = (adjustedDx / sx + adjustedDy / sy) / 2;
+        const tileYRaw = (adjustedDy / sy - adjustedDx / sx) / 2;
+
+        // Add back the panning offsets
+        const tileX = Math.floor(tileXRaw  + offsetX);
+        const tileY = Math.floor(tileYRaw  + offsetY);
+
+        return new PointIso(tileX, tileY, tileZ);
+    }
+
+    private _isPointInTileFace(tile: PointIso, screenX: number, screenY: number): boolean {
+        const { x: tx, y: ty, z } = tile;
+
+        const top    = this.translatePoint(new PointIso(tx,     ty,     z));
+        const right  = this.translatePoint(new PointIso(tx + 1, ty,     z));
+        const bottom = this.translatePoint(new PointIso(tx + 1, ty + 1, z));
+        const left   = this.translatePoint(new PointIso(tx,     ty + 1, z));
+
+        // Diamond center and half-extents (top face only)
+        const cx   = (top.x + bottom.x) / 2;
+        const topY = top.y;
+        const botY = bottom.y;
+        const halfW = (right.x - left.x) / 2;
+
+        // if (halfW <= 0 || botY <= topY) return false;
+
+        // Normalized coords relative to diamond center
+        const cy = (topY + botY) / 2;
+        const halfH = (botY - topY) / 2;
+
+        const u = (screenX - cx) / halfW;
+        const v = (screenY - cy) / halfH;
+
+        // Standard rhombus test for top face
+        if (Math.abs(u) + Math.abs(v) <= 1.0) return true;
+
+        // Also accept clicks on the visible side walls (below the top face).
+        // The walls extend downward from the left/right edges.
+        // Allow a pixel slop of one tile-height downward.
+        const wallHeight = halfH; // roughly the height of one side face in screen pixels
+        if (
+            Math.abs(u) <= 1.0 &&
+            v > 1.0 &&
+            v <= 1.0 + wallHeight / halfH
+        ) return true;
+
+        return false;
+    }
+    
+    screenToTileWithHeight(
+        screenX: number,
+        screenY: number,
+        mapLvl: Float32Array,
+        mapSize: number,
+        mapInfo: Float32Array,
+    ): PointIso | null {
+
+        const { originX, offsetX, offsetY, SCALE_SIZE, SCALE_MOD } = this.conf;
+        const sx = 32 * SCALE_SIZE;
+        const avgLvl = mapInfo[8];
+        const ratio = ISO_LVL_SCALE / SCALE_MOD / (2 * 16 * SCALE_SIZE);
+
+        const candidates: PointIso[] = [];
+
+        for (let ty = 0; ty < mapSize; ty++) {
+            for (let tx = 0; tx < mapSize; tx++) {
+                const z = mapLvl[tx * mapSize + ty];
+
+                // Fast pre-filter on X: the rhombus spans ±sx around its center X
+                const cx = originX + sx * ((tx - offsetX) - (ty - offsetY));
+                if (Math.abs(screenX - cx) > sx) continue;
+
+                candidates.push(new PointIso(tx, ty, z));
+            }
+        }
+
+        // Sort front-to-back: lower depth value = rendered last = visually on top
+        candidates.sort((a, b) => {
+            const da = a.x + a.y - 2 * a.z * ratio;
+            const db = b.x + b.y - 2 * b.z * ratio;
+            return db - da;
+        });
+
+        // Return the first (frontmost) tile whose top face contains the point
+        for (const tile of candidates) {
+            if (this._isPointInTileFace(tile, screenX, screenY)) {
+                return tile;
+            }
+        }
+
+        return null;
+    }
+
+
+
+    /**
+     * Gets the list of tile coordinates along a NE-SW diagonal (x - y = constant) 
+     * passing through a given mouse position.
+     * @param screenX The screen X coordinate of the mouse.
+     * @param screenY The screen Y coordinate of the mouse.
+     * @param mapSize The size of the map grid (width and height).
+     * @returns An array of PointIso objects representing the tile coordinates along the diagonal.
+     */
+    getNESWDiagonalCoords(
+        screenX: number,
+        screenY: number,
+        mapSize: number
+    ): PointIso[] {
+        const coords: PointIso[] = [];
+
+        // Convert screen coordinates to tile coordinates
+        const tile = this.screenToTile(screenX, screenY, 0);
+        if (!tile) return coords;
+
+        const xx = Math.round(tile.x);
+        const yy = Math.round(tile.y);
+
+        // Calculate the NE-SW diagonal constant: x - y = constant
+        const diagConstant = xx - yy;
+
+        // Calculate bounds based on tile position to extend to grid edges
+        // For NE-SW diagonal: gy = gx - diagConstant
+        // Need: 0 <= gx < mapSize and 0 <= gy < mapSize
+        
+        // Max dx when gx is at max (mapSize-1)
+        const maxDx = (mapSize - 1) - xx;
+        // Min dx when gx is at min (0)
+        const minDx = -xx;
+        
+        // Also need to ensure gy stays in bounds
+        // gy = (xx + dx) - diagConstant = yy + dx
+        // So gy is in bounds when: 0 <= yy + dx < mapSize
+        // This means: -yy <= dx < mapSize - yy
+        
+        // Combine both constraints
+        const minDxGy = -yy;
+        const maxDxGy = (mapSize - 1) - yy;
+        
+        const finalMinDx = Math.max(minDx, minDxGy);
+        const finalMaxDx = Math.min(maxDx, maxDxGy);
+
+        // Collect all tiles along the diagonal within the bounds
+        for (let dx = finalMinDx + 1; dx < finalMaxDx; dx++) {
+            const gx = xx + dx;
+            const gy = yy + dx; // Since gy = yy + dx (from gy = gx - diagConstant and diagConstant = xx - yy)
+
+            coords.push(new PointIso(gx, gy));
+        }
+
+        return coords;
+    }
+
   }

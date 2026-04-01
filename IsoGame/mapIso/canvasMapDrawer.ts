@@ -447,6 +447,10 @@ export class CanvasMapDrawers {
         this.drawTile(x, y);
       }
     }
+
+    // Draw grid overlay to show tile boundaries
+    this.drawGridOverlay();
+
     // iso.addImage();
     this._cleanCache();
 
@@ -480,6 +484,105 @@ export class CanvasMapDrawers {
             console.log('tileDelete');
 
         }
+    }
+  }
+
+  // --- 
+
+  /**
+   * Draws a shape's paths and optional centered text.
+   * @param shape The shape to draw
+   * @param fillColor Optional fill color
+   * @param text Optional text to display in the center
+   */
+  private drawShapePaths(shape: Shape, fillColor?: string, text?: string): void {
+    const allProjectedPoints: { x: number; y: number }[] = [];
+
+    shape.orderedPaths().forEach((path) => {
+      const translatedPoints = path.points.map((p) => 
+        this.isoProject.translatePoint(new PointIso(p.x, p.y, p.z))
+      );
+      
+      // Store points to calculate the center later
+      allProjectedPoints.push(...translatedPoints);
+
+      this.canvasCtx.beginPath();
+      translatedPoints.forEach((p, index) => {
+        if (index === 0) {
+          this.canvasCtx.moveTo(p.x, p.y);
+        } else {
+          this.canvasCtx.lineTo(p.x, p.y);
+        }
+      });
+      this.canvasCtx.closePath();
+      
+      if (fillColor) {
+        this.canvasCtx.fillStyle = fillColor;
+        this.canvasCtx.fill();
+      }
+      this.canvasCtx.stroke();
+    });
+
+    // --- Draw Centered Text ---
+    if (text && allProjectedPoints.length > 0) {
+      // 1. Calculate the average X and Y (Centroid)
+      const centerX = allProjectedPoints.reduce((sum, p) => sum + p.x, 0) / allProjectedPoints.length;
+      const centerY = allProjectedPoints.reduce((sum, p) => sum + p.y, 0) / allProjectedPoints.length;
+
+      // 2. Set text styles
+      this.canvasCtx.fillStyle = '#ffffff'; // Set your desired text color
+      this.canvasCtx.font = '14px sans-serif'; 
+      this.canvasCtx.textAlign = 'center';     // Horizontal centering
+      this.canvasCtx.textBaseline = 'middle';  // Vertical centering
+
+      // 3. Render
+      this.canvasCtx.fillText(text, centerX, centerY);
+    }
+  }
+
+  /**
+   * Draws a grid overlay showing tile boundaries.
+   * Grid is drawn at the average height (plan) of the grid, not aligned with individual tile heights.
+   */
+  private drawGridOverlay(): void {
+    const size = this.conf.DRAW_TILE_COUNT;
+    
+    // Grid line color - semi-transparent red
+    const gridColor = 'rgba(255, 0, 255, 0.9)';
+    const gridColor2 = 'rgba(0, 0, 255, 1)';
+    this.canvasCtx.lineWidth = 1;
+
+    // Draw grid lines at average height (plan of the grid)
+    // Use fixed height of 0 (average level) for all grid lines
+    const gridHeight = 0;
+    const height = 1;
+
+    // Draw grid lines for each tile
+    for (let x = 1; x < size - 1; x++) {
+      for (let y = 1; y < size - 1; y++) {
+        const xx = size - x - 1;
+        const yy = size - y - 1;
+        
+        if (!this.tilesMatrix?.tiles?.[xx]?.[yy]) continue;
+        // Get the Matrix to display
+        const metaTile = this.tilesMatrix.tiles[xx][yy];
+        // Factor applied to raw level difference to get display level
+        const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+        // Calculate the tile's current display level (Z coordinate)
+        const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
+
+        
+        // Create tile shape at average height (not individual tile height)
+        const shape2 = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height);
+        this.canvasCtx.strokeStyle = gridColor2;
+        this.drawShapePaths(shape2);
+        
+        // Create tile shape at average height (not individual tile height)
+        const shape = Shape.SurfaceFlat(new Point(xx, yy, 0 - height), 1, 1, height);
+        this.canvasCtx.strokeStyle = gridColor;
+        // this.drawShapePaths(shape, undefined, `${metaTile.x},${metaTile.y}`); // Display grid coordinates for debugging
+        // this.drawShapePaths(shape, undefined, `${xx}.${yy}`); // No text, just grid lines
+      }
     }
   }
 
