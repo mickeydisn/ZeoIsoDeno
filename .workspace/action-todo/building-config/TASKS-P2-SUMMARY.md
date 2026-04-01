@@ -60,7 +60,13 @@ This document summarizes the implementation status and next steps for Priority 2
 - [x] Registry ID already present in BuildingConfig metadata
 
 **Remaining:**
-- [ ] Support config versioning/migration
+- [x] Support config versioning/migration — Implemented migration framework with:
+  - `migration.ts` with version ordering, migration registry, and sequential migration engine
+  - `CURRENT_VERSION` and `SUPPORTED_VERSIONS` constants in `types.ts`
+  - Auto-migration on load in `loader.ts` with `migrateConfigIfNeeded()`
+  - Server-side migration endpoints (`POST /editor/migrate/building`, `POST /editor/migrate/asset-collection`, `GET /editor/versions`)
+  - Client-side API methods (`migrateBuilding()`, `migrateAssetCollection()`, `getVersions()`)
+  - Version-aware save flow with automatic migration on save
 
 #### 1.4 Error Handling & Edge Cases
 

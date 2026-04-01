@@ -370,6 +370,60 @@ export class ApiClient {
       body: config,
     });
   }
+
+  /**
+   * POST /editor/migrate/building — Migrate building config to current version
+   */
+  async migrateBuilding(config: BuildingConfig): Promise<{
+    success: boolean;
+    config: BuildingConfig | null;
+    migratedConfig: BuildingConfig | null;
+    migrationResult: {
+      originalVersion: string;
+      migratedVersion: string;
+      wasMigrated: boolean;
+      appliedMigrations: string[];
+      warnings: string[];
+    };
+    versionStatus: string;
+  }> {
+    return this.request(`/migrate/building`, {
+      method: "POST",
+      body: config,
+    });
+  }
+
+  /**
+   * POST /editor/migrate/asset-collection — Migrate asset collection config to current version
+   */
+  async migrateAssetCollection(config: AssetCollectionConfig): Promise<{
+    success: boolean;
+    config: AssetCollectionConfig | null;
+    migratedConfig: AssetCollectionConfig | null;
+    migrationResult: {
+      originalVersion: string;
+      migratedVersion: string;
+      wasMigrated: boolean;
+      appliedMigrations: string[];
+      warnings: string[];
+    };
+    versionStatus: string;
+  }> {
+    return this.request(`/migrate/asset-collection`, {
+      method: "POST",
+      body: config,
+    });
+  }
+
+  /**
+   * GET /editor/versions — Get current and supported versions
+   */
+  async getVersions(): Promise<{
+    currentVersion: string;
+    supportedVersions: string[];
+  }> {
+    return this.request(`/versions`);
+  }
 }
 
 // ============================================================================

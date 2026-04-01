@@ -25,6 +25,14 @@ import { WcAbstractBuildConf } from "../wcAbstractBuildConf.ts";
 import type { BuildingConfig, AssetCollectionConfig } from "./types.ts";
 import { World } from "../../word.ts";
 import { validateBuildingConfig, sanitizeBuildingConfig, formatValidationSummary, ValidationSeverity } from "./validation.ts";
+import { 
+  migrateBuildingConfig, 
+  migrateAssetCollectionConfig, 
+  isSupportedVersion, 
+  getVersionStatus,
+  needsMigration 
+} from "./migration.ts";
+import { CURRENT_VERSION, SUPPORTED_VERSIONS } from "./types.ts";
 
 // ============================================================================
 // Editor Router
@@ -234,13 +242,29 @@ editorRouter.post("/editor/save/building/:name", async (ctx) => {
       return;
     }
 
-    if (config.version !== "1.0") {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: `Invalid config version: expected '1.0', got '${config.version}'`,
-      };
-      return;
+    if (config.version !== CURRENT_VERSION) {
+      // Check if we can migrate
+      if (isSupportedVersion(config.version)) {
+        // Attempt migration
+        const migrationResult = migrateBuildingConfig(config);
+        if (!migrationResult.success) {
+          ctx.response.status = 400;
+          ctx.response.body = {
+            success: false,
+            error: `Config version ${config.version} migration failed: ${migrationResult.warnings.join(", ")}`,
+          };
+          return;
+        }
+        // Use migrated config
+        config.version = migrationResult.migratedVersion as typeof config.version;
+      } else {
+        ctx.response.status = 400;
+        ctx.response.body = {
+          success: false,
+          error: `Unsupported config version: '${config.version}'. Current version is '${CURRENT_VERSION}'. Supported versions: ${SUPPORTED_VERSIONS.join(", ")}`,
+        };
+        return;
+      }
     }
 
     // Ensure directory exists
@@ -1110,6 +1134,148 @@ editorRouter.post("/editor/duplicate/asset-collection/:name/:newName", async (ct
       error: `Failed to duplicate asset collection config: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
+});
+
+// ============================================================================
+// POST /editor/migrate/building — Migrate Building Config to Current Version
+// ============================================================================
+
+editorRouter.post("/editor/migrate/building", async (ctx) => {
+  try {
+    if (!ctx.request.hasBody) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing request body",
+      };
+      return;
+    }
+
+    const config: BuildingConfig = await ctx.request.body.json();
+
+    // Validate type
+    if (config.type !== "building") {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Invalid config type: expected 'building'",
+      };
+      return;
+    }
+
+    // Check if migration is needed
+    if (!needsMigration(config)) {
+      ctx.response.body = {
+        success: true,
+        config,
+        migrationResult: {
+          originalVersion: config.version,
+          migratedVersion: config.version,
+          wasMigrated: false,
+          appliedMigrations: [],
+          warnings: [],
+        },
+        versionStatus: getVersionStatus(config),
+      };
+      ctx.response.status = 200;
+      return;
+    }
+
+    // Perform migration
+    const migrationResult = migrateBuildingConfig(config);
+
+    ctx.response.body = {
+      success: migrationResult.success,
+      config: migrationResult.success ? config : null,
+      migratedConfig: migrationResult.success ? { ...config, version: migrationResult.migratedVersion } : null,
+      migrationResult,
+      versionStatus: getVersionStatus(config),
+    };
+    ctx.response.status = 200;
+  } catch (error: unknown) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: `Failed to migrate config: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+});
+
+// ============================================================================
+// POST /editor/migrate/asset-collection — Migrate Asset Collection Config
+// ============================================================================
+
+editorRouter.post("/editor/migrate/asset-collection", async (ctx) => {
+  try {
+    if (!ctx.request.hasBody) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing request body",
+      };
+      return;
+    }
+
+    const config: AssetCollectionConfig = await ctx.request.body.json();
+
+    // Validate type
+    if (config.type !== "assetCollection") {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Invalid config type: expected 'assetCollection'",
+      };
+      return;
+    }
+
+    // Check if migration is needed
+    if (!needsMigration(config)) {
+      ctx.response.body = {
+        success: true,
+        config,
+        migrationResult: {
+          originalVersion: config.version,
+          migratedVersion: config.version,
+          wasMigrated: false,
+          appliedMigrations: [],
+          warnings: [],
+        },
+        versionStatus: getVersionStatus(config),
+      };
+      ctx.response.status = 200;
+      return;
+    }
+
+    // Perform migration
+    const migrationResult = migrateAssetCollectionConfig(config);
+
+    ctx.response.body = {
+      success: migrationResult.success,
+      config: migrationResult.success ? config : null,
+      migratedConfig: migrationResult.success ? { ...config, version: migrationResult.migratedVersion } : null,
+      migrationResult,
+      versionStatus: getVersionStatus(config),
+    };
+    ctx.response.status = 200;
+  } catch (error: unknown) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: `Failed to migrate config: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+});
+
+// ============================================================================
+// GET /editor/versions — Get Current and Supported Versions
+// ============================================================================
+
+editorRouter.get("/editor/versions", (ctx) => {
+  ctx.response.body = {
+    currentVersion: CURRENT_VERSION,
+    supportedVersions: SUPPORTED_VERSIONS,
+  };
+  ctx.response.status = 200;
 });
 
 // ============================================================================

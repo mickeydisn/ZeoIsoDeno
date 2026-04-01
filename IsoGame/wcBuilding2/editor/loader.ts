@@ -15,6 +15,8 @@ import { WcAbstractBuildConf, WcConfTile, WcConfTileAsset, WcConfTileFunction } 
 import type { WcFace } from "../wcBuildFace.ts";
 import type { BuildingConfig, TileConfig } from "./types.ts";
 import { getBuildingConfigEntry } from "../../tools/buildingConfigRegistry.ts";
+import { CURRENT_VERSION } from "./types.ts";
+import { migrateBuildingConfig, migrateAssetCollectionConfig, MigrationResult, isSupportedVersion } from "./migration.ts";
 
 // ============================================================================
 // Index type for face key indexing
@@ -52,11 +54,32 @@ export class ConfigLoader {
       const jsonText = await Deno.readTextFile(jsonPath);
       const jsonConfig: BuildingConfig = JSON.parse(jsonText);
 
-      if (jsonConfig.type === "building" && jsonConfig.version === "1.0") {
+      if (jsonConfig.type === "building") {
+        // Migrate config if needed
+        const migrationResult = this.migrateConfigIfNeeded(jsonConfig);
+        if (!migrationResult.success) {
+          console.warn(
+            `Building config ${id} migration failed:`,
+            migrationResult.warnings.join(", ")
+          );
+          // Still try to process if version is supported
+          if (jsonConfig.version !== CURRENT_VERSION && !isSupportedVersion(jsonConfig.version)) {
+            throw new Error(
+              `Incompatible config version ${jsonConfig.version}. Expected ${CURRENT_VERSION}. ` +
+              `Migration failed: ${migrationResult.warnings.join(", ")}`
+            );
+          }
+        }
         return this.buildFromJSON(jsonConfig, params);
       }
-    } catch (_e) {
+    } catch (e) {
       // JSON file not found or invalid — fall through
+      if (e instanceof Error && e.message.includes("not found") || e instanceof Deno.errors.NotFound) {
+        // Expected case - file doesn't exist
+      } else {
+        // Re-throw unexpected errors
+        throw e;
+      }
     }
 
     // Step 2: Fall back to TS registry
@@ -93,6 +116,36 @@ export class ConfigLoader {
 
     // Step 4: Nothing found
     throw new Error(`Building config not found: ${id}`);
+  }
+
+  /**
+   * Migrate a config to the current version if needed.
+   * Returns the migration result for logging/reporting.
+   */
+  private static migrateConfigIfNeeded(
+    config: BuildingConfig,
+  ): MigrationResult {
+    if (config.version === CURRENT_VERSION) {
+      return {
+        success: true,
+        originalVersion: config.version,
+        migratedVersion: config.version,
+        wasMigrated: false,
+        appliedMigrations: [],
+        warnings: [],
+      };
+    }
+
+    const result = migrateBuildingConfig(config);
+    if (result.success && result.wasMigrated) {
+      // Update the config in place with migrated version
+      config.version = result.migratedVersion as typeof config.version;
+      console.log(
+        `Config migrated: ${result.originalVersion} → ${result.migratedVersion} ` +
+        `(${result.appliedMigrations.join(", ")})`
+      );
+    }
+    return result;
   }
 
   /**

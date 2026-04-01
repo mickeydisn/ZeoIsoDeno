@@ -54,6 +54,27 @@ export interface WcConfTileFunction {
 }
 
 // ============================================================================
+// Version Constants
+// ============================================================================
+
+/**
+ * Current schema version for building and asset collection configurations.
+ * Increment this when making breaking changes to the schema.
+ *
+ * Version History:
+ * - "1.0": Initial schema version (current)
+ */
+export const CURRENT_VERSION = "1.0" as const;
+
+/**
+ * All supported schema versions that the system can read and migrate.
+ * Older configs will be automatically migrated to CURRENT_VERSION on load.
+ */
+export const SUPPORTED_VERSIONS = ["1.0"] as const;
+
+export type SupportedVersion = typeof SUPPORTED_VERSIONS[number];
+
+// ============================================================================
 // Building Configuration JSON Schema
 // ============================================================================
 
@@ -79,8 +100,8 @@ export interface AssetCollectionRef {
  * Used by the editor for editing and by the loader for runtime instantiation.
  */
 export interface BuildingConfig {
-  /** Schema version for future compatibility */
-  version: "1.0";
+  /** Schema version for future compatibility (e.g., "1.0", "1.1", "2.0") */
+  version: typeof CURRENT_VERSION;
   /** Always "building" for building configurations */
   type: "building";
   /** Human-readable identifier (e.g., "HouseA", "GraveA") */
@@ -134,8 +155,8 @@ export interface ParamSchemaEntry {
  * that are referenced by building configurations.
  */
 export interface AssetCollectionConfig {
-  /** Schema version for future compatibility */
-  version: "1.0";
+  /** Schema version for future compatibility (e.g., "1.0", "1.1", "2.0") */
+  version: typeof CURRENT_VERSION;
   /** Always "assetCollection" for asset collections */
   type: "assetCollection";
   /** Human-readable identifier (e.g., "WallHouse", "FenceSimple") */
