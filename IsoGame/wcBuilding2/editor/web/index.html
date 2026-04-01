@@ -31,44 +31,7 @@
     <div class="modal-content"></div>
   </div>
 
-  <!-- State Management -->
-  <script type="module" src="js/state.ts"></script>
-  <!-- API Client -->
-  <script type="module" src="js/api.ts"></script>
-  <!-- Components -->
-  <script type="module" src="js/components/weightTable.ts"></script>
-  <script type="module" src="js/components/faceLinkTable.ts"></script>
-  <!-- Library Panel -->
-  <script type="module" src="js/panels/library.ts"></script>
-  <!-- Building Editor Panel -->
-  <script type="module" src="js/panels/building.ts"></script>
-  <script type="module">
-    import { stateManager } from './js/state.ts';
-    import { apiClient } from './js/api.ts';
-    import { BuildingEditorPanel } from './js/panels/building.ts';
-
-    // Initialize building editor panel
-    const mainPanel = document.getElementById('main-panel');
-    if (mainPanel) {
-      const buildingPanel = new BuildingEditorPanel(stateManager, apiClient);
-      
-      // Subscribe to active config changes
-      stateManager.subscribe(() => {
-        const state = stateManager.getState();
-        if (state.activeConfig?.type === 'building') {
-          buildingPanel.render(mainPanel);
-        } else if (state.activeConfig?.type === null || state.activeConfig?.data === null) {
-          // Show placeholder when no config is selected
-          mainPanel.innerHTML = `
-            <div class="placeholder-content">
-              <h2>Welcome to Building Config Editor</h2>
-              <p>Select a configuration from the library to start editing.</p>
-              <p>Use the Extract All button to load TypeScript configurations.</p>
-            </div>
-          `;
-        }
-      });
-    }
-  </script>
+  <!-- Single entry point - all modules bundled together -->
+  <script type="module" src="js/main.ts"></script>
 </body>
 </html>

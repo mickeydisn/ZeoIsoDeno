@@ -85,19 +85,24 @@ export class LibraryPanel {
    */
   private async loadData(): Promise<void> {
     try {
+      console.log('[LibraryPanel] Loading data...');
       this.stateManager.setLoading(true);
 
       // Fetch extractable TS classes
       const classesData = await this.apiClient.listClasses();
+      console.log('[LibraryPanel] TS classes loaded:', classesData);
       this.stateManager.setTSClasses(classesData);
 
       // Fetch existing JSON configs
       const configsData = await this.apiClient.listConfigs();
+      console.log('[LibraryPanel] Configs loaded:', configsData);
       this.stateManager.setJsonConfigs({
         jsonBuildings: configsData.jsonBuildings,
         jsonAssetCollections: configsData.jsonAssetCollections,
       });
+      console.log('[LibraryPanel] Data loading complete');
     } catch (error) {
+      console.error('[LibraryPanel] Load data error:', error);
       this.stateManager.setError(`Failed to load library: ${error.message}`);
     } finally {
       this.stateManager.setLoading(false);
@@ -308,12 +313,15 @@ export class LibraryPanel {
     type: "building" | "assetCollection";
     source: "ts" | "json";
   }): Promise<void> {
+    console.log('[LibraryPanel] Item clicked:', item);
     try {
       this.stateManager.setLoading(true);
 
       // Check if config is already in state
       const existing = this.stateManager.getConfig(item.type, item.id);
+      console.log('[LibraryPanel] Existing config:', existing);
       if (existing) {
+        console.log('[LibraryPanel] Setting active config:', item.type, item.id);
         this.stateManager.setActiveConfig(item.type, item.id, existing);
         this.stateManager.setLoading(false);
         return;
@@ -321,17 +329,20 @@ export class LibraryPanel {
 
       // Extract from TS if not available
       if (item.source === "ts") {
+        console.log('[LibraryPanel] Extracting from TS:', item.id);
         let config: BuildingConfig | AssetCollectionConfig;
         if (item.type === "building") {
           config = await this.apiClient.extractBuilding(item.id);
-          config.type = "building";
-          config.id = item.id;
+          (config as BuildingConfig).type = "building";
+          (config as BuildingConfig).id = item.id;
         } else {
           config = await this.apiClient.extractAssetCollection(item.id);
-          config.type = "assetCollection";
-          config.id = item.id;
+          (config as AssetCollectionConfig).type = "assetCollection";
+          (config as AssetCollectionConfig).id = item.id;
         }
+        console.log('[LibraryPanel] Extracted config:', config);
         this.stateManager.addConfig(config);
+        console.log('[LibraryPanel] Setting active config after extract:', item.type, item.id);
         this.stateManager.setActiveConfig(item.type, item.id, config);
       } else {
         // For JSON configs, we'd need to load them from disk via API
@@ -339,6 +350,7 @@ export class LibraryPanel {
         this.stateManager.setError(`Loading JSON configs not yet implemented`);
       }
     } catch (error) {
+      console.error('[LibraryPanel] Item click error:', error);
       this.stateManager.setError(`Failed to load config: ${error.message}`);
     } finally {
       this.stateManager.setLoading(false);
@@ -470,17 +482,3 @@ export class LibraryPanel {
   }
 }
 
-// ============================================================================
-// Initialize library panel when DOM is ready
-// ============================================================================
-
-import { stateManager } from "../state.ts";
-import { apiClient } from "../api.ts";
-
-document.addEventListener("DOMContentLoaded", () => {
-  const libraryContainer = document.getElementById("library-panel");
-  if (libraryContainer) {
-    const panel = new LibraryPanel(stateManager, apiClient);
-    panel.render(libraryContainer);
-  }
-});

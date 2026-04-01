@@ -45,12 +45,17 @@ export class BuildingEditorPanel {
    * Render the building editor panel into the given container.
    */
   render(container: HTMLElement): void {
+    console.log('[BuildingEditorPanel] render() called');
     this.container = container;
     container.innerHTML = "";
 
     // Subscribe to state changes
+    if (this.unsubscribe) {
+      this.unsubscribe();
+    }
     this.unsubscribe = this.stateManager.subscribe(() => this.renderIfNeeded());
 
+    console.log('[BuildingEditorPanel] Calling renderContent()');
     this.renderContent();
   }
 
@@ -74,12 +79,13 @@ export class BuildingEditorPanel {
   /**
    * Re-render only when activeConfig changes.
    */
+  private lastActiveId: string | null = null;
+
   private renderIfNeeded(): void {
     const state = this.stateManager.getState();
     const activeId = state.activeConfig.id;
-    const currentState = this.stateManager.getState();
-    const currentId = currentState.activeConfig.id;
-    if (activeId !== currentId) {
+    if (activeId !== this.lastActiveId) {
+      this.lastActiveId = activeId;
       this.renderContent();
     }
   }

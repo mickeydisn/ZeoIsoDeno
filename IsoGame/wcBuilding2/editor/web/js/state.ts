@@ -82,9 +82,13 @@ export class StateManager {
    * Subscribe to state changes. Returns an unsubscribe function.
    */
   subscribe(listener: Listener): () => void {
+    console.log('[StateManager] subscribe called, listeners before:', this.listeners.size);
     this.listeners.add(listener);
+    console.log('[StateManager] subscribe done, listeners after:', this.listeners.size);
     return () => {
+      console.log('[StateManager] unsubscribe called, listeners before:', this.listeners.size);
       this.listeners.delete(listener);
+      console.log('[StateManager] unsubscribe done, listeners after:', this.listeners.size);
     };
   }
 
@@ -120,6 +124,7 @@ export class StateManager {
     id: string,
     data: BuildingConfig | AssetCollectionConfig
   ): void {
+    console.log('[StateManager] setActiveConfig called:', type, id, data?.type);
     this.state = {
       ...this.state,
       activeConfig: {
@@ -129,6 +134,8 @@ export class StateManager {
         isDirty: false,
       },
     };
+    console.log('[StateManager] New state activeConfig:', this.state.activeConfig);
+    console.log('[StateManager] Notifying', this.listeners.size, 'listeners');
     this.notify();
   }
 

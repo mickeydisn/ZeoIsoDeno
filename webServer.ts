@@ -54,8 +54,9 @@ router.get("/img/(.*)", serveStatic2);
 router.get("/web/(.*)", serveStatic2);
 router.get("/img/(.*)", serveStatic2);
 
-// Editor route — serve editor web files
-router.get("/editor/(.*)", serveStaticEditor);
+// Editor static file router — serves /editor/* web files
+const editorStaticRouter = new Router();
+editorStaticRouter.get("/editor/(.*)", serveStaticEditor);
 
 const app = new Application();
 const port = 8081;
@@ -70,12 +71,17 @@ app.use(async (ctx: Context, next) => {
   await next();
 });
 
+// IMPORTANT: Mount editor API routes FIRST so they take precedence over static serving
+app.use(editorRouter.routes());
+app.use(editorRouter.allowedMethods());
+
+// Then mount the main router
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-// Mount editor routes
-app.use(editorRouter.routes());
-app.use(editorRouter.allowedMethods());
+// Finally mount editor static file router (lowest priority)
+app.use(editorStaticRouter.routes());
+app.use(editorStaticRouter.allowedMethods());
 console.log(`Server running on http://localhost:${port}`);
 
 app.listen({ port: port });
