@@ -1,0 +1,185 @@
+{
+  "version": "1.0",
+  "type": "assetCollection",
+  "id": "WcAsset_CorridorLab",
+  "metadata": {
+    "classRef": "WcAsset_CorridorLab",
+    "sourceFile": "wcAsset_CorridorLab"
+  },
+  "tag": "CA_",
+  "params": {
+    "tag": "CA_"
+  },
+  "paramsSchema": {
+    "tag": {
+      "type": "string",
+      "label": "Tag Prefix"
+    }
+  },
+  "tiles": [
+    {
+      "face": [
+        "CL_in",
+        "CL_out",
+        "CL_in",
+        "CL_out"
+      ],
+      "weight": 0,
+      "assets": [
+        {
+          "h": 0,
+          "key": "Lab5_corridor_",
+          "keyR": 0,
+          "sufix": {}
+        }
+      ],
+      "id": "Flat",
+      "sourceGetter": "Flat"
+    },
+    {
+      "face": [
+        "CL_in",
+        "CL_out",
+        "CL_in",
+        "CL_out"
+      ],
+      "weight": 0,
+      "assets": [
+        {
+          "h": 0,
+          "key": "Lab5_corridor_detailed",
+          "keyR": 0,
+          "sufix": {}
+        }
+      ],
+      "id": "Flat_Detail",
+      "sourceGetter": "Flat_Detail"
+    },
+    {
+      "face": [
+        "CL_in",
+        "CL_out",
+        "CL_in",
+        "CL_out"
+      ],
+      "weight": 0,
+      "assets": [
+        {
+          "h": 0,
+          "key": "Lab5_corridor_window",
+          "keyR": 0,
+          "sufix": {}
+        }
+      ],
+      "id": "Flat_Window",
+      "sourceGetter": "Flat_Window"
+    },
+    {
+      "face": [
+        "CL_in",
+        "CL_out",
+        "CL_outD",
+        "CL_out"
+      ],
+      "weight": 0,
+      "assets": [
+        {
+          "h": 0,
+          "key": "platform_center",
+          "keyR": 0,
+          "sufix": {}
+        },
+        {
+          "h": 0,
+          "key": "Lab5_corridor_end",
+          "keyR": 2,
+          "sufix": {}
+        }
+      ],
+      "id": "Door",
+      "sourceGetter": "Door"
+    },
+    {
+      "face": [
+        "CL_in",
+        "CL_in",
+        "CL_out",
+        "CL_out"
+      ],
+      "weight": 0,
+      "assets": [
+        {
+          "h": 0,
+          "key": "Lab5_corridor_corner",
+          "keyR": 3,
+          "sufix": {}
+        }
+      ],
+      "id": "Corner",
+      "sourceGetter": "Corner"
+    },
+    {
+      "face": [
+        "CL_in",
+        "CL_in",
+        "CL_out",
+        "CL_out"
+      ],
+      "weight": 0,
+      "assets": [
+        {
+          "h": 0,
+          "key": "platform_center",
+          "keyR": 0,
+          "sufix": {}
+        },
+        {
+          "h": 0,
+          "key": "Lab5_corridor_cornerRound",
+          "keyR": 3,
+          "sufix": {}
+        }
+      ],
+      "id": "Corner_Round",
+      "sourceGetter": "Corner_Round"
+    },
+    {
+      "face": [
+        "CL_in",
+        "CL_in",
+        "CL_in",
+        "CL_out"
+      ],
+      "weight": 0,
+      "assets": [
+        {
+          "h": 0,
+          "key": "Lab5_corridor_split",
+          "keyR": 0,
+          "sufix": {}
+        }
+      ],
+      "id": "TJoin",
+      "sourceGetter": "TJoin"
+    },
+    {
+      "face": [
+        "CL_in",
+        "CL_in",
+        "CL_in",
+        "CL_in"
+      ],
+      "weight": 0,
+      "assets": [
+        {
+          "h": 0,
+          "key": "Lab5_corridor_cross",
+          "keyR": 0,
+          "sufix": {}
+        }
+      ],
+      "id": "CrossJoin",
+      "sourceGetter": "CrossJoin"
+    }
+  ]
+}
