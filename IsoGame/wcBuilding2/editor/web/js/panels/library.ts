@@ -266,7 +266,7 @@ export class LibraryPanel {
   }
 
   /**
-   * Render a single library item.
+   * Render a single library item with context actions.
    */
   private renderItem(item: {
     id: string;
@@ -299,20 +299,238 @@ export class LibraryPanel {
     el.appendChild(nameSpan);
     el.appendChild(badge);
 
+    // Context menu button (only for JSON items)
+    if (item.source === "json") {
+      const menuBtn = document.createElement("button");
+      menuBtn.className = "library-item-action";
+      menuBtn.textContent = "⋮";
+      menuBtn.title = "More actions";
+      menuBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.showItemContextMenu(e, item);
+      });
+      el.appendChild(menuBtn);
+    }
+
     // Click handler
     el.addEventListener("click", () => this.handleItemClick(item));
+
+    // Right-click context menu
+    el.addEventListener("contextmenu", (e) => {
+      if (item.source === "json") {
+        e.preventDefault();
+        this.showItemContextMenu(e, item);
+      }
+    });
 
     return el;
   }
 
   /**
-   * Handle item click — load config into active state.
+   * Show context menu with delete/duplicate actions.
    */
-  private async handleItemClick(item: {
+  private showItemContextMenu(
+    event: MouseEvent | KeyboardEvent,
+    item: {
+      id: string;
+      type: "building" | "assetCollection";
+      source: "ts" | "json";
+    }
+  ): void {
+    // Remove any existing context menu
+    const existingMenu = document.querySelector(".library-context-menu");
+    if (existingMenu) existingMenu.remove();
+
+    const menu = document.createElement("div");
+    menu.className = "library-context-menu";
+    menu.style.position = "fixed";
+    menu.style.zIndex = "10000";
+    menu.style.background = "var(--bg-secondary, #1e1e2e)";
+    menu.style.border = "1px solid var(--border-color, #444)";
+    menu.style.borderRadius = "4px";
+    menu.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+    menu.style.padding = "4px 0";
+    menu.style.minWidth = "150px";
+
+    // Position menu
+    let x = "clientX" in event ? event.clientX : 0;
+    let y = "clientY" in event ? event.clientY : 0;
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+
+    // Duplicate action
+    const dupItem = document.createElement("div");
+    dupItem.className = "context-menu-item";
+    dupItem.textContent = "📋 Duplicate";
+    dupItem.style.padding = "8px 12px";
+    dupItem.style.cursor = "pointer";
+    dupItem.addEventListener("click", () => {
+      menu.remove();
+      this.handleDuplicate(item);
+    });
+    dupItem.addEventListener("mouseenter", () => {
+      dupItem.style.background = "var(--accent-color, #4a9eff)";
+    });
+    dupItem.addEventListener("mouseleave", () => {
+      dupItem.style.background = "transparent";
+    });
+
+    // Delete action
+    const delItem = document.createElement("div");
+    delItem.className = "context-menu-item";
+    delItem.textContent = "🗑️ Delete";
+    delItem.style.padding = "8px 12px";
+    delItem.style.cursor = "pointer";
+    delItem.style.color = "#ff4444";
+    delItem.addEventListener("click", () => {
+      menu.remove();
+      this.handleDelete(item);
+    });
+    delItem.addEventListener("mouseenter", () => {
+      delItem.style.background = "rgba(255, 68, 68, 0.1)";
+    });
+    delItem.addEventListener("mouseleave", () => {
+      delItem.style.background = "transparent";
+    });
+
+    menu.appendChild(dupItem);
+    menu.appendChild(delItem);
+    document.body.appendChild(menu);
+
+    // Close menu on click outside
+    const closeMenu = (e: MouseEvent) => {
+      if (!menu.contains(e.target as Node)) {
+        menu.remove();
+        document.removeEventListener("click", closeMenu);
+      }
+    };
+    setTimeout(() => document.addEventListener("click", closeMenu), 0);
+
+    // Close on Escape
+    const closeOnEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        menu.remove();
+        document.removeEventListener("keydown", closeOnEscape);
+      }
+    };
+    document.addEventListener("keydown", closeOnEscape);
+  }
+
+  /**
+   * Handle duplicate config.
+   */
+  private async handleDuplicate(item: {
     id: string;
     type: "building" | "assetCollection";
     source: "ts" | "json";
   }): Promise<void> {
+    const newName = prompt(`Enter name for duplicate of "${item.id}":`, `${item.id}_copy`);
+    if (!newName) return;
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(newName)) {
+      this.stateManager.setError("Invalid name format. Only alphanumeric characters, hyphens, and underscores are allowed.");
+      return;
+    }
+
+    try {
+      this.stateManager.setLoading(true);
+      this.stateManager.setError(null);
+
+      if (item.type === "building") {
+        // First load the original config
+        const config = await this.apiClient.loadBuilding(item.id);
+        // Then create a new one with the new name
+        config.id = newName;
+        await this.apiClient.saveBuilding(newName, config as BuildingConfig);
+      } else {
+        const config = await this.apiClient.loadAssetCollection(item.id);
+        config.id = newName;
+        await this.apiClient.saveAssetCollection(newName, config as AssetCollectionConfig);
+      }
+
+      // Refresh library
+      await this.loadData();
+    } catch (error) {
+      console.error('[LibraryPanel] Duplicate error:', error);
+      this.stateManager.setError(`Failed to duplicate: ${error.message}`);
+    } finally {
+      this.stateManager.setLoading(false);
+    }
+  }
+
+  /**
+   * Handle delete config.
+   */
+  private async handleDelete(item: {
+    id: string;
+    type: "building" | "assetCollection";
+    source: "ts" | "json";
+  }): Promise<void> {
+    if (!confirm(`Delete "${item.id}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      this.stateManager.setLoading(true);
+      this.stateManager.setError(null);
+
+      if (item.type === "building") {
+        await this.apiClient.deleteBuilding(item.id);
+      } else {
+        await this.apiClient.deleteAssetCollection(item.id);
+      }
+
+      // Remove from state if it's the active config
+      const state = this.stateManager.getState();
+      if (state.activeConfig.id === item.id) {
+        this.stateManager.setState({
+          activeConfig: {
+            type: null,
+            id: null,
+            data: null,
+            isDirty: false,
+            source: null,
+          },
+        });
+      }
+
+      // Remove from configs
+      if (item.type === "building") {
+        const buildings = this.stateManager.getConfigs("building").filter((c) => c.id !== item.id);
+        this.stateManager.setState({
+          configs: { buildings, assetCollections: this.stateManager.getConfigs("assetCollection") },
+        });
+      } else {
+        const collections = this.stateManager.getConfigs("assetCollection").filter((c) => c.id !== item.id);
+        this.stateManager.setState({
+          configs: { buildings: this.stateManager.getConfigs("building"), assetCollections: collections },
+        });
+      }
+
+      // Refresh library
+      await this.loadData();
+    } catch (error) {
+      console.error('[LibraryPanel] Delete error:', error);
+      this.stateManager.setError(`Failed to delete: ${error.message}`);
+    } finally {
+      this.stateManager.setLoading(false);
+    }
+  }
+
+  /**
+   * Handle item click — load config into active state.
+   * Supports retry logic for failed loads.
+   */
+  private async handleItemClick(
+    item: {
+      id: string;
+      type: "building" | "assetCollection";
+      source: "ts" | "json";
+    },
+    retryCount = 0
+  ): Promise<void> {
+    const MAX_RETRIES = 2;
+    
     console.log('[LibraryPanel] Item clicked:', item);
     try {
       this.stateManager.setLoading(true);
@@ -354,11 +572,46 @@ export class LibraryPanel {
           config = await this.apiClient.loadBuilding(item.id);
           (config as BuildingConfig).type = "building";
           (config as BuildingConfig).id = item.id;
+          
+          // Validate loaded building config for face key consistency
+          const validationResult = await this.apiClient.validateBuilding(config as BuildingConfig);
+          console.log('[LibraryPanel] Validation result:', validationResult);
+          
+          // Show warnings for validation issues
+          if (!validationResult.valid) {
+            const errors = validationResult.issues.filter(i => i.severity === 'error');
+            const warnings = validationResult.issues.filter(i => i.severity === 'warning');
+            const infos = validationResult.issues.filter(i => i.severity === 'info');
+            
+            if (errors.length > 0) {
+              this.stateManager.setError(`Config has ${errors.length} error(s): ${errors.map(e => e.message).join('; ')}`);
+            }
+            
+            if (warnings.length > 0) {
+              console.warn('[LibraryPanel] Config warnings:', warnings);
+              // Still allow loading but show warnings
+              const warningMsg = `⚠️ ${warnings.length} warning(s) in config: ${warnings.map(w => w.message).join('; ')}`;
+              if (errors.length === 0) {
+                // Only set warning as error if there are no actual errors
+                this.stateManager.setError(warningMsg);
+              }
+            }
+            
+            if (infos.length > 0) {
+              console.info('[LibraryPanel] Config info:', infos);
+            }
+          }
         } else {
           config = await this.apiClient.loadAssetCollection(item.id);
           (config as AssetCollectionConfig).type = "assetCollection";
           (config as AssetCollectionConfig).id = item.id;
         }
+        
+        // Validate loaded config - handle corrupted JSON gracefully
+        if (!config || (!config.tiles && item.type === "building")) {
+          throw new Error("Loaded config appears to be corrupted");
+        }
+        
         console.log('[LibraryPanel] Loaded JSON config:', config);
         this.stateManager.addConfig(config);
         console.log('[LibraryPanel] Setting active config after JSON load:', item.type, item.id);
@@ -366,6 +619,12 @@ export class LibraryPanel {
       }
     } catch (error) {
       console.error('[LibraryPanel] Item click error:', error);
+      // Retry logic for failed loads
+      if (retryCount < MAX_RETRIES && error.message.includes("Failed to load")) {
+        console.log(`[LibraryPanel] Retrying load (attempt ${retryCount + 1}/${MAX_RETRIES})...`);
+        await new Promise(resolve => setTimeout(resolve, 500 * (retryCount + 1)));
+        return this.handleItemClick(item, retryCount + 1);
+      }
       this.stateManager.setError(`Failed to load config: ${error.message}`);
     } finally {
       this.stateManager.setLoading(false);

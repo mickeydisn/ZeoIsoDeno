@@ -24,6 +24,7 @@ import { WcBuildFactoryGenarator } from "../wcBuildFactory.ts";
 import { WcAbstractBuildConf } from "../wcAbstractBuildConf.ts";
 import type { BuildingConfig, AssetCollectionConfig } from "./types.ts";
 import { World } from "../../word.ts";
+import { validateBuildingConfig, sanitizeBuildingConfig, formatValidationSummary, ValidationSeverity } from "./validation.ts";
 
 // ============================================================================
 // Editor Router
@@ -714,6 +715,399 @@ editorRouter.get("/editor/load/asset-collection/:name", async (ctx) => {
     ctx.response.body = {
       success: false,
       error: `Failed to load asset collection config: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+});
+
+// ============================================================================
+// POST /editor/validate/building — Validate Building Config
+// ============================================================================
+
+editorRouter.post("/editor/validate/building", async (ctx) => {
+  try {
+    if (!ctx.request.hasBody) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing request body",
+      };
+      return;
+    }
+
+    const config: BuildingConfig = await ctx.request.body.json();
+
+    // Validate type
+    if (config.type !== "building") {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Invalid config type: expected 'building'",
+      };
+      return;
+    }
+
+    // Run validation
+    const result = validateBuildingConfig(config);
+
+    ctx.response.body = {
+      success: result.valid,
+      valid: result.valid,
+      issues: result.issues,
+      summary: formatValidationSummary(result),
+      stats: {
+        totalTiles: result.stats.totalTiles,
+        uniqueFaceKeysInTiles: Array.from(result.stats.uniqueFaceKeysInTiles),
+        uniqueFaceKeysInLinks: Array.from(result.stats.uniqueFaceKeysInLinks),
+        orphanedFaceKeys: result.stats.orphanedFaceKeys,
+        missingWeightEntries: result.stats.missingWeightEntries,
+      },
+    };
+    ctx.response.status = 200;
+  } catch (error: unknown) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: `Failed to validate config: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+});
+
+// ============================================================================
+// POST /editor/sanitize/building — Sanitize Building Config (fix common issues)
+// ============================================================================
+
+editorRouter.post("/editor/sanitize/building", async (ctx) => {
+  try {
+    if (!ctx.request.hasBody) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing request body",
+      };
+      return;
+    }
+
+    const config: BuildingConfig = await ctx.request.body.json();
+
+    // Validate type
+    if (config.type !== "building") {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Invalid config type: expected 'building'",
+      };
+      return;
+    }
+
+    // Sanitize the config
+    const sanitized = sanitizeBuildingConfig(structuredClone(config));
+
+    // Re-validate to show what was fixed
+    const result = validateBuildingConfig(sanitized);
+
+    ctx.response.body = {
+      success: true,
+      config: sanitized,
+      validationResult: {
+        valid: result.valid,
+        issues: result.issues,
+        summary: formatValidationSummary(result),
+      },
+    };
+    ctx.response.status = 200;
+  } catch (error: unknown) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: `Failed to sanitize config: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+});
+
+// ============================================================================
+// GET /editor/registry/building/:id/metadata — Get Config Metadata
+// ============================================================================
+
+editorRouter.get("/editor/registry/building/:name/metadata", async (ctx) => {
+  try {
+    const { name } = ctx.params;
+
+    if (!name) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing name parameter",
+      };
+      return;
+    }
+
+    const filePath = `${getBuildingsDir()}/${name}.json`;
+
+    try {
+      await Deno.stat(filePath);
+    } catch {
+      ctx.response.status = 404;
+      ctx.response.body = {
+        success: false,
+        error: `Building config not found: ${name}`,
+      };
+      return;
+    }
+
+    const content = await Deno.readTextFile(filePath);
+    let config: BuildingConfig;
+    try {
+      config = JSON.parse(content);
+    } catch (parseError) {
+      ctx.response.status = 422;
+      ctx.response.body = {
+        success: false,
+        error: `Corrupted JSON file: ${parseError instanceof Error ? parseError.message : 'Unknown parse error'}`,
+      };
+      return;
+    }
+
+    // Return metadata with additional info
+    ctx.response.body = {
+      success: true,
+      id: config.id,
+      type: config.type,
+      version: config.version,
+      metadata: config.metadata,
+      tileCount: config.tiles?.length || 0,
+      assetCollectionCount: config.assetCollections?.length || 0,
+      lastModified: (await Deno.stat(filePath)).mtime,
+    };
+    ctx.response.status = 200;
+  } catch (error: unknown) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: `Failed to get config metadata: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+});
+
+// ============================================================================
+// DELETE /editor/config/building/:name — Delete Building Config
+// ============================================================================
+
+editorRouter.delete("/editor/config/building/:name", async (ctx) => {
+  try {
+    const { name } = ctx.params;
+
+    if (!name) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing name parameter",
+      };
+      return;
+    }
+
+    const filePath = `${getBuildingsDir()}/${name}.json`;
+
+    try {
+      await Deno.stat(filePath);
+    } catch {
+      ctx.response.status = 404;
+      ctx.response.body = {
+        success: false,
+        error: `Building config not found: ${name}`,
+      };
+      return;
+    }
+
+    await Deno.remove(filePath);
+
+    ctx.response.body = {
+      success: true,
+      deleted: name,
+    };
+    ctx.response.status = 200;
+  } catch (error: unknown) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: `Failed to delete building config: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+});
+
+// ============================================================================
+// DELETE /editor/config/asset-collection/:name — Delete Asset Collection Config
+// ============================================================================
+
+editorRouter.delete("/editor/config/asset-collection/:name", async (ctx) => {
+  try {
+    const { name } = ctx.params;
+
+    if (!name) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing name parameter",
+      };
+      return;
+    }
+
+    const filePath = `${getAssetCollectionsDir()}/${name}.json`;
+
+    try {
+      await Deno.stat(filePath);
+    } catch {
+      ctx.response.status = 404;
+      ctx.response.body = {
+        success: false,
+        error: `Asset collection config not found: ${name}`,
+      };
+      return;
+    }
+
+    await Deno.remove(filePath);
+
+    ctx.response.body = {
+      success: true,
+      deleted: name,
+    };
+    ctx.response.status = 200;
+  } catch (error: unknown) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: `Failed to delete asset collection config: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+});
+
+// ============================================================================
+// POST /editor/duplicate/building/:name/:newName — Duplicate Building Config
+// ============================================================================
+
+editorRouter.post("/editor/duplicate/building/:name/:newName", async (ctx) => {
+  try {
+    const { name, newName } = ctx.params;
+
+    if (!name || !newName) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing name or newName parameter",
+      };
+      return;
+    }
+
+    // Validate new name format
+    if (!/^[a-zA-Z0-9_-]+$/.test(newName)) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Invalid name format. Only alphanumeric characters, hyphens, and underscores are allowed.",
+      };
+      return;
+    }
+
+    const originalFilePath = `${getBuildingsDir()}/${name}.json`;
+    let config: BuildingConfig;
+
+    try {
+      const content = await Deno.readTextFile(originalFilePath);
+      config = JSON.parse(content);
+    } catch {
+      ctx.response.status = 404;
+      ctx.response.body = {
+        success: false,
+        error: `Original building config not found: ${name}`,
+      };
+      return;
+    }
+
+    // Update the config ID to the new name
+    config.id = newName;
+
+    // Ensure directory exists
+    await ensureDir(getBuildingsDir());
+
+    const newFilePath = `${getBuildingsDir()}/${newName}.json`;
+    await Deno.writeTextFile(newFilePath, JSON.stringify(config, null, 2));
+
+    ctx.response.body = {
+      success: true,
+      path: newFilePath,
+      newName,
+    };
+    ctx.response.status = 200;
+  } catch (error: unknown) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: `Failed to duplicate building config: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+});
+
+// ============================================================================
+// POST /editor/duplicate/asset-collection/:name/:newName — Duplicate Asset Collection Config
+// ============================================================================
+
+editorRouter.post("/editor/duplicate/asset-collection/:name/:newName", async (ctx) => {
+  try {
+    const { name, newName } = ctx.params;
+
+    if (!name || !newName) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing name or newName parameter",
+      };
+      return;
+    }
+
+    // Validate new name format
+    if (!/^[a-zA-Z0-9_-]+$/.test(newName)) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Invalid name format. Only alphanumeric characters, hyphens, and underscores are allowed.",
+      };
+      return;
+    }
+
+    const originalFilePath = `${getAssetCollectionsDir()}/${name}.json`;
+    let config: AssetCollectionConfig;
+
+    try {
+      const content = await Deno.readTextFile(originalFilePath);
+      config = JSON.parse(content);
+    } catch {
+      ctx.response.status = 404;
+      ctx.response.body = {
+        success: false,
+        error: `Original asset collection config not found: ${name}`,
+      };
+      return;
+    }
+
+    // Update the config ID to the new name
+    config.id = newName;
+
+    // Ensure directory exists
+    await ensureDir(getAssetCollectionsDir());
+
+    const newFilePath = `${getAssetCollectionsDir()}/${newName}.json`;
+    await Deno.writeTextFile(newFilePath, JSON.stringify(config, null, 2));
+
+    ctx.response.body = {
+      success: true,
+      path: newFilePath,
+      newName,
+    };
+    ctx.response.status = 200;
+  } catch (error: unknown) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: `Failed to duplicate asset collection config: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 });

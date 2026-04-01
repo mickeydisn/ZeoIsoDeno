@@ -64,6 +64,27 @@ export interface AssetPreviewResponse {
   total: number;
 }
 
+export interface ConfigMetadataResponse {
+  success: boolean;
+  id: string;
+  type: string;
+  version: string;
+  metadata: {
+    classRef: string;
+    sourceFile: string;
+    registryId?: string;
+  };
+  tileCount: number;
+  assetCollectionCount: number;
+  lastModified: string | null;
+}
+
+export interface DeleteConfigResponse {
+  success: boolean;
+  deleted: string;
+  error?: string;
+}
+
 // ============================================================================
 // API Client Class
 // ============================================================================
@@ -246,10 +267,108 @@ export class ApiClient {
   }
 
   /**
-   * Get asset preview URL (not a fetch, just returns the URL string)
+   * GET /editor/registry/building/:name/metadata — Get config metadata
+   */
+  async getConfigMetadata(name: string): Promise<ConfigMetadataResponse> {
+    return this.request<ConfigMetadataResponse>(
+      `/registry/building/${encodeURIComponent(name)}/metadata`
+    );
+  }
+
+  /**
+   * DELETE /editor/config/building/:name — Delete building config
+   */
+  async deleteBuilding(name: string): Promise<DeleteConfigResponse> {
+    return this.request<DeleteConfigResponse>(
+      `/config/building/${encodeURIComponent(name)}`,
+      { method: "DELETE" }
+    );
+  }
+
+  /**
+   * DELETE /editor/config/asset-collection/:name — Delete asset collection config
+   */
+  async deleteAssetCollection(name: string): Promise<DeleteConfigResponse> {
+    return this.request<DeleteConfigResponse>(
+      `/config/asset-collection/${encodeURIComponent(name)}`,
+      { method: "DELETE" }
+    );
+  }
+
+  /**
+   * POST /editor/duplicate/building/:name/:newName — Duplicate building config
+   */
+  async duplicateBuilding(name: string, newName: string): Promise<SaveResponse> {
+    return this.request<SaveResponse>(
+      `/duplicate/building/${encodeURIComponent(name)}/${encodeURIComponent(newName)}`,
+      { method: "POST" }
+    );
+  }
+
+  /**
+   * POST /editor/duplicate/asset-collection/:name/:newName — Duplicate asset collection config
+   */
+  async duplicateAssetCollection(name: string, newName: string): Promise<SaveResponse> {
+    return this.request<SaveResponse>(
+      `/duplicate/asset-collection/${encodeURIComponent(name)}/${encodeURIComponent(newName)}`,
+      { method: "POST" }
+    );
+  }
+
+  /**
+   * GET asset preview URL (not a fetch, just returns the URL string)
    */
   getAssetPreviewUrl(key: string): string {
     return `${this.baseUrl}/asset-preview/${encodeURIComponent(key)}`;
+  }
+
+  /**
+   * POST /editor/validate/building — Validate building config
+   */
+  async validateBuilding(config: BuildingConfig): Promise<{
+    success: boolean;
+    valid: boolean;
+    issues: Array<{
+      severity: string;
+      message: string;
+      tileIndex?: number;
+      tileId?: string;
+      faceKey?: string;
+    }>;
+    summary: string;
+    stats: {
+      totalTiles: number;
+      uniqueFaceKeysInTiles: string[];
+      uniqueFaceKeysInLinks: string[];
+      orphanedFaceKeys: string[];
+      missingWeightEntries: string[];
+    };
+  }> {
+    return this.request(`/validate/building`, {
+      method: "POST",
+      body: config,
+    });
+  }
+
+  /**
+   * POST /editor/sanitize/building — Sanitize building config (fix common issues)
+   */
+  async sanitizeBuilding(config: BuildingConfig): Promise<{
+    success: boolean;
+    config: BuildingConfig;
+    validationResult: {
+      valid: boolean;
+      issues: Array<{
+        severity: string;
+        message: string;
+      }>;
+      summary: string;
+    };
+  }> {
+    return this.request(`/sanitize/building`, {
+      method: "POST",
+      body: config,
+    });
   }
 }
 

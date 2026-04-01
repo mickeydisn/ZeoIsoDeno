@@ -11,6 +11,8 @@
 import type { StateManager } from "../state.ts";
 import type { ApiClient } from "../api.ts";
 import type { AssetCollectionConfig, TileConfig } from "../../../types.ts";
+import { TileEditorPanel, buildTileEditContextFromAssetCollection } from "./tile.ts";
+import { AssetPreviewService } from "../services/assetPreview.ts";
 
 // ============================================================================
 // Asset Collection Editor Panel Class
@@ -21,10 +23,17 @@ export class AssetCollectionEditorPanel {
   private apiClient: ApiClient;
   private container: HTMLElement | null = null;
   private unsubscribe: (() => void) | null = null;
+  
+  // Tile preview and editor
+  private tileEditorPanel: TileEditorPanel | null = null;
+  private assetPreviewService: AssetPreviewService;
+  private tilePreviewContainer: HTMLElement | null = null;
 
   constructor(stateManager: StateManager, apiClient: ApiClient) {
     this.stateManager = stateManager;
     this.apiClient = apiClient;
+    this.assetPreviewService = new AssetPreviewService();
+    this.tileEditorPanel = new TileEditorPanel(stateManager, apiClient);
   }
 
   /**
@@ -105,7 +114,10 @@ export class AssetCollectionEditorPanel {
     // Section 1: Parameters (tag, params)
     panel.appendChild(this.renderParametersSection(config));
 
-    // Section 2: Tile List
+    // Section 2: Tile Preview Grid (new)
+    panel.appendChild(this.renderTilePreviewSection(config));
+
+    // Section 3: Tile List
     panel.appendChild(this.renderTileListSection(config));
 
     // Action bar

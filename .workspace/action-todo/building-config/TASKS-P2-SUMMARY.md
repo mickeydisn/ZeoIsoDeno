@@ -49,22 +49,37 @@ This document summarizes the implementation status and next steps for Priority 2
 - `IsoGame/wcBuilding2/editor/web/js/api.ts`
 - `IsoGame/wcBuilding2/editor/server.ts`
 
-**Tasks:**
-- [ ] Add `GET /editor/registry/building/:id/metadata` endpoint for config metadata
-- [ ] Add registry ID to library panel items for proper loading
-- [ ] Implement config deletion endpoint
-- [ ] Add config duplication endpoint
+**Status:** ✅ MOSTLY COMPLETED
+
+**What was done:**
+- [x] Add `GET /editor/registry/building/:id/metadata` endpoint for config metadata
+- [x] Implement config deletion endpoints (DELETE /editor/config/building/:name, DELETE /editor/config/asset-collection/:name)
+- [x] Add config duplication endpoints (POST /editor/duplicate/building/:name/:newName, POST /editor/duplicate/asset-collection/:name/:newName)
+- [x] Add API client methods for new endpoints
+- [x] Add context menu with delete/duplicate actions in library panel
+- [x] Registry ID already present in BuildingConfig metadata
+
+**Remaining:**
 - [ ] Support config versioning/migration
 
 #### 1.4 Error Handling & Edge Cases
 
-**Tasks:**
-- [ ] Handle corrupted JSON files gracefully
+**Status:** ✅ PARTIALLY COMPLETED
+
+**What was done:**
+- [x] Handle corrupted JSON files gracefully (validation added in config metadata endpoint)
+- [x] Add retry logic for failed loads (retry logic added in handleItemClick, MAX_RETRIES = 2)
+- [x] Validate loaded config on load (corrupted config check added)
+
+**Remaining:**
 - [ ] Handle version migration (future schema changes)
-- [ ] Handle missing face keys when loading configs
+- [x] Handle missing face keys when loading configs — Implemented validation utility with:
+  - Server-side validation endpoint (`POST /editor/validate/building`)
+  - Server-side sanitization endpoint (`POST /editor/sanitize/building`)  
+  - Client-side validation on JSON config load in `library.ts`
+  - Checks for: orphaned face keys, missing weights, invalid face arrays, empty tiles
 - [ ] Validate tile references on load
 - [ ] Add loading indicators for JSON config loading
-- [ ] Add retry logic for failed loads
 
 ---
 
