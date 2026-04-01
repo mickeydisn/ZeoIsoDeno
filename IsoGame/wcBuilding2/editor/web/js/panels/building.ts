@@ -260,18 +260,33 @@ export class BuildingEditorPanel {
       sourceIndicator.innerHTML = `<span class="source-badge source-unknown">❓ Unknown Source</span>`;
     }
 
-    // "Reset to Default" button
-    const resetBtn = document.createElement("button");
-    resetBtn.textContent = "🔄 Reset to Default";
-    resetBtn.className = "btn-small btn-warning";
-    resetBtn.title = "Re-extract from original TypeScript class, discarding all edits";
-    resetBtn.addEventListener("click", () => {
-      this.resetToDefault(config);
-    });
-
+    // Action buttons container
     const headerRight = document.createElement("div");
     headerRight.className = "header-right";
-    headerRight.appendChild(resetBtn);
+
+    // "Reset to Default" button (only for extracted configs)
+    if (source === "extracted") {
+      const resetBtn = document.createElement("button");
+      resetBtn.textContent = "🔄 Reset to Default";
+      resetBtn.className = "btn-small btn-warning";
+      resetBtn.title = "Re-extract from original TypeScript class, discarding all edits";
+      resetBtn.addEventListener("click", () => {
+        this.resetToDefault(config);
+      });
+      headerRight.appendChild(resetBtn);
+    }
+
+    // "Revert to Original" button (only for loaded JSON configs)
+    if (source === "loaded") {
+      const revertBtn = document.createElement("button");
+      revertBtn.textContent = "↩️ Revert to Original";
+      revertBtn.className = "btn-small btn-warning";
+      revertBtn.title = "Reload original JSON from disk, discarding all unsaved edits";
+      revertBtn.addEventListener("click", () => {
+        this.revertToOriginal(config);
+      });
+      headerRight.appendChild(revertBtn);
+    }
 
     header.appendChild(titleDiv);
     header.appendChild(meta);
@@ -308,6 +323,33 @@ export class BuildingEditorPanel {
       this.stateManager.setActiveConfig("building", config.id, freshConfig, "extracted");
     } catch (error: any) {
       this.stateManager.setError(`Reset failed: ${error.message}`);
+    } finally {
+      this.stateManager.setLoading(false);
+    }
+  }
+
+  /**
+   * Revert loaded JSON config to its original state by reloading from disk.
+   */
+  private async revertToOriginal(config: BuildingConfig): Promise<void> {
+    if (!confirm(`Revert "${config.id}" to the original version saved on disk?\n\nAll unsaved changes will be discarded.`)) {
+      return;
+    }
+
+    try {
+      this.stateManager.setLoading(true);
+      this.stateManager.setError(null);
+      
+      // Reload the original JSON from disk via API
+      const originalConfig = await this.apiClient.loadBuilding(config.id);
+      originalConfig.type = "building";
+      originalConfig.id = config.id;
+      
+      // Add original to state and set as active (clean, not dirty)
+      this.stateManager.updateConfig("building", config.id, originalConfig);
+      this.stateManager.setActiveConfig("building", config.id, originalConfig, "loaded");
+    } catch (error: any) {
+      this.stateManager.setError(`Revert failed: ${error.message}`);
     } finally {
       this.stateManager.setLoading(false);
     }
