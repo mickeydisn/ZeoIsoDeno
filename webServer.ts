@@ -10,6 +10,7 @@ import {
 import { denoPlugins } from "jsr:@luca/esbuild-deno-loader@^0.11.1";
 import * as esbuild from "npm:esbuild@0.20.2";
 import { editorRouter } from "./IsoGame/wcBuilding2/editor/server.ts";
+import { serveStatic as serveStaticEditor } from "./IsoGame/wcBuilding2/editor/web/serveEditor.ts";
 
 export const serveStatic = async (context: Context) => {
   const filePath = context.request.url.pathname;
@@ -52,6 +53,9 @@ router.get("/card/(.*)", serveStatic2);
 router.get("/img/(.*)", serveStatic2);
 router.get("/web/(.*)", serveStatic2);
 router.get("/img/(.*)", serveStatic2);
+
+// Editor route — serve editor web files
+router.get("/editor/(.*)", serveStaticEditor);
 
 const app = new Application();
 const port = 8081;
