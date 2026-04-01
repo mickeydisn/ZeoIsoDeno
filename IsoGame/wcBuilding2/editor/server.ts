@@ -24,7 +24,7 @@ import { WcBuildFactoryGenarator } from "../wcBuildFactory.ts";
 import { WcAbstractBuildConf } from "../wcAbstractBuildConf.ts";
 import type { BuildingConfig, AssetCollectionConfig } from "./types.ts";
 import { World } from "../../word.ts";
-import { validateBuildingConfig, sanitizeBuildingConfig, formatValidationSummary, ValidationSeverity } from "./validation.ts";
+import { validateBuildingConfig, sanitizeBuildingConfig, formatValidationSummary, ValidationSeverity, validateTileReferences } from "./validation.ts";
 import { 
   migrateBuildingConfig, 
   migrateAssetCollectionConfig, 
@@ -792,6 +792,67 @@ editorRouter.post("/editor/validate/building", async (ctx) => {
     ctx.response.body = {
       success: false,
       error: `Failed to validate config: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+});
+
+// ============================================================================
+// POST /editor/validate-tile-refs/building — Validate Tile References in Building Config
+// ============================================================================
+
+editorRouter.post("/editor/validate-tile-refs/building", async (ctx) => {
+  try {
+    if (!ctx.request.hasBody) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing request body",
+      };
+      return;
+    }
+
+    const config: BuildingConfig = await ctx.request.body.json();
+
+    // Validate type
+    if (config.type !== "building") {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Invalid config type: expected 'building'",
+      };
+      return;
+    }
+
+    // Read body for optional loaded collections
+    let body: { collections?: Record<string, { tiles: any[] }> } = {};
+    try {
+      body = ctx.request.hasBody ? await ctx.request.body.json() : {};
+    } catch { /* no body provided */ }
+
+    // Build loaded collections map for sourceTileId validation
+    const loadedCollections = new Map<string, { tiles: any[] }>();
+    if (body.collections) {
+      for (const [id, coll] of Object.entries(body.collections)) {
+        loadedCollections.set(id, coll);
+      }
+    }
+
+    // Run tile reference validation
+    const result = validateTileReferences(config, loadedCollections);
+
+    ctx.response.body = {
+      success: result.valid,
+      valid: result.valid,
+      issues: result.issues,
+      summary: formatTileRefValidationSummary(result),
+      stats: result.stats,
+    };
+    ctx.response.status = 200;
+  } catch (error: unknown) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: `Failed to validate tile references: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 });

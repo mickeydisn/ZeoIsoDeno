@@ -84,7 +84,7 @@ This document summarizes the implementation status and next steps for Priority 2
   - Server-side sanitization endpoint (`POST /editor/sanitize/building`)  
   - Client-side validation on JSON config load in `library.ts`
   - Checks for: orphaned face keys, missing weights, invalid face arrays, empty tiles
-- [ ] Validate tile references on load
+- [x] Validate tile references on load
 - [ ] Add loading indicators for JSON config loading
 
 ---

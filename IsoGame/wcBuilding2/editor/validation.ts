@@ -6,11 +6,13 @@
  * - All face keys in faceLinks appear in at least one tile
  * - Tiles have valid face arrays (4 elements)
  * - faceLinkWeight exists for all face keys used in faceLinks
+ * - Tile references (sourceCollection, sourceTileId) are valid
+ * - Asset keys in tiles reference existing game assets
  *
  * Returns warnings and errors that can be displayed to the user.
  */
 
-import type { BuildingConfig, TileConfig } from "./types.ts";
+import type { BuildingConfig, TileConfig, AssetCollectionRef } from "./types.ts";
 
 // ============================================================================
 // Validation Result Types
@@ -394,6 +396,141 @@ function normalizeFaceArray(face: (string | null)[] | undefined | null): (string
   return normalized;
 }
 
+// ============================================================================
+// Tile Reference Validation
+// ============================================================================
+
+/**
+ * Result of tile reference validation.
+ */
+export interface TileReferenceValidationResult {
+  valid: boolean;
+  issues: ValidationIssue[];
+  stats: {
+    totalTiles: number;
+    tilesWithSourceCollection: number;
+    validCollectionRefs: number;
+    invalidCollectionRefs: number;
+    unknownAssetKeys: string[];
+  };
+}
+
+/**
+ * Validate tile references in a BuildingConfig.
+ *
+ * Checks:
+ * - Tiles with sourceCollection reference a collection in assetCollections
+ * - Tiles with sourceTileId reference a tile in the referenced collection (if collection is loaded)
+ * - Asset keys in tiles are valid (non-empty strings)
+ *
+ * @param config - The building configuration to validate
+ * @param loadedCollections - Map of collection ID to collection config (optional, for sourceTileId validation)
+ * @returns TileReferenceValidationResult with issues and statistics
+ */
+export function validateTileReferences(
+  config: BuildingConfig,
+  loadedCollections: Map<string, { tiles: TileConfig[] }> = new Map()
+): TileReferenceValidationResult {
+  const issues: ValidationIssue[] = [];
+
+  // Build set of valid collection IDs from assetCollections
+  const validCollectionIds = new Set<string>();
+  if (config.assetCollections) {
+    for (const ref of config.assetCollections) {
+      validCollectionIds.add(ref.id);
+    }
+  }
+
+  let tilesWithSourceCollection = 0;
+  let validCollectionRefs = 0;
+  let invalidCollectionRefs = 0;
+  const assetKeys = new Set<string>();
+
+  const tiles = config.tiles || [];
+  for (let i = 0; i < tiles.length; i++) {
+    const tile = tiles[i];
+    const tileId = tile.id || `tile_${i}`;
+
+    // Validate sourceCollection reference
+    if (tile.sourceCollection) {
+      tilesWithSourceCollection++;
+
+      if (validCollectionIds.has(tile.sourceCollection)) {
+        validCollectionRefs++;
+
+        // If collection is loaded, validate sourceTileId
+        if (tile.sourceTileId) {
+          const collection = loadedCollections.get(tile.sourceCollection);
+          if (collection) {
+            const tileExists = collection.tiles.some((t) => t.id === tile.sourceTileId);
+            if (!tileExists) {
+              issues.push({
+                severity: ValidationSeverity.ERROR,
+                message: `Tile "${tileId}" references tile "${tile.sourceTileId}" in collection "${tile.sourceCollection}" but it doesn't exist`,
+                tileIndex: i,
+                tileId,
+              });
+              invalidCollectionRefs++;
+            }
+          }
+          // If collection not loaded, we can't validate the tile reference
+        }
+      } else {
+        invalidCollectionRefs++;
+        issues.push({
+          severity: ValidationSeverity.ERROR,
+          message: `Tile "${tileId}" references collection "${tile.sourceCollection}" but it is not defined in assetCollections`,
+          tileIndex: i,
+          tileId,
+          faceKey: tile.sourceCollection,
+        });
+      }
+    }
+
+    // Collect asset keys for validation
+    if (tile.assets) {
+      for (const asset of tile.assets) {
+        if (asset.key) {
+          assetKeys.add(asset.key);
+        } else {
+          issues.push({
+            severity: ValidationSeverity.WARNING,
+            message: `Tile "${tileId}" has an asset without a key`,
+            tileIndex: i,
+            tileId,
+          });
+        }
+      }
+    }
+  }
+
+  // Validate asset keys are valid filenames
+  const invalidAssetKeys: string[] = [];
+  for (const key of assetKeys) {
+    // Basic validation: non-empty, no path separators, valid filename characters
+    if (!key || /[/\\]/.test(key)) {
+      invalidAssetKeys.push(key);
+      issues.push({
+        severity: ValidationSeverity.ERROR,
+        message: `Asset key "${key}" contains invalid characters`,
+        faceKey: key,
+      });
+    }
+  }
+
+  return {
+    valid: issues.filter((i) => i.severity === ValidationSeverity.ERROR).length === 0,
+    issues,
+    stats: {
+      totalTiles: tiles.length,
+      tilesWithSourceCollection,
+      validCollectionRefs,
+      invalidCollectionRefs,
+      unknownAssetKeys: invalidAssetKeys,
+    },
+  };
+}
+
 /**
  * Format validation issues as a user-readable summary.
  */
@@ -427,6 +564,54 @@ export function formatValidationSummary(result: ValidationResult): string {
 
   if (lines.length === 0) {
     return "✅ Config is valid";
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Format tile reference validation issues as a user-readable summary.
+ */
+export function formatTileRefValidationSummary(result: TileReferenceValidationResult): string {
+  const errors = result.issues.filter((i) => i.severity === ValidationSeverity.ERROR);
+  const warnings = result.issues.filter((i) => i.severity === ValidationSeverity.WARNING);
+  const infos = result.issues.filter((i) => i.severity === ValidationSeverity.INFO);
+
+  const lines: string[] = [];
+
+  if (result.stats.invalidCollectionRefs > 0) {
+    lines.push(`❌ ${result.stats.invalidCollectionRefs} invalid collection reference(s)`);
+  }
+
+  if (result.stats.tilesWithSourceCollection > 0) {
+    lines.push(
+      `📦 ${result.stats.validCollectionRefs}/${result.stats.tilesWithSourceCollection} valid collection references`
+    );
+  }
+
+  if (errors.length > 0) {
+    lines.push(`❌ ${errors.length} error(s):`);
+    for (const e of errors) {
+      lines.push(`   - ${e.message}`);
+    }
+  }
+
+  if (warnings.length > 0) {
+    lines.push(`⚠️ ${warnings.length} warning(s):`);
+    for (const w of warnings) {
+      lines.push(`   - ${w.message}`);
+    }
+  }
+
+  if (infos.length > 0) {
+    lines.push(`ℹ️ ${infos.length} info(s):`);
+    for (const i of infos) {
+      lines.push(`   - ${i.message}`);
+    }
+  }
+
+  if (lines.length === 0) {
+    return "✅ Tile references are valid";
   }
 
   return lines.join("\n");

@@ -577,28 +577,42 @@ export class LibraryPanel {
           const validationResult = await this.apiClient.validateBuilding(config as BuildingConfig);
           console.log('[LibraryPanel] Validation result:', validationResult);
           
+          // Validate tile references (sourceCollection, sourceTileId)
+          const tileRefValidation = await this.apiClient.validateTileRefs(config as BuildingConfig);
+          console.log('[LibraryPanel] Tile reference validation result:', tileRefValidation);
+          
+          // Combine validation issues
+          const allErrors = [
+            ...validationResult.issues.filter(i => i.severity === 'error'),
+            ...tileRefValidation.issues.filter(i => i.severity === 'error'),
+          ];
+          const allWarnings = [
+            ...validationResult.issues.filter(i => i.severity === 'warning'),
+            ...tileRefValidation.issues.filter(i => i.severity === 'warning'),
+          ];
+          const allInfos = [
+            ...validationResult.issues.filter(i => i.severity === 'info'),
+            ...tileRefValidation.issues.filter(i => i.severity === 'info'),
+          ];
+          
           // Show warnings for validation issues
-          if (!validationResult.valid) {
-            const errors = validationResult.issues.filter(i => i.severity === 'error');
-            const warnings = validationResult.issues.filter(i => i.severity === 'warning');
-            const infos = validationResult.issues.filter(i => i.severity === 'info');
-            
-            if (errors.length > 0) {
-              this.stateManager.setError(`Config has ${errors.length} error(s): ${errors.map(e => e.message).join('; ')}`);
+          if (!validationResult.valid || !tileRefValidation.valid) {
+            if (allErrors.length > 0) {
+              this.stateManager.setError(`Config has ${allErrors.length} error(s): ${allErrors.map(e => e.message).join('; ')}`);
             }
             
-            if (warnings.length > 0) {
-              console.warn('[LibraryPanel] Config warnings:', warnings);
+            if (allWarnings.length > 0) {
+              console.warn('[LibraryPanel] Config warnings:', allWarnings);
               // Still allow loading but show warnings
-              const warningMsg = `⚠️ ${warnings.length} warning(s) in config: ${warnings.map(w => w.message).join('; ')}`;
-              if (errors.length === 0) {
+              const warningMsg = `⚠️ ${allWarnings.length} warning(s) in config: ${allWarnings.map(w => w.message).join('; ')}`;
+              if (allErrors.length === 0) {
                 // Only set warning as error if there are no actual errors
                 this.stateManager.setError(warningMsg);
               }
             }
             
-            if (infos.length > 0) {
-              console.info('[LibraryPanel] Config info:', infos);
+            if (allInfos.length > 0) {
+              console.info('[LibraryPanel] Config info:', allInfos);
             }
           }
         } else {

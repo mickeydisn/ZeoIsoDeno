@@ -416,6 +416,34 @@ export class ApiClient {
   }
 
   /**
+   * POST /editor/validate-tile-refs/building — Validate tile references in building config
+   */
+  async validateTileRefs(config: BuildingConfig): Promise<{
+    success: boolean;
+    valid: boolean;
+    issues: Array<{
+      severity: string;
+      message: string;
+      tileIndex?: number;
+      tileId?: string;
+      faceKey?: string;
+    }>;
+    summary: string;
+    stats: {
+      totalTiles: number;
+      tilesWithSourceCollection: number;
+      validCollectionRefs: number;
+      invalidCollectionRefs: number;
+      unknownAssetKeys: string[];
+    };
+  }> {
+    return this.request(`/validate-tile-refs/building`, {
+      method: "POST",
+      body: config,
+    });
+  }
+
+  /**
    * GET /editor/versions — Get current and supported versions
    */
   async getVersions(): Promise<{
