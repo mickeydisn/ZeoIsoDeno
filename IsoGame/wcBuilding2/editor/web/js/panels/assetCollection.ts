@@ -543,7 +543,8 @@ export class AssetCollectionEditorPanel {
               continue; // Skip unresolvable templates
             }
           }
-          if (suffixStr?.startsWith('{')) {
+          // Resolve template suffix to actual value
+          if (typeof suffixStr === 'string' && suffixStr.startsWith('{')) {
             const resolved = this.resolveTemplateParam(suffixStr, params, paramsSchema);
             if (resolved && typeof resolved === 'string') {
               suffixStr = resolved;
@@ -558,8 +559,8 @@ export class AssetCollectionEditorPanel {
 
         ctx.save();
 
-        // Apply color filter
-        if (suffixStr?.startsWith('#')) {
+        // Apply color filter - ensure suffixStr is a string before calling startsWith
+        if (typeof suffixStr === 'string' && suffixStr.startsWith('#')) {
           ctx.filter = this.buildCSSFilterForCanvas(suffixStr);
         }
 
