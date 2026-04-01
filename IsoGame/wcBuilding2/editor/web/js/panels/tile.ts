@@ -17,6 +17,7 @@ import type { TileConfig, BuildingConfig, AssetCollectionConfig } from "../../..
 import { FaceEditor } from "../components/faceEditor.ts";
 import { AssetListEditor } from "../components/assetList.ts";
 import { Canvas2DPreview } from "../components/canvas2d.ts";
+import { AssetPreviewService } from "../services/assetPreview.ts";
 
 // ============================================================================
 // Tile Edit Context
@@ -58,6 +59,7 @@ export class TileEditorPanel {
   private faceEditor: FaceEditor | null = null;
   private assetListEditor: AssetListEditor | null = null;
   private canvasPreview: Canvas2DPreview | null = null;
+  private assetPreviewService: AssetPreviewService;
 
   // Current editing state
   private currentTile: TileConfig | null = null;
@@ -67,6 +69,7 @@ export class TileEditorPanel {
   constructor(stateManager: StateManager, apiClient: ApiClient) {
     this.stateManager = stateManager;
     this.apiClient = apiClient;
+    this.assetPreviewService = new AssetPreviewService();
   }
 
   /**
@@ -145,12 +148,24 @@ export class TileEditorPanel {
   }
 
   /**
-   * Load available assets from the server.
+   * Load available assets from the server and preload for current tile.
    */
   private async loadAvailableAssets(): Promise<{ key: string; category: string; filename: string }[]> {
     try {
       const response = await this.apiClient.listAssets();
-      return response.assets || [];
+      const assets = response.assets || [];
+
+      // Preload assets for current tile
+      if (this.currentTile?.assets?.length) {
+        const keysToLoad = this.currentTile.assets
+          .map((a) => a.key)
+          .filter((k): k is string => !!k);
+        if (keysToLoad.length > 0) {
+          await this.assetPreviewService.loadImages(keysToLoad);
+        }
+      }
+
+      return assets;
     } catch {
       return [];
     }
@@ -412,12 +427,15 @@ export class TileEditorPanel {
         availableAssets: this.context?.availableAssets || [],
         collectionParams: this.context?.collectionParams,
         templateParams: this.context?.templateParams,
+        assetPreviewService: this.assetPreviewService,
         onChange: (updatedAssets) => {
           if (this.currentTile) {
             this.currentTile.assets = updatedAssets;
             this.isDirty = true;
             // Update asset count in header
             header.textContent = `🎨 Assets (${updatedAssets.length})`;
+            // Reload asset preview
+            this.reloadAssetPreviews();
           }
         },
       });
@@ -733,9 +751,9 @@ export class TileEditorPanel {
   }
 
   /**
-   * Render canvas preview.
+   * Render canvas preview with asset images.
    */
-  private renderCanvasPreview(): void {
+  private async renderCanvasPreview(): Promise<void> {
     const canvasContainer = this.modal?.querySelector(".canvas-preview-container");
     if (!canvasContainer || !this.currentTile) return;
 
@@ -745,7 +763,43 @@ export class TileEditorPanel {
     }
 
     this.canvasPreview = new Canvas2DPreview(canvasContainer as HTMLElement);
+
+    // Load and set asset images for preview
+    if (this.currentTile.assets?.length) {
+      const keysToLoad = this.currentTile.assets
+        .map((a) => a.key)
+        .filter((k): k is string => !!k);
+      if (keysToLoad.length > 0) {
+        const images = await this.assetPreviewService.loadImages(keysToLoad);
+        this.canvasPreview.setAssetImages(images);
+      }
+    }
+
     this.canvasPreview.renderTile(this.currentTile);
+  }
+
+  /**
+   * Reload asset previews when assets change.
+   */
+  private async reloadAssetPreviews(): Promise<void> {
+    if (!this.currentTile || !this.canvasPreview) return;
+
+    if (this.currentTile.assets?.length) {
+      const keysToLoad = this.currentTile.assets
+        .map((a) => a.key)
+        .filter((k): k is string => !!k);
+      if (keysToLoad.length > 0) {
+        const images = await this.assetPreviewService.loadImages(keysToLoad);
+        this.canvasPreview.setAssetImages(images);
+        this.canvasPreview.render();
+      } else {
+        this.canvasPreview.setAssetImages(new Map());
+        this.canvasPreview.render();
+      }
+    } else {
+      this.canvasPreview.setAssetImages(new Map());
+      this.canvasPreview.render();
+    }
   }
 
   /**

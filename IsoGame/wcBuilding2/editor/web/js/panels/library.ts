@@ -345,9 +345,22 @@ export class LibraryPanel {
         console.log('[LibraryPanel] Setting active config after extract:', item.type, item.id);
         this.stateManager.setActiveConfig(item.type, item.id, config);
       } else {
-        // For JSON configs, we'd need to load them from disk via API
-        // This is a placeholder — actual loading would need a GET endpoint
-        this.stateManager.setError(`Loading JSON configs not yet implemented`);
+        // Load JSON config from disk via API
+        console.log('[LibraryPanel] Loading JSON config:', item.id, item.type);
+        let config: BuildingConfig | AssetCollectionConfig;
+        if (item.type === "building") {
+          config = await this.apiClient.loadBuilding(item.id);
+          (config as BuildingConfig).type = "building";
+          (config as BuildingConfig).id = item.id;
+        } else {
+          config = await this.apiClient.loadAssetCollection(item.id);
+          (config as AssetCollectionConfig).type = "assetCollection";
+          (config as AssetCollectionConfig).id = item.id;
+        }
+        console.log('[LibraryPanel] Loaded JSON config:', config);
+        this.stateManager.addConfig(config);
+        console.log('[LibraryPanel] Setting active config after JSON load:', item.type, item.id);
+        this.stateManager.setActiveConfig(item.type, item.id, config);
       }
     } catch (error) {
       console.error('[LibraryPanel] Item click error:', error);

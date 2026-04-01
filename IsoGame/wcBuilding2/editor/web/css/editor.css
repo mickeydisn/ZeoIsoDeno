@@ -1499,3 +1499,53 @@ html, body {
   outline: none;
   border-color: var(--accent-color);
 }
+
+/* ============================================================================
+   Phase 2: Asset Thumbnail & Preview Styles
+   ============================================================================ */
+
+/* --- Asset Thumbnail in AssetListEditor --- */
+.asset-thumbnail-container {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.asset-thumbnail {
+  max-width: 40px;
+  max-height: 40px;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+/* --- Asset Row Updated Layout --- */
+.asset-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  flex-wrap: wrap;
+}
+
+/* --- Canvas Asset Rendering --- */
+.canvas-preview-container canvas {
+  image-rendering: auto;
+}
+
+/* --- Asset Preview Loading State --- */
+.asset-thumbnail[data-loading="true"] {
+  opacity: 0.5;
+}
+
+.asset-thumbnail[data-error="true"] {
+  filter: grayscale(100%);
+}

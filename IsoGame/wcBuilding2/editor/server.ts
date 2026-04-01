@@ -14,6 +14,8 @@
  * - POST /editor/preview/generate                    — Run building generation preview
  * - GET  /editor/assets/list                         — List available game assets
  * - GET  /editor/asset-preview/:key                  — Get asset image for preview
+ * - GET  /editor/load/building/:name                 — Load existing JSON building config
+ * - GET  /editor/load/asset-collection/:name         — Load existing JSON asset collection config
  */
 
 import { Router } from "https://deno.land/x/oak/mod.ts";
@@ -457,6 +459,96 @@ editorRouter.get("/editor/assets/list", async (ctx) => {
     ctx.response.body = {
       success: false,
       error: `Failed to list assets: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+});
+
+// ============================================================================
+// GET /editor/load/building/:name — Load Existing JSON Building Config
+// ============================================================================
+
+editorRouter.get("/editor/load/building/:name", async (ctx) => {
+  try {
+    const { name } = ctx.params;
+
+    if (!name) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing name parameter",
+      };
+      return;
+    }
+
+    const filePath = `${getBuildingsDir()}/${name}.json`;
+
+    try {
+      await Deno.stat(filePath);
+    } catch {
+      ctx.response.status = 404;
+      ctx.response.body = {
+        success: false,
+        error: `Building config not found: ${name}`,
+      };
+      return;
+    }
+
+    const content = await Deno.readTextFile(filePath);
+    const config: BuildingConfig = JSON.parse(content);
+
+    ctx.response.headers.set("Content-Type", "application/json");
+    ctx.response.body = config;
+    ctx.response.status = 200;
+  } catch (error: unknown) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: `Failed to load building config: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+});
+
+// ============================================================================
+// GET /editor/load/asset-collection/:name — Load Existing JSON Asset Collection Config
+// ============================================================================
+
+editorRouter.get("/editor/load/asset-collection/:name", async (ctx) => {
+  try {
+    const { name } = ctx.params;
+
+    if (!name) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing name parameter",
+      };
+      return;
+    }
+
+    const filePath = `${getAssetCollectionsDir()}/${name}.json`;
+
+    try {
+      await Deno.stat(filePath);
+    } catch {
+      ctx.response.status = 404;
+      ctx.response.body = {
+        success: false,
+        error: `Asset collection config not found: ${name}`,
+      };
+      return;
+    }
+
+    const content = await Deno.readTextFile(filePath);
+    const config: AssetCollectionConfig = JSON.parse(content);
+
+    ctx.response.headers.set("Content-Type", "application/json");
+    ctx.response.body = config;
+    ctx.response.status = 200;
+  } catch (error: unknown) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: `Failed to load asset collection config: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 });

@@ -189,6 +189,22 @@ export class ApiClient {
   }
 
   /**
+   * GET /editor/load/building/:name — Load existing JSON building config
+   */
+  async loadBuilding(name: string): Promise<BuildingConfig> {
+    return this.request<BuildingConfig>(`/load/building/${encodeURIComponent(name)}`);
+  }
+
+  /**
+   * GET /editor/load/asset-collection/:name — Load existing JSON asset collection config
+   */
+  async loadAssetCollection(name: string): Promise<AssetCollectionConfig> {
+    return this.request<AssetCollectionConfig>(
+      `/load/asset-collection/${encodeURIComponent(name)}`
+    );
+  }
+
+  /**
    * GET /editor/assets/list — List available game assets
    */
   async listAssets(): Promise<AssetPreviewResponse> {

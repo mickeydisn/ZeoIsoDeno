@@ -12,6 +12,7 @@
 
 import type { WcConfTileAsset } from "../../../types.ts";
 import { ColorPicker } from "./colorPicker.ts";
+import { AssetPreviewService } from "../services/assetPreview.ts";
 
 export interface AssetListEditorOptions {
   /** Current asset list */
@@ -24,6 +25,8 @@ export interface AssetListEditorOptions {
   templateParams?: string[];
   /** Callback when assets change */
   onChange: (updatedAssets: WcConfTileAsset[]) => void;
+  /** Asset preview service for thumbnails */
+  assetPreviewService?: AssetPreviewService;
 }
 
 const ROTATION_LABELS = ["0°", "90°", "180°", "270°"];
@@ -32,6 +35,7 @@ export class AssetListEditor {
   private container: HTMLElement;
   private options: AssetListEditorOptions;
   private assets: WcConfTileAsset[];
+  private assetPreviewService: AssetPreviewService | null = null;
 
   constructor(
     container: HTMLElement,
@@ -40,6 +44,7 @@ export class AssetListEditor {
     this.container = container;
     this.options = options;
     this.assets = [...(options.assets || [])];
+    this.assetPreviewService = options.assetPreviewService || null;
   }
 
   /**
@@ -138,11 +143,37 @@ export class AssetListEditor {
   }
 
   /**
-   * Create a single asset row.
+   * Create a single asset row with thumbnail preview.
    */
   private createAssetRow(asset: WcConfTileAsset, index: number): HTMLElement {
     const row = document.createElement("div");
     row.className = "asset-row";
+
+    // Asset thumbnail preview
+    const thumbContainer = document.createElement("div");
+    thumbContainer.className = "asset-thumbnail-container";
+    const thumbImg = document.createElement("img");
+    thumbImg.className = "asset-thumbnail";
+    thumbImg.alt = asset.key || "No asset";
+    thumbImg.title = `Asset: ${asset.key || "None"}`;
+    thumbContainer.appendChild(thumbImg);
+
+    // Load thumbnail if we have a key
+    if (asset.key && this.assetPreviewService) {
+      this.assetPreviewService.loadImage(asset.key).then((img) => {
+        thumbImg.src = img.src;
+        // Apply color suffix filter preview
+        if (asset.sufix?.startsWith('#')) {
+          thumbImg.style.filter = this.buildCSSFilter(asset.sufix);
+        } else {
+          thumbImg.style.filter = 'none';
+        }
+      });
+    } else {
+      thumbImg.src = this.assetPreviewService?.getPlaceholderImage() || '';
+      thumbImg.style.filter = 'none';
+    }
+    row.appendChild(thumbContainer);
 
     // Layer indicator
     const layer = document.createElement("span");
@@ -225,6 +256,12 @@ export class AssetListEditor {
 
     suffixInput.addEventListener("input", () => {
       this.assets[index].sufix = suffixInput.value;
+      // Update thumbnail filter preview
+      if (asset.sufix?.startsWith('#')) {
+        thumbImg.style.filter = this.buildCSSFilter(asset.sufix);
+      } else {
+        thumbImg.style.filter = 'none';
+      }
       this.onAssetsChange();
     });
     suffixContainer.appendChild(suffixInput);
@@ -298,6 +335,40 @@ export class AssetListEditor {
     row.appendChild(deleteBtn);
 
     return row;
+  }
+
+  /**
+   * Build a CSS filter string for HTML elements from a color suffix.
+   */
+  private buildCSSFilter(suffix: string): string {
+    if (!suffix.startsWith('#')) return 'none';
+
+    const parts = suffix.substring(1).split('_');
+    let hue = 0;
+    let saturation = 100;
+    let brightness = 100;
+
+    for (const part of parts) {
+      const type = part.charAt(0);
+      const value = parseInt(part.substring(1), 10) || 0;
+
+      switch (type) {
+        case 'H': // Hue rotation (0-360)
+          hue = value;
+          break;
+        case 'C': // Chroma (0-255), affects brightness
+          brightness = (value / 128) * 100;
+          break;
+        case 'S': // Saturation (0-100+)
+          saturation = value * 2; // Scale to CSS range
+          break;
+        case 'B': // Brightness (0-255)
+          brightness = (value / 128) * 100;
+          break;
+      }
+    }
+
+    return `hue-rotate(${hue}deg) saturate(${saturation}%) brightness(${brightness}%)`;
   }
 
   /**

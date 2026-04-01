@@ -389,6 +389,95 @@ export class Canvas2DPreview {
         halfH * 0.6
       );
     }
+
+    // Draw asset images if loaded
+    this.drawTileAssets(baseX, baseY, tile);
+  }
+
+  /**
+   * Draw asset images on a tile.
+   * Renders asset images with color suffix filters, rotation, and height offsets.
+   */
+  private drawTileAssets(x: number, y: number, tile: TileConfig): void {
+    if (!tile.assets || tile.assets.length === 0) return;
+
+    const halfW = TILE_WIDTH / 2;
+    const halfH = TILE_HEIGHT / 2;
+
+    // Sort assets by height layer (back to front)
+    const sortedAssets = [...tile.assets].sort((a, b) => (a.h ?? 0) - (b.h ?? 0));
+
+    sortedAssets.forEach((asset) => {
+      const img = this.assetImages.get(asset.key || "");
+      if (!img) return;
+
+      this.ctx.save();
+
+      // Apply color suffix filter if present
+      if (asset.sufix?.startsWith('#')) {
+        const filter = this.buildColorFilter(asset.sufix);
+        this.ctx.filter = filter;
+      }
+
+      // Calculate position with offset
+      const offsetX = asset.off?.x ?? 0;
+      const offsetY = asset.off?.y ?? 0;
+      const heightOffset = (asset.h ?? 0) * 8; // Stack assets vertically
+
+      // Asset image should be centered on tile
+      const drawX = x + offsetX;
+      const drawY = y - heightOffset + offsetY;
+
+      // Scale asset image to fit tile
+      const imgWidth = halfW * 0.8;
+      const imgHeight = halfH * 0.8;
+
+      // Apply rotation if specified
+      const rotation = (asset.keyR ?? 0) * 90;
+      if (rotation !== 0) {
+        this.ctx.translate(drawX, drawY);
+        this.ctx.rotate((rotation * Math.PI) / 180);
+        this.ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+      } else {
+        this.ctx.drawImage(img, drawX - imgWidth / 2, drawY - imgHeight / 2, imgWidth, imgHeight);
+      }
+
+      this.ctx.restore();
+    });
+  }
+
+  /**
+   * Build a CSS filter string from a color suffix like #H210_C115_S35_B120.
+   */
+  private buildColorFilter(suffix: string): string {
+    if (!suffix.startsWith('#')) return 'none';
+
+    const parts = suffix.substring(1).split('_');
+    let hue = 0;
+    let saturation = 100;
+    let brightness = 100;
+
+    for (const part of parts) {
+      const type = part.charAt(0);
+      const value = parseInt(part.substring(1), 10) || 0;
+
+      switch (type) {
+        case 'H': // Hue rotation (0-360)
+          hue = value;
+          break;
+        case 'C': // Chroma (0-255), affects brightness
+          brightness = (value / 128) * 100;
+          break;
+        case 'S': // Saturation (0-100+)
+          saturation = value * 2; // Scale to CSS range
+          break;
+        case 'B': // Brightness (0-255)
+          brightness = (value / 128) * 100;
+          break;
+      }
+    }
+
+    return `hue-rotate(${hue}deg) saturate(${saturation}%) brightness(${brightness}%)`;
   }
 
   /**
