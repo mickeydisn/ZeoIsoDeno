@@ -314,6 +314,423 @@ export class AssetCollectionEditorPanel {
   }
 
   /**
+   * Render tile preview section with grid of tiles showing their asset images.
+   * Task 2.5: Asset Collection Tile Preview
+   */
+  private renderTilePreviewSection(config: AssetCollectionConfig): HTMLElement {
+    const section = document.createElement("div");
+    section.className = "editor-section editor-section-tile-preview";
+
+    const header = document.createElement("h3");
+    const tiles = config.tiles || [];
+    header.textContent = `🗺️ Tile Previews (${tiles.length})`;
+    section.appendChild(header);
+
+    // Preview mode toggle
+    const modeToggle = document.createElement("div");
+    modeToggle.className = "preview-mode-toggle";
+    modeToggle.innerHTML = `
+      <label>
+        <input type="checkbox" id="preview-show-templates" />
+        Show template placeholders
+      </label>
+    `;
+    section.appendChild(modeToggle);
+
+    // Tile preview grid container
+    const gridContainer = document.createElement("div");
+    gridContainer.className = "tile-preview-grid";
+    section.appendChild(gridContainer);
+
+    // Render tile previews
+    this.renderTilePreviews(gridContainer, config);
+
+    // Bind toggle handler
+    const showTemplatesCheckbox = gridContainer.parentElement?.querySelector("#preview-show-templates") as HTMLInputElement;
+    showTemplatesCheckbox?.addEventListener("change", () => {
+      this.renderTilePreviews(gridContainer, config);
+    });
+
+    return section;
+  }
+
+  /**
+   * Render grid of tile previews with their asset images.
+   */
+  private async renderTilePreviews(container: HTMLElement, config: AssetCollectionConfig): Promise<void> {
+    container.innerHTML = "";
+    const tiles = config.tiles || [];
+    const showTemplates = container.parentElement?.querySelector("#preview-show-templates") as HTMLInputElement;
+    const renderWithTemplates = showTemplates?.checked ?? false;
+
+    // Preload all assets used in tiles
+    const allAssetKeys = new Set<string>();
+    for (const tile of tiles) {
+      if (tile.assets) {
+        for (const asset of tile.assets) {
+          if (asset.key && !asset.key.startsWith('{')) {
+            allAssetKeys.add(asset.key);
+          }
+        }
+      }
+    }
+    if (allAssetKeys.size > 0) {
+      await this.assetPreviewService.loadImages(Array.from(allAssetKeys));
+    }
+
+    // Create preview for each tile
+    const params = config.params || {};
+    const paramsSchema = config.paramsSchema || {};
+
+    for (let i = 0; i < tiles.length; i++) {
+      const tile = tiles[i];
+      const previewCard = document.createElement("div");
+      previewCard.className = "tile-preview-card";
+      previewCard.dataset.tileIndex = String(i);
+
+      // Tile header
+      const cardHeader = document.createElement("div");
+      cardHeader.className = "tile-preview-header";
+      cardHeader.innerHTML = `
+        <span class="tile-id">${tile.id || `tile_${i}`}</span>
+        <span class="tile-weight">w:${tile.weight ?? 0}</span>
+      `;
+      previewCard.appendChild(cardHeader);
+
+      // Canvas for tile preview
+      const canvasContainer = document.createElement("div");
+      canvasContainer.className = "tile-canvas-container";
+      previewCard.appendChild(canvasContainer);
+
+      // Render 2D preview on canvas
+      this.renderTilePreviewCanvas(canvasContainer, tile, config, renderWithTemplates);
+
+      // Asset thumbnail strip
+      if (tile.assets && tile.assets.length > 0) {
+        const thumbStrip = document.createElement("div");
+        thumbStrip.className = "asset-thumbnail-strip";
+        for (const asset of tile.assets) {
+          if (!asset.key) continue;
+
+          const thumbContainer = document.createElement("div");
+          thumbContainer.className = "asset-thumbnail";
+          thumbContainer.title = `${asset.key}${asset.sufix ? ` (${asset.sufix})` : ""}`;
+
+          if (asset.key.startsWith('{') && !renderWithTemplates) {
+            // Template placeholder - resolve if possible
+            const resolvedValue = this.resolveTemplateParam(asset.key, params, paramsSchema);
+            if (resolvedValue && typeof resolvedValue === 'string') {
+              this.renderAssetThumbnail(thumbContainer, asset, resolvedValue);
+            } else {
+              thumbContainer.innerHTML = `<span class="template-placeholder">${asset.key}</span>`;
+            }
+          } else {
+            this.renderAssetThumbnail(thumbContainer, asset, null);
+          }
+
+          thumbStrip.appendChild(thumbContainer);
+        }
+        previewCard.appendChild(thumbStrip);
+      }
+
+      // Tile face info
+      const faceInfo = document.createElement("div");
+      faceInfo.className = "tile-face-info";
+      const faces = (tile.face || []).map((f, idx) => {
+        const dir = ["NW", "NE", "SE", "SW"][idx];
+        return f ? `${dir}: ${f.substring(0, 12)}${f.length > 12 ? '…' : ''}` : `${dir}: —`;
+      });
+      faceInfo.innerHTML = faces.join("<br>");
+      previewCard.appendChild(faceInfo);
+
+      // Click handler to open tile editor
+      previewCard.addEventListener("click", () => {
+        this.openTileEditor(config, tile, i);
+      });
+
+      container.appendChild(previewCard);
+    }
+  }
+
+  /**
+   * Render a 2D canvas preview for a single tile.
+   */
+  private renderTilePreviewCanvas(
+    container: HTMLElement,
+    tile: TileConfig,
+    config: AssetCollectionConfig,
+    renderWithTemplates: boolean
+  ): void {
+    const canvasEl = document.createElement("canvas");
+    canvasEl.width = 128;
+    canvasEl.height = 64;
+    canvasEl.className = "tile-preview-canvas";
+    container.appendChild(canvasEl);
+
+    const ctx = canvasEl.getContext("2d");
+    if (!ctx) return;
+
+    // Clear
+    ctx.clearRect(0, 0, 128, 64);
+
+    const halfW = 64;
+    const halfH = 32;
+    const centerX = 64;
+    const centerY = 32;
+
+    // Draw tile rhombus
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY - halfH);
+    ctx.lineTo(centerX + halfW, centerY);
+    ctx.lineTo(centerX, centerY + halfH);
+    ctx.lineTo(centerX - halfW, centerY);
+    ctx.closePath();
+
+    let fillColor = "#3a3a4e";
+    if (tile.empty) fillColor = "#2a2a3e";
+    else if (tile.color) {
+      const [r, g, b] = tile.color;
+      fillColor = `rgb(${r}, ${g}, ${b})`;
+    }
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+    ctx.strokeStyle = "#606078";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Face overlays
+    if (tile.face) {
+      const faceColors = [
+        "rgba(74, 158, 255, 0.4)",
+        "rgba(76, 175, 80, 0.4)",
+        "rgba(255, 152, 0, 0.4)",
+        "rgba(158, 158, 158, 0.4)"
+      ];
+      const faceOffsets = [
+        { x: 0, y: -halfH * 0.6 },
+        { x: halfW * 0.4, y: 0 },
+        { x: 0, y: halfH * 0.6 },
+        { x: -halfW * 0.4, y: 0 }
+      ];
+      tile.face.forEach((faceKey, idx) => {
+        if (!faceKey) return;
+        ctx.fillStyle = faceColors[idx] || "rgba(158, 158, 158, 0.4)";
+        const fx = centerX + faceOffsets[idx].x;
+        const fy = centerY + faceOffsets[idx].y;
+        const sz = 6;
+        ctx.fillRect(fx - sz / 2, fy - sz / 2, sz, sz);
+      });
+    }
+
+    // Draw assets
+    if (tile.assets) {
+      const params = config.params || {};
+      const paramsSchema = config.paramsSchema || {};
+
+      for (const asset of tile.assets) {
+        if (!asset.key) continue;
+
+        let assetKey = asset.key;
+        let suffixStr = asset.sufix;
+
+        // Resolve template parameters if not in template mode
+        if (!renderWithTemplates) {
+          if (assetKey.startsWith('{')) {
+            const resolved = this.resolveTemplateParam(assetKey, params, paramsSchema);
+            if (resolved && typeof resolved === 'string' && !resolved.startsWith('{')) {
+              assetKey = resolved;
+            } else {
+              continue; // Skip unresolvable templates
+            }
+          }
+          if (suffixStr?.startsWith('{')) {
+            const resolved = this.resolveTemplateParam(suffixStr, params, paramsSchema);
+            if (resolved && typeof resolved === 'string') {
+              suffixStr = resolved;
+            } else {
+              suffixStr = undefined;
+            }
+          }
+        }
+
+        const img = this.assetPreviewService.getCachedImage(assetKey);
+        if (!img) continue;
+
+        ctx.save();
+
+        // Apply color filter
+        if (suffixStr?.startsWith('#')) {
+          ctx.filter = this.buildCSSFilterForCanvas(suffixStr);
+        }
+
+        const offsetX = asset.off?.x ?? 0;
+        const offsetY = asset.off?.y ?? 0;
+        const heightOffset = (asset.h ?? 0) * 6;
+        const imgW = 24;
+        const imgH = 24;
+
+        const drawX = centerX + offsetX;
+        const drawY = centerY - heightOffset + offsetY;
+
+        const rotation = (asset.keyR ?? 0) * 90;
+        if (rotation !== 0) {
+          ctx.translate(drawX, drawY);
+          ctx.rotate((rotation * Math.PI) / 180);
+          ctx.drawImage(img, -imgW / 2, -imgH / 2, imgW, imgH);
+        } else {
+          ctx.drawImage(img, drawX - imgW / 2, drawY - imgH / 2, imgW, imgH);
+        }
+
+        ctx.restore();
+      }
+    }
+  }
+
+  /**
+   * Build CSS filter string for canvas rendering.
+   */
+  private buildCSSFilterForCanvas(suffix: string): string {
+    if (!suffix.startsWith('#')) return 'none';
+
+    const parts = suffix.substring(1).split('_');
+    let hue = 0;
+    let saturation = 100;
+    let brightness = 100;
+
+    for (const part of parts) {
+      const type = part.charAt(0);
+      const value = parseInt(part.substring(1), 10) || 0;
+      switch (type) {
+        case 'H': hue = value; break;
+        case 'C': brightness = (value / 128) * 100; break;
+        case 'S': saturation = value * 2; break;
+        case 'B': brightness = (value / 128) * 100; break;
+      }
+    }
+
+    return `hue-rotate(${hue}deg) saturate(${saturation}%) brightness(${brightness}%)`;
+  }
+
+  /**
+   * Resolve a template parameter reference (e.g., "{WALL_SUFFIX}") to its actual value.
+   */
+  private resolveTemplateParam(
+    templateRef: string,
+    params: Record<string, string | number | boolean>,
+    paramsSchema: Record<string, { type: string; label: string }>
+  ): string | number | boolean | null {
+    const match = templateRef.match(/^\{(\w+)\}$/);
+    if (!match) return templateRef;
+    const paramName = match[1];
+    return params[paramName] ?? null;
+  }
+
+  /**
+   * Render an asset thumbnail in a container element.
+   */
+  private async renderAssetThumbnail(
+    container: HTMLElement,
+    asset: { key?: string; sufix?: string; keyR?: number; h?: number },
+    resolvedValue: string | null
+  ): Promise<void> {
+    const assetKey = asset.key || "";
+    if (!assetKey || assetKey.startsWith('{')) {
+      container.innerHTML = `<span class="template-placeholder">${assetKey || '?'}</span>`;
+      return;
+    }
+
+    const img = this.assetPreviewService.getCachedImage(assetKey);
+    if (!img) {
+      container.innerHTML = `<span class="missing-asset">?</span>`;
+      return;
+    }
+
+    const thumbImg = document.createElement("img");
+    thumbImg.src = img.src;
+    thumbImg.className = "thumb-img";
+
+    // Apply CSS filter for color suffix
+    if (asset.sufix?.startsWith('#')) {
+      thumbImg.style.filter = this.buildCSSFilterString(asset.sufix);
+    }
+
+    // Apply rotation
+    const rotation = (asset.keyR ?? 0) * 90;
+    if (rotation !== 0) {
+      thumbImg.style.transform = `rotate(${rotation}deg)`;
+    }
+
+    container.innerHTML = '';
+    container.appendChild(thumbImg);
+  }
+
+  /**
+   * Build CSS filter string for HTML elements.
+   */
+  private buildCSSFilterString(suffix: string): string {
+    if (!suffix.startsWith('#')) return 'none';
+
+    const parts = suffix.substring(1).split('_');
+    let hue = 0;
+    let saturation = 100;
+    let brightness = 100;
+
+    for (const part of parts) {
+      const type = part.charAt(0);
+      const value = parseInt(part.substring(1), 10) || 0;
+      switch (type) {
+        case 'H': hue = value; break;
+        case 'C': brightness = (value / 128) * 100; break;
+        case 'S': saturation = value * 2; break;
+        case 'B': brightness = (value / 128) * 100; break;
+      }
+    }
+
+    return `hue-rotate(${hue}deg) saturate(${saturation}%) brightness(${brightness}%)`;
+  }
+
+  /**
+   * Open the tile editor modal for editing a specific tile.
+   */
+  private openTileEditor(
+    config: AssetCollectionConfig,
+    tile: TileConfig,
+    index: number
+  ): void {
+    if (!this.tileEditorPanel) return;
+
+    const context = buildTileEditContextFromAssetCollection(config, (updatedTile) => {
+      // Update tile in config
+      this.onConfigChange(config, (c) => {
+        if (!c.tiles) c.tiles = [];
+        c.tiles[index] = { ...updatedTile };
+      });
+    });
+
+    // Pass available assets and face keys from collection
+    const allFaceKeys = new Set<string>();
+    for (const t of config.tiles || []) {
+      for (const f of t.face || []) {
+        if (f) allFaceKeys.add(f);
+      }
+    }
+    context.faceKeys = Array.from(allFaceKeys).sort();
+
+    this.tileEditorPanel.open(
+      this.container!,
+      { ...tile },
+      context
+    );
+
+    // Listen for tile editor close to refresh previews
+    const originalOnClose = context.onClose;
+    context.onClose = () => {
+      originalOnClose?.();
+      this.renderTilePreviewSection(config);
+    };
+  }
+
+  /**
    * Render tile list section.
    */
   private renderTileListSection(config: AssetCollectionConfig): HTMLElement {

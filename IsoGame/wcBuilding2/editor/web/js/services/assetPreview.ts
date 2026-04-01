@@ -69,6 +69,14 @@ export class AssetPreviewService {
   }
 
   /**
+   * Get a cached image by key without triggering a new load.
+   * Returns null if the image is not yet in the cache.
+   */
+  getCachedImage(key: string): HTMLImageElement | null {
+    return this.cache.get(key) ?? null;
+  }
+
+  /**
    * Get placeholder image data URI for broken/missing images.
    */
   getPlaceholderImage(): string {

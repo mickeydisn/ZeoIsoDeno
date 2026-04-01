@@ -183,19 +183,19 @@ private drawTileAssets(x: number, y: number, tile: TileConfig): void {
 - Canvas filter applied when drawing asset images
 - CSS filter applied to thumbnail previews in asset list
 
-#### 2.5 Asset Collection Tile Preview
+  #### 2.5 Asset Collection Tile Preview
 
-**Problem:** Asset collection editor panel doesn't show visual previews of tile assets.
+  **Problem:** Asset collection editor panel doesn't show visual previews of tile assets.
 
-**Files to Update:**
-- `IsoGame/wcBuilding2/editor/web/js/panels/assetCollection.ts`
-- `IsoGame/wcBuilding2/editor/web/js/components/canvas2d.ts`
+  **Files to Update:**
+  - `IsoGame/wcBuilding2/editor/web/js/panels/assetCollection.ts`
+  - `IsoGame/wcBuilding2/editor/web/js/components/canvas2d.ts`
 
-**Tasks:**
-- [ ] Add tile preview section to asset collection editor
-- [ ] Show grid of tiles with their asset images rendered
-- [ ] Support clicking tile to open tile editor modal
-- [ ] Show template parameter resolved view (actual colors vs placeholders)
+  **Tasks:**
+  - [x] Add tile preview section to asset collection editor
+  - [x] Show grid of tiles with their asset images rendered
+  - [x] Support clicking tile to open tile editor modal
+  - [x] Show template parameter resolved view (actual colors vs placeholders)
 
 #### 2.6 Performance Optimization
 

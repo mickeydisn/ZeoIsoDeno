@@ -1579,3 +1579,163 @@ html, body {
 .asset-thumbnail[data-error="true"] {
   filter: grayscale(100%);
 }
+
+/* ============================================================================
+   Task 2.5: Asset Collection Tile Preview Styles
+   ============================================================================ */
+
+/* Tile Preview Section */
+.editor-section-tile-preview {
+  margin-bottom: 8px;
+}
+
+.preview-mode-toggle {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.preview-mode-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.preview-mode-toggle input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* Tile Preview Grid */
+.tile-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* Tile Preview Card */
+.tile-preview-card {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.tile-preview-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: var(--accent-color);
+}
+
+/* Tile Preview Header */
+.tile-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tile-id {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: monospace;
+}
+
+.tile-weight {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Tile Canvas Container */
+.tile-canvas-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  background-color: var(--bg-secondary);
+  min-height: 80px;
+}
+
+.tile-preview-canvas {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: transparent;
+  image-rendering: pixelated;
+}
+
+/* Asset Thumbnail Strip */
+.asset-thumbnail-strip {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+}
+
+.asset-thumbnail-strip::-webkit-scrollbar {
+  height: 4px;
+}
+
+.asset-thumbnail-strip::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+.asset-thumbnail-strip::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+/* Asset Thumbnail */
+.asset-thumbnail {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-secondary);
+}
+
+.asset-thumbnail .thumb-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.asset-thumbnail .template-placeholder,
+.asset-thumbnail .missing-asset {
+  font-size: 10px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.asset-thumbnail .template-placeholder {
+  color: var(--warning-color);
+  font-family: monospace;
+}
+
+.asset-thumbnail .missing-asset {
+  color: var(--error-color);
+}
+
+/* Tile Face Info */
+.tile-face-info {
+  padding: 6px 8px;
+  font-size: 10px;
+  font-family: monospace;
+  color: var(--text-secondary);
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+  line-height: 1.4;
+}
