@@ -1047,11 +1047,13 @@ export class BuildingEditorPanel {
   }
 
   /**
-   * Render action bar with Save button.
+   * Render action bar with Save and Save As buttons.
    */
   private renderActionBar(config: BuildingConfig): HTMLElement {
     const bar = document.createElement("div");
     bar.className = "editor-action-bar";
+    bar.style.display = "flex";
+    bar.style.gap = "8px";
 
     const saveBtn = document.createElement("button");
     saveBtn.textContent = "💾 Save Config";
@@ -1076,7 +1078,170 @@ export class BuildingEditorPanel {
     });
     bar.appendChild(saveBtn);
 
+    // "Save As..." button
+    const saveAsBtn = document.createElement("button");
+    saveAsBtn.textContent = "📄 Save As...";
+    saveAsBtn.className = "btn-secondary";
+    saveAsBtn.addEventListener("click", () => {
+      this.showSaveAsModal(config);
+    });
+    bar.appendChild(saveAsBtn);
+
     return bar;
+  }
+
+  /**
+   * Show Save As modal dialog.
+   */
+  private showSaveAsModal(config: BuildingConfig): void {
+    // Create modal overlay
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    `;
+
+    // Create modal content
+    const modal = document.createElement("div");
+    modal.className = "modal-content";
+    modal.style.cssText = `
+      background: var(--bg-panel, #1e1e2e);
+      border: 1px solid var(--border-color, #444);
+      border-radius: 8px;
+      padding: 24px;
+      min-width: 400px;
+      max-width: 500px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    `;
+
+    modal.innerHTML = `
+      <h3 style="margin: 0 0 16px 0; font-size: 16px;">Save Config As...</h3>
+      <p style="margin: 0 0 16px 0; color: var(--text-secondary, #888); font-size: 14px;">
+        Create a copy of "${config.id}" with a new name.
+      </p>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500;">
+          New Config Name:
+        </label>
+        <input 
+          type="text" 
+          id="save-as-input" 
+          placeholder="Enter new name..."
+          style="width: 100%; padding: 8px; border: 1px solid var(--border-color, #444); border-radius: 4px; background: var(--bg-input, #2a2a3a); color: var(--text-primary, #eee); font-size: 14px; box-sizing: border-box;"
+          pattern="[a-zA-Z0-9_-]+"
+          title="Only alphanumeric characters, hyphens, and underscores are allowed"
+          value="${config.id}_copy"
+        />
+        <p id="save-as-error" style="color: #f44; font-size: 12px; margin: 4px 0 0 0; display: none;"></p>
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button id="save-as-cancel" class="btn-small">Cancel</button>
+        <button id="save-as-confirm" class="btn-small primary">Save As</button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Focus the input
+    const input = modal.querySelector("#save-as-input") as HTMLInputElement;
+    input?.focus();
+    input?.select();
+
+    // Error display
+    const errorEl = modal.querySelector("#save-as-error") as HTMLElement;
+    const showError = (msg: string) => {
+      errorEl.textContent = msg;
+      errorEl.style.display = "block";
+    };
+    const hideError = () => {
+      errorEl.style.display = "none";
+    };
+
+    // Confirm handler
+    const confirmBtn = modal.querySelector("#save-as-confirm") as HTMLButtonElement;
+    const handleSaveAs = async () => {
+      const newName = input?.value.trim();
+      if (!newName) {
+        showError("Please enter a name");
+        return;
+      }
+      if (!/^[a-zA-Z0-9_-]+$/.test(newName)) {
+        showError("Invalid name format. Only alphanumeric characters, hyphens, and underscores are allowed.");
+        return;
+      }
+      if (newName === config.id) {
+        showError("New name must be different from the current config name");
+        return;
+      }
+
+      hideError();
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = "Saving...";
+
+      try {
+        this.stateManager.setLoading(true);
+        const result = await this.apiClient.saveAsBuilding(config.id, newName, config as any);
+        
+        if (result.success) {
+          // Create a new config with the new ID
+          const newConfig = JSON.parse(JSON.stringify(config)) as BuildingConfig;
+          newConfig.id = newName;
+          
+          // Add to state and set as active
+          this.stateManager.addConfig(newConfig);
+          this.stateManager.setActiveConfig("building", newName, newConfig, "loaded");
+          
+          // Close modal
+          overlay.remove();
+          
+          this.stateManager.setError(null);
+        } else if (result.error) {
+          showError(result.error);
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Save As";
+        }
+      } catch (error: any) {
+        showError(error.message || "Save As failed");
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = "Save As";
+      } finally {
+        this.stateManager.setLoading(false);
+      }
+    };
+
+    confirmBtn.addEventListener("click", handleSaveAs);
+    
+    // Handle Enter key
+    input?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        handleSaveAs();
+      } else if (e.key === "Escape") {
+        overlay.remove();
+      }
+    });
+
+    // Cancel handler
+    const cancelBtn = modal.querySelector("#save-as-cancel") as HTMLButtonElement;
+    cancelBtn.addEventListener("click", () => {
+      overlay.remove();
+    });
+    
+    // Close on overlay click
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+      }
+    });
   }
 
   /**

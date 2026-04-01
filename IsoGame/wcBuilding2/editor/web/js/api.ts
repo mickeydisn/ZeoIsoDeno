@@ -212,6 +212,40 @@ export class ApiClient {
   }
 
   /**
+   * POST /editor/save-as/building/:originalName/:newName — Save building as new JSON file
+   */
+  async saveAsBuilding(
+    originalName: string,
+    newName: string,
+    config: BuildingConfig
+  ): Promise<SaveResponse> {
+    return this.request<SaveResponse>(
+      `/save-as/building/${encodeURIComponent(originalName)}/${encodeURIComponent(newName)}`,
+      {
+        method: "POST",
+        body: config,
+      }
+    );
+  }
+
+  /**
+   * POST /editor/save-as/asset-collection/:originalName/:newName — Save asset collection as new
+   */
+  async saveAsAssetCollection(
+    originalName: string,
+    newName: string,
+    config: AssetCollectionConfig
+  ): Promise<SaveResponse> {
+    return this.request<SaveResponse>(
+      `/save-as/asset-collection/${encodeURIComponent(originalName)}/${encodeURIComponent(newName)}`,
+      {
+        method: "POST",
+        body: config,
+      }
+    );
+  }
+
+  /**
    * Get asset preview URL (not a fetch, just returns the URL string)
    */
   getAssetPreviewUrl(key: string): string {

@@ -265,6 +265,171 @@ editorRouter.post("/editor/save/building/:name", async (ctx) => {
 });
 
 // ============================================================================
+// POST /editor/save-as/building/:originalName/:newName — Save Building as New JSON File
+// ============================================================================
+
+editorRouter.post("/editor/save-as/building/:originalName/:newName", async (ctx) => {
+  try {
+    const { originalName, newName } = ctx.params;
+
+    if (!originalName || !newName) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing originalName or newName parameter",
+      };
+      return;
+    }
+
+    // Validate new name format
+    if (!/^[a-zA-Z0-9_-]+$/.test(newName)) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Invalid name format. Only alphanumeric characters, hyphens, and underscores are allowed.",
+      };
+      return;
+    }
+
+    // Check if new name already exists
+    const newFilePath = `${getBuildingsDir()}/${newName}.json`;
+    try {
+      await Deno.stat(newFilePath);
+      ctx.response.status = 409;
+      ctx.response.body = {
+        success: false,
+        error: `A building config with name "${newName}" already exists`,
+      };
+      return;
+    } catch {
+      // File doesn't exist — good
+    }
+
+    // Read original config
+    const originalFilePath = `${getBuildingsDir()}/${originalName}.json`;
+    let config: BuildingConfig;
+
+    try {
+      const content = await Deno.readTextFile(originalFilePath);
+      config = JSON.parse(content);
+    } catch {
+      ctx.response.status = 404;
+      ctx.response.body = {
+        success: false,
+        error: `Original building config not found: ${originalName}`,
+      };
+      return;
+    }
+
+    // Update the config ID to the new name
+    config.id = newName;
+
+    // Ensure directory exists
+    await ensureDir(getBuildingsDir());
+
+    // Write new file
+    await Deno.writeTextFile(newFilePath, JSON.stringify(config, null, 2));
+
+    ctx.response.body = {
+      success: true,
+      path: newFilePath,
+      newName,
+    };
+    ctx.response.status = 200;
+  } catch (error: unknown) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      success: false,
+      error: `Failed to save as new config: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+});
+
+// ============================================================================
+// POST /editor/save-as/asset-collection/:originalName/:newName — Save Asset Collection as New
+// ============================================================================
+
+editorRouter.post(
+  "/editor/save-as/asset-collection/:originalName/:newName",
+  async (ctx) => {
+    try {
+      const { originalName, newName } = ctx.params;
+
+      if (!originalName || !newName) {
+        ctx.response.status = 400;
+        ctx.response.body = {
+          success: false,
+          error: "Missing originalName or newName parameter",
+        };
+        return;
+      }
+
+      // Validate new name format
+      if (!/^[a-zA-Z0-9_-]+$/.test(newName)) {
+        ctx.response.status = 400;
+        ctx.response.body = {
+          success: false,
+          error: "Invalid name format. Only alphanumeric characters, hyphens, and underscores are allowed.",
+        };
+        return;
+      }
+
+      // Check if new name already exists
+      const newFilePath = `${getAssetCollectionsDir()}/${newName}.json`;
+      try {
+        await Deno.stat(newFilePath);
+        ctx.response.status = 409;
+        ctx.response.body = {
+          success: false,
+          error: `An asset collection config with name "${newName}" already exists`,
+        };
+        return;
+      } catch {
+        // File doesn't exist — good
+      }
+
+      // Read original config
+      const originalFilePath = `${getAssetCollectionsDir()}/${originalName}.json`;
+      let config: AssetCollectionConfig;
+
+      try {
+        const content = await Deno.readTextFile(originalFilePath);
+        config = JSON.parse(content);
+      } catch {
+        ctx.response.status = 404;
+        ctx.response.body = {
+          success: false,
+          error: `Original asset collection config not found: ${originalName}`,
+        };
+        return;
+      }
+
+      // Update the config ID to the new name
+      config.id = newName;
+
+      // Ensure directory exists
+      await ensureDir(getAssetCollectionsDir());
+
+      // Write new file
+      await Deno.writeTextFile(newFilePath, JSON.stringify(config, null, 2));
+
+      ctx.response.body = {
+        success: true,
+        path: newFilePath,
+        newName,
+      };
+      ctx.response.status = 200;
+    } catch (error: unknown) {
+      ctx.response.status = 500;
+      ctx.response.body = {
+        success: false,
+        error: `Failed to save as new config: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+  },
+);
+
+// ============================================================================
 // POST /editor/save/asset-collection/:name — Save Asset Collection JSON to Disk
 // ============================================================================
 
