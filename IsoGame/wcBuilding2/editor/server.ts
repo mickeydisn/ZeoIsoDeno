@@ -43,11 +43,11 @@ editorRouter.get("/editor/list/classes", (ctx) => {
       assetCollections: assetCollectionClasses,
     };
     ctx.response.status = 200;
-  } catch (error) {
+  } catch (error: unknown) {
     ctx.response.status = 500;
     ctx.response.body = {
       success: false,
-      error: `Failed to list classes: ${error.message}`,
+      error: `Failed to list classes: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 });
@@ -98,11 +98,11 @@ editorRouter.get("/editor/list", async (ctx) => {
       jsonAssetCollections,
     };
     ctx.response.status = 200;
-  } catch (error) {
+  } catch (error: unknown) {
     ctx.response.status = 500;
     ctx.response.body = {
       success: false,
-      error: `Failed to list configs: ${error.message}`,
+      error: `Failed to list configs: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 });
@@ -139,11 +139,11 @@ editorRouter.post("/editor/extract/building/:className", async (ctx) => {
     ctx.response.headers.set("Content-Type", "application/json");
     ctx.response.body = config;
     ctx.response.status = 200;
-  } catch (error) {
+  } catch (error: unknown) {
     ctx.response.status = 400;
     ctx.response.body = {
       success: false,
-      error: `Failed to extract building config: ${error.message}`,
+      error: `Failed to extract building config: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 });
@@ -182,11 +182,11 @@ editorRouter.post(
       ctx.response.headers.set("Content-Type", "application/json");
       ctx.response.body = config;
       ctx.response.status = 200;
-    } catch (error) {
+    } catch (error: unknown) {
       ctx.response.status = 400;
       ctx.response.body = {
         success: false,
-        error: `Failed to extract asset collection: ${error.message}`,
+        error: `Failed to extract asset collection: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   },
@@ -253,11 +253,11 @@ editorRouter.post("/editor/save/building/:name", async (ctx) => {
       path: filePath,
     };
     ctx.response.status = 200;
-  } catch (error) {
+  } catch (error: unknown) {
     ctx.response.status = 400;
     ctx.response.body = {
       success: false,
-      error: `Failed to save building config: ${error.message}`,
+      error: `Failed to save building config: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 });
@@ -314,11 +314,11 @@ editorRouter.post("/editor/save/asset-collection/:name", async (ctx) => {
       path: filePath,
     };
     ctx.response.status = 200;
-  } catch (error) {
+  } catch (error: unknown) {
     ctx.response.status = 400;
     ctx.response.body = {
       success: false,
-      error: `Failed to save asset collection: ${error.message}`,
+      error: `Failed to save asset collection: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 });
@@ -372,8 +372,12 @@ editorRouter.post("/editor/preview/generate", async (ctx) => {
     const generator = new WcBuildFactoryGenarator(world, tempConf);
     const success = generator.start2(0, 0);
 
-    // Extract tile data for preview
-    const tiles = generator.allTiles.map((tile) => ({
+    // Extract tile data for preview (cast to access protected members)
+    const genResult = (generator as unknown as Record<string, unknown>);
+    const allTiles = (genResult.allTiles || []) as Array<{
+      x: number; y: number; possibleFace?: (string | null)[][]; isFaceConfigured?: boolean;
+    }>;
+    const tiles = allTiles.map((tile) => ({
       x: tile.x,
       y: tile.y,
       tileType: tile.possibleFace?.[0]?.join("|") || "none",
@@ -391,11 +395,11 @@ editorRouter.post("/editor/preview/generate", async (ctx) => {
       },
     };
     ctx.response.status = 200;
-  } catch (error) {
+  } catch (error: unknown) {
     ctx.response.status = 400;
     ctx.response.body = {
       success: false,
-      error: `Failed to generate preview: ${error.message}`,
+      error: `Failed to generate preview: ${error instanceof Error ? error.message : String(error)}`,
     };
     console.error("Preview generation error:", error);
   }
@@ -448,11 +452,11 @@ editorRouter.get("/editor/assets/list", async (ctx) => {
       total: assets.length,
     };
     ctx.response.status = 200;
-  } catch (error) {
+  } catch (error: unknown) {
     ctx.response.status = 500;
     ctx.response.body = {
       success: false,
-      error: `Failed to list assets: ${error.message}`,
+      error: `Failed to list assets: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 });
@@ -486,9 +490,9 @@ editorRouter.get("/editor/asset-preview/:key", async (ctx) => {
     ctx.response.headers.set("Cache-Control", "public, max-age=86400");
     ctx.response.body = file;
     ctx.response.status = 200;
-  } catch (error) {
+  } catch (error: unknown) {
     ctx.response.status = 500;
-    ctx.response.body = `Failed to load asset: ${error.message}`;
+    ctx.response.body = `Failed to load asset: ${error instanceof Error ? error.message : String(error)}`;
   }
 });
 
