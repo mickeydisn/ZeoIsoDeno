@@ -1,0 +1,120 @@
+# TASKS-PHASE-1: Types & Runtime Extractor
+
+**Goal:** Define JSON schema interfaces and implement runtime extraction of TS building configs and asset collections into valid JSON.
+
+**Estimated Time:** 5-6 hours  
+**Dependencies:** None (first phase to implement)
+
+---
+
+## Context
+
+This phase establishes the foundation for the entire editor. All subsequent phases depend on these types and the extraction capability. Two critical patterns must be handled:
+
+1. **Getter-based asset collections** (WallHouse, WallManor, WallRLab) — tiles are produced by individual getters like `Corner`, `Wall_Door`, etc. Each getter computes face keys dynamically using `tag + suffix`.
+2. **groupAsset-based collections** (FenceSimple, FencePlatform, FenceGrave) — tiles are produced by calling `groupAsset({flatW, cornerW, innerW, isFrise})` with weight parameters.
+
+Face links must be deduplicated (store only unique pairs, not bidirectional duplicates). The runtime value `mainLvl` must NOT be included in JSON.
+
+---
+
+## File: `types.ts` — JSON Schema Interfaces
+
+- [ ] Define `BuildingConfig` interface matching the JSON schema from PLAN-SUMMARY-v4.md
+  - Fields: `version: "1.0"`, `type: "building"`, `id`, `metadata {classRef, sourceFile, registryId}`, `params {growLoopCount, endLoopMax}`, `assetCollections[]`, `faceLinkWeight`, `faceLinks`, `startTiles[]`, `tiles[]`
+  - Explicitly exclude `mainLvl` from params
+- [ ] Define `AssetCollectionConfig` interface
+  - Fields: `version`, `type: "assetCollection"`, `id`, `metadata {classRef, sourceFile}`, `tag`, `params`, `paramsSchema`, `tiles[]`
+- [ ] Define `TileConfig` interface extending `WcConfTile`
+  - Must include traceability fields: `sourceGetter?: string`, `sourceTileId?: string`, `sourceCollection?: string`
+- [ ] Define `WcConfTileAsset` interface
+  - Fields: `key?`, `keyR?`, `sufix?`, `h?`, `off?`
+- [ ] Define `WcConfTileFunction` interface
+  - Fields: `func`, `size?`
+- [ ] Define `AssetCollectionRef` interface for building → collection references
+  - Fields: `id`, `classRef`, `tag`, `params`, `sourceFile`
+- [ ] All types must compile without errors — verify with `deno check types.ts`
+
+---
+
+## File: `extractor.ts` — Runtime TS Class → JSON Extraction
+
+### Building Config Classes Registry
+- [ ] Define `BUILDING_CLASSES` constant mapping class names to class constructors
+  - Keys: `WcBuildConf_HouseA`, `WcBuildConf_GraveA`, `WcBuildConf_ManorA`, `WcBuildConf_LabBorderA`, `WcBuildConf_LabPipeA`, `WcBuildConf_RLabA`
+  - Import all 6 building config classes
+- [ ] Define `REGISTRY_ID_MAP` mapping class names to registry IDs from `buildingConfigRegistry.ts`
+  - HouseA → `house_a`, GraveA → `grave_a`, ManorA → `manor_a`, etc.
+
+### Asset Collection Classes Registry
+- [ ] Define `ASSET_COLLECTION_REGISTRY` with per-class configuration
+  - For getter-based classes: `tileGetters: string[]` listing all getter names
+    - `WcAsset_WallHouse`: ["Corner", "Corner_B", "Wall", "Wall_Door", "Wall_Windows", "Wall_RoofWindows", "InnerCorner", "InnerCorner_X", "Inside_Full"]
+    - `WcAsset_WallManor`: ["Corner", "Wall_Door", "Wall", "Wall_Windows", "InnerCorner", "InnerCorner_X"]
+    - `WcAsset_WallRLab`: similar pattern
+  - For groupAsset-based classes: `usesGroupAsset: true`, `groupAssetParams: {flatW, cornerW, innerW, isFrise}` with defaults
+    - `WcAsset_FenceSimple`, `WcAsset_FencePlatform`, `WcAsset_FenceGrave`
+  - Special handling for `WcAsset_Enter`: `groupInit: true`, `groupAsset: true`
+  - `WcAsset_CorridorLab`, `WcAsset_CorridorPipe`: identify their pattern
+
+### `ConfigExtractor.extractBuilding()` Method
+- [ ] Instantiate config class with `{}` (or optional override params)
+- [ ] Call `conf.init()` to populate `startTileOptions` and `listTileOptions`
+- [ ] Extract `growLoopCount` and `endLoopMax` from instance
+- [ ] Copy `faceLinkWeight` as-is from instance
+- [ ] Extract `faceLinks` and pass through `deduplicateFaceLinks()` to remove bidirectional duplicates
+- [ ] Extract `startTiles` from `startTileOptions` using `tileToJson()`
+- [ ] Extract `tiles` from `listTileOptions` using `tileToJson()`
+- [ ] Extract `assetCollections` references from known instance properties (e.g., `this.houseSimple`, `this.fence`)
+- [ ] Construct and return complete `BuildingConfig` object
+- [ ] Verify extraction for HouseA produces valid JSON with all 6 required face keys (WH_out, WH_outD, WH_in, WH_r, WH_l, WH_rX, WH_lX)
+
+### `ConfigExtractor.extractAssetCollection()` Method
+- [ ] Look up class in `ASSET_COLLECTION_REGISTRY`
+- [ ] Instantiate with default params (or override params map)
+- [ ] **Getter-based branch:** iterate through `entry.tileGetters`, check if getter exists on instance, call it, convert result to JSON with `sourceGetter` set
+- [ ] **groupAsset-based branch:** call `instance.groupAsset(entry.groupAssetParams)` and convert results to JSON
+- [ ] **Special case — WcAsset_Enter:** call `groupInit()` for start tiles and `groupAsset()` for entrance tiles
+- [ ] Extract `tag` from instance
+- [ ] Extract `params` (WALL_SUFFIX, ROOF_SUFFIX, etc.) from instance properties
+- [ ] Construct `paramsSchema` with type hints ("color" for suffix params)
+- [ ] Return complete `AssetCollectionConfig`
+
+### `ConfigExtractor.tileToJson()` Helper
+- [ ] Copy `face` array (4 elements: NW, NE, SE, SW)
+- [ ] Copy `weight`
+- [ ] Deep copy `assets[]` if present
+- [ ] Deep copy `functions[]` if present
+- [ ] Copy booleans: `allowMove`, `isFrise`, `empty`
+- [ ] Copy optional: `color`, `colorT`, `h`, `lvl`
+
+### `ConfigExtractor.deduplicateFaceLinks()` Helper
+- [ ] Create `Set<string>` for seen pairs
+- [ ] Normalize each pair to canonical form (sorted alphabetically: `a < b ? a|b : b|a`)
+- [ ] Filter out pairs already in set
+- [ ] Return deduplicated array of `[string, string][]`
+
+### `ConfigExtractor.extractAssetCollectionRefs()` Helper
+- [ ] Scan building config instance for asset collection property names
+- [ ] For each found collection, extract: `id`, `classRef`, `tag`, `params`, `sourceFile`
+- [ ] Return array of `AssetCollectionRef[]`
+
+---
+
+## Validation & Testing
+
+- [ ] Write test script that extracts all 6 building configs
+- [ ] Verify each extracted config is valid JSON via `JSON.parse(JSON.stringify())`
+- [ ] Verify all tiles have exactly 4 face elements
+- [ ] Verify `faceLinkWeight` keys are consistent with face keys used in `faceLinks`
+- [ ] Verify deduplicated `faceLinks` has ≈50% fewer entries than raw `conf.faceLinks`
+- [ ] Verify `mainLvl` is NOT present in any extracted config
+- [ ] Verify asset collections extract correctly for both getter-based and groupAsset-based patterns
+- [ ] Verify `sourceGetter` is set on all tiles from getter-based collections
+- [ ] Total validation: all 6 building configs + ~10 asset collections extract without errors
+
+---
+
+**Deliverables:**
+1. `IsoGame/wcBuilding2/editor/types.ts` — All JSON schema interfaces
+2. `IsoGame/wcBuilding2/editor/extractor.ts` — Complete extraction logic

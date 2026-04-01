@@ -137,7 +137,7 @@ class BuildingConfigLoader {
 - `web/js/buildConfig/jsonManager.ts`: JSON import/export
 
 **indexBuildConfig.html:**
-- W3.CSS layout (consistent with existing UI)
+- Custom modern layout (consistent with existing UI)
 - Sidebar with config list
 - Main panel with tabs (Asset/Building/JSON)
 - Canvas preview area
