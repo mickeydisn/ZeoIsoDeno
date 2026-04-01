@@ -45,7 +45,7 @@ IsoGame/wcBuilding2/editor/
 
 ## Phase Checklist
 
-- [ ] **Phase 1: Types & Runtime Extractor** — Define JSON schema interfaces and implement extraction of TS building configs and asset collections into valid JSON. Must handle two asset collection patterns: getter-based (WallHouse) and groupAsset-based (Fence). Must deduplicate faceLinks and exclude runtime-only values like `mainLvl`.
+- [x] **Phase 1: Types & Runtime Extractor** — Define JSON schema interfaces and implement extraction of TS building configs and asset collections into valid JSON. Must handle two asset collection patterns: getter-based (WallHouse) and groupAsset-based (Fence). Must deduplicate faceLinks and exclude runtime-only values like `mainLvl`.
 - [ ] **Phase 2: Deno Server Endpoints** — Create isolated HTTP endpoints for config listing, extraction, saving, preview generation, and asset listing. Mount separately from game routes in `webServer.ts`.
 - [ ] **Phase 3: Web Shell & Library Panel** — Build HTML entry point, state management, API client, and searchable library sidebar showing all extractable TS classes and existing JSON configs.
 - [ ] **Phase 4: Building Editor Panel** — Implement full building config editor with: parameters (growLoopCount, endLoopMax), asset collection references, face weight table, face links table (unique pairs), start tiles section, and tile list with CRUD.
