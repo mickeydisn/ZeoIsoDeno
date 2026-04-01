@@ -240,7 +240,7 @@ async function testZeroGameModifications(): Promise<void> {
 // Test 6: ConfigLoader resolution chain
 // ============================================================================
 
-async function testConfigLoaderResolution(): Promise<void> {
+async function testConfigLoaderResolution(extracted: Record<string, BuildingConfig>): Promise<void> {
   console.log("\n=== Test 6: ConfigLoader resolution chain ===");
 
   // Test 6a: Check hasJSONConfig for saved buildings
@@ -279,7 +279,7 @@ async function testConfigLoaderResolution(): Promise<void> {
     } catch (e) {
       assert(
         e instanceof Error && e.message.includes("not found"),
-        `Expected 'not found' error, got: ${e.message}`
+        `Expected 'not found' error, got: ${e instanceof Error ? e.message : String(e)}`
       );
       pass(testName, "throws error as expected");
     }
@@ -292,7 +292,7 @@ async function testConfigLoaderResolution(): Promise<void> {
 // Test 7: Performance validation
 // ============================================================================
 
-async function testPerformance(): Promise<void> {
+async function testPerformance(extracted: Record<string, BuildingConfig>): Promise<void> {
   console.log("\n=== Test 7: Performance validation ===");
 
   // Test extraction time per building
@@ -366,36 +366,36 @@ function printSummary(): void {
 // Main Execution
 // ============================================================================
 
-let extracted: Record<string, BuildingConfig> = {};
+(async () => {
+  try {
+    console.log("Building Config Editor — Round-Trip Validation");
+    console.log("Starting tests...\n");
 
-try {
-  console.log("Building Config Editor — Round-Trip Validation");
-  console.log("Starting tests...\n");
+    // Test 1: Extract all buildings
+    const extracted = await testExtractAllBuildings();
 
-  // Test 1: Extract all buildings
-  extracted = await testExtractAllBuildings();
+    // Test 2: Extract asset collections
+    await testExtractAssetCollections();
 
-  // Test 2: Extract asset collections
-  await testExtractAssetCollections();
+    // Test 3: Save and reload
+    await testSaveAndReload(extracted);
 
-  // Test 3: Save and reload
-  await testSaveAndReload(extracted);
+    // Test 4: Generation consistency (skipped — requires World context)
+    await testGenerationConsistency();
 
-  // Test 4: Generation consistency (skipped — requires World context)
-  await testGenerationConsistency();
+    // Test 5: Zero game modifications
+    await testZeroGameModifications();
 
-  // Test 5: Zero game modifications
-  await testZeroGameModifications();
+    // Test 6: ConfigLoader resolution chain
+    await testConfigLoaderResolution(extracted);
 
-  // Test 6: ConfigLoader resolution chain
-  await testConfigLoaderResolution();
+    // Test 7: Performance validation
+    await testPerformance(extracted);
 
-  // Test 7: Performance validation
-  await testPerformance();
-
-  // Print summary
-  printSummary();
-} catch (e) {
-  console.error("\nFatal error during validation:", e);
-  printSummary();
-}
+    // Print summary
+    printSummary();
+  } catch (e) {
+    console.error("\nFatal error during validation:", e);
+    printSummary();
+  }
+})();

@@ -51,4 +51,4 @@ IsoGame/wcBuilding2/editor/
 - [x] **Phase 4: Building Editor Panel** — Implement full building config editor with: parameters (growLoopCount, endLoopMax), asset collection references, face weight table, face links table (unique pairs), start tiles section, and tile list with CRUD.
 - [x] **Phase 5: Tile Editor & Components** — Create modal tile editor with 4-direction face configuration, asset list CRUD, function list, 2D canvas preview, and color suffix picker.
 - [x] **Phase 6: Asset Collection Editor & Preview** — Build asset collection editing panel with parameter editing (color suffixes), tile listing, and generation preview canvas.
-- [ ] **Phase 7: Config Loader & Round-Trip Validation** — Implement JSON → WcAbstractBuildConf loader for optional runtime integration. Validate round-trip consistency (extract → edit → save → load → generate).
+- [x] **Phase 7: Config Loader & Round-Trip Validation** — Implement JSON → WcAbstractBuildConf loader for optional runtime integration. Validate round-trip consistency (extract → edit → save → load → generate).

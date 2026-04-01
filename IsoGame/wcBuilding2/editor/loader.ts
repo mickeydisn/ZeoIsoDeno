@@ -12,6 +12,7 @@
  */
 
 import { WcAbstractBuildConf, WcConfTile, WcConfTileAsset, WcConfTileFunction } from "../wcAbstractBuildConf.ts";
+import type { WcFace } from "../wcBuildFace.ts";
 import type { BuildingConfig, TileConfig } from "./types.ts";
 import { getBuildingConfigEntry } from "../../tools/buildingConfigRegistry.ts";
 
@@ -19,6 +20,9 @@ import { getBuildingConfigEntry } from "../../tools/buildingConfigRegistry.ts";
 // Index type for face key indexing
 // ============================================================================
 type WcKeyTileFace = string;
+
+// Type for building config class constructor
+type BuildConfCtor = new (params: { growLoopCount: number; endLoopMax: number }) => WcAbstractBuildConf;
 
 // ============================================================================
 // ConfigLoader — Static class for loading JSON configs at runtime
@@ -74,11 +78,11 @@ export class ConfigLoader {
 
     for (const className of classNameCandidates) {
       try {
-        const module = await this.tryImportClass(className);
-        if (module) {
+        const ctor = await this.tryImportClass(className);
+        if (ctor) {
           const growLoopCount = params.growLoopCount ?? 50;
           const endLoopMax = params.endLoopMax ?? 200;
-          const conf = new module({ growLoopCount, endLoopMax });
+          const conf = new ctor({ growLoopCount, endLoopMax });
           conf.init();
           return conf;
         }
@@ -149,8 +153,15 @@ export class ConfigLoader {
    * @returns WcConfTile ready for use in generation
    */
   private static tileFromJSON(json: TileConfig): WcConfTile {
+    const tileFace: WcFace = [
+      json.face[0] ?? null,
+      json.face[1] ?? null,
+      json.face[2] ?? null,
+      json.face[3] ?? null,
+    ];
+
     const tile: WcConfTile = {
-      face: json.face as (string | null)[],
+      face: tileFace,
       weight: json.weight ?? 0,
     };
 
@@ -212,9 +223,7 @@ export class ConfigLoader {
    * @param className — Full class name (e.g., "WcBuildConf_HouseA")
    * @returns The class constructor, or null if not found
    */
-  private static async tryImportClass(
-    className: string,
-  ): Promise<new (params: { growLoopCount: number; endLoopMax: number }) => WcAbstractBuildConf | null> {
+  private static async tryImportClass(className: string): Promise<BuildConfCtor | null> {
     const moduleMap: Record<string, string> = {
       "WcBuildConf_HouseA": "../conf/buildConf_HouseA.ts",
       "WcBuildConf_GraveA": "../conf/buildConf_GraveA.ts",
@@ -229,7 +238,9 @@ export class ConfigLoader {
 
     try {
       const mod = await import(modulePath);
-      return mod[className] || null;
+      const cls: BuildConfCtor | undefined = mod[className];
+      if (!cls) return null;
+      return cls;
     } catch (_e) {
       return null;
     }
@@ -309,7 +320,8 @@ export async function createBuildingConfigFromJSONOrRegistry(
   try {
     return await ConfigLoader.loadBuilding(id, options);
   } catch (e) {
-    console.error(`Failed to load building config "${id}":`, e);
+    const errMsg = e instanceof Error ? e.message : String(e);
+    console.error(`Failed to load building config "${id}":`, errMsg);
     return null;
   }
 }
