@@ -17,6 +17,7 @@ import type { StateManager } from "../state.ts";
 import type { ApiClient } from "../api.ts";
 import type {
   BuildingConfig,
+  AssetCollectionConfig,
   TileConfig,
   AssetCollectionRef,
 } from "../../../types.ts";
@@ -224,9 +225,9 @@ export class BuildingEditorPanel {
   private renderHeader(config: BuildingConfig): HTMLElement {
     const header = document.createElement("div");
     header.className = "editor-header";
-    header.innerHTML = `
-      <h2 class="editor-title">🏗️ ${config.id}</h2>
-    `;
+    
+    const titleDiv = document.createElement("div");
+    titleDiv.innerHTML = `<h2 class="editor-title">🏗️ ${config.id}</h2>`;
 
     const meta = document.createElement("div");
     meta.className = "editor-meta";
@@ -238,8 +239,56 @@ export class BuildingEditorPanel {
       `;
     }
 
+    // "Reset to Default" button
+    const resetBtn = document.createElement("button");
+    resetBtn.textContent = "🔄 Reset to Default";
+    resetBtn.className = "btn-small btn-warning";
+    resetBtn.title = "Re-extract from original TypeScript class, discarding all edits";
+    resetBtn.addEventListener("click", () => {
+      this.resetToDefault(config);
+    });
+
+    const headerRight = document.createElement("div");
+    headerRight.className = "header-right";
+    headerRight.appendChild(resetBtn);
+
+    header.appendChild(titleDiv);
     header.appendChild(meta);
+    header.appendChild(headerRight);
     return header;
+  }
+
+  /**
+   * Reset config to default by re-extracting from TypeScript class.
+   */
+  private async resetToDefault(config: BuildingConfig): Promise<void> {
+    const classRef = config.metadata?.classRef;
+    if (!classRef) {
+      this.stateManager.setError("Cannot reset: no TypeScript class reference found");
+      return;
+    }
+
+    if (!confirm(`Reset "${config.id}" to default from TypeScript class "${classRef}"?\n\nThis will discard all edits.`)) {
+      return;
+    }
+
+    try {
+      this.stateManager.setLoading(true);
+      this.stateManager.setError(null);
+      
+      // Extract fresh config from TypeScript class
+      const freshConfig = await this.apiClient.extractBuilding(classRef);
+      
+      // Replace current config with fresh extraction
+      this.stateManager.updateConfig("building", config.id, freshConfig);
+      
+      // Also set as active config (not dirty since it's fresh from TS)
+      this.stateManager.setActiveConfig("building", config.id, freshConfig);
+    } catch (error: any) {
+      this.stateManager.setError(`Reset failed: ${error.message}`);
+    } finally {
+      this.stateManager.setLoading(false);
+    }
   }
 
   /**
@@ -404,9 +453,9 @@ export class BuildingEditorPanel {
         const option = document.createElement("option");
         option.value = collection.id;
         option.textContent = `${collection.id} (JSON)`;
-        option.dataset.classRef = collection.metadata?.classRef || "";
+        option.dataset.classRef = (collection as AssetCollectionConfig).metadata?.classRef || "";
         option.dataset.source = "json";
-        option.dataset.tag = collection.tag || "";
+        option.dataset.tag = (collection as AssetCollectionConfig).tag || "";
         select.appendChild(option);
         addedOptions.add(collection.id);
       }
@@ -519,10 +568,24 @@ export class BuildingEditorPanel {
     const section = document.createElement("div");
     section.className = "editor-section";
 
+    const headerRow = document.createElement("div");
+    headerRow.className = "editor-section-header";
+
     const header = document.createElement("h3");
     const count = config.startTiles?.length || 0;
     header.textContent = `Start Tiles (${count})`;
-    section.appendChild(header);
+    headerRow.appendChild(header);
+
+    // "Edit Start Tiles" button
+    const editStartTilesBtn = document.createElement("button");
+    editStartTilesBtn.className = "btn-small primary";
+    editStartTilesBtn.textContent = "✏️ Edit Start Tiles";
+    editStartTilesBtn.addEventListener("click", () => {
+      this.openTileEditorForStartTiles(config);
+    });
+    headerRow.appendChild(editStartTilesBtn);
+
+    section.appendChild(headerRow);
 
     if (count === 0) {
       const emptyDiv = document.createElement("div");
@@ -562,12 +625,64 @@ export class BuildingEditorPanel {
     });
 
     section.appendChild(summary);
+
+    // Bind edit-start action
+    section.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName !== "BUTTON") return;
+      const action = target.dataset.action;
+      const index = parseInt(target.dataset.index || "-1", 10);
+      if (action === "edit-start" && index >= 0 && config.startTiles) {
+        this.openTileEditorForTile(config.startTiles[index], (updatedTile) => {
+          this.onConfigChange(config, (c) => {
+            if (!c.startTiles) c.startTiles = [];
+            c.startTiles[index] = updatedTile;
+          });
+        });
+      }
+    });
+
     return section;
+  }
+
+  /**
+   * Open tile editor for editing all start tiles.
+   */
+  private openTileEditorForStartTiles(config: BuildingConfig): void {
+    // Update state to show tile editor with start tiles
+    this.stateManager.setState({
+      ui: {
+        ...this.stateManager.getState().ui,
+        showTileEditor: true,
+        editingTile: config.startTiles?.[0] || null,
+      },
+    });
+  }
+
+  /**
+   * Open tile editor for a specific tile with save callback.
+   */
+  private openTileEditorForTile(
+    tile: TileConfig,
+    onSave: (updatedTile: TileConfig) => void
+  ): void {
+    this.stateManager.setState({
+      ui: {
+        ...this.stateManager.getState().ui,
+        showTileEditor: true,
+        editingTile: tile,
+      },
+    });
   }
 
   /**
    * Render tile list section.
    */
+  private tileSort: { field: "id" | "face" | "weight" | "source"; direction: "asc" | "desc" } = {
+    field: "id",
+    direction: "asc",
+  };
+
   private renderTileListSection(config: BuildingConfig): HTMLElement {
     const section = document.createElement("div");
     section.className = "editor-section";
@@ -579,6 +694,10 @@ export class BuildingEditorPanel {
     const tiles = config.tiles || [];
     header.textContent = `Tiles (${tiles.length})`;
     headerRow.appendChild(header);
+
+    // Sort buttons
+    const sortButtons = this.renderSortButtons(config);
+    headerRow.appendChild(sortButtons);
 
     // Filter input
     const filterInput = document.createElement("input");
@@ -598,31 +717,43 @@ export class BuildingEditorPanel {
     table.innerHTML = `
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Face Preview</th>
-          <th>Weight</th>
-          <th>Source Info</th>
+          <th class="sortable" data-sort="id">ID <span class="sort-indicator"></span></th>
+          <th class="sortable" data-sort="face">Face Preview <span class="sort-indicator"></span></th>
+          <th class="sortable" data-sort="weight">Weight <span class="sort-indicator"></span></th>
+          <th class="sortable" data-sort="source">Source Info <span class="sort-indicator"></span></th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody id="tile-list-tbody"></tbody>
     `;
 
+    // Bind sort on header click
+    const thead = table.querySelector("thead");
+    thead?.addEventListener("click", (e) => {
+      const th = (e.target as HTMLElement).closest("th") as HTMLElement;
+      if (!th || !th.classList.contains("sortable")) return;
+      const field = th.dataset.sort as "id" | "face" | "weight" | "source";
+      this.toggleSort(field, config);
+    });
+
     const tbody = table.querySelector("#tile-list-tbody");
-    tiles.forEach((tile: TileConfig, i: number) => {
+    const sortedTiles = this.sortTiles(config.tiles || []);
+    sortedTiles.forEach((tile: TileConfig, i: number) => {
       const tr = document.createElement("tr");
-      tr.dataset.tileIndex = String(i);
+      // Find original index for actions
+      const originalIndex = config.tiles!.indexOf(tile);
+      tr.dataset.tileIndex = String(originalIndex);
       tr.dataset.tileFace = (tile.face || []).filter((f) => f).join(",").toLowerCase();
       tr.dataset.tileSource = `${tile.sourceGetter || ""} ${tile.sourceCollection || ""}`.toLowerCase();
 
       tr.innerHTML = `
-        <td>${tile.id || `tile_${i}`}</td>
+        <td>${tile.id || `tile_${originalIndex}`}</td>
         <td>[${(tile.face || []).join(", ")}]</td>
         <td>${tile.weight ?? 0}</td>
         <td>${tile.sourceGetter ? `from ${tile.sourceGetter}` : tile.sourceCollection ? `from ${tile.sourceCollection}` : "—"}</td>
         <td>
-          <button class="btn-small" data-action="duplicate-tile" data-index="${i}">Duplicate</button>
-          <button class="btn-small btn-danger" data-action="delete-tile" data-index="${i}">Delete</button>
+          <button class="btn-small" data-action="duplicate-tile" data-index="${originalIndex}">Duplicate</button>
+          <button class="btn-small btn-danger" data-action="delete-tile" data-index="${originalIndex}">Delete</button>
         </td>
       `;
       tbody?.appendChild(tr);
@@ -679,6 +810,89 @@ export class BuildingEditorPanel {
     });
 
     return section;
+  }
+
+  /**
+   * Render sort buttons for tile list.
+   */
+  private renderSortButtons(config: BuildingConfig): HTMLElement {
+    const sortDiv = document.createElement("div");
+    sortDiv.className = "tile-sort-buttons";
+
+    const sortFields: { field: "id" | "face" | "weight" | "source"; label: string }[] = [
+      { field: "id", label: "🔤 ID" },
+      { field: "face", label: "🔷 Face Key" },
+      { field: "weight", label: "⚖️ Weight" },
+      { field: "source", label: "📁 Source Getter" },
+    ];
+
+    sortFields.forEach(({ field, label }) => {
+      const btn = document.createElement("button");
+      btn.className = "btn-small sort-btn";
+      btn.textContent = label;
+      btn.dataset.sort = field;
+
+      if (this.tileSort.field === field) {
+        btn.classList.add("active");
+        btn.textContent += this.tileSort.direction === "asc" ? " ↑" : " ↓";
+      }
+
+      btn.addEventListener("click", () => {
+        this.toggleSort(field, config);
+      });
+
+      sortDiv.appendChild(btn);
+    });
+
+    return sortDiv;
+  }
+
+  /**
+   * Toggle sort order for the given field.
+   */
+  private toggleSort(field: "id" | "face" | "weight" | "source", config: BuildingConfig): void {
+    if (this.tileSort.field === field) {
+      this.tileSort.direction = this.tileSort.direction === "asc" ? "desc" : "asc";
+    } else {
+      this.tileSort.field = field;
+      this.tileSort.direction = "asc";
+    }
+    this.renderContent();
+  }
+
+  /**
+   * Sort tiles according to current sort field and direction.
+   */
+  private sortTiles(tiles: TileConfig[]): TileConfig[] {
+    const sorted = [...tiles];
+    const direction = this.tileSort.direction === "asc" ? 1 : -1;
+
+    sorted.sort((a, b) => {
+      switch (this.tileSort.field) {
+        case "id": {
+          const aId = a.id || "";
+          const bId = b.id || "";
+          return direction * aId.localeCompare(bId);
+        }
+        case "face": {
+          const aFace = (a.face || []).filter((f) => f).join(",");
+          const bFace = (b.face || []).filter((f) => f).join(",");
+          return direction * aFace.localeCompare(bFace);
+        }
+        case "weight": {
+          return direction * ((a.weight ?? 0) - (b.weight ?? 0));
+        }
+        case "source": {
+          const aSrc = `${a.sourceGetter || ""} ${a.sourceCollection || ""}`;
+          const bSrc = `${b.sourceGetter || ""} ${b.sourceCollection || ""}`;
+          return direction * aSrc.localeCompare(bSrc);
+        }
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
   }
 
   /**

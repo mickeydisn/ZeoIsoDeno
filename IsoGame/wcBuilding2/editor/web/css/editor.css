@@ -789,3 +789,75 @@ html, body {
 .face-key-select.no-weight {
   border-color: var(--warning-color);
 }
+
+/* ============================================================================
+   Phase 4 Additional Styles (Sort buttons, Reset button, etc.)
+   ============================================================================ */
+
+/* Header with reset button */
+.header-right {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+/* Sortable table headers */
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  background-color: var(--bg-primary) !important;
+}
+
+.sort-indicator::after {
+  content: "↕";
+  opacity: 0.4;
+  font-size: 10px;
+}
+
+.sort-indicator.asc::after {
+  content: "↑";
+  opacity: 1;
+}
+
+.sort-indicator.desc::after {
+  content: "↓";
+  opacity: 1;
+}
+
+/* Sort buttons */
+.tile-sort-buttons {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.sort-btn {
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.sort-btn.active {
+  opacity: 1;
+  background-color: var(--accent-color);
+  color: #fff;
+  border-color: var(--accent-color);
+}
+
+/* Section header layout */
+.editor-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.editor-section-header h3 {
+  margin: 0;
+  flex: 1;
+}

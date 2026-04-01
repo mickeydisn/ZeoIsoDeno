@@ -68,14 +68,14 @@ The Building Editor Panel is the main editing surface when a building config is 
 ### Section 5: Start Tiles
 - [x] Display count of configured start tiles
 - [x] Summary view showing each start tile's face keys and weight
-- [ ] "Edit Start Tiles" button → opens tile editor modal with start tiles
-- [ ] "Reset to Default" button → restores original TS class values (re-extract from TS)
+- [x] "Edit Start Tiles" button → opens tile editor modal with start tiles
+- [x] "Reset to Default" button → restores original TS class values (re-extract from TS)
 
 ### Section 6: Tile List
 - [x] Display tile count and filter input
 - [x] Table view with columns: ID, Face Preview (4 dirs), Weight, Source Info, Actions
 - [x] Filter input: filters tiles by face key content or source getter name
-- [ ] Sort buttons: by face key, weight, source getter
+- [x] Sort buttons: by face key, weight, source getter
 - [x] Per-row actions:
   - "Edit" button → opens tile in tile editor modal (Phase 5)
   - "Duplicate" button → clones tile, adds to tiles array
