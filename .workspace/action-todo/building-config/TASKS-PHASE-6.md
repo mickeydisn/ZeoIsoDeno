@@ -21,55 +21,55 @@ The preview service runs building generation server-side and returns the result 
 ## File: `web/js/panels/assetCollection.ts` — Asset Collection Editor Panel
 
 ### Panel Structure
-- [ ] Create `class AssetCollectionPanel` with `constructor(stateManager, apiClient)`
-- [ ] Implement `render(container: HTMLElement)` method
+- [x] Create `class AssetCollectionPanel` with `constructor(stateManager, apiClient)`
+- [x] Implement `render(container: HTMLElement)` method
   - Only renders when `activeConfig.type === "assetCollection"`; otherwise show empty state
   - Header with collection name, tag prefix, class reference
   - Sections:
     1. Parameters
     2. Tiles
-- [ ] Implement `private subscribe()` — re-renders when activeConfig changes
+- [x] Implement `private subscribe()` — re-renders when activeConfig changes
 
 ### Section 1: Parameters
-- [ ] Display "Parameters" header
-- [ ] For each entry in `params`:
+- [x] Display "Parameters" header
+- [x] For each entry in `params`:
   - Label from `paramsSchema` (e.g., "Wall Color" for WALL_SUFFIX)
   - If `type === "color"`: color suffix input with color picker helper button
   - If `type === "string"`: plain text input
-- [ ] Color suffix inputs show resolved preview: `#H210_C115_S35_B120` → colored rectangle
-- [ ] "🎨" button opens ColorPicker component with current value
-- [ ] Template reference option: "{ROOF_SUFFIX}" → dropdown of available param names
-- [ ] Changes mark config dirty and update `activeConfig.data.params`
+- [x] Color suffix inputs show resolved preview: `#H210_C115_S35_B120` → colored rectangle
+- [x] "🎨" button opens ColorPicker component with current value
+- [x] Template reference option: "{ROOF_SUFFIX}" → dropdown of available param names
+- [x] Changes mark config dirty and update `activeConfig.data.params`
 
 ### Section 2: Tiles
-- [ ] Display tile count
-- [ ] Table with columns: ID/Getter, Face Preview, Asset Count, Source
-- [ ] Getter-based collections: ID shows source getter name (Corner, Wall_Door, etc.)
-- [ ] groupAsset-based collections: ID shows tile type (flat, corner, inner)
-- [ ] Clicking a tile → opens in tile editor modal (read-only source getter)
-- [ ] "Add Tile" button → creates new tile in collection (getter-based only; groupAsset-based should re-extract)
-- [ ] "Re-Extract from TS" button for groupAsset-based collections → re-extracts with updated params
+- [x] Display tile count
+- [x] Table with columns: ID/Getter, Face Preview, Asset Count, Source
+- [x] Getter-based collections: ID shows source getter name (Corner, Wall_Door, etc.)
+- [x] groupAsset-based collections: ID shows tile type (flat, corner, inner)
+- [x] Clicking a tile → opens in tile editor modal (read-only source getter)
+- [x] "Add Tile" button → creates new tile in collection (getter-based only; groupAsset-based should re-extract)
+- [x] "Re-Extract from TS" button for groupAsset-based collections → re-extracts with updated params
 
 ### Collection Type Indicator
-- [ ] Show badge: "Getter-based" or "groupAsset-based"
-- [ ] For groupAsset-based: show current `groupAsset` params (flatW, cornerW, innerW, isFrise)
-- [ ] Editable weight inputs for groupAsset params
+- [x] Show badge: "Getter-based" or "groupAsset-based"
+- [x] For groupAsset-based: show current `groupAsset` params (flatW, cornerW, innerW, isFrise)
+- [x] Editable weight inputs for groupAsset params
 
 ---
 
 ## File: `web/js/services/preview.ts` — Generation Preview Service
 
 ### Service Structure
-- [ ] Create `class PreviewService` with `constructor(apiClient)`
-- [ ] Implement `async generate(config: BuildingConfig): Promise<PreviewResult>`
+- [x] Create `class PreviewService` with `constructor(apiClient)`
+- [x] Implement `async generate(config: BuildingConfig): Promise<PreviewResult>`
   - Calls `apiClient.previewGenerate(config)`
   - Returns typed result: `{ success, tiles, iterations, stats, error? }`
-- [ ] Implement `async quickPreview(config: BuildingConfig): Promise<QuickStats>`
+- [x] Implement `async quickPreview(config: BuildingConfig): Promise<QuickStats>`
   - Runs generation with minimal settings (growLoopCount: 10, endLoopMax: 100)
   - Returns quick stats: tile count, face key distribution
-- [ ] Implement `setSeed(seed: number)` — optional, for reproducible generation
-- [ ] Handle generation timeouts — abort after 30 seconds
-- [ ] Return descriptive error messages for common failure modes:
+- [x] Implement `setSeed(seed: number)` — optional, for reproducible generation
+- [x] Handle generation timeouts — abort after 30 seconds
+- [x] Return descriptive error messages for common failure modes:
   - "Generation failed: no start tiles configured"
   - "Generation incomplete: reached max iterations before closure"
 
@@ -78,65 +78,65 @@ The preview service runs building generation server-side and returns the result 
 ## File: `web/js/services/assetPreview.ts` — Asset Image Loading Service
 
 ### Service Structure
-- [ ] Create `class AssetPreviewService` with `constructor()`
-- [ ] Implement `async loadImage(key: string): Promise<HTMLImageElement>`
+- [x] Create `class AssetPreviewService` with `constructor()`
+- [x] Implement `async loadImage(key: string): Promise<HTMLImageElement>`
   - Constructs URL from asset key: `/editor/asset-preview/{key}`
   - Caches loaded images in `Map<string, HTMLImageElement>`
   - Returns cached image if already loaded
-- [ ] Implement `async loadImages(keys: string[]): Promise<Map<string, HTMLImageElement>>`
+- [x] Implement `async loadImages(keys: string[]): Promise<Map<string, HTMLImageElement>>`
   - Loads multiple assets in parallel with `Promise.all`
   - Returns map of key → image
-- [ ] Implement `getPlaceholderImage(): string` — returns data URI for broken/missing image icon
-- [ ] Implement `clearCache()` — clears loaded images (useful for asset updates)
-- [ ] Graceful error handling: broken images return placeholder, don't crash
+- [x] Implement `getPlaceholderImage(): string` — returns data URI for broken/missing image icon
+- [x] Implement `clearCache()` — clears loaded images (useful for asset updates)
+- [x] Graceful error handling: broken images return placeholder, don't crash
 
 ---
 
 ## File: `web/css/editor.css` — Additional Styles (extend from Phase 3)
 
 ### New Component Styles
-- [ ] `.asset-collection-panel` — main container styles
-- [ ] `.param-row` — parameter input row with label and value
-- [ ] `.param-label` — right-aligned label
-- [ ] `.param-value` — input field with color preview
-- [ ] `.collection-type-badge` — badge for getter-based vs groupAsset-based
-- [ ] `.tile-table` — tile list table styles
-- [ ] `.tile-row:hover` — hover effect for tile rows
-- [ ] `.color-preview` — small colored rectangle showing suffix
-- [ ] `.preview-stats` — stats display in preview section
+- [x] `.asset-collection-panel` — main container styles
+- [x] `.param-row` — parameter input row with label and value
+- [x] `.param-label` — right-aligned label
+- [x] `.param-value` — input field with color preview
+- [x] `.collection-type-badge` — badge for getter-based vs groupAsset-based
+- [x] `.tile-table` — tile list table styles
+- [x] `.tile-row:hover` — hover effect for tile rows
+- [x] `.color-preview` — small colored rectangle showing suffix
+- [x] `.preview-stats` — stats display in preview section
 
 ---
 
 ## Preview Integration
 
-- [ ] Preview service connects to `POST /editor/preview/generate` endpoint
-- [ ] Generated tile grid returned from server
-- [ ] Canvas2DPreview component renders the grid
-- [ ] Preview shows tile count, iteration count, success/failure status
-- [ ] Preview updates when "Run Generation" is clicked
-- [ ] Assets loaded via AssetPreviewService for visual rendering
-- [ ] Preview area cleared when config changes significantly
+- [x] Preview service connects to `POST /editor/preview/generate` endpoint
+- [x] Generated tile grid returned from server
+- [x] Canvas2DPreview component renders the grid
+- [x] Preview shows tile count, iteration count, success/failure status
+- [x] Preview updates when "Run Generation" is clicked
+- [x] Assets loaded via AssetPreviewService for visual rendering
+- [x] Preview area cleared when config changes significantly
 
 ---
 
 ## Integration & Testing
 
-- [ ] Asset Collection Panel renders when an asset collection is selected
-- [ ] Parameters section shows WALL_SUFFIX, ROOF_SUFFIX with color pickers
-- [ ] Changing a param value marks config dirty
-- [ ] Tile list shows all tiles with source getter info
-- [ ] Clicking a tile opens tile editor modal with the tile
-- [ ] Preview service generates buildings from current config
-- [ ] Canvas renders the generated tile grid
-- [ ] Asset images load correctly from img/asset_opti/
-- [ ] AssetPreviewService caches images properly
-- [ ] Preview handles generation failures gracefully
-- [ ] No console errors
+- [x] Asset Collection Panel renders when an asset collection is selected
+- [x] Parameters section shows WALL_SUFFIX, ROOF_SUFFIX with color pickers
+- [x] Changing a param value marks config dirty
+- [x] Tile list shows all tiles with source getter info
+- [x] Clicking a tile opens tile editor modal with the tile
+- [x] Preview service generates buildings from current config
+- [x] Canvas renders the generated tile grid
+- [x] Asset images load correctly from img/asset_opti/
+- [x] AssetPreviewService caches images properly
+- [x] Preview handles generation failures gracefully
+- [x] No console errors
 
 ---
 
 **Deliverables:**
-1. `IsoGame/wcBuilding2/editor/web/js/panels/assetCollection.ts` — Asset collection editor panel
-2. `IsoGame/wcBuilding2/editor/web/js/services/preview.ts` — Generation preview service
-3. `IsoGame/wcBuilding2/editor/web/js/services/assetPreview.ts` — Asset image loading service
-4. Updated `web/css/editor.css` — New component styles
+1. `IsoGame/wcBuilding2/editor/web/js/panels/assetCollection.ts` — Asset collection editor panel ✅
+2. `IsoGame/wcBuilding2/editor/web/js/services/preview.ts` — Generation preview service ✅
+3. `IsoGame/wcBuilding2/editor/web/js/services/assetPreview.ts` — Asset image loading service ✅
+4. Updated `web/css/editor.css` — New component styles ✅

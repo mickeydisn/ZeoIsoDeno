@@ -1391,3 +1391,111 @@ html, body {
 .tile-functions-section .function-table {
   margin-top: 8px;
 }
+
+/* ============================================================================
+   Phase 6: Asset Collection Editor Styles
+   ============================================================================ */
+
+/* --- Asset Collection Panel --- */
+.asset-collection-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* --- Collection Type Badge --- */
+.collection-type-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-left: 8px;
+}
+
+.collection-type-badge.getter-based {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: var(--success-color);
+}
+
+.collection-type-badge.group-asset-based {
+  background-color: rgba(92, 138, 255, 0.2);
+  color: var(--accent-color);
+}
+
+/* --- Color Preview Rectangle --- */
+.color-preview {
+  display: inline-block;
+  width: 24px;
+  height: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+.color-preview-rect {
+  width: 48px;
+  height: 32px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+/* --- Tile Table Hover --- */
+.tile-row:hover {
+  background-color: var(--bg-tertiary) !important;
+}
+
+/* --- Preview Stats --- */
+.preview-stats {
+  display: flex;
+  gap: 16px;
+  padding: 8px 12px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.preview-stats span {
+  font-weight: 500;
+}
+
+/* --- Group Asset Params --- */
+.group-asset-params {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.group-asset-param-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-asset-param-row label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.group-asset-param-input {
+  width: 80px;
+  padding: 4px 8px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.group-asset-param-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
