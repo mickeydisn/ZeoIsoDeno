@@ -9,6 +9,7 @@ import {
 } from "https://deno.land/x/oak/mod.ts";
 import { denoPlugins } from "jsr:@luca/esbuild-deno-loader@^0.11.1";
 import * as esbuild from "npm:esbuild@0.20.2";
+import { editorRouter } from "./IsoGame/wcBuilding2/editor/server.ts";
 
 export const serveStatic = async (context: Context) => {
   const filePath = context.request.url.pathname;
@@ -67,6 +68,10 @@ app.use(async (ctx: Context, next) => {
 
 app.use(router.routes());
 app.use(router.allowedMethods());
+
+// Mount editor routes
+app.use(editorRouter.routes());
+app.use(editorRouter.allowedMethods());
 console.log(`Server running on http://localhost:${port}`);
 
 app.listen({ port: port });

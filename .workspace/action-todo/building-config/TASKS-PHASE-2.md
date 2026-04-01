@@ -16,100 +16,100 @@ The server endpoints provide the API layer between the web UI and the extraction
 ## File: `server.ts` — Deno HTTP Endpoints
 
 ### Server Setup
-- [ ] Import `ConfigExtractor` from `./extractor.ts`
-- [ ] Import `BUILDING_CLASSES` and `ASSET_COLLECTION_REGISTRY`
-- [ ] Import Oak's `Router` from existing `webServer.ts` pattern
-- [ ] Create dedicated `editorRouter = new Router()` instance
-- [ ] Export `editorRouter` for mounting in `webServer.ts`
+- [x] Import `ConfigExtractor` from `./extractor.ts`
+- [x] Import `BUILDING_CLASSES` and `ASSET_COLLECTION_REGISTRY`
+- [x] Import Oak's `Router` from existing `webServer.ts` pattern
+- [x] Create dedicated `editorRouter = new Router()` instance
+- [x] Export `editorRouter` for mounting in `webServer.ts`
 
 ### Mounting in `webServer.ts`
-- [ ] Import `editorRouter` in `webServer.ts`
-- [ ] Register routes: `app.use(editorRouter.routes())` and `app.use(editorRouter.allowedMethods())`
-- [ ] Verify no conflicts with existing `/card/`, `/img/`, `/web/` routes
+- [x] Import `editorRouter` in `webServer.ts`
+- [x] Register routes: `app.use(editorRouter.routes())` and `app.use(editorRouter.allowedMethods())`
+- [x] Verify no conflicts with existing `/card/`, `/img/`, `/web/` routes
 
 ### `GET /editor/list/classes` — List Extractable TS Classes
-- [ ] Extract `className` from `Object.keys(BUILDING_CLASSES)`
-- [ ] Extract `assetClassName` from `Object.keys(ASSET_COLLECTION_REGISTRY)`
-- [ ] Return: `{ buildings: [...], assetCollections: [...] }`
-- [ ] Content-Type: `application/json`, Status: 200
+- [x] Extract `className` from `Object.keys(BUILDING_CLASSES)`
+- [x] Extract `assetClassName` from `Object.keys(ASSET_COLLECTION_REGISTRY)`
+- [x] Return: `{ buildings: [...], assetCollections: [...] }`
+- [x] Content-Type: `application/json`, Status: 200
 
 ### `GET /editor/list` — List All Configs
-- [ ] Scan `conf/buildings/` directory for existing JSON files
-- [ ] Scan `conf/asset-collections/` directory for existing JSON files
-- [ ] Combine with TS-extractable classes from `BUILDING_CLASSES`
-- [ ] Return: `{ tsBuildings: [...], tsAssetCollections: [...], jsonBuildings: [...], jsonAssetCollections: [...] }`
-- [ ] Return empty arrays if conf directories don't exist yet
+- [x] Scan `conf/buildings/` directory for existing JSON files
+- [x] Scan `conf/asset-collections/` directory for existing JSON files
+- [x] Combine with TS-extractable classes from `BUILDING_CLASSES`
+- [x] Return: `{ tsBuildings: [...], tsAssetCollections: [...], jsonBuildings: [...], jsonAssetCollections: [...] }`
+- [x] Return empty arrays if conf directories don't exist yet
 
 ### `POST /editor/extract/building/:className` — Extract Building Config
-- [ ] Extract `className` from URL params
-- [ ] Call `ConfigExtractor.extractBuilding(className)`
-- [ ] Return raw JSON config on success (200)
-- [ ] Return `{ error: message }` with status 400 if class unknown or extraction fails
-- [ ] Catch and handle all exceptions with descriptive messages
+- [x] Extract `className` from URL params
+- [x] Call `ConfigExtractor.extractBuilding(className)`
+- [x] Return raw JSON config on success (200)
+- [x] Return `{ error: message }` with status 400 if class unknown or extraction fails
+- [x] Catch and handle all exceptions with descriptive messages
 
 ### `POST /editor/extract/asset-collection/:className` — Extract Asset Collection
-- [ ] Extract `className` from URL params
-- [ ] Optionally accept `{ params: {} }` in request body for constructor override
-- [ ] Call `ConfigExtractor.extractAssetCollection(className, params)`
-- [ ] Return raw JSON config on success (200)
-- [ ] Return `{ error: message }` with status 400 on failure
+- [x] Extract `className` from URL params
+- [x] Optionally accept `{ params: {} }` in request body for constructor override
+- [x] Call `ConfigExtractor.extractAssetCollection(className, params)`
+- [x] Return raw JSON config on success (200)
+- [x] Return `{ error: message }` with status 400 on failure
 
 ### `POST /editor/save/building/:name` — Save Building JSON
-- [ ] Extract `name` from URL params
-- [ ] Read JSON body from request
-- [ ] Validate: body must have `type: "building"` and `version: "1.0"`
-- [ ] Ensure `conf/buildings/` directory exists (create if needed via `Deno.mkdir`)
-- [ ] Write to `IsoGame/wcBuilding2/editor/conf/buildings/{name}.json` with `JSON.stringify(config, null, 2)`
-- [ ] Return `{ success: true, path: "..." }` on success (200)
-- [ ] Return `{ error: message }` with status 400 on write failure
+- [x] Extract `name` from URL params
+- [x] Read JSON body from request
+- [x] Validate: body must have `type: "building"` and `version: "1.0"`
+- [x] Ensure `conf/buildings/` directory exists (create if needed via `Deno.mkdir`)
+- [x] Write to `IsoGame/wcBuilding2/editor/conf/buildings/{name}.json` with `JSON.stringify(config, null, 2)`
+- [x] Return `{ success: true, path: "..." }` on success (200)
+- [x] Return `{ error: message }` with status 400 on write failure
 
 ### `POST /editor/save/asset-collection/:name` — Save Asset Collection JSON
-- [ ] Extract `name` from URL params
-- [ ] Read JSON body from request
-- [ ] Validate: body must have `type: "assetCollection"`
-- [ ] Ensure `conf/asset-collections/` directory exists
-- [ ] Write to `IsoGame/wcBuilding2/editor/conf/asset-collections/{name}.json`
-- [ ] Return `{ success: true, path: "..." }` on success
+- [x] Extract `name` from URL params
+- [x] Read JSON body from request
+- [x] Validate: body must have `type: "assetCollection"`
+- [x] Ensure `conf/asset-collections/` directory exists
+- [x] Write to `IsoGame/wcBuilding2/editor/conf/asset-collections/{name}.json`
+- [x] Return `{ success: true, path: "..." }` on success
 
 ### `POST /editor/preview/generate` — Run Building Generation Preview
-- [ ] Read JSON `BuildingConfig` from request body
-- [ ] Construct temporary `WcAbstractBuildConf` from JSON:
+- [x] Read JSON `BuildingConfig` from request body
+- [x] Construct temporary `WcAbstractBuildConf` from JSON:
   - Set `growLoopCount`, `endLoopMax`
   - Set `faceLinkWeight`, `faceLinks` (expand unique pairs → bidirectional)
   - Set `startTileOptions`, `listTileOptions` from JSON tiles
   - Call `conf.init()` to rebuild face indices
-- [ ] Create `WcBuildFactoryGenarator` with temp config
-- [ ] Call `generator.start2(0, 0)` to run generation
-- [ ] Return result: `{ success: true, tiles: [{x, y, tileType, face}], iterations: N, stats: {...} }`
-- [ ] Return `{ error: message }` on generation failure
-- [ ] Limit `growLoopCount` to safe range (5-100) and `endLoopMax` (50-1000)
+- [x] Create `WcBuildFactoryGenarator` with temp config
+- [x] Call `generator.start2(0, 0)` to run generation
+- [x] Return result: `{ success: true, tiles: [{x, y, tileType, face}], iterations: N, stats: {...} }`
+- [x] Return `{ error: message }` on generation failure
+- [x] Limit `growLoopCount` to safe range (5-100) and `endLoopMax` (50-1000)
 
 ### `GET /editor/assets/list` — List Available Game Assets
-- [ ] Scan `img/asset_opti/` directory for `.png` files
-- [ ] Parse filenames to extract asset keys (e.g., `wallDoor.png` → `wallDoor`)
-- [ ] Return: `{ assets: [{ key: "wallDoor", category: "Wall", filename: "wallDoor.png" }, ...] }`
-- [ ] Group by inferred category from filename prefix
+- [x] Scan `img/asset_opti/` directory for `.png` files
+- [x] Parse filenames to extract asset keys (e.g., `wallDoor.png` → `wallDoor`)
+- [x] Return: `{ assets: [{ key: "wallDoor", category: "Wall", filename: "wallDoor.png" }, ...] }`
+- [x] Group by inferred category from filename prefix
 
 ### `GET /editor/asset-preview/:key` — Get Asset Image
-- [ ] Extract `key` from URL params
-- [ ] Look up file path for asset key in `img/asset_opti/`
-- [ ] Stream file back as response with `image/png` content type
-- [ ] Return 404 if asset not found
+- [x] Extract `key` from URL params
+- [x] Look up file path for asset key in `img/asset_opti/`
+- [x] Stream file back as response with `image/png` content type
+- [x] Return 404 if asset not found
 
 ### Error Handling Middleware
-- [ ] Add try/catch around all endpoint handlers
-- [ ] Return consistent error format: `{ success: false, error: "Descriptive message" }`
-- [ ] Log errors to server console with context (endpoint, params)
+- [x] Add try/catch around all endpoint handlers
+- [x] Return consistent error format: `{ success: false, error: "Descriptive message" }`
+- [x] Log errors to server console with context (endpoint, params)
 
 ---
 
 ## Integration
 
-- [ ] Verify all 9 endpoints respond correctly
-- [ ] Test with `curl` commands before building UI
-- [ ] Test extraction: `curl -X POST http://localhost:8081/editor/extract/building/WcBuildConf_HouseA`
-- [ ] Test saving: `curl -X POST -H "Content-Type: application/json" -d @test.json http://localhost:8081/editor/save/building/HouseA`
-- [ ] Test listing: `curl http://localhost:8081/editor/list/classes`
+- [x] Verify all 9 endpoints respond correctly
+- [x] Test with `curl` commands before building UI
+- [x] Test extraction: `curl -X POST http://localhost:8081/editor/extract/building/WcBuildConf_HouseA`
+- [x] Test saving: `curl -X POST -H "Content-Type: application/json" -d @test.json http://localhost:8081/editor/save/building/HouseA`
+- [x] Test listing: `curl http://localhost:8081/editor/list/classes`
 
 ---
 
