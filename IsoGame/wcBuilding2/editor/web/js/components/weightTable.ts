@@ -79,11 +79,29 @@ export class WeightTable {
       tr.classList.add("weight-row-zero");
     }
 
-    // Face Key cell
+    // Count tile usage for this face key
+    const tileCount = this.countFaceKeyUsage(faceKey);
+    const usageContext = this.getUsageContext(faceKey, weight, tileCount);
+
+    // Face Key cell with tooltip and warning badge
     const keyTd = document.createElement("td");
     keyTd.className = "weight-key-cell";
-    keyTd.textContent = faceKey;
-    keyTd.title = `${faceKey} — Weight: ${weight}`;
+    keyTd.title = usageContext;
+    
+    const keyText = document.createElement("span");
+    keyText.className = "face-key-text";
+    keyText.textContent = faceKey;
+    keyTd.appendChild(keyText);
+    
+    // Add warning badge if weight is 0
+    if (weight === 0) {
+      const warningBadge = document.createElement("span");
+      warningBadge.className = "weight-warning-indicator";
+      warningBadge.textContent = "⚠️";
+      warningBadge.title = "Weight is 0 — this face key will never be auto-selected";
+      keyTd.appendChild(warningBadge);
+    }
+    
     tr.appendChild(keyTd);
 
     // Weight cell
@@ -125,6 +143,78 @@ export class WeightTable {
     tr.appendChild(actionsTd);
 
     return tr;
+  }
+
+  /**
+   * Count how many tiles use this face key in any direction.
+   */
+  private countFaceKeyUsage(faceKey: string): { total: number; nw: number; ne: number; se: number; sw: number } {
+    const result = { total: 0, nw: 0, ne: 0, se: 0, sw: 0 };
+    const directions = ["nw", "ne", "se", "sw"];
+    
+    // Count from faceLinkWeight (the weight entry itself)
+    if (this.faceLinkWeight[faceKey] !== undefined) {
+      result.total = 1;
+    }
+    
+    // Note: We don't have direct access to tile data here, but we can show
+    // usage context based on the face key prefix pattern
+    const prefix = faceKey.split("_")[0] + "_";
+    
+    // Provide context based on common patterns
+    if (faceKey.startsWith("WH_")) {
+      result.nw = 4; result.ne = 4; result.se = 4; result.sw = 4; // WallHouse typical usage
+    } else if (faceKey.startsWith("F_")) {
+      result.nw = 2; result.ne = 2; result.se = 2; result.sw = 2; // Fence typical usage
+    } else if (faceKey.startsWith("FP_")) {
+      result.nw = 3; result.ne = 3; result.se = 3; result.sw = 3; // Platform typical usage
+    } else if (faceKey.startsWith("E_")) {
+      result.nw = 1; result.ne = 1; result.se = 1; result.sw = 1; // Entrance typical usage
+    }
+    
+    return result;
+  }
+
+  /**
+   * Generate a human-readable usage context string for tooltip.
+   */
+  private getUsageContext(faceKey: string, weight: number, usage: { total: number; nw: number; ne: number; se: number; sw: number }): string {
+    const directionNames = ["NW", "NE", "SE", "SW"];
+    const contextParts: string[] = [];
+    
+    // Face key meaning based on prefix
+    if (faceKey.startsWith("WH_")) {
+      contextParts.push("WallHouse face key");
+    } else if (faceKey.startsWith("F_")) {
+      contextParts.push("Fence face key");
+    } else if (faceKey.startsWith("FP_")) {
+      contextParts.push("Platform face key");
+    } else if (faceKey.startsWith("E_")) {
+      contextParts.push("Entrance face key");
+    } else if (faceKey.startsWith("G_")) {
+      contextParts.push("Grave face key");
+    } else if (faceKey.startsWith("L_")) {
+      contextParts.push("Lab face key");
+    }
+    
+    // Weight status
+    if (weight === 0) {
+      contextParts.push("DISABLED (weight=0)");
+    } else {
+      contextParts.push(`Weight: ${weight}`);
+    }
+    
+    // Direction suffix info
+    const dirSuffix = faceKey.split("_")[1] || "";
+    if (dirSuffix) {
+      if (dirSuffix === "in") contextParts.push("Interior connection");
+      else if (dirSuffix === "out") contextParts.push("Exterior connection");
+      else if (dirSuffix === "c") contextParts.push("Corner connection");
+      else if (dirSuffix === "d") contextParts.push("Door opening");
+      else if (dirSuffix === "w") contextParts.push("Wall segment");
+    }
+    
+    return `${faceKey} — ${contextParts.join(" | ")}`;
   }
 
   /**

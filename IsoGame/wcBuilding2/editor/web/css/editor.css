@@ -697,3 +697,95 @@ html, body {
   font-size: 13px;
   font-style: italic;
 }
+
+/* --- Add Asset Collection Section --- */
+.add-asset-collection-section {
+  margin-top: 12px;
+  padding: 10px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.add-asset-dropdown-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.add-asset-dropdown-container.hidden {
+  display: none;
+}
+
+.add-asset-select {
+  flex: 1;
+  padding: 6px 10px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.add-asset-select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+/* --- Collections Table Column Widths --- */
+.collections-table th:nth-child(1),
+.collections-table td:nth-child(1) {
+  width: 30%;
+}
+
+.collections-table th:nth-child(2),
+.collections-table td:nth-child(2) {
+  width: 20%;
+}
+
+.collections-table th:nth-child(3),
+.collections-table td:nth-child(3) {
+  width: 30%;
+}
+
+.collections-table th:nth-child(4),
+.collections-table td:nth-child(4) {
+  width: 20%;
+}
+
+/* --- Weight Table Warning Indicators --- */
+.weight-warning-indicator {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 12px;
+  cursor: help;
+}
+
+.face-key-text {
+  font-family: monospace;
+}
+
+/* --- Face Link Table Warning Indicators --- */
+.face-link-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.face-link-warning {
+  display: inline-block;
+  font-size: 12px;
+  cursor: help;
+}
+
+.face-key-select {
+  border-color: var(--border-color);
+  transition: border-color 0.15s;
+}
+
+.face-key-select.no-weight {
+  border-color: var(--warning-color);
+}

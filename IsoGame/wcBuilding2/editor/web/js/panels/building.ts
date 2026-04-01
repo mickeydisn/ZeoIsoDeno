@@ -164,7 +164,8 @@ export class BuildingEditorPanel {
         this.onConfigChange(config, (c) => {
           c.faceLinks = updatedLinks;
         });
-      }
+      },
+      config.faceLinkWeight // Pass weight for warning indicators
     );
     this.faceLinkTable.render();
 
@@ -347,6 +348,135 @@ export class BuildingEditorPanel {
     });
 
     section.appendChild(table);
+
+    // "Add Asset Collection" section
+    const addSection = document.createElement("div");
+    addSection.className = "add-asset-collection-section";
+    
+    const addBtn = document.createElement("button");
+    addBtn.className = "btn-small primary";
+    addBtn.textContent = "➕ Add Asset Collection";
+    addBtn.id = "btn-add-asset-collection";
+    addSection.appendChild(addBtn);
+
+    // Dropdown for available collections (hidden by default)
+    const dropdownContainer = document.createElement("div");
+    dropdownContainer.className = "add-asset-dropdown-container hidden";
+    dropdownContainer.id = "add-asset-collection-dropdown";
+
+    const select = document.createElement("select");
+    select.className = "add-asset-select";
+    select.id = "add-asset-collection-select";
+    
+    // Add default option
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "— Select an asset collection —";
+    select.appendChild(defaultOption);
+
+    // Populate dropdown with available asset collections from state
+    const state = this.stateManager.getState();
+    const tsClasses = state.ui.tsClasses;
+    const loadedCollections = this.stateManager.getConfigs("assetCollection");
+    
+    // Track added collection IDs to prevent duplicates
+    const existingCollectionIds = new Set(collections.map(c => c.id));
+    const addedOptions = new Set<string>();
+
+    // Add TS classes
+    if (tsClasses?.assetCollections?.length) {
+      for (const className of tsClasses.assetCollections) {
+        if (!existingCollectionIds.has(className) && !addedOptions.has(className)) {
+          const option = document.createElement("option");
+          option.value = className;
+          option.textContent = `${className} (TS)`;
+          option.dataset.classRef = className;
+          option.dataset.source = "ts";
+          select.appendChild(option);
+          addedOptions.add(className);
+        }
+      }
+    }
+
+    // Add loaded JSON collections
+    for (const collection of loadedCollections) {
+      if (!existingCollectionIds.has(collection.id) && !addedOptions.has(collection.id)) {
+        const option = document.createElement("option");
+        option.value = collection.id;
+        option.textContent = `${collection.id} (JSON)`;
+        option.dataset.classRef = collection.metadata?.classRef || "";
+        option.dataset.source = "json";
+        option.dataset.tag = collection.tag || "";
+        select.appendChild(option);
+        addedOptions.add(collection.id);
+      }
+    }
+
+    dropdownContainer.appendChild(select);
+
+    // Confirm button
+    const confirmBtn = document.createElement("button");
+    confirmBtn.className = "btn-small primary";
+    confirmBtn.textContent = "Confirm";
+    confirmBtn.id = "btn-confirm-add-asset-collection";
+    confirmBtn.style.display = "none";
+    dropdownContainer.appendChild(confirmBtn);
+
+    addSection.appendChild(dropdownContainer);
+    section.appendChild(addSection);
+
+    // Toggle dropdown on button click
+    addBtn.addEventListener("click", () => {
+      const isHidden = dropdownContainer.classList.contains("hidden");
+      dropdownContainer.classList.toggle("hidden", !isHidden);
+      confirmBtn.style.display = isHidden && select.value ? "inline-block" : "none";
+    });
+
+    // Show confirm button when selection changes
+    select.addEventListener("change", () => {
+      confirmBtn.style.display = select.value ? "inline-block" : "none";
+    });
+
+    // Handle adding the selected collection
+    confirmBtn.addEventListener("click", () => {
+      const selectedValue = select.value;
+      if (!selectedValue) return;
+
+      const selectedOption = select.querySelector(`option[value="${selectedValue}"]`) as HTMLOptionElement;
+      const source = selectedOption?.dataset.source || "ts";
+      const classRef = selectedOption?.dataset.classRef || selectedValue;
+      const tag = selectedOption?.dataset.tag || "";
+
+      // Determine tag prefix based on collection type
+      let tagPrefix = tag;
+      if (!tagPrefix) {
+        // Infer tag prefix from class name patterns
+        if (selectedValue.includes("Wall")) tagPrefix = "WH_";
+        else if (selectedValue.includes("Fence")) tagPrefix = "F_";
+        else if (selectedValue.includes("Platform")) tagPrefix = "FP_";
+        else if (selectedValue.includes("Grave")) tagPrefix = "G_";
+        else if (selectedValue.includes("Lab")) tagPrefix = "L_";
+        else tagPrefix = selectedValue.substring(0, 3).toUpperCase() + "_";
+      }
+
+      const newRef: AssetCollectionRef = {
+        id: selectedValue,
+        classRef: classRef || selectedValue,
+        tag: tagPrefix,
+        params: {},
+        sourceFile: source === "ts" ? selectedValue.toLowerCase() : selectedValue.toLowerCase(),
+      };
+
+      this.onConfigChange(config, (c) => {
+        if (!c.assetCollections) c.assetCollections = [];
+        c.assetCollections.push(newRef);
+      });
+
+      // Reset dropdown state
+      select.value = "";
+      dropdownContainer.classList.add("hidden");
+      confirmBtn.style.display = "none";
+    });
 
     // Bind action handlers
     section.addEventListener("click", async (e) => {

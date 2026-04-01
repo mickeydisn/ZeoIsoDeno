@@ -51,7 +51,7 @@ The Building Editor Panel is the main editing surface when a building config is 
   - "Edit params" button → inline edit mode for param values (WALL_SUFFIX, ROOF_SUFFIX, etc.)
   - "Open in editor" link button → switches activeConfig to that asset collection
   - "Remove" button → removes collection reference (with confirmation if tiles reference it)
-- [ ] "Add Asset Collection" button with dropdown of available collections
+- [x] "Add Asset Collection" button with dropdown of available collections
   - Dropdown populated from `tsClasses.assetCollections` or loaded JSON collections
 - [x] When params change, mark dirty and update `activeConfig.data.assetCollections[i].params`
 
@@ -101,7 +101,7 @@ The Building Editor Panel is the main editing surface when a building config is 
 - [x] "Delete" button per row → removes weight entry
 - [x] "Add Weight" section with dropdown of unused face keys + number input
 - [x] Dropdown populated from all face keys used in tiles minus existing weight keys
-- [ ] Tooltip on each face key showing usage context (e.g., "WH_in = Wall Interior, used in 12 tiles")
+- [x] Tooltip on each face key showing usage context (e.g., "WH_in = Wall Interior, used in 12 tiles")
 - [x] On any change → call `onChange(updatedFaceLinkWeight)` callback
 
 ---
@@ -117,7 +117,7 @@ The Building Editor Panel is the main editing surface when a building config is 
 - [x] "Add Link" section with two dropdowns: "From" and "To"
 - [x] Validation: prevent duplicate pairs, prevent self-links unless intentionally configured
 - [x] "Delete" button per row → removes pair
-- [ ] Visual indicator: warning icon if a face key in a pair has no weight entry
+- [x] Visual indicator: warning icon if a face key in a pair has no weight entry
 - [x] Helper text: "Note: Each pair expands to bidirectional at save time: [a,b] ↔ [b,a]"
 - [x] On any change → call `onChange(updatedFaceLinks)` callback
 

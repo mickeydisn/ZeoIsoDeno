@@ -14,17 +14,20 @@ export class FaceLinkTable {
   private container: HTMLElement;
   private faceLinks: [string, string][];
   private allFaceKeys: string[];
+  private faceLinkWeight: Record<string, number>;
   private onChange: (updatedFaceLinks: [string, string][]) => void;
 
   constructor(
     container: HTMLElement,
     faceLinks: [string, string][],
     allFaceKeys: string[],
-    onChange: (updatedFaceLinks: [string, string][]) => void
+    onChange: (updatedFaceLinks: [string, string][]) => void,
+    faceLinkWeight: Record<string, number> = {}
   ) {
     this.container = container;
     this.faceLinks = [...faceLinks];
     this.allFaceKeys = [...allFaceKeys];
+    this.faceLinkWeight = faceLinkWeight;
     this.onChange = onChange;
   }
 
@@ -83,21 +86,52 @@ export class FaceLinkTable {
   }
 
   /**
-   * Render a single link row.
+   * Check if a face key has a weight entry.
+   */
+  private hasWeight(faceKey: string): boolean {
+    return this.faceLinkWeight[faceKey] !== undefined && this.faceLinkWeight[faceKey] > 0;
+  }
+
+  /**
+   * Render a single link row with warning indicators for missing weights.
    */
   private renderLinkRow(from: string, to: string, index: number): HTMLElement {
     const tr = document.createElement("tr");
 
-    // From cell
+    // From cell with warning indicator
     const fromTd = document.createElement("td");
+    const fromWrapper = document.createElement("div");
+    fromWrapper.className = "face-link-cell";
     const fromSelect = this.createFaceKeySelect(from, "from", index);
-    fromTd.appendChild(fromSelect);
+    fromWrapper.appendChild(fromSelect);
+    
+    // Add warning if no weight
+    if (!this.hasWeight(from)) {
+      const warning = document.createElement("span");
+      warning.className = "face-link-warning";
+      warning.textContent = "⚠️";
+      warning.title = `Face key "${from}" has no weight entry`;
+      fromWrapper.appendChild(warning);
+    }
+    fromTd.appendChild(fromWrapper);
     tr.appendChild(fromTd);
 
-    // To cell
+    // To cell with warning indicator
     const toTd = document.createElement("td");
+    const toWrapper = document.createElement("div");
+    toWrapper.className = "face-link-cell";
     const toSelect = this.createFaceKeySelect(to, "to", index);
-    toTd.appendChild(toSelect);
+    toWrapper.appendChild(toSelect);
+    
+    // Add warning if no weight
+    if (!this.hasWeight(to)) {
+      const warning = document.createElement("span");
+      warning.className = "face-link-warning";
+      warning.textContent = "⚠️";
+      warning.title = `Face key "${to}" has no weight entry`;
+      toWrapper.appendChild(warning);
+    }
+    toTd.appendChild(toWrapper);
     tr.appendChild(toTd);
 
     // Actions cell
