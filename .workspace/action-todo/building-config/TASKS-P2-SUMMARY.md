@@ -37,7 +37,7 @@ This document summarizes the implementation status and next steps for Priority 2
 **Tasks:**
 - [x] Update `setActiveConfig` to track source ("extracted" vs "loaded" vs "json")
 - [x] Dirty state tracking works correctly for loaded JSON configs (`markDirty()` in state.ts)
-- [ ] Add visual indicator distinguishing "Extracted" vs "Loaded from JSON" configs
+ - [x] Add visual indicator distinguishing "Extracted" vs "Loaded from JSON" configs
 - [ ] Implement "Revert to Original" for dirty JSON configs (reload from disk)
 - [ ] Add "Save As..." functionality for creating copies of existing configs
 

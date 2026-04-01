@@ -229,6 +229,10 @@ export class BuildingEditorPanel {
    * Render header with building metadata.
    */
   private renderHeader(config: BuildingConfig): HTMLElement {
+    // Get current source from state manager for accurate display
+    const state = this.stateManager.getState();
+    const source = state.activeConfig.source;
+
     const header = document.createElement("div");
     header.className = "editor-header";
     
@@ -243,6 +247,17 @@ export class BuildingEditorPanel {
         <span class="meta-item"><strong>Class:</strong> ${config.metadata.classRef || "N/A"}</span>
         <span class="meta-item"><strong>Registry ID:</strong> ${config.metadata.registryId || "N/A"}</span>
       `;
+    }
+
+    // Source indicator badge
+    const sourceIndicator = document.createElement("div");
+    sourceIndicator.className = "editor-source";
+    if (source === "extracted") {
+      sourceIndicator.innerHTML = `<span class="source-badge source-extracted">🔧 Extracted from TypeScript</span>`;
+    } else if (source === "loaded") {
+      sourceIndicator.innerHTML = `<span class="source-badge source-loaded">📄 Loaded from JSON</span>`;
+    } else {
+      sourceIndicator.innerHTML = `<span class="source-badge source-unknown">❓ Unknown Source</span>`;
     }
 
     // "Reset to Default" button
@@ -260,6 +275,7 @@ export class BuildingEditorPanel {
 
     header.appendChild(titleDiv);
     header.appendChild(meta);
+    header.appendChild(sourceIndicator);
     header.appendChild(headerRight);
     return header;
   }

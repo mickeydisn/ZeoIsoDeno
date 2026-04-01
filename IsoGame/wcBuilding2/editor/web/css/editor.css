@@ -356,6 +356,36 @@ html, body {
   color: var(--text-primary);
 }
 
+/* --- Source Indicator Badge --- */
+.editor-source {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.source-badge {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.source-extracted {
+  background-color: rgba(92, 138, 255, 0.2);
+  color: #5c8aff;
+}
+
+.source-loaded {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.source-unknown {
+  background-color: rgba(160, 160, 184, 0.2);
+  color: #a0a0b8;
+}
+
 /* --- Editor Sections --- */
 .editor-section {
   background-color: var(--bg-secondary);
