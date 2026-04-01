@@ -11,35 +11,6 @@ This document summarizes the implementation status and next steps for Priority 2
 
 ## Feature 1: Loading JSON Configs
 
-### Current Status: ✅ FULLY IMPLEMENTED
-
-The JSON config loading functionality has been implemented on the server side but has gaps in client-side integration for the editor workflow.
-
-### What's Done
-
-| Component | File | Status | Description |
-|-----------|------|--------|-------------|
-| Server Loader | `IsoGame/wcBuilding2/editor/loader.ts` | ✅ Complete | `ConfigLoader.loadBuilding()` loads JSON configs with fallback to TS classes |
-| JSON Parser | `IsoGame/wcBuilding2/editor/loader.ts` | ✅ Complete | `buildFromJSON()` converts BuildingConfig JSON → WcAbstractBuildConf |
-| Tile Mapper | `IsoGame/wcBuilding2/editor/loader.ts` | ✅ Complete | `tileFromJSON()` converts TileConfig JSON → WcConfTile runtime format |
-| Asset Mapper | `IsoGame/wcBuilding2/editor/loader.ts` | ✅ Complete | `assetFromJSON()` converts WcConfTileAsset JSON → runtime format |
-| Function Mapper | `IsoGame/wcBuilding2/editor/loader.ts` | ✅ Complete | `functionFromJSON()` converts WcConfTileFunction JSON → runtime format |
-| Face Link Expansion | `IsoGame/wcBuilding2/editor/loader.ts` | ✅ Complete | Expands unique faceLinks to bidirectional pairs on load |
-| Fallback Chain | `IsoGame/wcBuilding2/editor/loader.ts` | ✅ Complete | JSON → Registry → TS Class → Error resolution chain |
-| Integration Wrapper | `IsoGame/wcBuilding2/editor/integration.ts` | ✅ Complete | Optional wrapper for game code integration |
-| Validation Script | `IsoGame/wcBuilding2/editor/validate.ts` | ✅ Complete | Round-trip validation tests |
-| Saved Config Listing | `IsoGame/wcBuilding2/editor/loader.ts` | ✅ Complete | `listSavedConfigs()` returns metadata about saved configs |
-| JSON Existence Check | `IsoGame/wcBuilding2/editor/loader.ts` | ✅ Complete | `hasJSONConfig()` checks if JSON exists for a building ID |
-| Export Helper | `IsoGame/wcBuilding2/editor/loader.ts` | ✅ Complete | `createBuildingConfigFromJSONOrRegistry()` convenience function |
-| Library Panel | `IsoGame/wcBuilding2/editor/web/js/panels/library.ts` | ✅ Implemented | Lists JSON configs, handles TS extraction, JSON click handling with error message |
-| API Client | `IsoGame/wcBuilding2/editor/web/js/api.ts` | ✅ Complete | Has `saveBuilding()` and `saveAssetCollection()` methods |
-| State Manager | `IsoGame/wcBuilding2/editor/web/js/state.ts` | ✅ Complete | Full state management with `setActiveConfig`, `markDirty`, `getConfig`, `addConfig` |
-| Building Editor | `IsoGame/wcBuilding2/editor/web/js/panels/building.ts` | ✅ Complete | Full editor with parameter editing, face link weights, tile management, preview, save |
-| Asset Collection Editor | `IsoGame/wcBuilding2/editor/web/js/panels/assetCollection.ts` | ✅ Complete | Full editor with metadata, parameters, tile list, save |
-| Tile Editor | `IsoGame/wcBuilding2/editor/web/js/panels/tile.ts` | ✅ Complete | Modal tile editor with face config, properties, assets, functions, canvas preview |
-| Server /editor/list | `IsoGame/wcBuilding2/editor/server.ts` | ✅ Complete | Returns TS classes and existing JSON configs |
-| Server Save Endpoints | `IsoGame/wcBuilding2/editor/server.ts` | ✅ Complete | POST `/editor/save/building/:name` and `/editor/save/asset-collection/:name` |
-
 ### What's Missing / Needs Improvement
 
 #### 1.1 Client-Side JSON Config Loading in Editor
@@ -64,7 +35,7 @@ The JSON config loading functionality has been implemented on the server side bu
 - `IsoGame/wcBuilding2/editor/web/js/panels/assetCollection.ts`
 
 **Tasks:**
-- [ ] Update `setActiveConfig` to track source ("extracted" vs "loaded" vs "json")
+- [x] Update `setActiveConfig` to track source ("extracted" vs "loaded" vs "json")
 - [x] Dirty state tracking works correctly for loaded JSON configs (`markDirty()` in state.ts)
 - [ ] Add visual indicator distinguishing "Extracted" vs "Loaded from JSON" configs
 - [ ] Implement "Revert to Original" for dirty JSON configs (reload from disk)
@@ -102,17 +73,6 @@ The JSON config loading functionality has been implemented on the server side bu
 ### Current Status: ✅ FULLY INTEGRATED
 
 The infrastructure for loading and displaying asset images exists but is not yet integrated into the tile editor UI. When a tile references an asset (via `assets: [{ key: "wallDoor", sufix: "#..." }]`), the editor should display the actual asset image.
-
-### What's Done
-
-| Component | File | Status | Description |
-|-----------|------|--------|-------------|
-| Asset Preview API | `IsoGame/wcBuilding2/editor/server.ts` | ✅ Complete | `GET /editor/asset-preview/:key` serves asset images |
-| Asset List API | `IsoGame/wcBuilding2/editor/server.ts` | ✅ Complete | `GET /editor/assets/list` returns available assets |
-| Asset Preview Service | `IsoGame/wcBuilding2/editor/web/js/services/assetPreview.ts` | ✅ Complete | `AssetPreviewService` with caching and fallback |
-| Asset List Editor | `IsoGame/wcBuilding2/editor/web/js/components/assetList.ts` | ✅ Complete | CRUD for tile assets with dropdowns, rotation, height, color picker integration |
-| Canvas2D Preview | `IsoGame/wcBuilding2/editor/web/js/components/canvas2d.ts` | ⚠️ Partial | Has `setAssetImages()` method and `assetImages` storage but doesn't render them |
-| Tile Editor Integration | `IsoGame/wcBuilding2/editor/web/js/panels/tile.ts` | ⚠️ Partial | Uses `AssetListEditor` and `Canvas2DPreview` but doesn't wire up `AssetPreviewService` |
 
 ### What's Missing / Needs Implementation
 
@@ -231,73 +191,6 @@ private drawTileAssets(x: number, y: number, tile: TileConfig): void {
 
 ---
 
-## Implementation Priority Order
-
-### Phase P2-A: Asset Image Display Foundation ✅ COMPLETED
-
-1. **[P2-A1]** ✅ Update `canvas2d.ts` to render loaded asset images on tiles
-   - ✅ Implemented `drawTileAssets()` method
-   - ✅ Integrated with existing `renderTileRhombus()` flow
-   - ✅ Handle asset positioning, rotation, layering
-   - ✅ Apply color suffix filters via canvas
-
-2. **[P2-A2]** ✅ Integrate `AssetPreviewService` into tile editor panel
-   - ✅ Wired up service in `tile.ts`
-   - ✅ Pass service to `Canvas2DPreview` instance
-   - ✅ Preload assets for active tile/building config
-
-### Phase P2-B: Asset Thumbnails in UI ✅ COMPLETED
-
-3. **[P2-B1]** ✅ Add asset thumbnails to `AssetListEditor`
-   - ✅ Added image thumbnail next to each asset row
-   - ✅ Show color suffix preview
-   - ✅ CSS filter applied for real-time preview
-
-4. **[P2-B2]** ✅ Added canvas preview integration in tile editor
-   - ✅ Canvas2DPreview renders with loaded asset images
-   - ✅ Click to edit tiles in full editor
-
-### Phase P2-C: JSON Config Loading Integration ✅ COMPLETED
-
-5. **[P2-C1]** ✅ Added server endpoints for loading JSON configs
-   - ✅ `GET /editor/load/building/:name`
-   - ✅ `GET /editor/load/asset-collection/:name`
-
-6. **[P2-C2]** ✅ Added client API methods
-   - ✅ `apiClient.loadBuilding(name)`
-   - ✅ `apiClient.loadAssetCollection(name)`
-
-7. **[P2-C3]** ✅ Updated library panel to handle JSON config clicks
-   - ✅ Load JSON config into editor state
-   - ✅ Loading indicators shown
-   - ✅ Errors handled gracefully
-
-### Phase P2-D: Color Filter System ✅ COMPLETED
-
-8. **[P2-D1]** ✅ Implemented color suffix parser and filter builder
-   - ✅ Parse `#Hxxx_Cxxx_Sxxx_Bxxx` format
-   - ✅ Build CSS filter strings
-   - ✅ Build canvas filter strings
-
-9. **[P2-D2]** ✅ Applied filters to asset images in canvas preview
-   - ✅ `Canvas2DPreview` applies filters when drawing assets
-   - ✅ Template references handled
-
-### Phase P2-E: Polish & Performance ⚠️ PARTIAL
-
-10. **[P2-E1]** Asset caching via `AssetPreviewService` (already exists)
-    - ✅ LRU-style caching in `AssetPreviewService`
-    - ⚠️ Viewport-based loading not yet implemented
-    - ✅ Loading placeholders via `AssetPreviewService`
-
-11. **[P2-E2]** Testing needed
-    - ⚠️ Test with HouseA.json (has asset collections)
-    - ⚠️ Test color suffix rendering
-    - ⚠️ Test asset rotation and layering
-    - ⚠️ Test JSON config loading workflow
-
----
-
 ## Technical Notes
 
 ### Asset Image Loading Flow
@@ -413,16 +306,3 @@ Color Filter System (2.4)
 | `IsoGame/wcBuilding2/editor/web/js/services/preview.ts` | Generation preview service |
 
 ---
-
-## Next Steps
-
-1. **Start with P2-A1**: Implement asset image rendering in `canvas2d.ts`
-   - This is the foundation for all visual asset features
-   - Without this, other asset display features have no rendering target
-
-2. **Follow with P2-C**: Add JSON config loading endpoints and client integration
-   - This is independent of asset display
-   - Enables full editing workflow for saved configs
-
-3. **Then P2-B, P2-D, P2-E**: Polish and remaining features
-   - These depend on the foundation being in place

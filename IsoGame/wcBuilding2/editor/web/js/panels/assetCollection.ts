@@ -179,7 +179,7 @@ export class AssetCollectionEditorPanel {
       this.stateManager.updateConfig("assetCollection", config.id, freshConfig);
       
       // Also set as active config (not dirty since it's fresh from TS)
-      this.stateManager.setActiveConfig("assetCollection", config.id, freshConfig);
+      this.stateManager.setActiveConfig("assetCollection", config.id, freshConfig, "extracted");
     } catch (error: any) {
       this.stateManager.setError(`Reset failed: ${error.message}`);
     } finally {

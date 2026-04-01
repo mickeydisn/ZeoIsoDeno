@@ -321,8 +321,10 @@ export class LibraryPanel {
       const existing = this.stateManager.getConfig(item.type, item.id);
       console.log('[LibraryPanel] Existing config:', existing);
       if (existing) {
-        console.log('[LibraryPanel] Setting active config:', item.type, item.id);
-        this.stateManager.setActiveConfig(item.type, item.id, existing);
+        // Determine source type: if it came from JSON loading it has metadata.sourceFile
+        const source = item.source === "json" ? "loaded" as const : "extracted" as const;
+        console.log('[LibraryPanel] Setting active config:', item.type, item.id, 'source:', source);
+        this.stateManager.setActiveConfig(item.type, item.id, existing, source);
         this.stateManager.setLoading(false);
         return;
       }
@@ -343,7 +345,7 @@ export class LibraryPanel {
         console.log('[LibraryPanel] Extracted config:', config);
         this.stateManager.addConfig(config);
         console.log('[LibraryPanel] Setting active config after extract:', item.type, item.id);
-        this.stateManager.setActiveConfig(item.type, item.id, config);
+        this.stateManager.setActiveConfig(item.type, item.id, config, "extracted");
       } else {
         // Load JSON config from disk via API
         console.log('[LibraryPanel] Loading JSON config:', item.id, item.type);
@@ -360,7 +362,7 @@ export class LibraryPanel {
         console.log('[LibraryPanel] Loaded JSON config:', config);
         this.stateManager.addConfig(config);
         console.log('[LibraryPanel] Setting active config after JSON load:', item.type, item.id);
-        this.stateManager.setActiveConfig(item.type, item.id, config);
+        this.stateManager.setActiveConfig(item.type, item.id, config, "loaded");
       }
     } catch (error) {
       console.error('[LibraryPanel] Item click error:', error);

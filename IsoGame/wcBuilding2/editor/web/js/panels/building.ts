@@ -289,7 +289,7 @@ export class BuildingEditorPanel {
       this.stateManager.updateConfig("building", config.id, freshConfig);
       
       // Also set as active config (not dirty since it's fresh from TS)
-      this.stateManager.setActiveConfig("building", config.id, freshConfig);
+      this.stateManager.setActiveConfig("building", config.id, freshConfig, "extracted");
     } catch (error: any) {
       this.stateManager.setError(`Reset failed: ${error.message}`);
     } finally {
@@ -1005,7 +1005,9 @@ export class BuildingEditorPanel {
         // Reset dirty state
         const state = this.stateManager.getState();
         if (state.activeConfig.id === config.id) {
-          this.stateManager.setActiveConfig("building", config.id, config);
+          // Preserve current source on save
+          const currentSource = state.activeConfig.source || "loaded";
+          this.stateManager.setActiveConfig("building", config.id, config, currentSource);
         }
         this.stateManager.setError(null);
       } catch (error: any) {

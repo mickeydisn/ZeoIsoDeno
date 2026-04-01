@@ -21,6 +21,7 @@ export interface EditorState {
     id: string | null;
     data: BuildingConfig | AssetCollectionConfig | null;
     isDirty: boolean;
+    source: "extracted" | "loaded" | null;
   };
   ui: {
     editingTile: TileConfig | null;
@@ -49,6 +50,7 @@ const initialState: EditorState = {
     id: null,
     data: null,
     isDirty: false,
+    source: null,
   },
   ui: {
     editingTile: null,
@@ -122,9 +124,10 @@ export class StateManager {
   setActiveConfig(
     type: "building" | "assetCollection",
     id: string,
-    data: BuildingConfig | AssetCollectionConfig
+    data: BuildingConfig | AssetCollectionConfig,
+    source: "extracted" | "loaded" = "extracted"
   ): void {
-    console.log('[StateManager] setActiveConfig called:', type, id, data?.type);
+    console.log('[StateManager] setActiveConfig called:', type, id, data?.type, 'source:', source);
     this.state = {
       ...this.state,
       activeConfig: {
@@ -132,6 +135,7 @@ export class StateManager {
         id,
         data,
         isDirty: false,
+        source,
       },
     };
     console.log('[StateManager] New state activeConfig:', this.state.activeConfig);
