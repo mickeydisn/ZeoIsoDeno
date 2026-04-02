@@ -64,15 +64,39 @@ export interface WcConfTileFunction {
  * Version History:
  * - "1.0": Initial schema version (current)
  */
-export const CURRENT_VERSION = "1.0" as const;
+export const CURRENT_VERSION = "1.1" as const;
 
 /**
  * All supported schema versions that the system can read and migrate.
  * Older configs will be automatically migrated to CURRENT_VERSION on load.
  */
-export const SUPPORTED_VERSIONS = ["1.0"] as const;
+export const SUPPORTED_VERSIONS = ["1.0", "1.1"] as const;
 
 export type SupportedVersion = typeof SUPPORTED_VERSIONS[number];
+
+// ============================================================================
+// Tile Group Types
+// ============================================================================
+
+/**
+ * Tile configuration within a group - omits face property as it's inherited from group.
+ */
+export type TileGroupItem = Omit<TileConfig, 'face'>;
+
+/**
+ * Tile group configuration for editor schema.
+ * Defines a shared face with multiple tile items that can be selected by weight.
+ */
+export interface TileGroupConfig {
+  /** Unique identifier for this group within its parent config */
+  id: string;
+  /** Shared face configuration inherited by all items in this group */
+  face: (string | null)[];
+  /** Default selection weight for the group */
+  weight?: number;
+  /** Array of tile items in this group */
+  items: TileGroupItem[];
+}
 
 // ============================================================================
 // Building Configuration JSON Schema
@@ -132,6 +156,8 @@ export interface BuildingConfig {
   startTiles: TileConfig[];
   /** All tile definitions for the building */
   tiles: TileConfig[];
+  /** Optional tile groups with shared face definitions */
+  groups?: TileGroupConfig[];
 }
 
 // ============================================================================
@@ -176,6 +202,8 @@ export interface AssetCollectionConfig {
   paramsSchema?: Record<string, ParamSchemaEntry>;
   /** All tile definitions in this collection */
   tiles: TileConfig[];
+  /** Optional tile groups with shared face definitions */
+  groups?: TileGroupConfig[];
 }
 
 // ============================================================================
