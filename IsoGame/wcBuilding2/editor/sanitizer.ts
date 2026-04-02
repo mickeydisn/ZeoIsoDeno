@@ -6,7 +6,7 @@
  * logic in the validation module.
  */
 
-import type { BuildingConfig } from "./types.ts";
+import type { BuildingConfig, TileGroupConfig } from "./types.ts";
 
 /**
  * Sanitize a BuildingConfig by fixing common issues.
@@ -31,6 +31,30 @@ export function sanitizeBuildingConfig(config: BuildingConfig): BuildingConfig {
     }));
   }
 
+  // Sanitize tile groups
+  if (config.groups) {
+    config.groups = config.groups.map((group: TileGroupConfig) => {
+      // Normalize group face
+      const sanitizedGroup: TileGroupConfig = {
+        ...group,
+        face: normalizeFaceArray(group.face),
+        // Ensure weight is valid number or default to 1
+        weight: typeof group.weight === 'number' && !isNaN(group.weight) ? group.weight : 1,
+        // Ensure items array exists
+        items: group.items || []
+      };
+
+      // Sanitize group items (no face property)
+      sanitizedGroup.items = sanitizedGroup.items.map(item => ({
+        ...item,
+        // Ensure weight is valid number or default to 1
+        weight: typeof item.weight === 'number' && !isNaN(item.weight) ? item.weight : 1
+      }));
+
+      return sanitizedGroup;
+    });
+  }
+
   // Ensure faceLinkWeight has entries for all face keys in faceLinks
   if (config.faceLinks) {
     if (!config.faceLinkWeight) {
@@ -49,6 +73,7 @@ export function sanitizeBuildingConfig(config: BuildingConfig): BuildingConfig {
   // Ensure arrays exist
   config.tiles = config.tiles || [];
   config.startTiles = config.startTiles || [];
+  config.groups = config.groups || [];
   config.faceLinkWeight = config.faceLinkWeight || {};
   config.faceLinks = config.faceLinks || [];
 

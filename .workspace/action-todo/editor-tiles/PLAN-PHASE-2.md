@@ -14,7 +14,7 @@
   - File: `IsoGame/wcBuilding2/editor/loader.ts`
   - Note: Expansion happens at load time, stored config remains untouched
 
-- [ ] Task: Update sanitizer.ts to handle groups
+- [x] Task: Update sanitizer.ts to handle groups
   - Detail: Add sanitization logic for group objects and group items
   - File: `IsoGame/wcBuilding2/editor/sanitizer.ts`
 
