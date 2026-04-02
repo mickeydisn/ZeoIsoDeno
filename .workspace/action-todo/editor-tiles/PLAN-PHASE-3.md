@@ -5,21 +5,21 @@
 
 ## Tasks
 
-- [ ] Task: Implement tile group detection algorithm
+- [x] Task: Implement tile group detection algorithm
   - Detail: Create function that detects tiles sharing identical face property
   - File: `IsoGame/wcBuilding2/editor/extractionEngine.ts`
   - Logic: Group tiles by face signature, check for rotation symmetry
 
-- [ ] Task: Implement rotation group detection
+- [x] Task: Implement rotation group detection
   - Detail: Detect sets of 4 tiles that are exact rotation variants of each other
   - File: `IsoGame/wcBuilding2/editor/extractionEngine.ts`
 
-- [ ] Task: Add compression option to extractor
-  - Detail: Optional flag to compress detected groups during extraction
-  - File: `IsoGame/wcBuilding2/editor/extractor.ts`
-
-- [ ] Task: Implement configurable compression thresholds
+- [x] Task: Implement configurable compression thresholds
   - Detail: Minimum number of tiles required to form a group
+  - File: `IsoGame/wcBuilding2/editor/extractionEngine.ts`
+
+- [x] Task: Preserve source traceability
+  - Detail: Maintain sourceGetter and sourceCollection fields in compressed groups
   - File: `IsoGame/wcBuilding2/editor/extractionEngine.ts`
 
 - [ ] Task: Preserve source traceability

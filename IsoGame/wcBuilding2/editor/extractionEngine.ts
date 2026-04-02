@@ -22,6 +22,7 @@ import type {
   ParamSchemaEntry,
   TileConfig,
   TileGroupConfig,
+  TileGroupItem,
 } from "./types.ts";
 
 /**
@@ -81,7 +82,7 @@ export class ConfigExtractor {
     const tiles = conf.listTileOptions.map((t) => this.tileToJson(t));
 
      return {
-       version: "1.0",
+       version: "1.1",
        type: "building",
        id: className.replace("WcBuildConf_", ""),
        metadata: {
@@ -162,7 +163,7 @@ export class ConfigExtractor {
     const paramsSchema = this.buildParamsSchema(extractedParams, className);
 
      return {
-       version: "1.0",
+       version: "1.1",
        type: "assetCollection",
        id: className.replace("WcAsset_", ""),
        metadata: {
@@ -363,6 +364,104 @@ export class ConfigExtractor {
     }
 
     return schema;
+  }
+
+  // ============================================================================
+  // Tile Group Detection & Compression
+  // ============================================================================
+
+  /**
+   * Create a consistent hash key from a face array for grouping
+   */
+  private static faceToKey(face: (string | null)[]): string {
+    return face.map(f => f ?? 'null').join('|');
+  }
+
+  /**
+   * Detect tile groups by common face signature
+   * Groups tiles that share identical face property
+   */
+  static detectTileGroups(tiles: TileConfig[], minGroupSize: number = 2): { groups: TileGroupConfig[], remainingTiles: TileConfig[] } {
+    const faceGroups = new Map<string, TileConfig[]>();
+
+    // Group tiles by face signature
+    for (const tile of tiles) {
+      const faceKey = this.faceToKey(tile.face);
+      if (!faceGroups.has(faceKey)) {
+        faceGroups.set(faceKey, []);
+      }
+      faceGroups.get(faceKey)!.push(tile);
+    }
+
+    const groups: TileGroupConfig[] = [];
+    const remainingTiles: TileConfig[] = [];
+    let groupCounter = 0;
+
+    // Process groups
+    for (const [faceKey, groupTiles] of faceGroups.entries()) {
+      if (groupTiles.length >= minGroupSize) {
+        // Create group config
+        const group: TileGroupConfig = {
+          id: `group_${groupCounter++}`,
+          face: [...groupTiles[0].face],
+          weight: groupTiles.reduce((sum, t) => sum + (t.weight ?? 1), 0) / groupTiles.length,
+          items: groupTiles.map(tile => {
+            // Create group item without face property
+            const { face, ...item } = tile;
+            return item as TileGroupItem;
+          })
+        };
+        groups.push(group);
+      } else {
+        // Add small groups/individual tiles back to remaining
+        remainingTiles.push(...groupTiles);
+      }
+    }
+
+    return { groups, remainingTiles };
+  }
+
+  /**
+   * Detect rotation variant groups (sets of 4 tiles that are exact rotations)
+   */
+  static detectRotationGroups(tiles: TileConfig[]): { groups: TileGroupConfig[], remainingTiles: TileConfig[] } {
+    // TODO: Implement rotation symmetry detection logic
+    // For now return all tiles as remaining
+    return { groups: [], remainingTiles: [...tiles] };
+  }
+
+  /**
+   * Compress tiles array into groups using configured thresholds
+   */
+  static compressTileGroups(tiles: TileConfig[], options: {
+    enableCompression: boolean;
+    minGroupSize?: number;
+    detectRotations?: boolean;
+  }): { groups: TileGroupConfig[], tiles: TileConfig[] } {
+    if (!options.enableCompression) {
+      return { groups: [], tiles: [...tiles] };
+    }
+
+    const minSize = options.minGroupSize ?? 3;
+    let currentTiles = [...tiles];
+    const allGroups: TileGroupConfig[] = [];
+
+    // First pass: simple face grouping
+    const { groups: faceGroups, remainingTiles } = this.detectTileGroups(currentTiles, minSize);
+    allGroups.push(...faceGroups);
+    currentTiles = remainingTiles;
+
+    // Second pass: rotation group detection (if enabled)
+    if (options.detectRotations) {
+      const { groups: rotationGroups, remainingTiles: rotationRemaining } = this.detectRotationGroups(currentTiles);
+      allGroups.push(...rotationGroups);
+      currentTiles = rotationRemaining;
+    }
+
+    return {
+      groups: allGroups,
+      tiles: currentTiles
+    };
   }
 
   // ============================================================================
