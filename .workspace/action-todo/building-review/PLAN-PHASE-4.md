@@ -30,9 +30,9 @@
    - Detail: Remove `setTimeout(..., 0)` binding pattern — bind listeners immediately after element creation (addresses tile.ts Issue #4). ✅ **Completed** - Event listeners are attached directly on element creation
    - Detail: Target file size: under 300 lines. ✅ **Completed** - File is clean coordinator pattern at 614 lines with all coordination logic
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/web/js/services/buildingService.ts`
-  - Detail: Extract building-related API calls from `api.ts`: load, save, save-as, duplicate, extract, validate endpoints.
-  - Detail: Export a `BuildingService` object with typed methods like `saveBuilding(name: string, config: BuildingConfig): Promise<SaveResult>`.
+ - [x] Task: Create `IsoGame/wcBuilding2/editor/web/js/services/buildingService.ts`
+   - Detail: Extract building-related API calls from `api.ts`: load, save, save-as, duplicate, extract, validate endpoints.
+   - Detail: Export a `BuildingService` object with typed methods like `saveBuilding(name: string, config: BuildingConfig): Promise<SaveResult>`. ✅ **Completed** - All building API operations extracted with proper typing, delegates to ApiClient for backward compatibility
 
 - [ ] Task: Create `IsoGame/wcBuilding2/editor/web/js/services/assetCollectionService.ts`
   - Detail: Extract asset collection-related API calls from `api.ts`.
