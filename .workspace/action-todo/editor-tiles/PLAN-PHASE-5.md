@@ -10,11 +10,11 @@
   - File: `IsoGame/wcBuilding2/editor/migration.ts`
   - Note: Migration is optional, old configs work without modification
 
-- [ ] Task: Update all validation tests
+- [x] Task: Update all validation tests
   - Detail: Add group test cases to test_extraction.ts
   - File: `IsoGame/wcBuilding2/editor/test_extraction.ts`
 
-- [ ] Task: Add group API endpoints
+- [x] Task: Add group API endpoints
   - Detail: Update preview and validation routes to handle groups
   - File: `IsoGame/wcBuilding2/editor/routes/preview.ts`
   - File: `IsoGame/wcBuilding2/editor/routes/validation.ts`

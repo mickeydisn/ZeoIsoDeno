@@ -50,7 +50,10 @@ export function validateBuildingConfig(config: BuildingConfig): ValidationResult
   // Validate basic structure
   validateBasicStructure(config, issues);
 
-  // Collect face keys from tiles and faceLinks
+  // Validate tile groups
+  validateTileGroups(config, issues);
+
+  // Collect face keys from tiles (including groups) and faceLinks
   const faceKeysInTiles = collectFaceKeysFromTiles(config, issues);
   const faceKeysInLinks = collectFaceKeysFromLinks(config, issues);
 
@@ -87,11 +90,18 @@ export function validateBuildingConfig(config: BuildingConfig): ValidationResult
   // Validate start tiles
   validateStartTiles(config, issues);
 
+  // Count tiles including expanded groups
+  const directTilesCount = (config.tiles || []).length;
+  const groupTilesCount = (config.groups || []).reduce(
+    (sum, group) => sum + (group.items || []).length,
+    0
+  );
+
   return {
     valid: issues.filter((i) => i.severity === ValidationSeverity.ERROR).length === 0,
     issues,
     stats: {
-      totalTiles: (config.tiles || []).length,
+      totalTiles: directTilesCount + groupTilesCount,
       uniqueFaceKeysInTiles: faceKeysInTiles,
       uniqueFaceKeysInLinks: faceKeysInLinks,
       orphanedFaceKeys,
@@ -168,7 +178,7 @@ function validateBasicStructure(config: BuildingConfig, issues: ValidationIssue[
 }
 
 /**
- * Collect all face keys from tile face arrays and validate face structure.
+ * Collect all face keys from tile face arrays (including groups) and validate face structure.
  */
 function collectFaceKeysFromTiles(
   config: BuildingConfig,
@@ -177,6 +187,7 @@ function collectFaceKeysFromTiles(
   const faceKeys = new Set<string>();
   const tiles = config.tiles || [];
 
+  // Collect face keys from direct tiles
   for (let i = 0; i < tiles.length; i++) {
     const tile = tiles[i];
     const tileIndex = i;
@@ -219,6 +230,18 @@ function collectFaceKeysFromTiles(
     for (const f of tile.face) {
       if (f) {
         faceKeys.add(f);
+      }
+    }
+  }
+
+  // Collect face keys from tile groups
+  const groups = config.groups || [];
+  for (const group of groups) {
+    if (group.face) {
+      for (const f of group.face) {
+        if (f) {
+          faceKeys.add(f);
+        }
       }
     }
   }
@@ -303,6 +326,99 @@ function findMissingWeightEntries(
   }
 
   return missing.sort();
+}
+
+/**
+ * Validate tile groups structure and items.
+ */
+function validateTileGroups(config: BuildingConfig, issues: ValidationIssue[]): void {
+  const groups = config.groups || [];
+
+  const groupIds = new Set<string>();
+
+  for (let i = 0; i < groups.length; i++) {
+    const group = groups[i];
+    const groupId = group.id || `group_${i}`;
+
+    // Check for duplicate group IDs
+    if (group.id) {
+      if (groupIds.has(group.id)) {
+        issues.push({
+          severity: ValidationSeverity.ERROR,
+          message: `Duplicate group ID: "${group.id}"`,
+          tileId: groupId,
+        });
+      }
+      groupIds.add(group.id);
+    }
+
+    // Check if group has a face array
+    if (!group.face) {
+      issues.push({
+        severity: ValidationSeverity.ERROR,
+        message: `Group "${groupId}" is missing face array`,
+        tileId: groupId,
+      });
+      continue;
+    }
+
+    // Check face array length (should be 4: NW, NE, SE, SW)
+    if (group.face.length !== 4) {
+      issues.push({
+        severity: ValidationSeverity.ERROR,
+        message: `Group "${groupId}" has invalid face array length: ${group.face.length} (expected 4)`,
+        tileId: groupId,
+      });
+    }
+
+    // Check for all-null face
+    const hasAnyFace = group.face.some((f) => f !== null);
+    if (!hasAnyFace) {
+      issues.push({
+        severity: ValidationSeverity.WARNING,
+        message: `Group "${groupId}" has all-null face array — may cause generation issues`,
+        tileId: groupId,
+      });
+    }
+
+    // Check if group has items
+    if (!group.items || group.items.length === 0) {
+      issues.push({
+        severity: ValidationSeverity.WARNING,
+        message: `Group "${groupId}" has no items`,
+        tileId: groupId,
+      });
+      continue;
+    }
+
+    // Validate group items
+    for (let j = 0; j < group.items.length; j++) {
+      const item = group.items[j];
+      const itemId = item.id || `group_${i}_item_${j}`;
+
+      // Check weight is valid
+      if (item.weight !== undefined && (typeof item.weight !== 'number' || item.weight < 0)) {
+        issues.push({
+          severity: ValidationSeverity.WARNING,
+          message: `Group "${groupId}" item "${itemId}" has invalid weight: ${item.weight}`,
+          tileId: itemId,
+        });
+      }
+
+      // Validate assets if present
+      if (item.assets) {
+        for (const asset of item.assets) {
+          if (asset.key !== undefined && (!asset.key || /[/\\]/.test(asset.key))) {
+            issues.push({
+              severity: ValidationSeverity.ERROR,
+              message: `Group "${groupId}" item "${itemId}" has invalid asset key: "${asset.key}"`,
+              tileId: itemId,
+            });
+          }
+        }
+      }
+    }
+  }
 }
 
 /**

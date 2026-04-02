@@ -7,8 +7,9 @@
  * These functions were extracted from server.ts to improve modularity and type safety.
  */
 
-import { WcAbstractBuildConf, WcConfTile } from "../../wcAbstractBuildConf.ts";
+import { WcAbstractBuildConf, WcConfTile, WcConfRawGroup } from "../../wcAbstractBuildConf.ts";
 import type { BuildingConfig, TileConfig } from "../types.ts";
+import { confsGroup_to_confsTile } from "../../wcUtils.ts";
 
 // ============================================================================
 // Type Definitions
@@ -88,10 +89,18 @@ export function buildTempConfig(json: BuildingConfig): WcAbstractBuildConf {
     (tile) => tileFromJSON(tile) as unknown as WcConfTile,
   );
 
-  // Map tiles
-  conf.listTileOptions = (json.tiles || []).map(
-    (tile) => tileFromJSON(tile) as unknown as WcConfTile,
-  );
+  // Map tiles — expand groups if present
+  if (json.groups && json.groups.length > 0) {
+    const expandedGroupTiles = confsGroup_to_confsTile(json.groups as unknown as WcConfRawGroup[]);
+    conf.listTileOptions = [
+      ...(json.tiles || []).map((tile) => tileFromJSON(tile) as unknown as WcConfTile),
+      ...expandedGroupTiles,
+    ];
+  } else {
+    conf.listTileOptions = (json.tiles || []).map(
+      (tile) => tileFromJSON(tile) as unknown as WcConfTile,
+    );
+  }
 
   return conf;
 }
