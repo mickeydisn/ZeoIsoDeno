@@ -12,29 +12,31 @@
  * Returns warnings and errors that can be displayed to the user.
  */
 
-import type { BuildingConfig, TileConfig, AssetCollectionRef } from "./types.ts";
+import type { BuildingConfig, TileConfig } from "./types.ts";
 import { sanitizeBuildingConfig } from "./sanitizer.ts";
+import {
+  ValidationSeverity,
+  ValidationIssue,
+  SerializableValidationResult,
+  SerializableTileRefValidationResult,
+  formatValidationSummary as formatValidationSummaryUtil,
+  formatTileRefValidationSummary as formatTileRefValidationSummaryUtil,
+} from "./validationUtils.ts";
 
 // Re-export for backward compatibility
 export { sanitizeBuildingConfig };
 
-// ============================================================================
-// Validation Result Types
-// ============================================================================
+// Re-export types from validationUtils for backward compatibility
+export type {
+  ValidationSeverity,
+  ValidationIssue,
+  SerializableValidationResult,
+  SerializableTileRefValidationResult,
+} from "./validationUtils.ts";
 
-export enum ValidationSeverity {
-  ERROR = "error",
-  WARNING = "warning",
-  INFO = "info",
-}
-
-export interface ValidationIssue {
-  severity: ValidationSeverity;
-  message: string;
-  tileIndex?: number;
-  tileId?: string;
-  faceKey?: string;
-}
+// ============================================================================
+// Internal Validation Result Type (uses Set for internal processing)
+// ============================================================================
 
 export interface ValidationResult {
   valid: boolean;
@@ -101,8 +103,6 @@ export function validateBuildingConfig(config: BuildingConfig): ValidationResult
   // Validate start tiles
   validateStartTiles(config, issues);
 
-  const allFaceKeys = new Set([...faceKeysInTiles, ...faceKeysInLinks]);
-
   return {
     valid: issues.filter((i) => i.severity === ValidationSeverity.ERROR).length === 0,
     issues,
@@ -114,6 +114,50 @@ export function validateBuildingConfig(config: BuildingConfig): ValidationResult
       missingWeightEntries: missingWeights,
     },
   };
+}
+
+/**
+ * Convert internal ValidationResult to serializable format for HTTP responses.
+ */
+function toSerializableResult(result: ValidationResult): SerializableValidationResult {
+  return {
+    valid: result.valid,
+    issues: result.issues,
+    stats: {
+      totalTiles: result.stats.totalTiles,
+      uniqueFaceKeysInTiles: Array.from(result.stats.uniqueFaceKeysInTiles),
+      uniqueFaceKeysInLinks: Array.from(result.stats.uniqueFaceKeysInLinks),
+      orphanedFaceKeys: result.stats.orphanedFaceKeys,
+      missingWeightEntries: result.stats.missingWeightEntries,
+    },
+  };
+}
+
+/**
+ * Convert internal TileReferenceValidationResult to serializable format.
+ */
+function toSerializableTileRefResult(result: TileReferenceValidationResult): SerializableTileRefValidationResult {
+  return {
+    valid: result.valid,
+    issues: result.issues,
+    stats: result.stats,
+  };
+}
+
+/**
+ * Format validation issues as a user-readable summary.
+ * Wrapper around validationUtils.formatValidationSummary that converts internal result to serializable format.
+ */
+export function formatValidationSummary(result: ValidationResult): string {
+  return formatValidationSummaryUtil(toSerializableResult(result));
+}
+
+/**
+ * Format tile reference validation issues as a user-readable summary.
+ * Wrapper around validationUtils.formatTileRefValidationSummary that converts internal result to serializable format.
+ */
+export function formatTileRefValidationSummary(result: TileReferenceValidationResult): string {
+  return formatTileRefValidationSummaryUtil(toSerializableTileRefResult(result));
 }
 
 /**
@@ -338,9 +382,8 @@ function validateStartTiles(config: BuildingConfig, issues: ValidationIssue[]): 
 // ============================================================================
 // Tile Reference Validation
 // ============================================================================
-
 /**
- * Result of tile reference validation.
+ * Internal tile reference validation result (uses Set internally).
  */
 export interface TileReferenceValidationResult {
   valid: boolean;
@@ -470,88 +513,5 @@ export function validateTileReferences(
   };
 }
 
-/**
- * Format validation issues as a user-readable summary.
- */
-export function formatValidationSummary(result: ValidationResult): string {
-  const errors = result.issues.filter((i) => i.severity === ValidationSeverity.ERROR);
-  const warnings = result.issues.filter((i) => i.severity === ValidationSeverity.WARNING);
-  const infos = result.issues.filter((i) => i.severity === ValidationSeverity.INFO);
-
-  const lines: string[] = [];
-
-  if (errors.length > 0) {
-    lines.push(`❌ ${errors.length} error(s):`);
-    for (const e of errors) {
-      lines.push(`   - ${e.message}`);
-    }
-  }
-
-  if (warnings.length > 0) {
-    lines.push(`⚠️ ${warnings.length} warning(s):`);
-    for (const w of warnings) {
-      lines.push(`   - ${w.message}`);
-    }
-  }
-
-  if (infos.length > 0) {
-    lines.push(`ℹ️ ${infos.length} info(s):`);
-    for (const i of infos) {
-      lines.push(`   - ${i.message}`);
-    }
-  }
-
-  if (lines.length === 0) {
-    return "✅ Config is valid";
-  }
-
-  return lines.join("\n");
-}
-
-/**
- * Format tile reference validation issues as a user-readable summary.
- */
-export function formatTileRefValidationSummary(result: TileReferenceValidationResult): string {
-  const errors = result.issues.filter((i) => i.severity === ValidationSeverity.ERROR);
-  const warnings = result.issues.filter((i) => i.severity === ValidationSeverity.WARNING);
-  const infos = result.issues.filter((i) => i.severity === ValidationSeverity.INFO);
-
-  const lines: string[] = [];
-
-  if (result.stats.invalidCollectionRefs > 0) {
-    lines.push(`❌ ${result.stats.invalidCollectionRefs} invalid collection reference(s)`);
-  }
-
-  if (result.stats.tilesWithSourceCollection > 0) {
-    lines.push(
-      `📦 ${result.stats.validCollectionRefs}/${result.stats.tilesWithSourceCollection} valid collection references`
-    );
-  }
-
-  if (errors.length > 0) {
-    lines.push(`❌ ${errors.length} error(s):`);
-    for (const e of errors) {
-      lines.push(`   - ${e.message}`);
-    }
-  }
-
-  if (warnings.length > 0) {
-    lines.push(`⚠️ ${warnings.length} warning(s):`);
-    for (const w of warnings) {
-      lines.push(`   - ${w.message}`);
-    }
-  }
-
-  if (infos.length > 0) {
-    lines.push(`ℹ️ ${infos.length} info(s):`);
-    for (const i of infos) {
-      lines.push(`   - ${i.message}`);
-    }
-  }
-
-  if (lines.length === 0) {
-    return "✅ Tile references are valid";
-  }
-
-  return lines.join("\n");
-}
+// formattingValidationSummary and formatTileRefValidationSummary are exported above
+// as local wrapper functions that convert internal results to serializable format

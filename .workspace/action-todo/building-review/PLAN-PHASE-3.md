@@ -21,7 +21,7 @@
   - Detail: Extract the `sanitizeBuildingConfig` function and related sanitization utilities from `validation.ts` into this new file.
   - Detail: This separates fix/repair logic from validation/checking logic.
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/validationUtils.ts` module
+- [x] Task: Create `IsoGame/wcBuilding2/editor/validationUtils.ts` module
   - Detail: Extract the `formatValidationSummary`, `formatTileRefValidationSummary`, severity type definitions, and any shared formatting utilities from `validation.ts`.
   - Detail: Include the `ValidationResult` type definition with `string[]` instead of `Set<string>` for serializable HTTP responses (addresses validation Issue #2).
 
