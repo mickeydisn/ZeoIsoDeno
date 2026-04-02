@@ -34,9 +34,9 @@
    - Detail: Extract building-related API calls from `api.ts`: load, save, save-as, duplicate, extract, validate endpoints.
    - Detail: Export a `BuildingService` object with typed methods like `saveBuilding(name: string, config: BuildingConfig): Promise<SaveResult>`. ✅ **Completed** - All building API operations extracted with proper typing, delegates to ApiClient for backward compatibility
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/web/js/services/assetCollectionService.ts`
-  - Detail: Extract asset collection-related API calls from `api.ts`.
-  - Detail: Export an `AssetCollectionService` object with typed methods.
+ - [x] Task: Create `IsoGame/wcBuilding2/editor/web/js/services/assetCollectionService.ts`
+   - Detail: Extract asset collection-related API calls from `api.ts`. ✅ Created assetCollectionService.ts with all asset collection API operations extracted
+   - Detail: Export an `AssetCollectionService` object with typed methods. ✅ Implemented extract, load, save, saveAs, duplicate, delete, migrate methods with proper typing
 
 - [ ] Task: Refactor `IsoGame/wcBuilding2/editor/web/js/api.ts` to be a thin HTTP client wrapper
   - Detail: Keep only the base `fetch` wrapper, error handling, and request/response utilities.
