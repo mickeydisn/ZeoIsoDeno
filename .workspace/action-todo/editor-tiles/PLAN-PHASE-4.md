@@ -21,7 +21,7 @@
   - Detail: Highlight grouped tiles in preview canvas, show expansion preview
   - File: `IsoGame/wcBuilding2/editor/web/js/components/canvas2d.ts`
 
-- [ ] Task: Implement group create/conversion actions
+- [x] Task: Implement group create/conversion actions
   - Detail: Add "Create Group from Selected Tiles" button
   - File: `IsoGame/wcBuilding2/editor/web/js/panels/building.ts`
 

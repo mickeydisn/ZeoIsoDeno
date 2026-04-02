@@ -37,6 +37,7 @@ export class BuildingEditorPanel {
   private unsubscribe: (() => void) | null = null;
   private weightTable: WeightTable | null = null;
   private faceLinkTable: FaceLinkTable | null = null;
+  private selectedTileIndices: Set<number> = new Set();
 
   constructor(stateManager: StateManager, apiClient: ApiClient) {
     this.stateManager = stateManager;
@@ -783,11 +784,73 @@ export class BuildingEditorPanel {
 
     section.appendChild(headerRow);
 
+    // Selection actions bar
+    const selectionBar = document.createElement("div");
+    selectionBar.className = "tile-selection-bar";
+    selectionBar.style.cssText = `
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    `;
+
+    const selectAllBtn = document.createElement("button");
+    selectAllBtn.className = "btn-small";
+    selectAllBtn.textContent = "Select All";
+    selectAllBtn.addEventListener("click", () => {
+      const tbody = this.container?.querySelector("#tile-list-tbody");
+      if (!tbody) return;
+      const checkboxes = tbody.querySelectorAll("input[type='checkbox']") as NodeListOf<HTMLInputElement>;
+      checkboxes.forEach((cb) => {
+        cb.checked = true;
+        const index = parseInt(cb.dataset.index || "-1", 10);
+        if (index >= 0) this.selectedTileIndices.add(index);
+      });
+      this.updateSelectionCount();
+    });
+    selectionBar.appendChild(selectAllBtn);
+
+    const deselectAllBtn = document.createElement("button");
+    deselectAllBtn.className = "btn-small";
+    deselectAllBtn.textContent = "Deselect All";
+    deselectAllBtn.addEventListener("click", () => {
+      this.selectedTileIndices.clear();
+      const tbody = this.container?.querySelector("#tile-list-tbody");
+      if (!tbody) return;
+      const checkboxes = tbody.querySelectorAll("input[type='checkbox']") as NodeListOf<HTMLInputElement>;
+      checkboxes.forEach((cb) => cb.checked = false);
+      this.updateSelectionCount();
+    });
+    selectionBar.appendChild(deselectAllBtn);
+
+    const createGroupFromSelectedBtn = document.createElement("button");
+    createGroupFromSelectedBtn.className = "btn-small primary";
+    createGroupFromSelectedBtn.textContent = "📦 Create Group from Selected";
+    createGroupFromSelectedBtn.id = "btn-create-group-from-selected";
+    createGroupFromSelectedBtn.addEventListener("click", () => {
+      this.createGroupFromSelectedTiles(config);
+    });
+    selectionBar.appendChild(createGroupFromSelectedBtn);
+
+    const selectionCount = document.createElement("span");
+    selectionCount.id = "selection-count";
+    selectionCount.className = "selection-count";
+    selectionCount.textContent = "0 selected";
+    selectionCount.style.cssText = `
+      color: var(--text-secondary, #888);
+      font-size: 12px;
+      margin-left: 8px;
+    `;
+    selectionBar.appendChild(selectionCount);
+
+    section.appendChild(selectionBar);
+
     const table = document.createElement("table");
     table.className = "tile-list-table tile-list-grouped";
     table.innerHTML = `
       <thead>
         <tr>
+          <th><input type="checkbox" id="select-all-checkbox" title="Select All"></th>
           <th class="sortable" data-sort="id">ID <span class="sort-indicator"></span></th>
           <th>🔄</th>
           <th class="sortable" data-sort="face">Face Preview <span class="sort-indicator"></span></th>
@@ -798,6 +861,27 @@ export class BuildingEditorPanel {
       </thead>
       <tbody id="tile-list-tbody"></tbody>
     `;
+
+    // Bind select-all checkbox
+    const selectAllCheckbox = table.querySelector("#select-all-checkbox") as HTMLInputElement;
+    selectAllCheckbox.addEventListener("change", (e) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      const tbody = table.querySelector("#tile-list-tbody");
+      if (!tbody) return;
+      const checkboxes = tbody.querySelectorAll("input[type='checkbox']") as NodeListOf<HTMLInputElement>;
+      checkboxes.forEach((cb) => {
+        cb.checked = checked;
+        const index = parseInt(cb.dataset.index || "-1", 10);
+        if (index >= 0) {
+          if (checked) {
+            this.selectedTileIndices.add(index);
+          } else {
+            this.selectedTileIndices.delete(index);
+          }
+        }
+      });
+      this.updateSelectionCount();
+    });
 
     // Bind sort on header click
     const thead = table.querySelector("thead");
@@ -843,12 +927,16 @@ export class BuildingEditorPanel {
       tr.dataset.tileFace = (rep.face || []).filter((f) => f).join(",").toLowerCase();
       tr.dataset.tileSource = `${rep.sourceGetter || ""} ${rep.sourceCollection || ""}`.toLowerCase();
       
+      // Check if any of the group's tiles are selected
+      const isSelected = indices.some(idx => this.selectedTileIndices.has(idx));
+      
       // Rotation badge
       const rotationBadge = rotationCount > 1 
         ? `<span class="rotation-badge" title="${rotationCount} rotation variants">${rotationCount}×</span>` 
         : "";
 
       tr.innerHTML = `
+        <td><input type="checkbox" class="tile-checkbox" data-indices='${JSON.stringify(indices)}' ${isSelected ? "checked" : ""}></td>
         <td>${rep.id || `tile_${indices[0]}`}</td>
         <td class="rotation-cell">${rotationBadge}</td>
         <td>[${(rep.face || []).join(", ")}]</td>
@@ -861,6 +949,27 @@ export class BuildingEditorPanel {
         </td>
       `;
       tbody?.appendChild(tr);
+    });
+
+    // Bind checkbox change handlers
+    tbody?.querySelectorAll(".tile-checkbox").forEach((checkbox) => {
+      checkbox.addEventListener("change", (e) => {
+        const target = e.target as HTMLInputElement;
+        const indicesStr = target.dataset.indices;
+        if (!indicesStr) return;
+        
+        try {
+          const indices: number[] = JSON.parse(indicesStr);
+          indices.forEach((idx) => {
+            if (target.checked) {
+              this.selectedTileIndices.add(idx);
+            } else {
+              this.selectedTileIndices.delete(idx);
+            }
+          });
+          this.updateSelectionCount();
+        } catch { /* skip */ }
+      });
     });
 
     section.appendChild(table);
@@ -1654,6 +1763,86 @@ export class BuildingEditorPanel {
     this.stateManager.updateConfig("building", config.id, config);
     // Re-render to reflect changes in components
     this.renderContent();
+  }
+
+  /**
+   * Update the selection count display.
+   */
+  private updateSelectionCount(): void {
+    const countEl = this.container?.querySelector("#selection-count");
+    if (countEl) {
+      const count = this.selectedTileIndices.size;
+      countEl.textContent = `${count} selected`;
+    }
+  }
+
+  /**
+   * Create a new group from selected tiles.
+   */
+  private createGroupFromSelectedTiles(config: BuildingConfig): void {
+    const tiles = config.tiles || [];
+    const selectedIndices = Array.from(this.selectedTileIndices).sort((a, b) => a - b);
+
+    if (selectedIndices.length === 0) {
+      this.stateManager.setError("No tiles selected. Please select at least one tile to create a group.");
+      return;
+    }
+
+    // Get the selected tiles
+    const selectedTiles = selectedIndices.map(idx => tiles[idx]).filter(Boolean);
+
+    if (selectedTiles.length === 0) {
+      this.stateManager.setError("Selected tiles not found.");
+      return;
+    }
+
+    // Use the face from the first selected tile as the shared face
+    const sharedFace = selectedTiles[0].face || [null, null, null, null];
+
+    // Create group items from selected tiles (without face property)
+    const items = selectedTiles.map(tile => ({
+      weight: tile.weight ?? 1,
+      assets: tile.assets ? [...tile.assets] : undefined,
+      functions: tile.functions ? [...tile.functions] : undefined,
+      empty: tile.empty,
+      isFrise: tile.isFrise,
+      allowMove: tile.allowMove,
+      colorT: tile.colorT,
+      color: tile.color,
+      h: tile.h,
+      lvl: tile.lvl,
+    }));
+
+    // Create the new group
+    const newGroup: TileGroupConfig = {
+      id: `group_${Date.now()}`,
+      face: sharedFace,
+      weight: 1,
+      items: items,
+    };
+
+    // Add the group to config
+    this.onConfigChange(config, (c) => {
+      if (!c.groups) c.groups = [];
+      c.groups.push(newGroup);
+
+      // Remove the selected tiles from the tiles array
+      // Sort descending to avoid index shifting issues
+      const sortedIndices = [...selectedIndices].sort((a, b) => b - a);
+      if (!c.tiles) c.tiles = [];
+      for (const idx of sortedIndices) {
+        c.tiles.splice(idx, 1);
+      }
+    });
+
+    // Clear selection
+    this.selectedTileIndices.clear();
+    this.updateSelectionCount();
+
+    // Open the group editor for the new group
+    const groups = config.groups || [];
+    const newIndex = groups.length - 1;
+    this.openGroupEditor(config, newGroup, newIndex);
   }
 
   /**
