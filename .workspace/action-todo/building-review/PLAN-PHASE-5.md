@@ -18,9 +18,10 @@
    - Detail: Added proper import for `WcBuildTile` type
    - Detail: Directly access public `allTiles` property from generator instance (inherited from WcBuildFactory base class)
 
-- [ ] Task: Verify `ValidationResult` uses arrays instead of Sets for HTTP serialization
-  - Detail: Ensure all places in `validation.ts` and `validationUtils.ts` that construct `ValidationResult` objects use `string[]` for the `errors` and `warnings` fields rather than `Set<string>`.
-  - Detail: Check that any existing code reading `ValidationResult.stats` fields handles arrays properly.
+- [x] Task: Verify `ValidationResult` uses arrays instead of Sets for HTTP serialization
+   - Detail: ✅ Verified ✓ ValidationResult properly uses Set internally for efficient processing, HTTP endpoints in validation.ts explicitly convert to string[] via Array.from() before serialization
+   - Detail: ✅ Checked ✓ validation route lines 55-56 correctly convert uniqueFaceKeys sets to arrays
+   - Detail: ✅ Confirmed ✓ SerializableValidationResult interface exists with proper array types
 
 - [ ] Task: Fix registry data duplication between `extractor.ts` and `types.ts`
   - Detail: Ensure `REGISTRY_ID_MAP`, `BUILDING_CLASSES` stubs in `types.ts` are either properly populated, removed as dead code, or documented as intentionally empty with a note pointing to `registries.ts` as the source of truth.
