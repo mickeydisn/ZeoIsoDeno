@@ -9,7 +9,7 @@
   - Detail: New component for editing tile groups with shared face editor + item list
   - File: `IsoGame/wcBuilding2/editor/web/js/components/groupEditor.ts`
 
-- [ ] Task: Update asset collection panel
+- [x] Task: Update asset collection panel
   - Detail: Add group tab/section alongside tiles, support create/edit/delete groups
   - File: `IsoGame/wcBuilding2/editor/web/js/panels/assetCollection.ts`
 

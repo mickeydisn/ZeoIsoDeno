@@ -6,19 +6,7 @@
  */
 
 import { FaceEditor } from "./faceEditor.ts";
-
-export interface TileGroupItem {
-  id?: string;
-  weight?: number;
-  properties?: Record<string, unknown>;
-}
-
-export interface TileGroupConfig {
-  id: string;
-  face: (string | null)[];
-  weight?: number;
-  items: TileGroupItem[];
-}
+import type { TileGroupConfig, TileGroupItem } from "../../../types.ts";
 
 export interface GroupEditorOptions {
   /** Group configuration to edit */
