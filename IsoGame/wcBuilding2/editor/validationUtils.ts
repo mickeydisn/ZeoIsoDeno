@@ -4,6 +4,7 @@
  * Extracted from validation.ts to separate utilities from validation rules.
  * Contains:
  * - Severity type definitions
+ * - Internal validation result types (with Set<string> for internal processing)
  * - Serializable validation result types (string[] instead of Set<string> for HTTP responses)
  * - Formatting utilities for validation summaries
  */
@@ -19,7 +20,7 @@ export enum ValidationSeverity {
 }
 
 // ============================================================================
-// Serializable Validation Result Types
+// Validation Result Types
 // ============================================================================
 
 /**
@@ -31,6 +32,36 @@ export interface ValidationIssue {
   tileIndex?: number;
   tileId?: string;
   faceKey?: string;
+}
+
+/**
+ * Internal validation result with Set<string> for internal processing.
+ */
+export interface ValidationResult {
+  valid: boolean;
+  issues: ValidationIssue[];
+  stats: {
+    totalTiles: number;
+    uniqueFaceKeysInTiles: Set<string>;
+    uniqueFaceKeysInLinks: Set<string>;
+    orphanedFaceKeys: string[];
+    missingWeightEntries: string[];
+  };
+}
+
+/**
+ * Internal tile reference validation result.
+ */
+export interface TileReferenceValidationResult {
+  valid: boolean;
+  issues: ValidationIssue[];
+  stats: {
+    totalTiles: number;
+    tilesWithSourceCollection: number;
+    validCollectionRefs: number;
+    invalidCollectionRefs: number;
+    unknownAssetKeys: string[];
+  };
 }
 
 /**

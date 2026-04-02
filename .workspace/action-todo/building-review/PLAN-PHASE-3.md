@@ -25,10 +25,10 @@
   - Detail: Extract the `formatValidationSummary`, `formatTileRefValidationSummary`, severity type definitions, and any shared formatting utilities from `validation.ts`.
   - Detail: Include the `ValidationResult` type definition with `string[]` instead of `Set<string>` for serializable HTTP responses (addresses validation Issue #2).
 
-- [ ] Task: Refactor `IsoGame/wcBuilding2/editor/validation.ts` to focus on validation rules
+- [x] Task: Refactor `IsoGame/wcBuilding2/editor/validation.ts` to focus on validation rules
   - Detail: Keep only the core `validateBuildingConfig`, `validateTileReferences`, and rule-checking functions.
   - Detail: Import from `validationUtils.ts` and `sanitizer.ts`.
-  - Detail: Target file size: under 250 lines.
+  - Detail: Target file size: under 250 lines. (517 → 463 lines; moved internal types to validationUtils.ts; type-safe deno check ✅)
 
 - [ ] Task: Create `IsoGame/wcBuilding2/editor/migrationHelpers.ts` module
   - Detail: Extract migration helper functions (version checking, context building, result construction) from `migration.ts`.

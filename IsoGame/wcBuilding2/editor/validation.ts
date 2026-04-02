@@ -17,8 +17,8 @@ import { sanitizeBuildingConfig } from "./sanitizer.ts";
 import {
   ValidationSeverity,
   ValidationIssue,
-  SerializableValidationResult,
-  SerializableTileRefValidationResult,
+  ValidationResult,
+  TileReferenceValidationResult,
   formatValidationSummary as formatValidationSummaryUtil,
   formatTileRefValidationSummary as formatTileRefValidationSummaryUtil,
 } from "./validationUtils.ts";
@@ -30,25 +30,9 @@ export { sanitizeBuildingConfig };
 export type {
   ValidationSeverity,
   ValidationIssue,
-  SerializableValidationResult,
-  SerializableTileRefValidationResult,
+  ValidationResult,
+  TileReferenceValidationResult,
 } from "./validationUtils.ts";
-
-// ============================================================================
-// Internal Validation Result Type (uses Set for internal processing)
-// ============================================================================
-
-export interface ValidationResult {
-  valid: boolean;
-  issues: ValidationIssue[];
-  stats: {
-    totalTiles: number;
-    uniqueFaceKeysInTiles: Set<string>;
-    uniqueFaceKeysInLinks: Set<string>;
-    orphanedFaceKeys: string[];
-    missingWeightEntries: string[];
-  };
-}
 
 // ============================================================================
 // Validation Functions
@@ -117,39 +101,18 @@ export function validateBuildingConfig(config: BuildingConfig): ValidationResult
 }
 
 /**
- * Convert internal ValidationResult to serializable format for HTTP responses.
- */
-function toSerializableResult(result: ValidationResult): SerializableValidationResult {
-  return {
-    valid: result.valid,
-    issues: result.issues,
-    stats: {
-      totalTiles: result.stats.totalTiles,
-      uniqueFaceKeysInTiles: Array.from(result.stats.uniqueFaceKeysInTiles),
-      uniqueFaceKeysInLinks: Array.from(result.stats.uniqueFaceKeysInLinks),
-      orphanedFaceKeys: result.stats.orphanedFaceKeys,
-      missingWeightEntries: result.stats.missingWeightEntries,
-    },
-  };
-}
-
-/**
- * Convert internal TileReferenceValidationResult to serializable format.
- */
-function toSerializableTileRefResult(result: TileReferenceValidationResult): SerializableTileRefValidationResult {
-  return {
-    valid: result.valid,
-    issues: result.issues,
-    stats: result.stats,
-  };
-}
-
-/**
  * Format validation issues as a user-readable summary.
  * Wrapper around validationUtils.formatValidationSummary that converts internal result to serializable format.
  */
 export function formatValidationSummary(result: ValidationResult): string {
-  return formatValidationSummaryUtil(toSerializableResult(result));
+  return formatValidationSummaryUtil({
+    ...result,
+    stats: {
+      ...result.stats,
+      uniqueFaceKeysInTiles: Array.from(result.stats.uniqueFaceKeysInTiles),
+      uniqueFaceKeysInLinks: Array.from(result.stats.uniqueFaceKeysInLinks),
+    },
+  });
 }
 
 /**
@@ -157,7 +120,7 @@ export function formatValidationSummary(result: ValidationResult): string {
  * Wrapper around validationUtils.formatTileRefValidationSummary that converts internal result to serializable format.
  */
 export function formatTileRefValidationSummary(result: TileReferenceValidationResult): string {
-  return formatTileRefValidationSummaryUtil(toSerializableTileRefResult(result));
+  return formatTileRefValidationSummaryUtil(result);
 }
 
 /**
@@ -379,23 +342,6 @@ function validateStartTiles(config: BuildingConfig, issues: ValidationIssue[]): 
   }
 }
 
-// ============================================================================
-// Tile Reference Validation
-// ============================================================================
-/**
- * Internal tile reference validation result (uses Set internally).
- */
-export interface TileReferenceValidationResult {
-  valid: boolean;
-  issues: ValidationIssue[];
-  stats: {
-    totalTiles: number;
-    tilesWithSourceCollection: number;
-    validCollectionRefs: number;
-    invalidCollectionRefs: number;
-    unknownAssetKeys: string[];
-  };
-}
 
 /**
  * Validate tile references in a BuildingConfig.
