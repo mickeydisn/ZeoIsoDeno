@@ -23,6 +23,23 @@ import type {
   TileConfig,
 } from "./types.ts";
 
+/**
+ * Interface for dynamic asset collection instances with optional methods and properties
+ */
+interface AssetCollectionInstance {
+  groupAsset?: (options: Record<string, unknown>) => WcConfTile[];
+  groupInit?: () => void;
+  tag?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Interface for building configuration instances with dynamic asset collection properties
+ */
+interface BuildingConfigInstance extends WcAbstractBuildConf {
+  [key: string]: unknown;
+}
+
 import {
   ASSET_COLLECTION_REGISTRY,
   BUILDING_CLASSES,
@@ -99,11 +116,11 @@ export class ConfigExtractor {
       throw new Error(`Unknown asset collection class: ${className}`);
     }
 
-    const instance = new entry.class(params);
+    const instance = new entry.class(params) as AssetCollectionInstance;
     const tiles: TileConfig[] = [];
 
     if (entry.usesGroupAsset) {
-      const groupAssetMethod = (instance as any).groupAsset?.bind(instance);
+      const groupAssetMethod = instance.groupAsset?.bind(instance);
       if (typeof groupAssetMethod === "function") {
         const groupTiles = groupAssetMethod(
           entry.groupAssetDefaults || {
@@ -119,7 +136,7 @@ export class ConfigExtractor {
       }
 
       if (entry.hasGroupInit) {
-        const groupInitMethod = (instance as any).groupInit?.bind(instance);
+        const groupInitMethod = instance.groupInit?.bind(instance);
         if (typeof groupInitMethod === "function") {
           groupInitMethod(); // Called for side effects on start tiles
         }
@@ -127,10 +144,10 @@ export class ConfigExtractor {
     } else if (entry.tileGetters) {
       for (const getter of entry.tileGetters) {
         if (getter in instance) {
-          const tile = (instance as any)[getter];
-          if (tile) {
+          const tile = instance[getter];
+          if (tile && typeof tile === 'object' && 'face' in tile && 'weight' in tile) {
             tiles.push({
-              ...this.tileToJson(tile),
+              ...this.tileToJson(tile as WcConfTile),
               id: getter,
               sourceGetter: getter,
             });
@@ -200,13 +217,13 @@ export class ConfigExtractor {
     };
 
     for (const entry of assetCollectionProps) {
-      const instance = (conf as any)[entry.prop];
-      if (instance) {
+      const instance = (conf as BuildingConfigInstance)[entry.prop];
+      if (instance && typeof instance === 'object') {
         const key = entry.classRef;
         if (seen.has(key)) continue;
         seen.add(key);
 
-        const tag = instance?.tag || "";
+        const tag = (instance as AssetCollectionInstance).tag || "";
         const params = this.extractAssetParams(instance);
 
         refs.push({
