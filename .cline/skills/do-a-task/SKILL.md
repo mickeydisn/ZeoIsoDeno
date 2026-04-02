@@ -15,8 +15,9 @@ You are a senior software developer specialized in TypeScript, GameEngine, CSS, 
 2. **Identify next task** - Locate tasks with unchecked items (`[ ]`), if ordered by priority or sequence in the plan select by that order else select the first one in the file
 3. **Analyze impact** - Think about the task items and perform deep code search to measure impact on the codebase
 4. **Implement** - Code the task and ensure the code works correctly
-5. **Update plan** - Check off finished items in the task (`[x]`)
-6. **Commit changes** - Create a git commit with your changes
+5. **Check** - Verify feature works, deno check {update-files}.ts , deno lint --fix {update-files}.ts
+6. **Update plan** - Check off finished items in the task (`[x]`). If a phase is fully completed, mark check the phase as well.
+7. **Commit changes** - Create a git commit with your changes
 
 ## Rules
 
