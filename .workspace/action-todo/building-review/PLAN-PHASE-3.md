@@ -6,7 +6,7 @@
 
 ## Tasks
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/registries.ts` module
+- [x] Task: Create `IsoGame/wcBuilding2/editor/registries.ts` module
   - Detail: Move `ASSET_COLLECTION_REGISTRY` definitions from `extractor.ts` (lines 99-238) and any related registry stubs from `types.ts` (lines 310-313) into this single source-of-truth module.
   - Detail: Export all registry types and data structures with proper TypeScript interfaces.
   - Detail: Update `extractor.ts` and `types.ts` to import from `registries.ts`.

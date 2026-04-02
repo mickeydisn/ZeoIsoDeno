@@ -24,7 +24,6 @@ import type { WcConfRawTile } from "../wcAbstractBuildConf.ts";
 
 // Editor types
 import type {
-  AssetCollectionClassEntry,
   AssetCollectionConfig,
   AssetCollectionRef,
   BuildingConfig,
@@ -36,206 +35,16 @@ import type {
 // Building Config Class Registry
 // Maps class names to constructors for instantiation during extraction.
 // ============================================================================
-import { WcBuildConf_HouseA } from "../conf/buildConf_HouseA.ts";
-import { WcBuildConf_GraveA } from "../conf/buildConf_GraveA.ts";
-import { WcBuildConf_ManorA } from "../conf/buildConf_ManorA.ts";
-import { WcBuildConf_LabBorderA } from "../conf/buildConf_LabBorderA.ts";
-import { WcBuildConf_LabPipeA } from "../conf/buildConf_LabPipeA.ts";
-import { WcBuildConf_RLabA } from "../conf/buildConf_RLabA.ts";
-
-// Asset collection class imports
-import { WcAsset_WallHouse } from "../conf/assetsCollection/wcAsset_WallHouse.ts";
-import { WcAsset_WallManor } from "../conf/assetsCollection/wcAsset_WallManor.ts";
-import { WcAsset_WallRLab } from "../conf/assetsCollection/wcAsset_WallRLab.ts";
+// Import registries from centralized registries module
 import {
-  FenceCollapseType,
-  WcAsset_FenceGrave,
-  WcAsset_FencePlatform,
-  WcAsset_FenceSimple,
-} from "../conf/assetsCollection/wcAsset_Fence2.ts";
-import { WcAsset_Enter } from "../conf/assetsCollection/wcAsset_Entrer.ts";
-import { WcAsset_CorridorLab } from "../conf/assetsCollection/wcAsset_CorridorLab.ts";
-import { WcAsset_CorridorPipe } from "../conf/assetsCollection/wcAsset_CorridorPipe.ts";
-import { wcAsset_X } from "../conf/assetsCollection/wcAsset_X.ts";
+  ASSET_COLLECTION_REGISTRY,
+  BUILDING_CLASSES,
+  BUILDING_SOURCE_FILES,
+  REGISTRY_ID_MAP,
+} from "./registries.ts";
 
-// Registry ID map
-import { REGISTRY_ID_MAP } from "./types.ts";
-
-// ============================================================================
-// Registry Definitions
-// ============================================================================
-
-/**
- * Maps building config class names to their constructor functions.
- */
-export const BUILDING_CLASSES: Record<
-  string,
-  new (params?: Record<string, unknown>) => WcAbstractBuildConf
-> = {
-  "WcBuildConf_HouseA": WcBuildConf_HouseA,
-  "WcBuildConf_GraveA": WcBuildConf_GraveA,
-  "WcBuildConf_ManorA": WcBuildConf_ManorA,
-  "WcBuildConf_LabBorderA": WcBuildConf_LabBorderA,
-  "WcBuildConf_LabPipeA": WcBuildConf_LabPipeA,
-  "WcBuildConf_RLabA": WcBuildConf_RLabA,
-};
-
-/**
- * Maps building config class names to their source file names.
- */
-const BUILDING_SOURCE_FILES: Record<string, string> = {
-  "WcBuildConf_HouseA": "buildConf_HouseA",
-  "WcBuildConf_GraveA": "buildConf_GraveA",
-  "WcBuildConf_ManorA": "buildConf_ManorA",
-  "WcBuildConf_LabBorderA": "buildConf_LabBorderA",
-  "WcBuildConf_LabPipeA": "buildConf_LabPipeA",
-  "WcBuildConf_RLabA": "buildConf_RLabA",
-};
-
-/**
- * Asset collection class registry with per-class extraction configuration.
- * Defines how each class produces tiles.
- */
-export const ASSET_COLLECTION_REGISTRY: Record<
-  string,
-  AssetCollectionClassEntry
-> = {
-  // Wall-based (getter-based)
-  "WcAsset_WallHouse": {
-    class: WcAsset_WallHouse as unknown as new (
-      params?: Record<string, unknown>,
-    ) => { tag: string; [key: string]: unknown },
-    sourceFile: "wcAsset_WallHouse",
-    tileGetters: [
-      "Corner",
-      "Corner_B",
-      "Wall",
-      "Wall_Door",
-      "Wall_Windows",
-      "Wall_RoofWindows",
-      "InnerCorner",
-      "InnerCorner_X",
-      "Inside_Full",
-    ],
-  },
-  "WcAsset_WallManor": {
-    class: WcAsset_WallManor as unknown as new (
-      params?: Record<string, unknown>,
-    ) => { tag: string; [key: string]: unknown },
-    sourceFile: "wcAsset_WallManor",
-    tileGetters: [
-      "Corner",
-      "Wall_Door",
-      "Wall",
-      "Wall_Windows",
-      "InnerCorner",
-      "InnerCorner_X",
-      "Inside_Full",
-    ],
-  },
-  "WcAsset_WallRLab": {
-    class: WcAsset_WallRLab as unknown as new (
-      params?: Record<string, unknown>,
-    ) => { tag: string; [key: string]: unknown },
-    sourceFile: "wcAsset_WallRLab",
-    tileGetters: [
-      "Corner",
-      "Corner_Round",
-      "Wall",
-      "InnerCorner",
-      "Inside_Full",
-    ],
-  },
-
-  // Fence-based (groupAsset-based)
-  "WcAsset_FenceSimple": {
-    class: WcAsset_FenceSimple as unknown as new (
-      params?: Record<string, unknown>,
-    ) => { tag: string; [key: string]: unknown },
-    sourceFile: "wcAsset_Fence2",
-    usesGroupAsset: true,
-    groupAssetDefaults: { flatW: 10, cornerW: 10, innerW: 0, isFrise: false },
-  },
-  "WcAsset_FencePlatform": {
-    class: WcAsset_FencePlatform as unknown as new (
-      params?: Record<string, unknown>,
-    ) => { tag: string; [key: string]: unknown },
-    sourceFile: "wcAsset_Fence2",
-    usesGroupAsset: true,
-    groupAssetDefaults: {
-      flatW: 100,
-      cornerW: 500,
-      innerW: 400,
-      isFrise: true,
-    },
-  },
-  "WcAsset_FenceGrave": {
-    class: WcAsset_FenceGrave as unknown as new (
-      params?: Record<string, unknown>,
-    ) => { tag: string; [key: string]: unknown },
-    sourceFile: "wcAsset_Fence2",
-    usesGroupAsset: true,
-    groupAssetDefaults: { flatW: 10, cornerW: 0, innerW: 13, isFrise: true },
-  },
-
-  // Entrance (special: has both groupInit and groupAsset)
-  "WcAsset_Enter": {
-    class: WcAsset_Enter as unknown as new (
-      params?: Record<string, unknown>,
-    ) => { tag: string; [key: string]: unknown },
-    sourceFile: "wcAsset_Entrer",
-    usesGroupAsset: true,
-    hasGroupInit: true,
-    groupAssetDefaults: { flatW: 0, cornerW: 0, innerW: 0, isFrise: false },
-  },
-
-  // Lab corridors (getter-based)
-  "WcAsset_CorridorLab": {
-    class: WcAsset_CorridorLab as unknown as new (
-      params?: Record<string, unknown>,
-    ) => { tag: string; [key: string]: unknown },
-    sourceFile: "wcAsset_CorridorLab",
-    tileGetters: [
-      "Flat",
-      "Flat_Detail",
-      "Flat_Window",
-      "Door",
-      "Corner",
-      "Corner_Round",
-      "TJoin",
-      "CrossJoin",
-    ],
-  },
-  "WcAsset_CorridorPipe": {
-    class: WcAsset_CorridorPipe as unknown as new (
-      params?: Record<string, unknown>,
-    ) => { tag: string; [key: string]: unknown },
-    sourceFile: "wcAsset_CorridorPipe",
-    tileGetters: [
-      "Flat",
-      "Flat_NoSupport",
-      "Flat_Ring",
-      "Flat_Open",
-      "Door",
-      "Door2",
-      "Corner",
-      "Corner_Round",
-      "TJoin",
-      "CrossJoin",
-      "Silo",
-    ],
-  },
-
-  // Generic X tiles
-  "WcAsset_X": {
-    class: wcAsset_X as unknown as new (
-      params?: Record<string, unknown>,
-    ) => { tag: string; [key: string]: unknown },
-    sourceFile: "wcAsset_X",
-    usesGroupAsset: true,
-    groupAssetDefaults: { flatW: 0, cornerW: 0, innerW: 0, isFrise: false },
-  },
-};
+// Re-export registries for backward compatibility
+export { ASSET_COLLECTION_REGISTRY, BUILDING_CLASSES };
 
 // ============================================================================
 // ConfigExtractor — Main Extraction Class

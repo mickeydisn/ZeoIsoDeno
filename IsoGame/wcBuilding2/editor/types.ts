@@ -254,82 +254,12 @@ export function isAssetCollectionConfig(
 }
 
 // ============================================================================
-// Registry Types (for extraction mapping)
+// Registry Re-exports (centralized in registries.ts)
 // ============================================================================
 
-/**
- * Maps TypeScript class names to their registry IDs.
- * Used during extraction to populate metadata.registryId.
- */
-export const REGISTRY_ID_MAP: Record<string, string> = {
-  "WcBuildConf_HouseA": "house_a",
-  "WcBuildConf_GraveA": "grave_a",
-  "WcBuildConf_ManorA": "manor_a",
-  "WcBuildConf_LabBorderA": "lab_border_a",
-  "WcBuildConf_LabPipeA": "lab_pipe_a",
-  "WcBuildConf_RLabA": "r_lab_a",
-};
-
-/**
- * Asset collection class registry configuration.
- * Defines how each asset collection class produces tiles.
- *
- * Two patterns exist:
- * 1. **Getter-based**: Tiles produced by individual getters (WallHouse, WallManor, WallRLab)
- *    Each getter computes face keys dynamically using `tag + suffix`.
- * 2. **groupAsset-based**: Tiles produced by calling groupAsset(params) with weight parameters
- *    (FenceSimple, FencePlatform, FenceGrave)
- */
-export interface AssetCollectionClassEntry {
-  /** TypeScript class reference */
-  class: new (params?: Record<string, unknown>) => {
-    tag: string;
-    [key: string]: unknown;
-  };
-  /** Source module file name */
-  sourceFile: string;
-  /** For getter-based classes: list of tile-producing getter names */
-  tileGetters?: string[];
-  /** For groupAsset-based classes: set to true */
-  usesGroupAsset?: boolean;
-  /** Default parameters for groupAsset() call */
-  groupAssetDefaults?: {
-    flatW: number;
-    cornerW: number;
-    innerW: number;
-    isFrise: boolean;
-  };
-  /** Special: has groupInit() for start tiles (e.g., WcAsset_Enter) */
-  hasGroupInit?: boolean;
-}
-
-/**
- * Registry of all asset collection classes with their extraction configuration.
- * This maps class names to their tile production patterns.
- */
-export const ASSET_COLLECTION_REGISTRY: Record<
-  string,
-  AssetCollectionClassEntry
-> = {} as Record<string, AssetCollectionClassEntry>;
-
-/**
- * Registry of all building config classes.
- * Maps class names to their constructors.
- */
-export const BUILDING_CLASSES: Record<
-  string,
-  new (params?: Record<string, unknown>) => unknown
-> = {};
-
-// ============================================================================
-// Editor Registry (auto-populated at initialization)
-// ============================================================================
-
-/**
- * Initialize the extraction registries with actual class references.
- * Called once at editor startup to populate BUILDING_CLASSES and ASSET_COLLECTION_REGISTRY.
- */
-export function initExtractionRegistries(): void {
-  // This function will be implemented in extractor.ts to avoid circular dependencies.
-  // The registries are populated dynamically when the extractor is loaded.
-}
+export {
+  ASSET_COLLECTION_REGISTRY,
+  BUILDING_CLASSES,
+  REGISTRY_ID_MAP,
+} from "./registries.ts";
+export type { AssetCollectionClassEntry } from "./registries.ts";
