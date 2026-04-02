@@ -13,7 +13,7 @@
   - Detail: Add group tab/section alongside tiles, support create/edit/delete groups
   - File: `IsoGame/wcBuilding2/editor/web/js/panels/assetCollection.ts`
 
-- [ ] Task: Update building panel
+- [x] Task: Update building panel
   - Detail: Add group support in building configuration editor
   - File: `IsoGame/wcBuilding2/editor/web/js/panels/building.ts`
 

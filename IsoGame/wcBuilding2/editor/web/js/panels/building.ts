@@ -20,9 +20,11 @@ import type {
   AssetCollectionConfig,
   TileConfig,
   AssetCollectionRef,
+  TileGroupConfig,
 } from "../../../types.ts";
 import { WeightTable } from "../components/weightTable.ts";
 import { FaceLinkTable } from "../components/faceLinkTable.ts";
+import { GroupEditor } from "../components/groupEditor.ts";
 
 // ============================================================================
 // Building Editor Panel Class
@@ -182,7 +184,10 @@ export class BuildingEditorPanel {
     // Section 6: Tile List
     panel.appendChild(this.renderTileListSection(config));
 
-    // Section 7: Preview
+    // Section 7: Groups
+    panel.appendChild(this.renderGroupsSection(config));
+
+    // Section 8: Preview
     panel.appendChild(this.renderPreviewSection(config));
 
     // Action bar
@@ -1144,6 +1149,229 @@ export class BuildingEditorPanel {
       const source = tr.dataset.tileSource || "";
       const visible = face.includes(filter) || source.includes(filter);
       tr.style.display = visible ? "" : "none";
+    });
+  }
+
+  /**
+   * Render groups section with group list and create/edit/delete support.
+   */
+  private renderGroupsSection(config: BuildingConfig): HTMLElement {
+    const section = document.createElement("div");
+    section.className = "editor-section";
+
+    const headerRow = document.createElement("div");
+    headerRow.className = "editor-section-header";
+
+    const groups = config.groups || [];
+    const header = document.createElement("h3");
+    header.textContent = `📦 Groups (${groups.length})`;
+    headerRow.appendChild(header);
+
+    // Create group button
+    const createBtn = document.createElement("button");
+    createBtn.className = "btn-small btn-primary";
+    createBtn.textContent = "+ Create Group";
+    createBtn.addEventListener("click", () => {
+      this.createGroup(config);
+    });
+    headerRow.appendChild(createBtn);
+
+    section.appendChild(headerRow);
+
+    // Groups list
+    if (groups.length === 0) {
+      const emptyMsg = document.createElement("div");
+      emptyMsg.className = "empty-state";
+      emptyMsg.textContent = "No groups defined. Groups allow you to define shared face configurations with multiple tile items.";
+      section.appendChild(emptyMsg);
+    } else {
+      const groupsList = document.createElement("div");
+      groupsList.className = "groups-list";
+
+      groups.forEach((group, index) => {
+        const groupCard = this.createGroupCard(config, group, index);
+        groupsList.appendChild(groupCard);
+      });
+
+      section.appendChild(groupsList);
+    }
+
+    return section;
+  }
+
+  /**
+   * Create a group card for displaying and editing a group.
+   */
+  private createGroupCard(config: BuildingConfig, group: TileGroupConfig, index: number): HTMLElement {
+    const card = document.createElement("div");
+    card.className = "group-card";
+
+    // Group header
+    const cardHeader = document.createElement("div");
+    cardHeader.className = "group-card-header";
+
+    const groupInfo = document.createElement("div");
+    groupInfo.className = "group-info";
+    groupInfo.innerHTML = `
+      <span class="group-id">${group.id || `group_${index}`}</span>
+      <span class="group-meta">Weight: ${group.weight ?? 1} | Items: ${group.items?.length ?? 0}</span>
+    `;
+    cardHeader.appendChild(groupInfo);
+
+    const actions = document.createElement("div");
+    actions.className = "group-actions";
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "btn-small";
+    editBtn.textContent = "Edit";
+    editBtn.addEventListener("click", () => {
+      this.openGroupEditor(config, group, index);
+    });
+    actions.appendChild(editBtn);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "btn-small btn-danger";
+    deleteBtn.textContent = "Delete";
+    deleteBtn.addEventListener("click", () => {
+      this.deleteGroup(config, index);
+    });
+    actions.appendChild(deleteBtn);
+
+    cardHeader.appendChild(actions);
+    card.appendChild(cardHeader);
+
+    // Group face preview
+    const facePreview = document.createElement("div");
+    facePreview.className = "group-face-preview";
+    const faceLabels = ["NW", "NE", "SE", "SW"];
+    const faceStr = (group.face || []).map((f, idx) => {
+      return f ? `${faceLabels[idx]}: ${f}` : `${faceLabels[idx]}: —`;
+    }).join(" | ");
+    facePreview.textContent = faceStr;
+    card.appendChild(facePreview);
+
+    // Group items summary
+    if (group.items && group.items.length > 0) {
+      const itemsSummary = document.createElement("div");
+      itemsSummary.className = "group-items-summary";
+      itemsSummary.textContent = `${group.items.length} item(s) in group`;
+      card.appendChild(itemsSummary);
+    }
+
+    return card;
+  }
+
+  /**
+   * Create a new group and add it to the config.
+   */
+  private createGroup(config: BuildingConfig): void {
+    const newGroup: TileGroupConfig = {
+      id: `group_${Date.now()}`,
+      face: [null, null, null, null],
+      weight: 1,
+      items: [{ weight: 1 }],
+    };
+
+    this.onConfigChange(config, (c) => {
+      if (!c.groups) c.groups = [];
+      c.groups.push(newGroup);
+    });
+
+    // Open the editor for the new group
+    const groups = config.groups || [];
+    this.openGroupEditor(config, newGroup, groups.length - 1);
+  }
+
+  /**
+   * Open the group editor modal.
+   */
+  private openGroupEditor(config: BuildingConfig, group: TileGroupConfig, index: number): void {
+    // Collect all face keys from tiles
+    const allFaceKeys = new Set<string>();
+    for (const tile of config.tiles || []) {
+      for (const f of tile.face || []) {
+        if (f) allFaceKeys.add(f);
+      }
+    }
+    // Also add face keys from startTiles
+    for (const tile of config.startTiles || []) {
+      for (const f of tile.face || []) {
+        if (f) allFaceKeys.add(f);
+      }
+    }
+    // Also add face keys from existing groups
+    for (const g of config.groups || []) {
+      for (const f of g.face || []) {
+        if (f) allFaceKeys.add(f);
+      }
+    }
+
+    // Create modal overlay
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+
+    const modal = document.createElement("div");
+    modal.className = "modal group-editor-modal";
+
+    const modalHeader = document.createElement("div");
+    modalHeader.className = "modal-header";
+    modalHeader.innerHTML = `<h3>Edit Group: ${group.id}</h3>`;
+
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "modal-close-btn";
+    closeBtn.textContent = "×";
+    closeBtn.addEventListener("click", () => {
+      document.body.removeChild(overlay);
+    });
+    modalHeader.appendChild(closeBtn);
+    modal.appendChild(modalHeader);
+
+    const modalBody = document.createElement("div");
+    modalBody.className = "modal-body";
+
+    // Create group editor
+    const groupEditor = new GroupEditor(
+      modalBody,
+      group,
+      Array.from(allFaceKeys).sort(),
+      (updatedGroup) => {
+        this.onConfigChange(config, (c) => {
+          if (!c.groups) c.groups = [];
+          c.groups[index] = updatedGroup;
+        });
+      },
+      () => {
+        // Delete callback
+        this.deleteGroup(config, index);
+        document.body.removeChild(overlay);
+      }
+    );
+    groupEditor.render();
+
+    modal.appendChild(modalBody);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Close on overlay click
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        document.body.removeChild(overlay);
+      }
+    });
+  }
+
+  /**
+   * Delete a group from the config.
+   */
+  private deleteGroup(config: BuildingConfig, index: number): void {
+    if (!confirm("Are you sure you want to delete this group?")) {
+      return;
+    }
+
+    this.onConfigChange(config, (c) => {
+      if (c.groups) {
+        c.groups.splice(index, 1);
+      }
     });
   }
 
