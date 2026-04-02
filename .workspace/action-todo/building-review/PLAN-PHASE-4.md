@@ -20,9 +20,9 @@
    - Detail: Extract function-related editing UI from `tile.ts` (the Canvas2DPreview integration, function panels, weight tables).
    - Detail: Export a class or function `TileFunctionsEditor`.
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/web/js/components/contextBuilders.ts`
-  - Detail: Extract the context builder functions (`buildAssetContext`, `buildAssetCollectionContext`, etc.) from `tile.ts` into this shared utility module.
-  - Detail: These are pure data transformation functions that prepare config data for rendering.
+ - [x] Task: Create `IsoGame/wcBuilding2/editor/web/js/components/contextBuilders.ts`
+   - Detail: Extract the context builder functions (`buildAssetContext`, `buildAssetCollectionContext`, etc.) from `tile.ts` into this shared utility module.
+   - Detail: These are pure data transformation functions that prepare config data for rendering.
 
 - [ ] Task: Refactor `IsoGame/wcBuilding2/editor/web/js/panels/tile.ts` to be a coordinator class
   - Detail: Keep only the `TileEditorPanel` class that coordinates the sub-components (TilePropertiesEditor, TileFaceEditor, TileFunctionsEditor).
