@@ -99,7 +99,7 @@ export class ApiClient {
   /**
    * Generic request method with JSON handling.
    */
-  private async request<T>(
+  async request<T>(
     path: string,
     options: {
       method?: string;
@@ -139,23 +139,91 @@ export class ApiClient {
   }
 
   /**
-   * Generic public request method for service modules
-   */
-  async request<T>(
-    path: string,
-    options: {
-      method?: string;
-      body?: unknown;
-    } = {}
-  ): Promise<T> {
-    return this.request<T>(path, options);
-  }
-
-  /**
    * GET asset preview URL (not a fetch, just returns the URL string)
    */
   getAssetPreviewUrl(key: string): string {
     return `${this.baseUrl}/asset-preview/${encodeURIComponent(key)}`;
+  }
+
+  // ============================================================================
+  // Backward Compatibility Methods
+  // These are deprecated and will be removed once all panels use service modules
+  // ============================================================================
+
+  async listClasses() {
+    return this.request("/list/classes");
+  }
+
+  async listConfigs() {
+    return this.request("/list");
+  }
+
+  async listAssets() {
+    return this.request("/assets/list");
+  }
+
+  async extractBuilding(className: string) {
+    return this.request(`/extract/building/${className}`, { method: "POST" });
+  }
+
+  async extractAssetCollection(className: string) {
+    return this.request(`/extract/asset-collection/${className}`, { method: "POST" });
+  }
+
+  async loadBuilding(name: string) {
+    return this.request(`/load/building/${name}`);
+  }
+
+  async loadAssetCollection(name: string) {
+    return this.request(`/load/asset-collection/${name}`);
+  }
+
+  async saveBuilding(name: string, config: unknown) {
+    return this.request(`/save/building/${name}`, { method: "POST", body: config });
+  }
+
+  async saveAssetCollection(name: string, config: unknown) {
+    return this.request(`/save/asset-collection/${name}`, { method: "POST", body: config });
+  }
+
+  async saveAsBuilding(originalName: string, newName: string, config: unknown) {
+    return this.request(`/save-as/building/${originalName}/${newName}`, { method: "POST", body: config });
+  }
+
+  async saveAsAssetCollection(originalName: string, newName: string, config: unknown) {
+    return this.request(`/save-as/asset-collection/${originalName}/${newName}`, { method: "POST", body: config });
+  }
+
+  async duplicateBuilding(name: string, newName: string) {
+    return this.request(`/duplicate/building/${name}/${newName}`, { method: "POST" });
+  }
+
+  async duplicateAssetCollection(name: string, newName: string) {
+    return this.request(`/duplicate/asset-collection/${name}/${newName}`, { method: "POST" });
+  }
+
+  async deleteBuilding(name: string) {
+    return this.request(`/config/building/${name}`, { method: "DELETE" });
+  }
+
+  async deleteAssetCollection(name: string) {
+    return this.request(`/config/asset-collection/${name}`, { method: "DELETE" });
+  }
+
+  async previewGenerate(config: unknown) {
+    return this.request("/preview/generate", { method: "POST", body: config });
+  }
+
+  async validateBuilding(config: unknown) {
+    return this.request("/validate/building", { method: "POST", body: config });
+  }
+
+  async validateTileRefs(config: unknown) {
+    return this.request("/validate-tile-refs/building", { method: "POST", body: config });
+  }
+
+  async migrateBuilding(config: unknown) {
+    return this.request("/migrate/building", { method: "POST", body: config });
   }
 }
 

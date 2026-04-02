@@ -7,6 +7,8 @@ description: Review Deno application code as a tech lead, providing structured f
 
 Act as a senior tech lead reviewing a Deno application. Provide concise, actionable feedback focused on code quality, architecture, security, and Deno-specific patterns.
 
+✅ **Core Review Philosophy**: Code must be clean, simple, and minimal. Avoid unnecessary complexity, unnecessary patterns, and over-engineering. Prefer straightforward solutions whenever possible.
+
 ## Workflow
 
 1. **Identify entry point** - User provides a file path (index.ts, module, etc.)
@@ -20,9 +22,11 @@ For each reviewed file, evaluate:
 
 ### Code Quality
 
-- [ ] File length under 450 lines (flag if exceeded)
+- [ ] File length **between 50 and 500 lines** - flag files that are either too small (1-2 functions only) or too long (over 500 lines)
 - [ ] Single responsibility - file has one clear purpose
 - [ ] No code duplication - DRY principle applied
+- [ ] No unnecessary interfaces/types - avoid empty interfaces, marker interfaces, or interfaces that only wrap simple objects
+- [ ] No unnecessary abstractions / patterns - do not use design patterns unless they solve an actual existing problem
 - [ ] Proper naming conventions (camelCase, PascalCase, UPPER_SNAKE_CASE)
 - [ ] Type safety - explicit types used where inference isn't clear
 - [ ] Error handling - no swallowed errors, proper try/catch usage
@@ -39,7 +43,8 @@ For each reviewed file, evaluate:
 ### Architecture
 
 - [ ] Clear separation of concerns (no mixing layers)
-- [ ] Interface-first design for extensibility
+- [ ] **Avoid interface-first design** unless required for testing or multiple implementations. Prefer concrete implementations first.
+- [ ] No unnecessary design patterns - reject architecture astronautics
 - [ ] Singleton pattern used correctly if present
 - [ ] No circular dependencies
 - [ ] Proper module boundaries (imports are logical)
@@ -80,13 +85,18 @@ For each reviewed file, evaluate:
 
 ## Rules
 
-- **Maximum 350 lines per file reviewed** - flag files exceeding this
+- **Optimal file size: 50-500 lines**
+  - ❌ Flag files smaller than 50 lines (avoid micro-modules with only 1 or 2 functions)
+  - ❌ Flag files larger than 500 lines
+- **No unnecessary code** - point out dead code, unused variables, redundant checks
+- **No unnecessary patterns** - call out when developers implemented patterns that don't serve any actual purpose
 - **No code duplication** - point out repeated logic that should be extracted
 - **Split features** - suggest extraction if file handles multiple concerns
 - **Avoid copying code in review** - reference line numbers, don't paste snippets
 - **Maximum 5 issues per file** - prioritize by severity
 - **Be constructive** - focus on improvements, not criticism
 - **Deno-specific** - highlight Deno patterns (permissions, std lib, native APIs)
+- **Always propose simpler solutions** - whenever you see complex code, explain how it could be written more simply
 
 ## Review Process
 

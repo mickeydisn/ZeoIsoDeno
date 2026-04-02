@@ -11,7 +11,8 @@
 import type { StateManager } from "../state.ts";
 import type { ApiClient } from "../api.ts";
 import type { AssetCollectionConfig, TileConfig } from "../../../types.ts";
-import { TileEditorPanel, buildTileEditContextFromAssetCollection } from "./tile.ts";
+import { TileEditorPanel } from "./tile.ts";
+import { buildTileEditContextFromAssetCollection } from "../components/contextBuilders.ts";
 import { AssetPreviewService } from "../services/assetPreview.ts";
 
 // ============================================================================

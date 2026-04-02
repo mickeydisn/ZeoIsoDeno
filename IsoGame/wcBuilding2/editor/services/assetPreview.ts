@@ -6,7 +6,7 @@
  */
 
 import sharp from "npm:sharp";
-import type { TypeAssetImageConfig, TypeAssetGroupConfig } from "../../mapIso/asset/assetOptiConfig.ts";
+import type { TypeAssetImageConfig, TypeAssetGroupConfig } from "../../../mapIso/asset/assetOptiConfig.ts";
 
 // ============================================================================
 // Types
@@ -73,7 +73,7 @@ export async function lookupAssetConfig(
   assetLabel: string
 ): Promise<AssetPreviewConfig | null> {
   const { assetOptiConfig } = await import(
-    "../../mapIso/asset/assetOptiConfig.ts"
+    "../../../mapIso/asset/assetOptiConfig.ts"
   );
 
   for (const group of assetOptiConfig as TypeAssetGroupConfig[]) {
