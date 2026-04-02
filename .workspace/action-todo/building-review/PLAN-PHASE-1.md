@@ -11,7 +11,7 @@
   - Detail: Include base directory configuration as a single source of truth, supporting both relative and absolute paths.
   - Detail: Update `server.ts` and `loader.ts` to import from `configPaths.ts` instead of computing paths inline.
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/services/duplicateConfig.ts` helper function
+- [x] Task: Create `IsoGame/wcBuilding2/editor/services/duplicateConfig.ts` helper function
   - Detail: Extract the duplicated save-as/duplicate logic from `server.ts` endpoints (lines 297-372, 378-456, 1073-1133, 1139-1199) into a single async function `duplicateConfig(type: 'building' | 'asset-collection', originalName: string, newName: string)` that handles validation, file reading, ID update, and writing.
   - Detail: The function should return a typed result `{ success: boolean; path?: string; error?: string }`.
   - Update `server.ts` save-as and duplicate endpoints to call this shared function.

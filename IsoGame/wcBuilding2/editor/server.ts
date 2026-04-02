@@ -38,6 +38,7 @@ import {
   getAssetCollectionsDir,
   ensureDir,
 } from "./configPaths.ts";
+import { duplicateConfig } from "./services/duplicateConfig.ts";
 import sharp from "npm:sharp";
 
 // ============================================================================
@@ -300,80 +301,25 @@ editorRouter.post("/editor/save/building/:name", async (ctx) => {
 // ============================================================================
 
 editorRouter.post("/editor/save-as/building/:originalName/:newName", async (ctx) => {
-  try {
-    const { originalName, newName } = ctx.params;
+  const { originalName, newName } = ctx.params;
+  const result = await duplicateConfig("building", originalName || "", newName || "");
 
-    if (!originalName || !newName) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing originalName or newName parameter",
-      };
-      return;
-    }
-
-    // Validate new name format
-    if (!/^[a-zA-Z0-9_-]+$/.test(newName)) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Invalid name format. Only alphanumeric characters, hyphens, and underscores are allowed.",
-      };
-      return;
-    }
-
-    // Check if new name already exists
-    const newFilePath = `${getBuildingsDir()}/${newName}.json`;
-    try {
-      await Deno.stat(newFilePath);
+  if (!result.success) {
+    if (result.error?.includes("already exists")) {
       ctx.response.status = 409;
-      ctx.response.body = {
-        success: false,
-        error: `A building config with name "${newName}" already exists`,
-      };
-      return;
-    } catch {
-      // File doesn't exist — good
-    }
-
-    // Read original config
-    const originalFilePath = `${getBuildingsDir()}/${originalName}.json`;
-    let config: BuildingConfig;
-
-    try {
-      const content = await Deno.readTextFile(originalFilePath);
-      config = JSON.parse(content);
-    } catch {
+    } else if (result.error?.includes("not found")) {
       ctx.response.status = 404;
-      ctx.response.body = {
-        success: false,
-        error: `Original building config not found: ${originalName}`,
-      };
-      return;
+    } else if (result.error?.includes("Invalid name")) {
+      ctx.response.status = 400;
+    } else {
+      ctx.response.status = 500;
     }
-
-    // Update the config ID to the new name
-    config.id = newName;
-
-    // Ensure directory exists
-    await ensureDir(getBuildingsDir());
-
-    // Write new file
-    await Deno.writeTextFile(newFilePath, JSON.stringify(config, null, 2));
-
-    ctx.response.body = {
-      success: true,
-      path: newFilePath,
-      newName,
-    };
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to save as new config: ${error instanceof Error ? error.message : String(error)}`,
-    };
+    ctx.response.body = { success: false, error: result.error };
+    return;
   }
+
+  ctx.response.body = { success: true, path: result.path, newName: result.newName };
+  ctx.response.status = 200;
 });
 
 // ============================================================================
@@ -383,80 +329,25 @@ editorRouter.post("/editor/save-as/building/:originalName/:newName", async (ctx)
 editorRouter.post(
   "/editor/save-as/asset-collection/:originalName/:newName",
   async (ctx) => {
-    try {
-      const { originalName, newName } = ctx.params;
+    const { originalName, newName } = ctx.params;
+    const result = await duplicateConfig("asset-collection", originalName || "", newName || "");
 
-      if (!originalName || !newName) {
-        ctx.response.status = 400;
-        ctx.response.body = {
-          success: false,
-          error: "Missing originalName or newName parameter",
-        };
-        return;
-      }
-
-      // Validate new name format
-      if (!/^[a-zA-Z0-9_-]+$/.test(newName)) {
-        ctx.response.status = 400;
-        ctx.response.body = {
-          success: false,
-          error: "Invalid name format. Only alphanumeric characters, hyphens, and underscores are allowed.",
-        };
-        return;
-      }
-
-      // Check if new name already exists
-      const newFilePath = `${getAssetCollectionsDir()}/${newName}.json`;
-      try {
-        await Deno.stat(newFilePath);
+    if (!result.success) {
+      if (result.error?.includes("already exists")) {
         ctx.response.status = 409;
-        ctx.response.body = {
-          success: false,
-          error: `An asset collection config with name "${newName}" already exists`,
-        };
-        return;
-      } catch {
-        // File doesn't exist — good
-      }
-
-      // Read original config
-      const originalFilePath = `${getAssetCollectionsDir()}/${originalName}.json`;
-      let config: AssetCollectionConfig;
-
-      try {
-        const content = await Deno.readTextFile(originalFilePath);
-        config = JSON.parse(content);
-      } catch {
+      } else if (result.error?.includes("not found")) {
         ctx.response.status = 404;
-        ctx.response.body = {
-          success: false,
-          error: `Original asset collection config not found: ${originalName}`,
-        };
-        return;
+      } else if (result.error?.includes("Invalid name")) {
+        ctx.response.status = 400;
+      } else {
+        ctx.response.status = 500;
       }
-
-      // Update the config ID to the new name
-      config.id = newName;
-
-      // Ensure directory exists
-      await ensureDir(getAssetCollectionsDir());
-
-      // Write new file
-      await Deno.writeTextFile(newFilePath, JSON.stringify(config, null, 2));
-
-      ctx.response.body = {
-        success: true,
-        path: newFilePath,
-        newName,
-      };
-      ctx.response.status = 200;
-    } catch (error: unknown) {
-      ctx.response.status = 500;
-      ctx.response.body = {
-        success: false,
-        error: `Failed to save as new config: ${error instanceof Error ? error.message : String(error)}`,
-      };
+      ctx.response.body = { success: false, error: result.error };
+      return;
     }
+
+    ctx.response.body = { success: true, path: result.path, newName: result.newName };
+    ctx.response.status = 200;
   },
 );
 
@@ -1076,65 +967,25 @@ editorRouter.delete("/editor/config/asset-collection/:name", async (ctx) => {
 // ============================================================================
 
 editorRouter.post("/editor/duplicate/building/:name/:newName", async (ctx) => {
-  try {
-    const { name, newName } = ctx.params;
+  const { name, newName } = ctx.params;
+  const result = await duplicateConfig("building", name || "", newName || "");
 
-    if (!name || !newName) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing name or newName parameter",
-      };
-      return;
-    }
-
-    // Validate new name format
-    if (!/^[a-zA-Z0-9_-]+$/.test(newName)) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Invalid name format. Only alphanumeric characters, hyphens, and underscores are allowed.",
-      };
-      return;
-    }
-
-    const originalFilePath = `${getBuildingsDir()}/${name}.json`;
-    let config: BuildingConfig;
-
-    try {
-      const content = await Deno.readTextFile(originalFilePath);
-      config = JSON.parse(content);
-    } catch {
+  if (!result.success) {
+    if (result.error?.includes("already exists")) {
+      ctx.response.status = 409;
+    } else if (result.error?.includes("not found")) {
       ctx.response.status = 404;
-      ctx.response.body = {
-        success: false,
-        error: `Original building config not found: ${name}`,
-      };
-      return;
+    } else if (result.error?.includes("Invalid name")) {
+      ctx.response.status = 400;
+    } else {
+      ctx.response.status = 500;
     }
-
-    // Update the config ID to the new name
-    config.id = newName;
-
-    // Ensure directory exists
-    await ensureDir(getBuildingsDir());
-
-    const newFilePath = `${getBuildingsDir()}/${newName}.json`;
-    await Deno.writeTextFile(newFilePath, JSON.stringify(config, null, 2));
-
-    ctx.response.body = {
-      success: true,
-      path: newFilePath,
-      newName,
-    };
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to duplicate building config: ${error instanceof Error ? error.message : String(error)}`,
-    };
+    ctx.response.body = { success: false, error: result.error };
+    return;
   }
+
+  ctx.response.body = { success: true, path: result.path, newName: result.newName };
+  ctx.response.status = 200;
 });
 
 // ============================================================================
@@ -1142,65 +993,25 @@ editorRouter.post("/editor/duplicate/building/:name/:newName", async (ctx) => {
 // ============================================================================
 
 editorRouter.post("/editor/duplicate/asset-collection/:name/:newName", async (ctx) => {
-  try {
-    const { name, newName } = ctx.params;
+  const { name, newName } = ctx.params;
+  const result = await duplicateConfig("asset-collection", name || "", newName || "");
 
-    if (!name || !newName) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing name or newName parameter",
-      };
-      return;
-    }
-
-    // Validate new name format
-    if (!/^[a-zA-Z0-9_-]+$/.test(newName)) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Invalid name format. Only alphanumeric characters, hyphens, and underscores are allowed.",
-      };
-      return;
-    }
-
-    const originalFilePath = `${getAssetCollectionsDir()}/${name}.json`;
-    let config: AssetCollectionConfig;
-
-    try {
-      const content = await Deno.readTextFile(originalFilePath);
-      config = JSON.parse(content);
-    } catch {
+  if (!result.success) {
+    if (result.error?.includes("already exists")) {
+      ctx.response.status = 409;
+    } else if (result.error?.includes("not found")) {
       ctx.response.status = 404;
-      ctx.response.body = {
-        success: false,
-        error: `Original asset collection config not found: ${name}`,
-      };
-      return;
+    } else if (result.error?.includes("Invalid name")) {
+      ctx.response.status = 400;
+    } else {
+      ctx.response.status = 500;
     }
-
-    // Update the config ID to the new name
-    config.id = newName;
-
-    // Ensure directory exists
-    await ensureDir(getAssetCollectionsDir());
-
-    const newFilePath = `${getAssetCollectionsDir()}/${newName}.json`;
-    await Deno.writeTextFile(newFilePath, JSON.stringify(config, null, 2));
-
-    ctx.response.body = {
-      success: true,
-      path: newFilePath,
-      newName,
-    };
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to duplicate asset collection config: ${error instanceof Error ? error.message : String(error)}`,
-    };
+    ctx.response.body = { success: false, error: result.error };
+    return;
   }
+
+  ctx.response.body = { success: true, path: result.path, newName: result.newName };
+  ctx.response.status = 200;
 });
 
 // ============================================================================
