@@ -6,6 +6,6 @@ The `IsoGame/wcBuilding2/editor` module and its frontend counterpart `IsoGame/wc
 
 - [x] Phase 1: Infrastructure — Centralized paths, shared types, and utility modules (4/4 tasks done)
 - [ ] Phase 2: Server Refactoring — Split server.ts into domain-based route modules
-- [ ] Phase 3: Backend Module Splitting — Split extractor.ts, validation.ts, migration.ts
+- [x] Phase 3: Backend Module Splitting — Split extractor.ts, validation.ts, migration.ts (8/8 tasks done)
 - [ ] Phase 4: Frontend Refactoring — Split tile.ts panel and api.ts service
 - [ ] Phase 5: Type Safety & Cleanup — Fix `any` casts, serializable types, and polish

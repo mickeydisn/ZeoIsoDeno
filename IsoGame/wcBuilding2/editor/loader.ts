@@ -18,14 +18,12 @@ import { getBuildingConfigEntry } from "../../tools/buildingConfigRegistry.ts";
 import { CURRENT_VERSION } from "./types.ts";
 import { migrateBuildingConfig, migrateAssetCollectionConfig, MigrationResult, isSupportedVersion } from "./migration.ts";
 import { getBuildingPath, getBuildingsDir } from "./configPaths.ts";
+import { tryImportClass } from "./dynamicImport.ts";
 
 // ============================================================================
 // Index type for face key indexing
 // ============================================================================
 type WcKeyTileFace = string;
-
-// Type for building config class constructor
-type BuildConfCtor = new (params: { growLoopCount: number; endLoopMax: number }) => WcAbstractBuildConf;
 
 // ============================================================================
 // ConfigLoader — Static class for loading JSON configs at runtime
@@ -102,7 +100,7 @@ export class ConfigLoader {
 
     for (const className of classNameCandidates) {
       try {
-        const ctor = await this.tryImportClass(className);
+        const ctor = await tryImportClass(className);
         if (ctor) {
           const growLoopCount = params.growLoopCount ?? 50;
           const endLoopMax = params.endLoopMax ?? 200;
@@ -268,36 +266,6 @@ export class ConfigLoader {
     if (json.size !== undefined) fn.size = json.size;
     if (json.off !== undefined) fn.off = { ...json.off };
     return fn;
-  }
-
-  /**
-   * Attempt to dynamically import a building config class by name.
-   * This is used as a fallback when JSON and registry lookups fail.
-   *
-   * @param className — Full class name (e.g., "WcBuildConf_HouseA")
-   * @returns The class constructor, or null if not found
-   */
-  private static async tryImportClass(className: string): Promise<BuildConfCtor | null> {
-    const moduleMap: Record<string, string> = {
-      "WcBuildConf_HouseA": "../conf/buildConf_HouseA.ts",
-      "WcBuildConf_GraveA": "../conf/buildConf_GraveA.ts",
-      "WcBuildConf_ManorA": "../conf/buildConf_ManorA.ts",
-      "WcBuildConf_LabBorderA": "../conf/buildConf_LabBorderA.ts",
-      "WcBuildConf_LabPipeA": "../conf/buildConf_LabPipeA.ts",
-      "WcBuildConf_RLabA": "../conf/buildConf_RLabA.ts",
-    };
-
-    const modulePath = moduleMap[className];
-    if (!modulePath) return null;
-
-    try {
-      const mod = await import(modulePath);
-      const cls: BuildConfCtor | undefined = mod[className];
-      if (!cls) return null;
-      return cls;
-    } catch (_e) {
-      return null;
-    }
   }
 
   /**

@@ -35,8 +35,8 @@
   - Detail: Keep the migration engine core (function registry and sequential application) in `migration.ts`. ✅ Kept `migrateBuildingConfig`, `migrateAssetCollectionConfig`, `migrateConfig`, and registries
   - Detail: Target file size: migration.ts under 200 lines, migrationHelpers.ts under 200 lines. ✅ migrationHelpers.ts: 148 lines; migration.ts: 320 lines
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/dynamicImport.ts` module
-  - Detail: Extract the `tryImportClass` function and module map from `loader.ts` (addresses loader Issue #1).
-  - Detail: Consider generating the module map from the registry to avoid maintenance drift.
-  - Detail: Target file size: under 150 lines.
-  - Detail: Update `loader.ts` imports accordingly.
+- [x] Task: Create `IsoGame/wcBuilding2/editor/dynamicImport.ts` module
+  - Detail: Extract the `tryImportClass` function and module map from `loader.ts` (addresses loader Issue #1). ✅ (~50 lines, added `registerModuleMapping` and `getModuleMap` helpers)
+  - Detail: Consider generating the module map from the registry to avoid maintenance drift. ✅ Added `registerModuleMapping()` for runtime registration
+  - Detail: Target file size: under 150 lines. ✅ (~60 lines)
+  - Detail: Update `loader.ts` imports accordingly. ✅ Updated to import from `dynamicImport.ts`
