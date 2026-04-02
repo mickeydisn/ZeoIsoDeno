@@ -12,9 +12,9 @@
    - Detail: Remove `innerHTML` usage in favor of `document.createElement` for all form element creation (addresses tile.ts Issue #2).
    - Detail: Integrated into `tile.ts` — replaced `renderPropertiesSection()` and `renderHeader()` tile ID input, added cleanup in `close()`.
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/web/js/components/tileFaceEditor.ts`
-  - Detail: Extract face-specific editing logic from `tile.ts` (the FaceEditor component integration, face rendering, face link handling).
-  - Detail: Export a class or function `TileFaceEditor` with methods for rendering face panels and updating face data.
+ - [x] Task: Create `IsoGame/wcBuilding2/editor/web/js/components/tileFaceEditor.ts`
+   - Detail: Extract face-specific editing logic from `tile.ts` (the FaceEditor component integration, face rendering, face link handling).
+   - Detail: Export a class or function `TileFaceEditor` with methods for rendering face panels and updating face data.
 
 - [ ] Task: Create `IsoGame/wcBuilding2/editor/web/js/components/tileFunctionsEditor.ts`
   - Detail: Extract function-related editing UI from `tile.ts` (the Canvas2DPreview integration, function panels, weight tables).

@@ -14,11 +14,11 @@
 import type { StateManager } from "../state.ts";
 import type { ApiClient } from "../api.ts";
 import type { TileConfig, BuildingConfig, AssetCollectionConfig } from "../../../types.ts";
-import { FaceEditor } from "../components/faceEditor.ts";
 import { AssetListEditor } from "../components/assetList.ts";
 import { Canvas2DPreview } from "../components/canvas2d.ts";
 import { AssetPreviewService } from "../services/assetPreview.ts";
 import { TilePropertiesEditor } from "../components/tilePropertiesEditor.ts";
+import { TileFaceEditor } from "../components/tileFaceEditor.ts";
 
 // ============================================================================
 // Tile Edit Context
@@ -57,7 +57,7 @@ export class TileEditorPanel {
   private isDirty = false;
 
   // Component instances
-  private faceEditor: FaceEditor | null = null;
+  private tileFaceEditor: TileFaceEditor | null = null;
   private propertiesEditor: TilePropertiesEditor | null = null;
   private assetListEditor: AssetListEditor | null = null;
   private canvasPreview: Canvas2DPreview | null = null;
@@ -267,18 +267,10 @@ export class TileEditorPanel {
     const section = document.createElement("div");
     section.className = "editor-section tile-face-section";
 
-    const header = document.createElement("h3");
-    header.textContent = "🔷 Face Configuration (NW, NE, SE, SW)";
-    section.appendChild(header);
-
-    const faceContainer = document.createElement("div");
-    faceContainer.className = "face-editor-container";
-    section.appendChild(faceContainer);
-
-    // Initialize face editor component
+    // Initialize tile face editor component
     if (this.currentTile) {
-      this.faceEditor = new FaceEditor(
-        faceContainer,
+      this.tileFaceEditor = new TileFaceEditor(
+        section,
         [...(this.currentTile.face as (string | null)[])],
         this.faceKeys,
         (updatedFace) => {
@@ -289,7 +281,7 @@ export class TileEditorPanel {
           }
         }
       );
-      this.faceEditor.render();
+      this.tileFaceEditor.render();
     }
 
     return section;
@@ -803,9 +795,9 @@ export class TileEditorPanel {
     }
 
     // Cleanup components
-    if (this.faceEditor) {
-      this.faceEditor.destroy();
-      this.faceEditor = null;
+    if (this.tileFaceEditor) {
+      this.tileFaceEditor.destroy();
+      this.tileFaceEditor = null;
     }
     if (this.propertiesEditor) {
       this.propertiesEditor.destroy();
