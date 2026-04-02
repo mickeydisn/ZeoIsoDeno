@@ -11,6 +11,8 @@ export interface TileGridItem {
   x: number;
   y: number;
   tile: TileConfig;
+  /** Optional group identifier for visual grouping */
+  groupId?: string;
 }
 
 export interface PanZoom {
@@ -20,7 +22,7 @@ export interface PanZoom {
 }
 
 // Isometric projection constants
-const ISO_ANGLE = 26.565; // degrees (approximate for 2:1 ratio)
+const _ISO_ANGLE = 26.565; // degrees (approximate for 2:1 ratio)
 const TILE_WIDTH = 64;    // pixels at zoom 1
 const TILE_HEIGHT = 32;   // pixels at zoom 1 (2:1 ratio)
 
@@ -31,6 +33,22 @@ const FACE_COLORS: Record<number, string> = {
   2: "rgba(255, 152, 0, 0.4)",   // SE - orange
   3: "rgba(158, 158, 158, 0.4)", // SW - grey
 };
+
+// Group highlight colors for overlay (distinct palette for group visualization)
+const GROUP_COLORS: string[] = [
+  "#e91e63", // pink
+  "#9c27b0", // purple
+  "#673ab7", // deep purple
+  "#3f51b5", // indigo
+  "#2196f3", // blue
+  "#00bcd4", // cyan
+  "#009688", // teal
+  "#4caf50", // green
+  "#8bc34a", // light green
+  "#ffeb3b", // yellow
+  "#ff9800", // orange
+  "#795548", // brown
+];
 
 export class Canvas2DPreview {
   private container: HTMLElement;
@@ -43,6 +61,8 @@ export class Canvas2DPreview {
   private singleTile: TileConfig | null = null;
   private showFaceOverlay = true;
   private showAssetOutlines = false;
+  private showGroupOverlay = false;
+  private groupColors: Map<string, string> = new Map();
   private assetImages: Map<string, HTMLImageElement> = new Map();
   private onTileClick: ((tile: TileConfig, x: number, y: number) => void) | null = null;
 
@@ -163,7 +183,7 @@ export class Canvas2DPreview {
    */
   private resizeCanvas(): void {
     const rect = this.container.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = globalThis.devicePixelRatio || 1;
     this.canvas.width = rect.width * dpr;
     this.canvas.height = rect.height * dpr;
     this.canvas.style.width = `${rect.width}px`;
@@ -223,12 +243,13 @@ export class Canvas2DPreview {
    */
   renderGrid(
     tiles: TileGridItem[],
-    options?: { showFaceOverlay?: boolean; showAssetOutlines?: boolean }
+    options?: { showFaceOverlay?: boolean; showAssetOutlines?: boolean; showGroupOverlay?: boolean }
   ): void {
     this.tiles = tiles;
     this.singleTile = null;
     this.showFaceOverlay = options?.showFaceOverlay ?? this.showFaceOverlay;
     this.showAssetOutlines = options?.showAssetOutlines ?? this.showAssetOutlines;
+    this.showGroupOverlay = options?.showGroupOverlay ?? this.showGroupOverlay;
 
     this.centerView();
     this.render();
@@ -296,7 +317,7 @@ export class Canvas2DPreview {
     ];
 
     // Translate to grid position
-    const screenPos = { x, y: 0 }; // Simplified - in real iso, use proper grid mapping
+    const _screenPos = { x, y: 0 }; // Simplified - in real iso, use proper grid mapping
 
     // Tile background
     this.ctx.beginPath();
@@ -319,10 +340,35 @@ export class Canvas2DPreview {
     this.ctx.fillStyle = fillColor;
     this.ctx.fill();
 
-    // Stroke
-    this.ctx.strokeStyle = "#606078";
-    this.ctx.lineWidth = 1 / this.panZoom.zoom;
-    this.ctx.stroke();
+    // Group overlay: draw colored border if tile belongs to a group
+    if (this.showGroupOverlay) {
+      const gridItem = this.tiles.find(item => item.x === x && item.y === y);
+      if (gridItem?.groupId) {
+        const groupColor = this.getGroupColor(gridItem.groupId);
+        this.ctx.strokeStyle = groupColor;
+        this.ctx.lineWidth = 3 / this.panZoom.zoom;
+        this.ctx.stroke();
+        
+        // Draw group ID label
+        if (showLabels) {
+          this.ctx.fillStyle = groupColor;
+          this.ctx.font = `bold ${8 / this.panZoom.zoom}px sans-serif`;
+          this.ctx.textAlign = "center";
+          this.ctx.textBaseline = "top";
+          this.ctx.fillText(gridItem.groupId, baseX, baseY + halfH * 0.5);
+        }
+      } else {
+        // Regular stroke for ungrouped tiles
+        this.ctx.strokeStyle = "#606078";
+        this.ctx.lineWidth = 1 / this.panZoom.zoom;
+        this.ctx.stroke();
+      }
+    } else {
+      // Regular stroke
+      this.ctx.strokeStyle = "#606078";
+      this.ctx.lineWidth = 1 / this.panZoom.zoom;
+      this.ctx.stroke();
+    }
 
     // Face key overlays
     if (this.showFaceOverlay && tile.face) {
@@ -414,7 +460,7 @@ export class Canvas2DPreview {
       this.ctx.save();
 
       // Apply color suffix filter if present
-      if (asset.sufix?.startsWith('#')) {
+      if (typeof asset.sufix === 'string' && asset.sufix.startsWith('#')) {
         const filter = this.buildColorFilter(asset.sufix);
         this.ctx.filter = filter;
       }
@@ -444,6 +490,23 @@ export class Canvas2DPreview {
 
       this.ctx.restore();
     });
+  }
+
+  /**
+   * Get a color for a group ID.
+   * Uses custom colors if set, otherwise assigns from default palette.
+   */
+  private getGroupColor(groupId: string): string {
+    // Check if custom color is set
+    if (this.groupColors.has(groupId)) {
+      return this.groupColors.get(groupId)!;
+    }
+    // Assign color based on group ID hash
+    let hash = 0;
+    for (let i = 0; i < groupId.length; i++) {
+      hash = groupId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return GROUP_COLORS[Math.abs(hash) % GROUP_COLORS.length];
   }
 
   /**
@@ -534,12 +597,30 @@ export class Canvas2DPreview {
   }
 
   /**
+   * Toggle group overlay visibility.
+   */
+  toggleGroupOverlay(): void {
+    this.showGroupOverlay = !this.showGroupOverlay;
+    this.render();
+  }
+
+  /**
+   * Set group colors mapping.
+   * @param colors Map of groupId to color string
+   */
+  setGroupColors(colors: Map<string, string>): void {
+    this.groupColors = new Map(colors);
+    this.render();
+  }
+
+  /**
    * Get current settings state.
    */
-  getSettings(): { showFaceOverlay: boolean; showAssetOutlines: boolean } {
+  getSettings(): { showFaceOverlay: boolean; showAssetOutlines: boolean; showGroupOverlay: boolean } {
     return {
       showFaceOverlay: this.showFaceOverlay,
       showAssetOutlines: this.showAssetOutlines,
+      showGroupOverlay: this.showGroupOverlay,
     };
   }
 

@@ -17,7 +17,7 @@
   - Detail: Add group support in building configuration editor
   - File: `IsoGame/wcBuilding2/editor/web/js/panels/building.ts`
 
-- [ ] Task: Add tile grid group visualization
+- [x] Task: Add tile grid group visualization
   - Detail: Highlight grouped tiles in preview canvas, show expansion preview
   - File: `IsoGame/wcBuilding2/editor/web/js/components/canvas2d.ts`
 
