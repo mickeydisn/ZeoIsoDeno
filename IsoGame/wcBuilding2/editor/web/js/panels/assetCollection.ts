@@ -631,7 +631,7 @@ export class AssetCollectionEditorPanel {
    */
   private async renderAssetThumbnail(
     container: HTMLElement,
-    asset: { key?: string; sufix?: string; keyR?: number; h?: number },
+    asset: { key?: string; sufix?: string | number | boolean; keyR?: number; h?: number },
     resolvedValue: string | null
   ): Promise<void> {
     const assetKey = asset.key || "";
@@ -651,7 +651,7 @@ export class AssetCollectionEditorPanel {
     thumbImg.className = "thumb-img";
 
     // Apply CSS filter for color suffix
-    if (asset.sufix?.startsWith('#')) {
+    if (typeof asset.sufix === 'string' && asset.sufix.startsWith('#')) {
       thumbImg.style.filter = this.buildCSSFilterString(asset.sufix);
     }
 
@@ -741,8 +741,8 @@ export class AssetCollectionEditorPanel {
     const headerRow = document.createElement("div");
     headerRow.className = "editor-section-header";
 
-    const header = document.createElement("h3");
     const tiles = config.tiles || [];
+    const header = document.createElement("h3");
     header.textContent = `Tiles (${tiles.length})`;
     headerRow.appendChild(header);
 
@@ -765,81 +765,53 @@ export class AssetCollectionEditorPanel {
       <thead>
         <tr>
           <th>ID</th>
-          <th>Face (NW, NE, SE, SW)</th>
+          <th>Face</th>
           <th>Weight</th>
-          <th>Source</th>
+          <th>Assets</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody id="tile-list-tbody"></tbody>
     `;
 
-    const tbody = table.querySelector("#tile-list-tbody");
-    tiles.forEach((tile: TileConfig, i: number) => {
+    const tbody = table.querySelector("tbody");
+
+    tiles.forEach((tile, index) => {
       const tr = document.createElement("tr");
-      tr.dataset.tileFace = (tile.face || []).filter((f) => f).join(",").toLowerCase();
-      tr.dataset.tileSource = `${tile.sourceGetter || ""} ${tile.sourceCollection || ""}`.toLowerCase();
+      tr.dataset.tileIndex = String(index);
+
+      const faceStr = (tile.face || []).filter(Boolean).join(", ") || "—";
+      const assetCount = tile.assets?.length ?? 0;
 
       tr.innerHTML = `
-        <td>${tile.id || `tile_${i}`}</td>
-        <td>[${(tile.face || []).join(", ")}]</td>
-        <td>${tile.weight ?? 0}</td>
-        <td>${tile.sourceGetter ? `from ${tile.sourceGetter}` : "—"}</td>
-        <td>
-          <button class="btn-small" data-action="duplicate-tile" data-index="${i}">Duplicate</button>
-          <button class="btn-small btn-danger" data-action="delete-tile" data-index="${i}">Delete</button>
+        <td class="tile-id-cell">${tile.id || `tile_${index}`}</td>
+        <td class="tile-face-cell">${faceStr}</td>
+        <td class="tile-weight-cell">${tile.weight ?? 0}</td>
+        <td class="asset-count-cell">${assetCount}</td>
+        <td class="tile-actions-cell">
+          <button class="btn-small" data-action="edit" data-index="${index}">Edit</button>
         </td>
       `;
+
+      // Store tile face for filtering
+      tr.dataset.tileFace = faceStr.toLowerCase();
+      tr.dataset.tileSource = (tile.id || "").toLowerCase();
+
       tbody?.appendChild(tr);
     });
 
     section.appendChild(table);
 
-    // Add Tile button
-    const addDiv = document.createElement("div");
-    addDiv.className = "tile-list-actions";
-    const addBtn = document.createElement("button");
-    addBtn.textContent = "Add Tile";
-    addBtn.className = "btn-small primary";
-    addBtn.addEventListener("click", () => {
-      const newTile: TileConfig = {
-        id: `tile_${config.tiles ? config.tiles.length : 0}`,
-        face: [null, null, null, null],
-        weight: 0,
-        assets: [],
-        functions: [],
-      };
-      this.onConfigChange(config, (c) => {
-        if (!c.tiles) c.tiles = [];
-        c.tiles.push(newTile);
-      });
-    });
-    addDiv.appendChild(addBtn);
-    section.appendChild(addDiv);
-
-    // Bind action handlers
+    // Bind edit button handlers
     section.addEventListener("click", (e) => {
       const target = e.target as HTMLElement;
       if (target.tagName !== "BUTTON") return;
-
       const action = target.dataset.action;
       const index = parseInt(target.dataset.index || "-1", 10);
-      if (index < 0 || !action) return;
+      if (index < 0 || !tiles[index]) return;
 
-      if (action === "duplicate-tile") {
-        const tile = { ...tiles[index] };
-        tile.id = `${tile.id || `tile_${index}`}_copy`;
-        this.onConfigChange(config, (c) => {
-          if (!c.tiles) c.tiles = [];
-          c.tiles.push(tile);
-        });
-      } else if (action === "delete-tile") {
-        if (confirm(`Delete tile "${tiles[index].id}"?`)) {
-          this.onConfigChange(config, (c) => {
-            if (!c.tiles) c.tiles = [];
-            c.tiles.splice(index, 1);
-          });
-        }
+      if (action === "edit") {
+        this.openTileEditor(config, tiles[index], index);
       }
     });
 

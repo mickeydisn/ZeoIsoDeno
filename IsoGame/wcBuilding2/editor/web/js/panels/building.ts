@@ -754,9 +754,11 @@ export class BuildingEditorPanel {
     const headerRow = document.createElement("div");
     headerRow.className = "editor-section-header";
 
-    const header = document.createElement("h3");
     const tiles = config.tiles || [];
-    header.textContent = `Tiles (${tiles.length})`;
+    const groups = this.groupTilesByRotation(tiles);
+
+    const header = document.createElement("h3");
+    header.textContent = `Tiles (${tiles.length} total, ${groups.length} unique)`;
     headerRow.appendChild(header);
 
     // Sort buttons
@@ -777,11 +779,12 @@ export class BuildingEditorPanel {
     section.appendChild(headerRow);
 
     const table = document.createElement("table");
-    table.className = "tile-list-table";
+    table.className = "tile-list-table tile-list-grouped";
     table.innerHTML = `
       <thead>
         <tr>
           <th class="sortable" data-sort="id">ID <span class="sort-indicator"></span></th>
+          <th>🔄</th>
           <th class="sortable" data-sort="face">Face Preview <span class="sort-indicator"></span></th>
           <th class="sortable" data-sort="weight">Weight <span class="sort-indicator"></span></th>
           <th class="sortable" data-sort="source">Source Info <span class="sort-indicator"></span></th>
@@ -801,23 +804,55 @@ export class BuildingEditorPanel {
     });
 
     const tbody = table.querySelector("#tile-list-tbody");
-    const sortedTiles = this.sortTiles(config.tiles || []);
-    sortedTiles.forEach((tile: TileConfig, i: number) => {
+    
+    // Sort groups by representative tile
+    const sortedGroups = [...groups].sort((a, b) => {
+      const direction = this.tileSort.direction === "asc" ? 1 : -1;
+      switch (this.tileSort.field) {
+        case "id":
+          return direction * (a.rep.id || "").localeCompare(b.rep.id || "");
+        case "face": {
+          const aFace = (a.rep.face || []).filter((f) => f).join(",");
+          const bFace = (b.rep.face || []).filter((f) => f).join(",");
+          return direction * aFace.localeCompare(bFace);
+        }
+        case "weight":
+          return direction * ((a.rep.weight ?? 0) - (b.rep.weight ?? 0));
+        case "source": {
+          const aSrc = `${a.rep.sourceGetter || ""} ${a.rep.sourceCollection || ""}`;
+          const bSrc = `${b.rep.sourceGetter || ""} ${b.rep.sourceCollection || ""}`;
+          return direction * aSrc.localeCompare(bSrc);
+        }
+        default:
+          return 0;
+      }
+    });
+
+    sortedGroups.forEach((group) => {
+      const { rep, members, indices } = group;
+      const rotationCount = members.length;
       const tr = document.createElement("tr");
-      // Find original index for actions
-      const originalIndex = config.tiles!.indexOf(tile);
-      tr.dataset.tileIndex = String(originalIndex);
-      tr.dataset.tileFace = (tile.face || []).filter((f) => f).join(",").toLowerCase();
-      tr.dataset.tileSource = `${tile.sourceGetter || ""} ${tile.sourceCollection || ""}`.toLowerCase();
+      
+      // Store all member indices for actions
+      tr.dataset.tileIndices = JSON.stringify(indices);
+      tr.dataset.tileFace = (rep.face || []).filter((f) => f).join(",").toLowerCase();
+      tr.dataset.tileSource = `${rep.sourceGetter || ""} ${rep.sourceCollection || ""}`.toLowerCase();
+      
+      // Rotation badge
+      const rotationBadge = rotationCount > 1 
+        ? `<span class="rotation-badge" title="${rotationCount} rotation variants">${rotationCount}×</span>` 
+        : "";
 
       tr.innerHTML = `
-        <td>${tile.id || `tile_${originalIndex}`}</td>
-        <td>[${(tile.face || []).join(", ")}]</td>
-        <td>${tile.weight ?? 0}</td>
-        <td>${tile.sourceGetter ? `from ${tile.sourceGetter}` : tile.sourceCollection ? `from ${tile.sourceCollection}` : "—"}</td>
+        <td>${rep.id || `tile_${indices[0]}`}</td>
+        <td class="rotation-cell">${rotationBadge}</td>
+        <td>[${(rep.face || []).join(", ")}]</td>
+        <td>${rep.weight ?? 0}</td>
+        <td>${rep.sourceGetter ? `from ${rep.sourceGetter}` : rep.sourceCollection ? `from ${rep.sourceCollection}` : "—"}</td>
         <td>
-          <button class="btn-small" data-action="duplicate-tile" data-index="${originalIndex}">Duplicate</button>
-          <button class="btn-small btn-danger" data-action="delete-tile" data-index="${originalIndex}">Delete</button>
+          ${rotationCount > 1 ? `<button class="btn-small expand-group-btn" data-action="expand-group" data-indices='${JSON.stringify(indices)}' title="Show ${rotationCount} rotation variants">Expand</button>` : ""}
+          <button class="btn-small" data-action="duplicate-group" data-indices='${JSON.stringify(indices)}'>Duplicate${rotationCount > 1 ? ` (${rotationCount})` : ""}</button>
+          <button class="btn-small btn-danger" data-action="delete-group" data-indices='${JSON.stringify(indices)}'>Delete${rotationCount > 1 ? ` (${rotationCount})` : ""}</button>
         </td>
       `;
       tbody?.appendChild(tr);
@@ -853,27 +888,109 @@ export class BuildingEditorPanel {
       if (target.tagName !== "BUTTON") return;
 
       const action = target.dataset.action;
-      const index = parseInt(target.dataset.index || "-1", 10);
-      if (index < 0 || !action) return;
+      const indicesStr = target.dataset.indices;
+      
+      if (!indicesStr || !action) return;
+      
+      let indices: number[];
+      try {
+        indices = JSON.parse(indicesStr);
+      } catch {
+        return;
+      }
+      if (indices.length === 0) return;
 
-      if (action === "duplicate-tile") {
-        const tile = { ...tiles[index] };
-        tile.id = `${tile.id || `tile_${index}`}_copy`;
+      const primaryIndex = indices[0];
+
+      if (action === "duplicate-group") {
+        // Duplicate all tiles in the group
+        const newTiles: TileConfig[] = [];
+        for (const idx of indices) {
+          const tile = { ...tiles[idx] };
+          tile.id = `${tile.id || `tile_${idx}`}_copy`;
+          tile.assets = tile.assets?.map(a => ({ ...a }));
+          tile.functions = tile.functions?.map(f => ({ ...f }));
+          newTiles.push(tile);
+        }
         this.onConfigChange(config, (c) => {
           if (!c.tiles) c.tiles = [];
-          c.tiles.push(tile);
+          c.tiles.push(...newTiles);
         });
-      } else if (action === "delete-tile") {
-        if (confirm(`Delete tile "${tiles[index].id}"?`)) {
+      } else if (action === "delete-group") {
+        if (confirm(`Delete ${indices.length} tile(s) (${indices.length > 1 ? "all rotation variants" : "this tile"})?`)) {
+          // Sort indices descending to avoid index shifting issues
+          const sortedIndices = [...indices].sort((a, b) => b - a);
           this.onConfigChange(config, (c) => {
             if (!c.tiles) c.tiles = [];
-            c.tiles.splice(index, 1);
+            for (const idx of sortedIndices) {
+              c.tiles.splice(idx, 1);
+            }
           });
         }
+      } else if (action === "expand-group") {
+        // Expand to show all rotation variants
+        this.expandTileGroup(config, indices);
       }
     });
 
     return section;
+  }
+
+  /**
+   * Expand a tile group to show all rotation variants individually.
+   */
+  private expandTileGroup(config: BuildingConfig, indices: number[]): void {
+    const tbody = this.container?.querySelector("#tile-list-tbody");
+    if (!tbody) return;
+
+    // Find the group row and expand it
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+    for (const row of rows) {
+      const tr = row as HTMLTableRowElement;
+      const storedIndices = tr.dataset.tileIndices;
+      if (storedIndices) {
+        try {
+          const groupIndices = JSON.parse(storedIndices);
+          const matches = indices.every(i => groupIndices.includes(i)) && indices.length === groupIndices.length;
+          if (matches) {
+            tr.classList.add("expanded-group");
+            // Show expanded rows after this one
+            this.renderExpandedTileRows(tbody, row, config, indices);
+          }
+        } catch { /* skip */ }
+      }
+    }
+  }
+
+  /**
+   * Render expanded rows for all tiles in a rotation group.
+   */
+  private renderExpandedTileRows(tbody: Element, afterRow: Element, config: BuildingConfig, indices: number[]): void {
+    const tiles = config.tiles || [];
+    for (const idx of indices) {
+      const tile = tiles[idx];
+      if (!tile) continue;
+      
+      const tr = document.createElement("tr");
+      tr.className = "expanded-tile-row";
+      tr.dataset.tileExpandedFor = JSON.stringify(indices);
+      tr.dataset.tileIndex = String(idx);
+      tr.dataset.tileFace = (tile.face || []).filter((f) => f).join(",").toLowerCase();
+      tr.dataset.tileSource = `${tile.sourceGetter || ""} ${tile.sourceCollection || ""}`.toLowerCase();
+      
+      tr.innerHTML = `
+        <td class="expanded-indent">↳ ${tile.id || `tile_${idx}`}</td>
+        <td class="rotation-cell">1×</td>
+        <td>[${(tile.face || []).join(", ")}]</td>
+        <td>${tile.weight ?? 0}</td>
+        <td>${tile.sourceGetter ? `from ${tile.sourceGetter}` : tile.sourceCollection ? `from ${tile.sourceCollection}` : "—"}</td>
+        <td>
+          <button class="btn-small" data-action="duplicate-tile" data-index="${idx}">Duplicate</button>
+          <button class="btn-small btn-danger" data-action="delete-tile" data-index="${idx}">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
   }
 
   /**
@@ -925,38 +1042,92 @@ export class BuildingEditorPanel {
   }
 
   /**
-   * Sort tiles according to current sort field and direction.
+   * Compute all cyclic shifts of a tile's face array.
    */
-  private sortTiles(tiles: TileConfig[]): TileConfig[] {
-    const sorted = [...tiles];
-    const direction = this.tileSort.direction === "asc" ? 1 : -1;
+  private getCyclicShifts(face: (string | null)[]): (string | null)[][] {
+    const shifts: (string | null)[][] = [];
+    for (let i = 0; i < 4; i++) {
+      shifts.push(face.slice(i).concat(face.slice(0, i)));
+    }
+    return shifts;
+  }
 
-    sorted.sort((a, b) => {
-      switch (this.tileSort.field) {
-        case "id": {
-          const aId = a.id || "";
-          const bId = b.id || "";
-          return direction * aId.localeCompare(bId);
-        }
-        case "face": {
-          const aFace = (a.face || []).filter((f) => f).join(",");
-          const bFace = (b.face || []).filter((f) => f).join(",");
-          return direction * aFace.localeCompare(bFace);
-        }
-        case "weight": {
-          return direction * ((a.weight ?? 0) - (b.weight ?? 0));
-        }
-        case "source": {
-          const aSrc = `${a.sourceGetter || ""} ${a.sourceCollection || ""}`;
-          const bSrc = `${b.sourceGetter || ""} ${b.sourceCollection || ""}`;
-          return direction * aSrc.localeCompare(bSrc);
-        }
-        default:
-          return 0;
+  /**
+   * Normalize a tile signature to its lexicographically smallest cyclic shift.
+   * This allows grouping tiles that are rotations of each other.
+   */
+  private normalizeTileSignature(tile: TileConfig): string {
+    const face = tile.face || [null, null, null, null];
+    const shifts = this.getCyclicShifts(face);
+    const sorted = shifts.map(s => s.join(",")).sort();
+    return sorted[0]; // canonical form
+  }
+
+  /**
+   * Normalize an asset key by stripping direction suffixes (_NW, _NE, _SE, _SW).
+   * This allows tiles with direction-specific assets to be grouped together.
+   */
+  private normalizeAssetKey(key: string | undefined): string {
+    if (!key) return "";
+    // Strip common direction suffixes: _NW, _NE, _SE, _SW, _Door, _Window, etc.
+    const suffixes = ["_NW", "_NE", "_SE", "_SW", "_Door", "_Window", "_Roof", "_Wall"];
+    let result = key;
+    for (const suffix of suffixes) {
+      if (result.endsWith(suffix)) {
+        result = result.slice(0, -suffix.length);
       }
-    });
+    }
+    return result;
+  }
 
-    return sorted;
+  /**
+   * Build a tile grouping key that ignores rotation but distinguishes different tile types.
+   * Tiles with faces that are cyclic shifts of each other (e.g., [F_out, F_out, F_r, F_l]
+   * and [F_l, F_out, F_out, F_r]) will produce the same normalized face signature and
+   * be grouped together as rotation variants.
+   */
+  private getTileGroupKey(tile: TileConfig): string {
+    const normalizedFace = this.normalizeTileSignature(tile);
+    const weight = tile.weight ?? 0;
+    const empty = tile.empty ?? false;
+    const frise = tile.isFrise ?? false;
+    const allowMove = tile.allowMove ?? false;
+    // Normalize asset keys by stripping direction suffixes but keeping keyR for rotation offset
+    const assetKeys = tile.assets?.map(a => {
+      const normalizedKey = this.normalizeAssetKey(a.key);
+      const keyR = a.keyR ?? 0;
+      return normalizedKey ? `${normalizedKey}_r${keyR}` : "";
+    })
+      .filter(k => k)
+      .sort() || [];
+    const assets = JSON.stringify(assetKeys);
+    // Compare functions by their actual func property and size
+    const functions = JSON.stringify(
+      tile.functions?.map(f => `${f.key || ""}_s${f.size ?? 0}`).sort() || []
+    );
+    const color = JSON.stringify(tile.color || null);
+    return `${normalizedFace}|w=${weight}|e=${empty}|fr=${frise}|am=${allowMove}|a=${assets}|fn=${functions}|c=${color}`;
+  }
+
+  /**
+   * Group tiles by their rotation-invariant signature.
+   * Returns an array of { representative, members, originalIndices } groups.
+   */
+  private groupTilesByRotation(tiles: TileConfig[]): { rep: TileConfig; members: TileConfig[]; indices: number[] }[] {
+    const groups = new Map<string, { members: TileConfig[]; indices: number[] }>();
+    tiles.forEach((tile, origIdx) => {
+      const key = this.getTileGroupKey(tile);
+      if (!groups.has(key)) {
+        groups.set(key, { members: [], indices: [] });
+      }
+      groups.get(key)!.members.push(tile);
+      groups.get(key)!.indices.push(origIdx);
+    });
+    return Array.from(groups.entries()).map(([key, group]) => ({
+      rep: group.members[0],
+      members: group.members,
+      indices: group.indices,
+    }));
   }
 
   /**

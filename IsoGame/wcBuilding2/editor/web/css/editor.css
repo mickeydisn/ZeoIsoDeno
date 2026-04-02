@@ -659,6 +659,44 @@ html, body {
   background-color: var(--accent-hover);
 }
 
+/* --- Tile List Grouped (rotation-aware) --- */
+.rotation-cell {
+  text-align: center;
+  font-weight: 500;
+}
+
+.rotation-badge {
+  display: inline-block;
+  background: rgba(92, 138, 255, 0.15);
+  color: var(--accent-color);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.expand-group-btn {
+  margin-right: 6px;
+  font-size: 11px;
+}
+
+.expanded-tile-row {
+  background-color: var(--bg-primary);
+}
+
+.expanded-tile-row:hover {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.expanded-indent {
+  padding-left: 32px !important;
+  color: var(--text-secondary);
+}
+
+.expanded-tile-row td {
+  font-size: 12px;
+}
+
 /* --- Tile List --- */
 .tile-list-actions {
   margin-top: 12px;

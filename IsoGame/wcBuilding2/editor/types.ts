@@ -32,7 +32,7 @@ export interface WcConfTileAsset {
   /** Rotation index (0-3 for 90° increments) */
   keyR?: number;
   /** Color filter suffix (e.g., "#H210_C115_S35_B120" or template like "{WALL_SUFFIX}") */
-  sufix?: string;
+  sufix?: string | number | boolean;
   /** Height layer (0 = ground, 1 = wall, 2 = roof) */
   h?: number;
   /** Position offset {x, y} */
