@@ -33,9 +33,10 @@
   - Detail: Add JSDoc comments to each new module file explaining its purpose and exported API.
   - Detail: Update any README or integration documentation to reflect the new file structure.
 
-- [ ] Task: Run type check and fix any TypeScript errors introduced during refactoring
-  - Detail: Run `deno check IsoGame/wcBuilding2/editor/server.ts` and `deno check web/js/main.ts` to verify all imports resolve correctly.
-  - Detail: Fix any type mismatches, missing exports, or broken import paths.
+- [x] Task: Run type check and fix any TypeScript errors introduced during refactoring
+   - Detail: Run `deno check IsoGame/wcBuilding2/editor/server.ts` and `deno check web/js/main.ts` to verify all imports resolve correctly.
+   - Detail: ✅ Fixed TypeScript error TS2339: Property 'toJson' does not exist on type 'Tile' in `tilesMatrix.ts` line 66. Changed to use existing `toJsonInfo()` method which provides complete tile serialization.
+   - Detail: ✅ Deno check passes successfully with no errors.
 
 - [ ] Task: Verify all HTTP endpoints function correctly after refactoring
   - Detail: Test each endpoint: list, extract, save, save-as, duplicate, preview, load, validate, asset-preview.

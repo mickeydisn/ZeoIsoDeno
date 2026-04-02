@@ -63,7 +63,7 @@ export class TilesMatrixSelected {
         this.rangeY.map((_, idy) => {
           const tile = this.tiles[idx][idy];
           return {
-            ...tile.toJson(),
+            ...tile.toJsonInfo(),
             x: idx,
             y: idy,
             lvl: tile.lvl - baseLvl,
