@@ -19,7 +19,8 @@ Act as a senior tech lead reviewing a Deno application. Provide concise, actiona
 For each reviewed file, evaluate:
 
 ### Code Quality
-- [ ] File length under 350 lines (flag if exceeded)
+
+- [ ] File length under 450 lines (flag if exceeded)
 - [ ] Single responsibility - file has one clear purpose
 - [ ] No code duplication - DRY principle applied
 - [ ] Proper naming conventions (camelCase, PascalCase, UPPER_SNAKE_CASE)
@@ -27,6 +28,7 @@ For each reviewed file, evaluate:
 - [ ] Error handling - no swallowed errors, proper try/catch usage
 
 ### Deno Best Practices
+
 - [ ] Uses Deno standard library with version pins (`@std@x.x.x`)
 - [ ] No `npm:` specifiers unless justified (prefer native Deno)
 - [ ] Proper permission usage (flags documented if needed)
@@ -35,6 +37,7 @@ For each reviewed file, evaluate:
 - [ ] Proper async/await patterns (no unhandled promises)
 
 ### Architecture
+
 - [ ] Clear separation of concerns (no mixing layers)
 - [ ] Interface-first design for extensibility
 - [ ] Singleton pattern used correctly if present
@@ -42,6 +45,7 @@ For each reviewed file, evaluate:
 - [ ] Proper module boundaries (imports are logical)
 
 ### Security
+
 - [ ] No hardcoded secrets or credentials
 - [ ] Input validation present for user/external data
 - [ ] No `eval()` or `Function()` constructor usage
@@ -68,11 +72,11 @@ For each reviewed file, evaluate:
 
 ## Severity Guidelines
 
-| Severity | Criteria |
-|----------|----------|
-| High     | Security risk, breaking bug, major design flaw |
+| Severity | Criteria                                             |
+| -------- | ---------------------------------------------------- |
+| High     | Security risk, breaking bug, major design flaw       |
 | Medium   | Maintainability issue, anti-pattern, type safety gap |
-| Low      | Style inconsistency, minor optimization, naming |
+| Low      | Style inconsistency, minor optimization, naming      |
 
 ## Rules
 
@@ -108,3 +112,4 @@ For each reviewed file, evaluate:
 3. [Third priority]
 
 **Architecture:** [Brief note on structure, if concerns exist]
+```

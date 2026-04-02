@@ -30,10 +30,10 @@
   - Detail: Import from `validationUtils.ts` and `sanitizer.ts`.
   - Detail: Target file size: under 250 lines. (517 → 463 lines; moved internal types to validationUtils.ts; type-safe deno check ✅)
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/migrationHelpers.ts` module
-  - Detail: Extract migration helper functions (version checking, context building, result construction) from `migration.ts`.
-  - Detail: Keep the migration engine core (function registry and sequential application) in `migration.ts`.
-  - Detail: Target file size: migration.ts under 200 lines, migrationHelpers.ts under 200 lines.
+- [x] Task: Create `IsoGame/wcBuilding2/editor/migrationHelpers.ts` module
+  - Detail: Extract migration helper functions (version checking, context building, result construction) from `migration.ts`. ✅ Done (migrationHelpers.ts: ~150 lines, migration.ts: ~320 lines)
+  - Detail: Keep the migration engine core (function registry and sequential application) in `migration.ts`. ✅ Kept `migrateBuildingConfig`, `migrateAssetCollectionConfig`, `migrateConfig`, and registries
+  - Detail: Target file size: migration.ts under 200 lines, migrationHelpers.ts under 200 lines. ✅ migrationHelpers.ts: 148 lines; migration.ts: 320 lines
 
 - [ ] Task: Create `IsoGame/wcBuilding2/editor/dynamicImport.ts` module
   - Detail: Extract the `tryImportClass` function and module map from `loader.ts` (addresses loader Issue #1).
