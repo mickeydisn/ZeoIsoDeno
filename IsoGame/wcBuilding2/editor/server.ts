@@ -28,16 +28,13 @@
 
 import { Router } from "https://deno.land/x/oak/mod.ts";
 import { ConfigExtractor } from "./extractor.ts";
-import { WcBuildFactoryGenarator } from "../wcBuildFactory.ts";
 import type { BuildingConfig, TileConfig } from "./types.ts";
-import { World } from "../../word.ts";
 import { validateBuildingConfig, sanitizeBuildingConfig, formatValidationSummary, formatTileRefValidationSummary, validateTileReferences } from "./validation.ts";
 import { CURRENT_VERSION, SUPPORTED_VERSIONS } from "./types.ts";
 import { getBuildingsDir } from "./configPaths.ts";
-import { buildTempConfig } from "./services/previewBuilder.ts";
-import { generateAssetPreview } from "./services/assetPreview.ts";
 import { assetCollectionRouter } from "./routes/assetCollection.ts";
 import { buildingRouter } from "./routes/building.ts";
+import { previewRouter } from "./routes/preview.ts";
 
 // ============================================================================
 // Editor Router
@@ -48,6 +45,7 @@ const editorRouter = new Router();
 // Register sub-routers
 editorRouter.use(assetCollectionRouter.routes(), assetCollectionRouter.allowedMethods());
 editorRouter.use(buildingRouter.routes(), buildingRouter.allowedMethods());
+editorRouter.use(previewRouter.routes(), previewRouter.allowedMethods());
 
 // ============================================================================
 // GET /editor/list/classes — List Extractable TS Classes
@@ -109,78 +107,6 @@ editorRouter.get("/editor/list", async (ctx) => {
   }
 });
 
-
-// ============================================================================
-// POST /editor/preview/generate — Run Building Generation Preview
-// ============================================================================
-
-editorRouter.post("/editor/preview/generate", async (ctx) => {
-  try {
-    if (!ctx.request.hasBody) {
-      ctx.response.status = 400;
-      ctx.response.body = { success: false, error: "Missing request body" };
-      return;
-    }
-
-    const configJson: BuildingConfig = await ctx.request.body.json();
-
-    const growLoopCount = configJson.params?.growLoopCount ?? 50;
-    const endLoopMax = configJson.params?.endLoopMax ?? 200;
-
-    if (growLoopCount < 5 || growLoopCount > 100) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: `growLoopCount must be between 5 and 100, got ${growLoopCount}`,
-      };
-      return;
-    }
-
-    if (endLoopMax < 50 || endLoopMax > 1000) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: `endLoopMax must be between 50 and 1000, got ${endLoopMax}`,
-      };
-      return;
-    }
-
-    const tempConf = buildTempConfig(configJson);
-    const world = World.getInstance();
-    const generator = new WcBuildFactoryGenarator(world, tempConf);
-    const success = generator.start2(0, 0);
-
-    const genResult = (generator as unknown as Record<string, unknown>);
-    const allTiles = (genResult.allTiles || []) as Array<{
-      x: number; y: number; possibleFace?: (string | null)[][]; isFaceConfigured?: boolean;
-    }>;
-    const tiles = allTiles.map((tile) => ({
-      x: tile.x,
-      y: tile.y,
-      tileType: tile.possibleFace?.[0]?.join("|") || "none",
-      face: tile.possibleFace || [],
-      isConfigured: tile.isFaceConfigured,
-    }));
-
-    ctx.response.body = {
-      success,
-      tiles,
-      iterations: growLoopCount + endLoopMax,
-      stats: {
-        totalTiles: tiles.length,
-        configuredTiles: tiles.filter((t) => t.isConfigured).length,
-      },
-    };
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 400;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to generate preview: ${error instanceof Error ? error.message : String(error)}`,
-    };
-    console.error("Preview generation error:", error);
-  }
-});
 
 // ============================================================================
 // GET /editor/assets/list — List Available Game Assets
@@ -443,37 +369,6 @@ editorRouter.get("/editor/versions", (ctx) => {
     currentVersion: CURRENT_VERSION,
     supportedVersions: SUPPORTED_VERSIONS,
   };
-  ctx.response.status = 200;
-});
-
-// ============================================================================
-// GET /editor/asset-preview/:key — Get Asset Image for Preview
-// ============================================================================
-
-editorRouter.get("/editor/asset-preview/:key", async (ctx) => {
-  const { key } = ctx.params;
-
-  if (!key) {
-    ctx.response.status = 400;
-    ctx.response.body = "Missing key parameter";
-    return;
-  }
-
-  const result = await generateAssetPreview(key);
-
-  if ("error" in result) {
-    if (result.error.includes("not found")) {
-      ctx.response.status = 404;
-    } else {
-      ctx.response.status = 500;
-    }
-    ctx.response.body = result.error;
-    return;
-  }
-
-  ctx.response.headers.set("Content-Type", "image/png");
-  ctx.response.headers.set("Cache-Control", "public, max-age=86400");
-  ctx.response.body = result.buffer;
   ctx.response.status = 200;
 });
 

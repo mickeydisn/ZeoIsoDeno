@@ -18,10 +18,10 @@
   - Detail: Export the configured Oak `Router` instance.
   - Detail: File should be under 200 lines after extraction.
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/routes/preview.ts` router module
-  - Detail: Extract `/editor/preview/generate` and `/editor/asset-preview/:key` endpoints.
-  - Detail: Import from `services/previewBuilder.ts` and `services/assetPreview.ts` (Phase 1).
-  - Detail: Export the configured Oak `Router` instance.
+- [x] Task: Create `IsoGame/wcBuilding2/editor/routes/preview.ts` router module
+   - Detail: Extract `/editor/preview/generate` and `/editor/asset-preview/:key` endpoints.
+   - Detail: Import from `services/previewBuilder.ts` and `services/assetPreview.ts` (Phase 1).
+   - Detail: Export the configured Oak `Router` instance.
 
 - [ ] Task: Create `IsoGame/wcBuilding2/editor/routes/validation.ts` router module
   - Detail: Extract any validation-related endpoints from `server.ts` (search for validation route handlers).
