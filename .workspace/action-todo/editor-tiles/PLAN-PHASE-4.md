@@ -5,7 +5,7 @@
 
 ## Tasks
 
-- [ ] Task: Create GroupEditor web component
+- [x] Task: Create GroupEditor web component
   - Detail: New component for editing tile groups with shared face editor + item list
   - File: `IsoGame/wcBuilding2/editor/web/js/components/groupEditor.ts`
 
