@@ -31,7 +31,7 @@ export abstract class WcBuildFactory {
 
   protected world: World;
   protected fm: FactoryMap;
-  protected allTiles: WcBuildTile[];
+  public allTiles: WcBuildTile[];
 
   constructor(world: World, conf: WcAbstractBuildConf) {
     this.world = world;

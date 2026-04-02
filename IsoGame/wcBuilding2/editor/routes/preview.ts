@@ -13,8 +13,28 @@ import { Router } from "https://deno.land/x/oak/mod.ts";
 import type { BuildingConfig } from "../types.ts";
 import { World } from "../../../word.ts";
 import { WcBuildFactoryGenarator } from "../../wcBuildFactory.ts";
+import { WcBuildTile } from "../../wcBuildTile.ts";
 import { buildTempConfig } from "../services/previewBuilder.ts";
 import { generateAssetPreview } from "../services/assetPreview.ts";
+
+/**
+ * Interface for generation result returned from preview generation
+ */
+interface GenerationResult {
+  success: boolean;
+  tiles: Array<{
+    x: number;
+    y: number;
+    tileType: string;
+    face: (string | null)[][];
+    isConfigured: boolean;
+  }>;
+  iterations: number;
+  stats: {
+    totalTiles: number;
+    configuredTiles: number;
+  };
+}
 
 const router = new Router();
 
@@ -55,10 +75,8 @@ router.post("/editor/preview/generate", async (ctx) => {
     const generator = new WcBuildFactoryGenarator(world, tempConf);
     const success = generator.start2(0, 0);
 
-    const genResult = (generator as unknown as Record<string, unknown>);
-    const allTiles = (genResult.allTiles || []) as Array<{
-      x: number; y: number; possibleFace?: (string | null)[][]; isFaceConfigured?: boolean;
-    }>;
+    // WcBuildFactoryGenarator extends WcBuildFactory which has public allTiles property
+    const allTiles: WcBuildTile[] = generator.allTiles || [];
     const tiles = allTiles.map((tile) => ({
       x: tile.x,
       y: tile.y,

@@ -6,13 +6,17 @@
 
 ## Tasks
 
-- [ ] Task: Fix `any` casts in `IsoGame/wcBuilding2/editor/extractionEngine.ts`
-  - Detail: Replace `(instance as any)` dynamic property access (lines 331, 359, 458 in original `extractor.ts`) with a proper `AssetCollectionInstance` interface using typed index access or a Record type.
-  - Detail: Define `interface AssetCollectionInstance { [key: string]: unknown }` or a more specific type based on the actual dynamic properties accessed.
+- [x] Task: Fix `any` casts in `IsoGame/wcBuilding2/editor/extractionEngine.ts`
+   - Detail: Replaced all `(instance as any)` dynamic property access with proper TypeScript interfaces
+   - Detail: Added `AssetCollectionInstance` interface with known method signatures and index accessor
+   - Detail: Added `BuildingConfigInstance` interface extending base class for dynamic property access
+   - Detail: All 4 instances of unsafe `any` casting removed from the file
 
-- [ ] Task: Fix `any` cast in `genResult` handling in `IsoGame/wcBuilding2/editor/routes/preview.ts`
-  - Detail: Replace the `genResult as any` cast (line 1538-1558 in original `server.ts`) with a proper interface for the generation result.
-  - Detail: Define `interface GenerationResult { tiles: WcConfTile[]; warnings: string[]; stats: object }` or extend existing types from `types.ts`.
+- [x] Task: Fix `any` cast in `genResult` handling in `IsoGame/wcBuilding2/editor/routes/preview.ts`
+   - Detail: Replaced unsafe `(generator as unknown as Record<string, unknown>)` cast with proper TypeScript typing
+   - Detail: Added explicit `GenerationResult` interface definition
+   - Detail: Added proper import for `WcBuildTile` type
+   - Detail: Directly access public `allTiles` property from generator instance (inherited from WcBuildFactory base class)
 
 - [ ] Task: Verify `ValidationResult` uses arrays instead of Sets for HTTP serialization
   - Detail: Ensure all places in `validation.ts` and `validationUtils.ts` that construct `ValidationResult` objects use `string[]` for the `errors` and `warnings` fields rather than `Set<string>`.
