@@ -423,11 +423,78 @@ export class ConfigExtractor {
 
   /**
    * Detect rotation variant groups (sets of 4 tiles that are exact rotations)
+   * 
+   * Rotation variants have faces that are cyclic shifts of each other.
+   * For example: [A,B,C,D], [D,A,B,C], [C,D,A,B], [B,C,D,A]
+   * 
+   * Groups tiles by their canonical (lexicographically smallest) cyclic shift,
+   * then forms groups only when exactly 4 tiles with distinct faces are found.
    */
   static detectRotationGroups(tiles: TileConfig[]): { groups: TileGroupConfig[], remainingTiles: TileConfig[] } {
-    // TODO: Implement rotation symmetry detection logic
-    // For now return all tiles as remaining
-    return { groups: [], remainingTiles: [...tiles] };
+    // Helper to compute all cyclic shifts of a face array
+    const getCyclicShifts = (face: (string | null)[]): (string | null)[][] => {
+      const shifts: (string | null)[][] = [];
+      for (let i = 0; i < 4; i++) {
+        shifts.push(face.slice(i).concat(face.slice(0, i)));
+      }
+      return shifts;
+    };
+
+    // Get canonical form: lexicographically smallest cyclic shift as a string key
+    const getCanonicalKey = (face: (string | null)[]): string => {
+      const shifts = getCyclicShifts(face);
+      const sorted = shifts.map(s => s.join(",")).sort();
+      return sorted[0];
+    };
+
+    // Group tiles by their canonical face key
+    const canonicalGroups = new Map<string, TileConfig[]>();
+    
+    for (const tile of tiles) {
+      const face = tile.face || [null, null, null, null];
+      const key = getCanonicalKey(face);
+      if (!canonicalGroups.has(key)) {
+        canonicalGroups.set(key, []);
+      }
+      canonicalGroups.get(key)!.push(tile);
+    }
+
+    const groups: TileGroupConfig[] = [];
+    const remainingTiles: TileConfig[] = [];
+    let groupCounter = 0;
+
+    for (const [canonicalKey, groupTiles] of canonicalGroups.entries()) {
+      // Only form rotation groups with exactly 4 tiles having distinct faces
+      if (groupTiles.length === 4) {
+        const faceStrings = groupTiles.map(t => 
+          (t.face || [null, null, null, null]).map(f => f ?? 'null').join(',')
+        );
+        const uniqueFaces = new Set(faceStrings);
+        
+        if (uniqueFaces.size === 4) {
+          // Parse canonical face back to array
+          const canonicalFace = canonicalKey.split(',').map(f => f === 'null' ? null : f);
+          
+          // Create rotation group with canonical face
+          const group: TileGroupConfig = {
+            id: `rotation_group_${groupCounter++}`,
+            face: canonicalFace,
+            weight: groupTiles.reduce((sum, t) => sum + (t.weight ?? 1), 0) / groupTiles.length,
+            items: groupTiles.map(tile => {
+              const { face, ...item } = tile;
+              return item as TileGroupItem;
+            })
+          };
+          groups.push(group);
+          continue;
+        }
+      }
+      
+      // Not a complete rotation group, add all to remaining
+      remainingTiles.push(...groupTiles);
+    }
+
+    return { groups, remainingTiles };
   }
 
   /**
