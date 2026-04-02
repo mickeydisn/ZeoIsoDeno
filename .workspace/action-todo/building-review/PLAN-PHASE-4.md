@@ -38,7 +38,7 @@
    - Detail: Extract asset collection-related API calls from `api.ts`. ✅ Created assetCollectionService.ts with all asset collection API operations extracted
    - Detail: Export an `AssetCollectionService` object with typed methods. ✅ Implemented extract, load, save, saveAs, duplicate, delete, migrate methods with proper typing
 
-- [ ] Task: Refactor `IsoGame/wcBuilding2/editor/web/js/api.ts` to be a thin HTTP client wrapper
+ - [x] Task: Refactor `IsoGame/wcBuilding2/editor/web/js/api.ts` to be a thin HTTP client wrapper
   - Detail: Keep only the base `fetch` wrapper, error handling, and request/response utilities.
   - Detail: Remove direct endpoint calls — delegate to service modules.
   - Detail: Target file size: under 150 lines.
