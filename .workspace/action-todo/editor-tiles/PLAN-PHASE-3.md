@@ -22,6 +22,6 @@
   - Detail: Maintain sourceGetter and sourceCollection fields in compressed groups
   - File: `IsoGame/wcBuilding2/editor/extractionEngine.ts`
 
-- [ ] Task: Preserve source traceability
+- [x] Task: Preserve source traceability
   - Detail: Maintain sourceGetter and sourceCollection fields in compressed groups
   - File: `IsoGame/wcBuilding2/editor/extractionEngine.ts`
