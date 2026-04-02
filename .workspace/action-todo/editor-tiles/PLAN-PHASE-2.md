@@ -18,7 +18,7 @@
   - Detail: Add sanitization logic for group objects and group items
   - File: `IsoGame/wcBuilding2/editor/sanitizer.ts`
 
-- [ ] Task: Update validate.ts for group validation
+- [x] Task: Update validate.ts for group validation
   - Detail: Add validation rules:
     - Group face exists and has exactly 4 entries
     - Group items array is not empty
@@ -26,6 +26,6 @@
     - Group weight is valid number
   - File: `IsoGame/wcBuilding2/editor/validate.ts`
 
-- [ ] Task: Update extraction engine pass-through
+- [x] Task: Update extraction engine pass-through
   - Detail: Ensure groups are preserved during extraction round-trip
   - File: `IsoGame/wcBuilding2/editor/extractionEngine.ts`

@@ -119,6 +119,26 @@ async function testExtractAllBuildings(): Promise<Record<string, BuildingConfig>
       // Validate mainLvl is NOT present in params
       assert(!("mainLvl" in config.params), "mainLvl must NOT be in params");
 
+      // Validate tile groups if present
+      if (config.groups) {
+        for (const group of config.groups) {
+          assert(Array.isArray(group.face) && group.face.length === 4, 
+            `Group ${group.id} face must have exactly 4 entries`);
+          assert(Array.isArray(group.items) && group.items.length > 0, 
+            `Group ${group.id} items array must not be empty`);
+          
+          for (const item of group.items) {
+            assert(!('face' in item), 
+              `Group item in ${group.id} must not have face property defined`);
+          }
+          
+          if (group.weight !== undefined) {
+            assert(typeof group.weight === 'number' && group.weight >= 0, 
+              `Group ${group.id} weight must be valid non-negative number`);
+          }
+        }
+      }
+
       extracted[config.id] = config;
       pass(testName, `${config.tiles.length} tiles, ${config.startTiles.length} start tiles`);
     } catch (e) {
@@ -144,6 +164,26 @@ async function testExtractAssetCollections(): Promise<void> {
       assert(config.version === "1.0", "version must be '1.0'");
       assert(config.type === "assetCollection", "type must be 'assetCollection'");
       assert(config.tag !== undefined, "tag must be present");
+
+      // Validate tile groups if present
+      if (config.groups) {
+        for (const group of config.groups) {
+          assert(Array.isArray(group.face) && group.face.length === 4, 
+            `Group ${group.id} face must have exactly 4 entries`);
+          assert(Array.isArray(group.items) && group.items.length > 0, 
+            `Group ${group.id} items array must not be empty`);
+          
+          for (const item of group.items) {
+            assert(!('face' in item), 
+              `Group item in ${group.id} must not have face property defined`);
+          }
+          
+          if (group.weight !== undefined) {
+            assert(typeof group.weight === 'number' && group.weight >= 0, 
+              `Group ${group.id} weight must be valid non-negative number`);
+          }
+        }
+      }
 
       // Validate tiles have sourceGetter for getter-based collections
       const registryEntry = ConfigExtractor.listAssetCollectionClasses();

@@ -21,6 +21,7 @@ import type {
   BuildingConfig,
   ParamSchemaEntry,
   TileConfig,
+  TileGroupConfig,
 } from "./types.ts";
 
 /**
@@ -79,25 +80,26 @@ export class ConfigExtractor {
     const startTiles = conf.startTileOptions.map((t) => this.tileToJson(t));
     const tiles = conf.listTileOptions.map((t) => this.tileToJson(t));
 
-    return {
-      version: "1.0",
-      type: "building",
-      id: className.replace("WcBuildConf_", ""),
-      metadata: {
-        classRef: className,
-        sourceFile: BUILDING_SOURCE_FILES[className] || className.toLowerCase(),
-        registryId: REGISTRY_ID_MAP[className] || "",
-      },
-      params: {
-        growLoopCount: conf.growLoopCount,
-        endLoopMax: conf.endLoopMax,
-      },
-      assetCollections,
-      faceLinkWeight: { ...conf.faceLinkWeight },
-      faceLinks,
-      startTiles,
-      tiles,
-    };
+     return {
+       version: "1.0",
+       type: "building",
+       id: className.replace("WcBuildConf_", ""),
+       metadata: {
+         classRef: className,
+         sourceFile: BUILDING_SOURCE_FILES[className] || className.toLowerCase(),
+         registryId: REGISTRY_ID_MAP[className] || "",
+       },
+       params: {
+         growLoopCount: conf.growLoopCount,
+         endLoopMax: conf.endLoopMax,
+       },
+       assetCollections,
+       faceLinkWeight: { ...conf.faceLinkWeight },
+       faceLinks,
+       startTiles,
+       tiles,
+       groups: (conf as BuildingConfigInstance).groups as TileGroupConfig[] | undefined,
+     };
   }
 
   // ============================================================================
@@ -159,19 +161,20 @@ export class ConfigExtractor {
     const extractedParams = this.extractAssetParams(instance);
     const paramsSchema = this.buildParamsSchema(extractedParams, className);
 
-    return {
-      version: "1.0",
-      type: "assetCollection",
-      id: className.replace("WcAsset_", ""),
-      metadata: {
-        classRef: className,
-        sourceFile: entry.sourceFile,
-      },
-      tag: instance.tag || "",
-      params: extractedParams,
-      paramsSchema,
-      tiles,
-    };
+     return {
+       version: "1.0",
+       type: "assetCollection",
+       id: className.replace("WcAsset_", ""),
+       metadata: {
+         classRef: className,
+         sourceFile: entry.sourceFile,
+       },
+       tag: instance.tag || "",
+       params: extractedParams,
+       paramsSchema,
+       tiles,
+       groups: instance.groups as TileGroupConfig[] | undefined,
+     };
   }
 
   // ============================================================================
