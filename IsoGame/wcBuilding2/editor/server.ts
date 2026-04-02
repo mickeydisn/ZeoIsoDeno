@@ -8,45 +8,54 @@
  * - GET  /editor/list/classes          — List extractable TS classes
  * - GET  /editor/list                  — List all configs (TS + existing JSON)
  * - POST /editor/extract/building/:className         — Extract building config to JSON
- * - POST /editor/extract/asset-collection/:className  — Extract asset collection to JSON
  * - POST /editor/save/building/:name                 — Save building JSON to disk
- * - POST /editor/save/asset-collection/:name         — Save asset collection JSON to disk
+ * - POST /editor/save-as/building/:originalName/:newName — Save building as new file
+ * - POST /editor/duplicate/building/:name/:newName   — Duplicate building config
  * - POST /editor/preview/generate                    — Run building generation preview
  * - GET  /editor/assets/list                         — List available game assets
  * - GET  /editor/asset-preview/:key                  — Get asset image for preview
  * - GET  /editor/load/building/:name                 — Load existing JSON building config
- * - GET  /editor/load/asset-collection/:name         — Load existing JSON asset collection config
+ * - POST /editor/validate/building                   — Validate building config
+ * - POST /editor/validate-tile-refs/building         — Validate tile references
+ * - POST /editor/sanitize/building                   — Sanitize building config
+ * - GET  /editor/registry/building/:name/metadata    — Get config metadata
+ * - DELETE /editor/config/building/:name             — Delete building config
+ * - POST /editor/migrate/building                    — Migrate building config
+ * - GET  /editor/versions                            — Get current and supported versions
+ *
+ * Asset collection endpoints are handled by assetCollectionRouter.
  */
 
 import { Router } from "https://deno.land/x/oak/mod.ts";
 import { ConfigExtractor } from "./extractor.ts";
 import { WcBuildFactoryGenarator } from "../wcBuildFactory.ts";
-import { WcAbstractBuildConf } from "../wcAbstractBuildConf.ts";
-import type { BuildingConfig, AssetCollectionConfig } from "./types.ts";
+import type { BuildingConfig, TileConfig } from "./types.ts";
 import { World } from "../../word.ts";
-import { validateBuildingConfig, sanitizeBuildingConfig, formatValidationSummary, formatTileRefValidationSummary, ValidationSeverity, validateTileReferences } from "./validation.ts";
-import { 
-  migrateBuildingConfig, 
-  migrateAssetCollectionConfig, 
-  isSupportedVersion, 
+import { validateBuildingConfig, sanitizeBuildingConfig, formatValidationSummary, formatTileRefValidationSummary, validateTileReferences } from "./validation.ts";
+import {
+  migrateBuildingConfig,
+  isSupportedVersion,
   getVersionStatus,
-  needsMigration 
+  needsMigration,
 } from "./migration.ts";
 import { CURRENT_VERSION, SUPPORTED_VERSIONS } from "./types.ts";
 import {
   getBuildingsDir,
-  getAssetCollectionsDir,
   ensureDir,
 } from "./configPaths.ts";
 import { duplicateConfig } from "./services/duplicateConfig.ts";
 import { buildTempConfig } from "./services/previewBuilder.ts";
 import { generateAssetPreview } from "./services/assetPreview.ts";
+import { assetCollectionRouter } from "./routes/assetCollection.ts";
 
 // ============================================================================
 // Editor Router
 // ============================================================================
 
 const editorRouter = new Router();
+
+// Register sub-routers
+editorRouter.use(assetCollectionRouter.routes(), assetCollectionRouter.allowedMethods());
 
 // ============================================================================
 // GET /editor/list/classes — List Extractable TS Classes
@@ -77,18 +86,12 @@ editorRouter.get("/editor/list/classes", (ctx) => {
 
 editorRouter.get("/editor/list", async (ctx) => {
   try {
-    // TS classes from extractor
     const tsBuildings = ConfigExtractor.listBuildingClasses();
     const tsAssetCollections = ConfigExtractor.listAssetCollectionClasses();
 
-    // Scan for existing JSON files
     const jsonBuildings: string[] = [];
-    const jsonAssetCollections: string[] = [];
-
     const buildingsDir = getBuildingsDir();
-    const assetCollectionsDir = getAssetCollectionsDir();
 
-    // Scan buildings directory
     try {
       for await (const entry of Deno.readDir(buildingsDir)) {
         if (entry.name.endsWith(".json")) {
@@ -99,22 +102,10 @@ editorRouter.get("/editor/list", async (ctx) => {
       // Directory doesn't exist yet — that's fine
     }
 
-    // Scan asset collections directory
-    try {
-      for await (const entry of Deno.readDir(assetCollectionsDir)) {
-        if (entry.name.endsWith(".json")) {
-          jsonAssetCollections.push(entry.name.replace(".json", ""));
-        }
-      }
-    } catch {
-      // Directory doesn't exist yet — that's fine
-    }
-
     ctx.response.body = {
       tsBuildings,
       tsAssetCollections,
       jsonBuildings,
-      jsonAssetCollections,
     };
     ctx.response.status = 200;
   } catch (error: unknown) {
@@ -143,7 +134,6 @@ editorRouter.post("/editor/extract/building/:className", async (ctx) => {
       return;
     }
 
-    // Optionally accept params override in request body
     let params: Record<string, unknown> = {};
     if (ctx.request.hasBody) {
       try {
@@ -168,50 +158,6 @@ editorRouter.post("/editor/extract/building/:className", async (ctx) => {
 });
 
 // ============================================================================
-// POST /editor/extract/asset-collection/:className — Extract Asset Collection
-// ============================================================================
-
-editorRouter.post(
-  "/editor/extract/asset-collection/:className",
-  async (ctx) => {
-    try {
-      const { className } = ctx.params;
-
-      if (!className) {
-        ctx.response.status = 400;
-        ctx.response.body = {
-          success: false,
-          error: "Missing className parameter",
-        };
-        return;
-      }
-
-      // Optionally accept params override in request body
-      let params: Record<string, unknown> = {};
-      if (ctx.request.hasBody) {
-        try {
-          params = await ctx.request.body.json() as Record<string, unknown>;
-        } catch {
-          // No body or invalid JSON — use defaults
-        }
-      }
-
-      const config = ConfigExtractor.extractAssetCollection(className, params);
-
-      ctx.response.headers.set("Content-Type", "application/json");
-      ctx.response.body = config;
-      ctx.response.status = 200;
-    } catch (error: unknown) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: `Failed to extract asset collection: ${error instanceof Error ? error.message : String(error)}`,
-      };
-    }
-  },
-);
-
-// ============================================================================
 // POST /editor/save/building/:name — Save Building JSON to Disk
 // ============================================================================
 
@@ -221,26 +167,18 @@ editorRouter.post("/editor/save/building/:name", async (ctx) => {
 
     if (!name) {
       ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing name parameter",
-      };
+      ctx.response.body = { success: false, error: "Missing name parameter" };
       return;
     }
 
-    // Read and validate JSON body
     if (!ctx.request.hasBody) {
       ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing request body",
-      };
+      ctx.response.body = { success: false, error: "Missing request body" };
       return;
     }
 
     const config: BuildingConfig = await ctx.request.body.json();
 
-    // Validate required fields
     if (config.type !== "building") {
       ctx.response.status = 400;
       ctx.response.body = {
@@ -251,9 +189,7 @@ editorRouter.post("/editor/save/building/:name", async (ctx) => {
     }
 
     if (config.version !== CURRENT_VERSION) {
-      // Check if we can migrate
       if (isSupportedVersion(config.version)) {
-        // Attempt migration
         const migrationResult = migrateBuildingConfig(config);
         if (!migrationResult.success) {
           ctx.response.status = 400;
@@ -263,7 +199,6 @@ editorRouter.post("/editor/save/building/:name", async (ctx) => {
           };
           return;
         }
-        // Use migrated config
         config.version = migrationResult.migratedVersion as typeof config.version;
       } else {
         ctx.response.status = 400;
@@ -275,18 +210,13 @@ editorRouter.post("/editor/save/building/:name", async (ctx) => {
       }
     }
 
-    // Ensure directory exists
     const dir = getBuildingsDir();
     await ensureDir(dir);
 
-    // Write file
     const filePath = `${dir}/${name}.json`;
     await Deno.writeTextFile(filePath, JSON.stringify(config, null, 2));
 
-    ctx.response.body = {
-      success: true,
-      path: filePath,
-    };
+    ctx.response.body = { success: true, path: filePath };
     ctx.response.status = 200;
   } catch (error: unknown) {
     ctx.response.status = 400;
@@ -298,7 +228,7 @@ editorRouter.post("/editor/save/building/:name", async (ctx) => {
 });
 
 // ============================================================================
-// POST /editor/save-as/building/:originalName/:newName — Save Building as New JSON File
+// POST /editor/save-as/building/:originalName/:newName — Save Building as New
 // ============================================================================
 
 editorRouter.post("/editor/save-as/building/:originalName/:newName", async (ctx) => {
@@ -324,93 +254,29 @@ editorRouter.post("/editor/save-as/building/:originalName/:newName", async (ctx)
 });
 
 // ============================================================================
-// POST /editor/save-as/asset-collection/:originalName/:newName — Save Asset Collection as New
+// POST /editor/duplicate/building/:name/:newName — Duplicate Building Config
 // ============================================================================
 
-editorRouter.post(
-  "/editor/save-as/asset-collection/:originalName/:newName",
-  async (ctx) => {
-    const { originalName, newName } = ctx.params;
-    const result = await duplicateConfig("asset-collection", originalName || "", newName || "");
+editorRouter.post("/editor/duplicate/building/:name/:newName", async (ctx) => {
+  const { name, newName } = ctx.params;
+  const result = await duplicateConfig("building", name || "", newName || "");
 
-    if (!result.success) {
-      if (result.error?.includes("already exists")) {
-        ctx.response.status = 409;
-      } else if (result.error?.includes("not found")) {
-        ctx.response.status = 404;
-      } else if (result.error?.includes("Invalid name")) {
-        ctx.response.status = 400;
-      } else {
-        ctx.response.status = 500;
-      }
-      ctx.response.body = { success: false, error: result.error };
-      return;
-    }
-
-    ctx.response.body = { success: true, path: result.path, newName: result.newName };
-    ctx.response.status = 200;
-  },
-);
-
-// ============================================================================
-// POST /editor/save/asset-collection/:name — Save Asset Collection JSON to Disk
-// ============================================================================
-
-editorRouter.post("/editor/save/asset-collection/:name", async (ctx) => {
-  try {
-    const { name } = ctx.params;
-
-    if (!name) {
+  if (!result.success) {
+    if (result.error?.includes("already exists")) {
+      ctx.response.status = 409;
+    } else if (result.error?.includes("not found")) {
+      ctx.response.status = 404;
+    } else if (result.error?.includes("Invalid name")) {
       ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing name parameter",
-      };
-      return;
+    } else {
+      ctx.response.status = 500;
     }
-
-    // Read and validate JSON body
-    if (!ctx.request.hasBody) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing request body",
-      };
-      return;
-    }
-
-    const config: AssetCollectionConfig = await ctx.request.body.json();
-
-    // Validate required fields
-    if (config.type !== "assetCollection") {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Invalid config type: expected 'assetCollection'",
-      };
-      return;
-    }
-
-    // Ensure directory exists
-    const dir = getAssetCollectionsDir();
-    await ensureDir(dir);
-
-    // Write file
-    const filePath = `${dir}/${name}.json`;
-    await Deno.writeTextFile(filePath, JSON.stringify(config, null, 2));
-
-    ctx.response.body = {
-      success: true,
-      path: filePath,
-    };
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 400;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to save asset collection: ${error instanceof Error ? error.message : String(error)}`,
-    };
+    ctx.response.body = { success: false, error: result.error };
+    return;
   }
+
+  ctx.response.body = { success: true, path: result.path, newName: result.newName };
+  ctx.response.status = 200;
 });
 
 // ============================================================================
@@ -421,16 +287,12 @@ editorRouter.post("/editor/preview/generate", async (ctx) => {
   try {
     if (!ctx.request.hasBody) {
       ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing request body",
-      };
+      ctx.response.body = { success: false, error: "Missing request body" };
       return;
     }
 
     const configJson: BuildingConfig = await ctx.request.body.json();
 
-    // Validate params are within safe range
     const growLoopCount = configJson.params?.growLoopCount ?? 50;
     const endLoopMax = configJson.params?.endLoopMax ?? 200;
 
@@ -452,17 +314,11 @@ editorRouter.post("/editor/preview/generate", async (ctx) => {
       return;
     }
 
-    // Build temp config from JSON
     const tempConf = buildTempConfig(configJson);
-
-    // Get World instance for factory
     const world = World.getInstance();
-
-    // Create generator and run
     const generator = new WcBuildFactoryGenarator(world, tempConf);
     const success = generator.start2(0, 0);
 
-    // Extract tile data for preview (cast to access protected members)
     const genResult = (generator as unknown as Record<string, unknown>);
     const allTiles = (genResult.allTiles || []) as Array<{
       x: number; y: number; possibleFace?: (string | null)[][]; isFaceConfigured?: boolean;
@@ -502,32 +358,22 @@ editorRouter.post("/editor/preview/generate", async (ctx) => {
 editorRouter.get("/editor/assets/list", async (ctx) => {
   try {
     const assetDir = `${Deno.cwd()}/img/asset_opti`;
-    const assets: Array<{
-      key: string;
-      category: string;
-      filename: string;
-    }> = [];
+    const assets: Array<{ key: string; category: string; filename: string }> = [];
 
     try {
       for await (const entry of Deno.readDir(assetDir)) {
         if (entry.isFile && entry.name.endsWith(".png")) {
           const key = entry.name.replace(".png", "");
-          // Infer category from filename prefix (before first number or capital letter)
           const match = key.match(/^([A-Za-z]+)/);
           const category = match ? match[1] : "Other";
 
-          assets.push({
-            key,
-            category,
-            filename: entry.name,
-          });
+          assets.push({ key, category, filename: entry.name });
         }
       }
     } catch {
       // Directory doesn't exist or can't be read
     }
 
-    // Group by category
     const grouped = assets.reduce((acc, asset) => {
       if (!acc[asset.category]) {
         acc[asset.category] = [];
@@ -561,10 +407,7 @@ editorRouter.get("/editor/load/building/:name", async (ctx) => {
 
     if (!name) {
       ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing name parameter",
-      };
+      ctx.response.body = { success: false, error: "Missing name parameter" };
       return;
     }
 
@@ -574,10 +417,7 @@ editorRouter.get("/editor/load/building/:name", async (ctx) => {
       await Deno.stat(filePath);
     } catch {
       ctx.response.status = 404;
-      ctx.response.body = {
-        success: false,
-        error: `Building config not found: ${name}`,
-      };
+      ctx.response.body = { success: false, error: `Building config not found: ${name}` };
       return;
     }
 
@@ -597,51 +437,6 @@ editorRouter.get("/editor/load/building/:name", async (ctx) => {
 });
 
 // ============================================================================
-// GET /editor/load/asset-collection/:name — Load Existing JSON Asset Collection Config
-// ============================================================================
-
-editorRouter.get("/editor/load/asset-collection/:name", async (ctx) => {
-  try {
-    const { name } = ctx.params;
-
-    if (!name) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing name parameter",
-      };
-      return;
-    }
-
-    const filePath = `${getAssetCollectionsDir()}/${name}.json`;
-
-    try {
-      await Deno.stat(filePath);
-    } catch {
-      ctx.response.status = 404;
-      ctx.response.body = {
-        success: false,
-        error: `Asset collection config not found: ${name}`,
-      };
-      return;
-    }
-
-    const content = await Deno.readTextFile(filePath);
-    const config: AssetCollectionConfig = JSON.parse(content);
-
-    ctx.response.headers.set("Content-Type", "application/json");
-    ctx.response.body = config;
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to load asset collection config: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-});
-
-// ============================================================================
 // POST /editor/validate/building — Validate Building Config
 // ============================================================================
 
@@ -649,16 +444,12 @@ editorRouter.post("/editor/validate/building", async (ctx) => {
   try {
     if (!ctx.request.hasBody) {
       ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing request body",
-      };
+      ctx.response.body = { success: false, error: "Missing request body" };
       return;
     }
 
     const config: BuildingConfig = await ctx.request.body.json();
 
-    // Validate type
     if (config.type !== "building") {
       ctx.response.status = 400;
       ctx.response.body = {
@@ -668,7 +459,6 @@ editorRouter.post("/editor/validate/building", async (ctx) => {
       return;
     }
 
-    // Run validation
     const result = validateBuildingConfig(config);
 
     ctx.response.body = {
@@ -695,23 +485,19 @@ editorRouter.post("/editor/validate/building", async (ctx) => {
 });
 
 // ============================================================================
-// POST /editor/validate-tile-refs/building — Validate Tile References in Building Config
+// POST /editor/validate-tile-refs/building — Validate Tile References
 // ============================================================================
 
 editorRouter.post("/editor/validate-tile-refs/building", async (ctx) => {
   try {
     if (!ctx.request.hasBody) {
       ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing request body",
-      };
+      ctx.response.body = { success: false, error: "Missing request body" };
       return;
     }
 
     const config: BuildingConfig = await ctx.request.body.json();
 
-    // Validate type
     if (config.type !== "building") {
       ctx.response.status = 400;
       ctx.response.body = {
@@ -721,21 +507,18 @@ editorRouter.post("/editor/validate-tile-refs/building", async (ctx) => {
       return;
     }
 
-    // Read body for optional loaded collections
-    let body: { collections?: Record<string, { tiles: any[] }> } = {};
+    let body: { collections?: Record<string, { tiles: TileConfig[] }> } = {};
     try {
-      body = ctx.request.hasBody ? await ctx.request.body.json() : {};
+      body = ctx.request.hasBody ? (await ctx.request.body.json()) as { collections?: Record<string, { tiles: TileConfig[] }> } : {};
     } catch { /* no body provided */ }
 
-    // Build loaded collections map for sourceTileId validation
-    const loadedCollections = new Map<string, { tiles: any[] }>();
+    const loadedCollections = new Map<string, { tiles: TileConfig[] }>();
     if (body.collections) {
       for (const [id, coll] of Object.entries(body.collections)) {
         loadedCollections.set(id, coll);
       }
     }
 
-    // Run tile reference validation
     const result = validateTileReferences(config, loadedCollections);
 
     ctx.response.body = {
@@ -756,23 +539,19 @@ editorRouter.post("/editor/validate-tile-refs/building", async (ctx) => {
 });
 
 // ============================================================================
-// POST /editor/sanitize/building — Sanitize Building Config (fix common issues)
+// POST /editor/sanitize/building — Sanitize Building Config
 // ============================================================================
 
 editorRouter.post("/editor/sanitize/building", async (ctx) => {
   try {
     if (!ctx.request.hasBody) {
       ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing request body",
-      };
+      ctx.response.body = { success: false, error: "Missing request body" };
       return;
     }
 
     const config: BuildingConfig = await ctx.request.body.json();
 
-    // Validate type
     if (config.type !== "building") {
       ctx.response.status = 400;
       ctx.response.body = {
@@ -782,10 +561,7 @@ editorRouter.post("/editor/sanitize/building", async (ctx) => {
       return;
     }
 
-    // Sanitize the config
     const sanitized = sanitizeBuildingConfig(structuredClone(config));
-
-    // Re-validate to show what was fixed
     const result = validateBuildingConfig(sanitized);
 
     ctx.response.body = {
@@ -808,7 +584,7 @@ editorRouter.post("/editor/sanitize/building", async (ctx) => {
 });
 
 // ============================================================================
-// GET /editor/registry/building/:id/metadata — Get Config Metadata
+// GET /editor/registry/building/:name/metadata — Get Config Metadata
 // ============================================================================
 
 editorRouter.get("/editor/registry/building/:name/metadata", async (ctx) => {
@@ -817,10 +593,7 @@ editorRouter.get("/editor/registry/building/:name/metadata", async (ctx) => {
 
     if (!name) {
       ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing name parameter",
-      };
+      ctx.response.body = { success: false, error: "Missing name parameter" };
       return;
     }
 
@@ -830,10 +603,7 @@ editorRouter.get("/editor/registry/building/:name/metadata", async (ctx) => {
       await Deno.stat(filePath);
     } catch {
       ctx.response.status = 404;
-      ctx.response.body = {
-        success: false,
-        error: `Building config not found: ${name}`,
-      };
+      ctx.response.body = { success: false, error: `Building config not found: ${name}` };
       return;
     }
 
@@ -850,7 +620,6 @@ editorRouter.get("/editor/registry/building/:name/metadata", async (ctx) => {
       return;
     }
 
-    // Return metadata with additional info
     ctx.response.body = {
       success: true,
       id: config.id,
@@ -881,10 +650,7 @@ editorRouter.delete("/editor/config/building/:name", async (ctx) => {
 
     if (!name) {
       ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing name parameter",
-      };
+      ctx.response.body = { success: false, error: "Missing name parameter" };
       return;
     }
 
@@ -894,19 +660,13 @@ editorRouter.delete("/editor/config/building/:name", async (ctx) => {
       await Deno.stat(filePath);
     } catch {
       ctx.response.status = 404;
-      ctx.response.body = {
-        success: false,
-        error: `Building config not found: ${name}`,
-      };
+      ctx.response.body = { success: false, error: `Building config not found: ${name}` };
       return;
     }
 
     await Deno.remove(filePath);
 
-    ctx.response.body = {
-      success: true,
-      deleted: name,
-    };
+    ctx.response.body = { success: true, deleted: name };
     ctx.response.status = 200;
   } catch (error: unknown) {
     ctx.response.status = 500;
@@ -918,121 +678,19 @@ editorRouter.delete("/editor/config/building/:name", async (ctx) => {
 });
 
 // ============================================================================
-// DELETE /editor/config/asset-collection/:name — Delete Asset Collection Config
-// ============================================================================
-
-editorRouter.delete("/editor/config/asset-collection/:name", async (ctx) => {
-  try {
-    const { name } = ctx.params;
-
-    if (!name) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing name parameter",
-      };
-      return;
-    }
-
-    const filePath = `${getAssetCollectionsDir()}/${name}.json`;
-
-    try {
-      await Deno.stat(filePath);
-    } catch {
-      ctx.response.status = 404;
-      ctx.response.body = {
-        success: false,
-        error: `Asset collection config not found: ${name}`,
-      };
-      return;
-    }
-
-    await Deno.remove(filePath);
-
-    ctx.response.body = {
-      success: true,
-      deleted: name,
-    };
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to delete asset collection config: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-});
-
-// ============================================================================
-// POST /editor/duplicate/building/:name/:newName — Duplicate Building Config
-// ============================================================================
-
-editorRouter.post("/editor/duplicate/building/:name/:newName", async (ctx) => {
-  const { name, newName } = ctx.params;
-  const result = await duplicateConfig("building", name || "", newName || "");
-
-  if (!result.success) {
-    if (result.error?.includes("already exists")) {
-      ctx.response.status = 409;
-    } else if (result.error?.includes("not found")) {
-      ctx.response.status = 404;
-    } else if (result.error?.includes("Invalid name")) {
-      ctx.response.status = 400;
-    } else {
-      ctx.response.status = 500;
-    }
-    ctx.response.body = { success: false, error: result.error };
-    return;
-  }
-
-  ctx.response.body = { success: true, path: result.path, newName: result.newName };
-  ctx.response.status = 200;
-});
-
-// ============================================================================
-// POST /editor/duplicate/asset-collection/:name/:newName — Duplicate Asset Collection Config
-// ============================================================================
-
-editorRouter.post("/editor/duplicate/asset-collection/:name/:newName", async (ctx) => {
-  const { name, newName } = ctx.params;
-  const result = await duplicateConfig("asset-collection", name || "", newName || "");
-
-  if (!result.success) {
-    if (result.error?.includes("already exists")) {
-      ctx.response.status = 409;
-    } else if (result.error?.includes("not found")) {
-      ctx.response.status = 404;
-    } else if (result.error?.includes("Invalid name")) {
-      ctx.response.status = 400;
-    } else {
-      ctx.response.status = 500;
-    }
-    ctx.response.body = { success: false, error: result.error };
-    return;
-  }
-
-  ctx.response.body = { success: true, path: result.path, newName: result.newName };
-  ctx.response.status = 200;
-});
-
-// ============================================================================
-// POST /editor/migrate/building — Migrate Building Config to Current Version
+// POST /editor/migrate/building — Migrate Building Config
 // ============================================================================
 
 editorRouter.post("/editor/migrate/building", async (ctx) => {
   try {
     if (!ctx.request.hasBody) {
       ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing request body",
-      };
+      ctx.response.body = { success: false, error: "Missing request body" };
       return;
     }
 
     const config: BuildingConfig = await ctx.request.body.json();
 
-    // Validate type
     if (config.type !== "building") {
       ctx.response.status = 400;
       ctx.response.body = {
@@ -1042,7 +700,6 @@ editorRouter.post("/editor/migrate/building", async (ctx) => {
       return;
     }
 
-    // Check if migration is needed
     if (!needsMigration(config)) {
       ctx.response.body = {
         success: true,
@@ -1060,73 +717,7 @@ editorRouter.post("/editor/migrate/building", async (ctx) => {
       return;
     }
 
-    // Perform migration
     const migrationResult = migrateBuildingConfig(config);
-
-    ctx.response.body = {
-      success: migrationResult.success,
-      config: migrationResult.success ? config : null,
-      migratedConfig: migrationResult.success ? { ...config, version: migrationResult.migratedVersion } : null,
-      migrationResult,
-      versionStatus: getVersionStatus(config),
-    };
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to migrate config: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-});
-
-// ============================================================================
-// POST /editor/migrate/asset-collection — Migrate Asset Collection Config
-// ============================================================================
-
-editorRouter.post("/editor/migrate/asset-collection", async (ctx) => {
-  try {
-    if (!ctx.request.hasBody) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing request body",
-      };
-      return;
-    }
-
-    const config: AssetCollectionConfig = await ctx.request.body.json();
-
-    // Validate type
-    if (config.type !== "assetCollection") {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Invalid config type: expected 'assetCollection'",
-      };
-      return;
-    }
-
-    // Check if migration is needed
-    if (!needsMigration(config)) {
-      ctx.response.body = {
-        success: true,
-        config,
-        migrationResult: {
-          originalVersion: config.version,
-          migratedVersion: config.version,
-          wasMigrated: false,
-          appliedMigrations: [],
-          warnings: [],
-        },
-        versionStatus: getVersionStatus(config),
-      };
-      ctx.response.status = 200;
-      return;
-    }
-
-    // Perform migration
-    const migrationResult = migrateAssetCollectionConfig(config);
 
     ctx.response.body = {
       success: migrationResult.success,

@@ -6,7 +6,7 @@
 
 ## Tasks
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/routes/assetCollection.ts` router module
+- [x] Task: Create `IsoGame/wcBuilding2/editor/routes/assetCollection.ts` router module
   - Detail: Extract all `/editor/*asset-collection*` endpoints: POST extract, POST save, POST save-as, POST duplicate, GET load.
   - Detail: Import from `configPaths.ts`, `duplicateConfig.ts` (Phase 1), and the extractor/loader modules as needed.
   - Detail: Export the configured Oak `Router` instance.
