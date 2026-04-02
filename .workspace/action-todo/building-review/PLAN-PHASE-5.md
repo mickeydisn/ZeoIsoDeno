@@ -23,8 +23,11 @@
    - Detail: ✅ Checked ✓ validation route lines 55-56 correctly convert uniqueFaceKeys sets to arrays
    - Detail: ✅ Confirmed ✓ SerializableValidationResult interface exists with proper array types
 
-- [ ] Task: Fix registry data duplication between `extractor.ts` and `types.ts`
-  - Detail: Ensure `REGISTRY_ID_MAP`, `BUILDING_CLASSES` stubs in `types.ts` are either properly populated, removed as dead code, or documented as intentionally empty with a note pointing to `registries.ts` as the source of truth.
+- [x] Task: Fix registry data duplication between `extractor.ts` and `types.ts`
+   - Detail: ✅ Completed - All registry definitions are centralized in `registries.ts`
+   - Detail: ✅ Verified - `types.ts` and `extractor.ts` only contain re-exports (no duplicate data)
+   - Detail: ✅ Documented - `registries.ts` is properly marked as the single source of truth
+   - Detail: ✅ All existing imports correctly reference the central registry module
 
 - [ ] Task: Add documentation comments to new module structure
   - Detail: Add JSDoc comments to each new module file explaining its purpose and exported API.
