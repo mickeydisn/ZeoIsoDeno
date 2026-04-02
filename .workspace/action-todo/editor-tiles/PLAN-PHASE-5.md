@@ -5,7 +5,7 @@
 
 ## Tasks
 
-- [ ] Task: Implement schema migration from 1.0 to 1.1
+- [x] Task: Implement schema migration from 1.0 to 1.1
   - Detail: Add migration logic that automatically updates old configs
   - File: `IsoGame/wcBuilding2/editor/migration.ts`
   - Note: Migration is optional, old configs work without modification

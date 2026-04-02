@@ -19,7 +19,7 @@ import { CURRENT_VERSION, SUPPORTED_VERSIONS, type SupportedVersion } from "./ty
  * Ordered list of versions for migration path resolution.
  * Add new versions to the end of this array.
  */
-export const VERSION_ORDER: readonly SupportedVersion[] = ["1.0"];
+export const VERSION_ORDER: readonly SupportedVersion[] = ["1.0", "1.1"];
 
 /**
  * Get the index of a version in the version ordering.
@@ -83,7 +83,7 @@ export interface MigrationContext {
 // Migration Function Type
 // ============================================================================
 
-import type { AnyConfig, BuildingConfig, AssetCollectionConfig } from "./types.ts";
+import type { AnyConfig } from "./types.ts";
 
 /**
  * A migration function transforms a config from one version to the next.

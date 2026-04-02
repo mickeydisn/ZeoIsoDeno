@@ -67,15 +67,24 @@ export function registerAssetCollectionMigration(
 // Default Migrations (No-op for 1.0 since it's the current version)
 // ============================================================================
 
-// Example migration for future use (uncomment when adding 1.1):
-// registerBuildingMigration("1.0", "1.1", (config, ctx) => {
-//   ctx.warnings.push("Migrated from 1.0 to 1.1");
-//   return {
-//     ...config,
-//     version: "1.1",
-//     // Add new fields or transform existing ones here
-//   };
-// });
+// Migration from 1.0 to 1.1: Add groups field if missing
+registerBuildingMigration("1.0", "1.1", (config, ctx) => {
+  ctx.warnings.push("Migrated from 1.0 to 1.1: added groups field");
+  return {
+    ...config,
+    version: "1.1",
+    groups: config.groups ?? [],
+  };
+});
+
+registerAssetCollectionMigration("1.0", "1.1", (config, ctx) => {
+  ctx.warnings.push("Migrated from 1.0 to 1.1: added groups field");
+  return {
+    ...config,
+    version: "1.1",
+    groups: config.groups ?? [],
+  };
+});
 
 // ============================================================================
 // Migration Engine
@@ -314,7 +323,7 @@ export function migrateConfig<T extends AnyConfig>(
       migratedVersion: "unknown",
       wasMigrated: false,
       appliedMigrations: [],
-      warnings: [`Unknown config type: ${(config as any).type}`],
+      warnings: [`Unknown config type: ${config.type}`],
     },
   };
 }
