@@ -16,9 +16,9 @@
    - Detail: Extract face-specific editing logic from `tile.ts` (the FaceEditor component integration, face rendering, face link handling).
    - Detail: Export a class or function `TileFaceEditor` with methods for rendering face panels and updating face data.
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/web/js/components/tileFunctionsEditor.ts`
-  - Detail: Extract function-related editing UI from `tile.ts` (the Canvas2DPreview integration, function panels, weight tables).
-  - Detail: Export a class or function `TileFunctionsEditor`.
+ - [x] Task: Create `IsoGame/wcBuilding2/editor/web/js/components/tileFunctionsEditor.ts`
+   - Detail: Extract function-related editing UI from `tile.ts` (the Canvas2DPreview integration, function panels, weight tables).
+   - Detail: Export a class or function `TileFunctionsEditor`.
 
 - [ ] Task: Create `IsoGame/wcBuilding2/editor/web/js/components/contextBuilders.ts`
   - Detail: Extract the context builder functions (`buildAssetContext`, `buildAssetCollectionContext`, etc.) from `tile.ts` into this shared utility module.

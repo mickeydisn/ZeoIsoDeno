@@ -19,6 +19,7 @@ import { Canvas2DPreview } from "../components/canvas2d.ts";
 import { AssetPreviewService } from "../services/assetPreview.ts";
 import { TilePropertiesEditor } from "../components/tilePropertiesEditor.ts";
 import { TileFaceEditor } from "../components/tileFaceEditor.ts";
+import { TileFunctionsEditor } from "../components/tileFunctionsEditor.ts";
 
 // ============================================================================
 // Tile Edit Context
@@ -59,6 +60,7 @@ export class TileEditorPanel {
   // Component instances
   private tileFaceEditor: TileFaceEditor | null = null;
   private propertiesEditor: TilePropertiesEditor | null = null;
+  private functionsEditor: TileFunctionsEditor | null = null;
   private assetListEditor: AssetListEditor | null = null;
   private canvasPreview: Canvas2DPreview | null = null;
   private assetPreviewService: AssetPreviewService;
@@ -359,7 +361,7 @@ export class TileEditorPanel {
   }
 
   /**
-   * Render functions section.
+   * Render functions section using TileFunctionsEditor component.
    */
   private renderFunctionsSection(): HTMLElement {
     const section = document.createElement("div");
@@ -372,253 +374,26 @@ export class TileEditorPanel {
 
     if (!this.currentTile) return section;
 
-    const table = document.createElement("table");
-    table.className = "function-table";
-    table.innerHTML = `
-      <thead>
-        <tr>
-          <th>Function Name</th>
-          <th>Size</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    `;
-    section.appendChild(table);
+    const container = document.createElement("div");
+    container.className = "tile-functions-container";
+    section.appendChild(container);
 
-    const tbody = table.querySelector("tbody");
-
-    // Render existing functions
-    this.currentTile.functions?.forEach((func, index) => {
-      const tr = document.createElement("tr");
-
-      // Function name dropdown
-      const funcNameTd = document.createElement("td");
-      const funcSelect = document.createElement("select");
-      funcSelect.className = "func-select";
-      const funcNames = ["lvlAvgSquare", "lvlAvg", "lvlDiff"];
-      funcNames.forEach((name) => {
-        const option = document.createElement("option");
-        option.value = name;
-        option.textContent = name;
-        if (func.key === name) option.selected = true;
-        funcSelect.appendChild(option);
-      });
-      funcSelect.addEventListener("change", () => {
-        if (this.currentTile?.functions) {
-          this.currentTile.functions[index].key = funcSelect.value;
+    // Initialize functions editor component
+    this.functionsEditor = new TileFunctionsEditor(
+      container,
+      this.currentTile.functions || [],
+      (updatedFunctions) => {
+        if (this.currentTile) {
+          this.currentTile.functions = updatedFunctions;
           this.isDirty = true;
+          // Update function count in header
+          header.textContent = `🔧 Terrain Functions (${updatedFunctions.length})`;
         }
-      });
-      funcNameTd.appendChild(funcSelect);
-      tr.appendChild(funcNameTd);
-
-      // Size input
-      const sizeTd = document.createElement("td");
-      const sizeInput = document.createElement("input");
-      sizeInput.type = "number";
-      sizeInput.className = "func-size-input";
-      sizeInput.min = "1";
-      sizeInput.value = String(func.size || 5);
-      sizeInput.addEventListener("change", () => {
-        if (this.currentTile?.functions) {
-          this.currentTile.functions[index].size = parseInt(sizeInput.value, 10) || 5;
-          this.isDirty = true;
-        }
-      });
-      sizeTd.appendChild(sizeInput);
-      tr.appendChild(sizeTd);
-
-      // Delete button
-      const actionsTd = document.createElement("td");
-      const deleteBtn = document.createElement("button");
-      deleteBtn.className = "btn-small btn-danger";
-      deleteBtn.textContent = "🗑️";
-      deleteBtn.addEventListener("click", () => {
-        if (this.currentTile?.functions) {
-          this.currentTile.functions.splice(index, 1);
-          this.isDirty = true;
-          // Re-render functions section
-          section.innerHTML = "";
-          section.appendChild(header);
-          section.appendChild(this.renderFunctionsTable(this.currentTile, header));
-        }
-      });
-      actionsTd.appendChild(deleteBtn);
-      tr.appendChild(actionsTd);
-
-      tbody?.appendChild(tr);
-    });
-
-    // Add function row
-    const addRow = document.createElement("tr");
-    addRow.className = "function-add-row";
-    addRow.innerHTML = `
-      <td>
-        <select class="func-select" id="new-func-name">
-          <option value="">— Select —</option>
-          <option value="lvlAvgSquare">lvlAvgSquare</option>
-          <option value="lvlAvg">lvlAvg</option>
-          <option value="lvlDiff">lvlDiff</option>
-        </select>
-      </td>
-      <td><input type="number" class="func-size-input" min="1" value="5" id="new-func-size" /></td>
-      <td><button class="btn-small primary" id="btn-add-func">➕ Add</button></td>
-    `;
-    tbody?.appendChild(addRow);
-
-    // Bind add function handler
-    const addBtn = document.getElementById("btn-add-func");
-    addBtn?.addEventListener("click", () => {
-      const funcName = (document.getElementById("new-func-name") as HTMLSelectElement)?.value;
-      const funcSize = parseInt((document.getElementById("new-func-size") as HTMLInputElement)?.value || "5", 10);
-
-      if (!funcName) {
-        this.stateManager.setError("Please select a function name");
-        return;
       }
-
-      if (!this.currentTile) return;
-      if (!this.currentTile.functions) this.currentTile.functions = [];
-      this.currentTile.functions.push({
-        key: funcName,
-        size: funcSize,
-      });
-      this.isDirty = true;
-
-      // Re-render functions section
-      section.innerHTML = "";
-      section.appendChild(header);
-      section.appendChild(this.renderFunctionsTable(this.currentTile, header));
-    });
+    );
+    this.functionsEditor.render();
 
     return section;
-  }
-
-  /**
-   * Helper to render function table body.
-   */
-  private renderFunctionsTable(tile: TileConfig, header: HTMLElement): HTMLElement {
-    const table = document.createElement("table");
-    table.className = "function-table";
-    table.innerHTML = `
-      <thead>
-        <tr>
-          <th>Function Name</th>
-          <th>Size</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    `;
-
-    const tbody = table.querySelector("tbody");
-
-    tile.functions?.forEach((func, index) => {
-      const tr = document.createElement("tr");
-
-      // Function name
-      const funcNameTd = document.createElement("td");
-      const funcSelect = document.createElement("select");
-      funcSelect.className = "func-select";
-      ["lvlAvgSquare", "lvlAvg", "lvlDiff"].forEach((name) => {
-        const option = document.createElement("option");
-        option.value = name;
-        option.textContent = name;
-        if (func.key === name) option.selected = true;
-        funcSelect.appendChild(option);
-      });
-      funcSelect.addEventListener("change", () => {
-        if (tile.functions) {
-          tile.functions[index].key = funcSelect.value;
-          this.isDirty = true;
-        }
-      });
-      funcNameTd.appendChild(funcSelect);
-      tr.appendChild(funcNameTd);
-
-      // Size
-      const sizeTd = document.createElement("td");
-      const sizeInput = document.createElement("input");
-      sizeInput.type = "number";
-      sizeInput.className = "func-size-input";
-      sizeInput.min = "1";
-      sizeInput.value = String(func.size || 5);
-      sizeInput.addEventListener("change", () => {
-        if (tile.functions) {
-          tile.functions[index].size = parseInt(sizeInput.value, 10) || 5;
-          this.isDirty = true;
-        }
-      });
-      sizeTd.appendChild(sizeInput);
-      tr.appendChild(sizeTd);
-
-      // Delete
-      const actionsTd = document.createElement("td");
-      const deleteBtn = document.createElement("button");
-      deleteBtn.className = "btn-small btn-danger";
-      deleteBtn.textContent = "🗑️";
-      deleteBtn.addEventListener("click", () => {
-        if (tile.functions) {
-          tile.functions.splice(index, 1);
-          this.isDirty = true;
-          header.textContent = `🔧 Terrain Functions (${(tile.functions?.length || 0)})`;
-          const parent = table.parentElement;
-          if (parent) {
-            parent.innerHTML = "";
-            parent.appendChild(this.renderFunctionsTable(tile, header));
-          }
-        }
-      });
-      actionsTd.appendChild(deleteBtn);
-      tr.appendChild(actionsTd);
-
-      tbody?.appendChild(tr);
-    });
-
-    // Add row
-    const addRow = document.createElement("tr");
-    addRow.className = "function-add-row";
-    addRow.innerHTML = `
-      <td>
-        <select class="func-select" id="new-func-name">
-          <option value="">— Select —</option>
-          <option value="lvlAvgSquare">lvlAvgSquare</option>
-          <option value="lvlAvg">lvlAvg</option>
-          <option value="lvlDiff">lvlDiff</option>
-        </select>
-      </td>
-      <td><input type="number" class="func-size-input" min="1" value="5" id="new-func-size" /></td>
-      <td><button class="btn-small primary" id="btn-add-func">➕ Add</button></td>
-    `;
-    tbody?.appendChild(addRow);
-
-    setTimeout(() => {
-      const addBtnEl = document.getElementById("btn-add-func");
-      addBtnEl?.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const funcName = (document.getElementById("new-func-name") as HTMLSelectElement)?.value;
-        const funcSize = parseInt((document.getElementById("new-func-size") as HTMLInputElement)?.value || "5", 10);
-
-        if (!funcName) {
-          this.stateManager.setError("Please select a function name");
-          return;
-        }
-
-        if (!tile.functions) tile.functions = [];
-        tile.functions.push({ key: funcName, size: funcSize });
-        this.isDirty = true;
-        header.textContent = `🔧 Terrain Functions (${tile.functions.length})`;
-        const parent = table.parentElement;
-        if (parent) {
-          parent.innerHTML = "";
-          parent.appendChild(this.renderFunctionsTable(tile, header));
-        }
-      });
-    }, 0);
-
-    return table;
   }
 
   /**
@@ -802,6 +577,10 @@ export class TileEditorPanel {
     if (this.propertiesEditor) {
       this.propertiesEditor.destroy();
       this.propertiesEditor = null;
+    }
+    if (this.functionsEditor) {
+      this.functionsEditor.destroy();
+      this.functionsEditor = null;
     }
     if (this.assetListEditor) {
       this.assetListEditor.destroy();
