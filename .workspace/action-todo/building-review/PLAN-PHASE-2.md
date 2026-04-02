@@ -12,7 +12,7 @@
   - Detail: Export the configured Oak `Router` instance.
   - Detail: File should be under 200 lines after extraction.
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/routes/building.ts` router module
+- [x] Task: Create `IsoGame/wcBuilding2/editor/routes/building.ts` router module
   - Detail: Extract all `/editor/*building*` endpoints: POST extract, POST save, POST save-as, POST duplicate, GET load.
   - Detail: Import from `configPaths.ts`, `duplicateConfig.ts` (Phase 1), and the extractor/loader modules as needed.
   - Detail: Export the configured Oak `Router` instance.
