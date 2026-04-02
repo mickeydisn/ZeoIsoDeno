@@ -28,13 +28,13 @@
 
 import { Router } from "https://deno.land/x/oak/mod.ts";
 import { ConfigExtractor } from "./extractor.ts";
-import type { BuildingConfig, TileConfig } from "./types.ts";
-import { validateBuildingConfig, sanitizeBuildingConfig, formatValidationSummary, formatTileRefValidationSummary, validateTileReferences } from "./validation.ts";
+import type { BuildingConfig } from "./types.ts";
 import { CURRENT_VERSION, SUPPORTED_VERSIONS } from "./types.ts";
 import { getBuildingsDir } from "./configPaths.ts";
 import { assetCollectionRouter } from "./routes/assetCollection.ts";
 import { buildingRouter } from "./routes/building.ts";
 import { previewRouter } from "./routes/preview.ts";
+import { validationRouter } from "./routes/validation.ts";
 
 // ============================================================================
 // Editor Router
@@ -46,6 +46,7 @@ const editorRouter = new Router();
 editorRouter.use(assetCollectionRouter.routes(), assetCollectionRouter.allowedMethods());
 editorRouter.use(buildingRouter.routes(), buildingRouter.allowedMethods());
 editorRouter.use(previewRouter.routes(), previewRouter.allowedMethods());
+editorRouter.use(validationRouter.routes(), validationRouter.allowedMethods());
 
 // ============================================================================
 // GET /editor/list/classes — List Extractable TS Classes
@@ -107,200 +108,6 @@ editorRouter.get("/editor/list", async (ctx) => {
   }
 });
 
-
-// ============================================================================
-// GET /editor/assets/list — List Available Game Assets
-// ============================================================================
-
-editorRouter.get("/editor/assets/list", async (ctx) => {
-  try {
-    const assetDir = `${Deno.cwd()}/img/asset_opti`;
-    const assets: Array<{ key: string; category: string; filename: string }> = [];
-
-    try {
-      for await (const entry of Deno.readDir(assetDir)) {
-        if (entry.isFile && entry.name.endsWith(".png")) {
-          const key = entry.name.replace(".png", "");
-          const match = key.match(/^([A-Za-z]+)/);
-          const category = match ? match[1] : "Other";
-
-          assets.push({ key, category, filename: entry.name });
-        }
-      }
-    } catch {
-      // Directory doesn't exist or can't be read
-    }
-
-    const grouped = assets.reduce((acc, asset) => {
-      if (!acc[asset.category]) {
-        acc[asset.category] = [];
-      }
-      acc[asset.category].push(asset);
-      return acc;
-    }, {} as Record<string, typeof assets>);
-
-    ctx.response.body = {
-      assets,
-      categories: Object.keys(grouped).sort(),
-      total: assets.length,
-    };
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to list assets: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-});
-
-
-// ============================================================================
-// POST /editor/validate/building — Validate Building Config
-// ============================================================================
-
-editorRouter.post("/editor/validate/building", async (ctx) => {
-  try {
-    if (!ctx.request.hasBody) {
-      ctx.response.status = 400;
-      ctx.response.body = { success: false, error: "Missing request body" };
-      return;
-    }
-
-    const config: BuildingConfig = await ctx.request.body.json();
-
-    if (config.type !== "building") {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Invalid config type: expected 'building'",
-      };
-      return;
-    }
-
-    const result = validateBuildingConfig(config);
-
-    ctx.response.body = {
-      success: result.valid,
-      valid: result.valid,
-      issues: result.issues,
-      summary: formatValidationSummary(result),
-      stats: {
-        totalTiles: result.stats.totalTiles,
-        uniqueFaceKeysInTiles: Array.from(result.stats.uniqueFaceKeysInTiles),
-        uniqueFaceKeysInLinks: Array.from(result.stats.uniqueFaceKeysInLinks),
-        orphanedFaceKeys: result.stats.orphanedFaceKeys,
-        missingWeightEntries: result.stats.missingWeightEntries,
-      },
-    };
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to validate config: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-});
-
-// ============================================================================
-// POST /editor/validate-tile-refs/building — Validate Tile References
-// ============================================================================
-
-editorRouter.post("/editor/validate-tile-refs/building", async (ctx) => {
-  try {
-    if (!ctx.request.hasBody) {
-      ctx.response.status = 400;
-      ctx.response.body = { success: false, error: "Missing request body" };
-      return;
-    }
-
-    const config: BuildingConfig = await ctx.request.body.json();
-
-    if (config.type !== "building") {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Invalid config type: expected 'building'",
-      };
-      return;
-    }
-
-    let body: { collections?: Record<string, { tiles: TileConfig[] }> } = {};
-    try {
-      body = ctx.request.hasBody ? (await ctx.request.body.json()) as { collections?: Record<string, { tiles: TileConfig[] }> } : {};
-    } catch { /* no body provided */ }
-
-    const loadedCollections = new Map<string, { tiles: TileConfig[] }>();
-    if (body.collections) {
-      for (const [id, coll] of Object.entries(body.collections)) {
-        loadedCollections.set(id, coll);
-      }
-    }
-
-    const result = validateTileReferences(config, loadedCollections);
-
-    ctx.response.body = {
-      success: result.valid,
-      valid: result.valid,
-      issues: result.issues,
-      summary: formatTileRefValidationSummary(result),
-      stats: result.stats,
-    };
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to validate tile references: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-});
-
-// ============================================================================
-// POST /editor/sanitize/building — Sanitize Building Config
-// ============================================================================
-
-editorRouter.post("/editor/sanitize/building", async (ctx) => {
-  try {
-    if (!ctx.request.hasBody) {
-      ctx.response.status = 400;
-      ctx.response.body = { success: false, error: "Missing request body" };
-      return;
-    }
-
-    const config: BuildingConfig = await ctx.request.body.json();
-
-    if (config.type !== "building") {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Invalid config type: expected 'building'",
-      };
-      return;
-    }
-
-    const sanitized = sanitizeBuildingConfig(structuredClone(config));
-    const result = validateBuildingConfig(sanitized);
-
-    ctx.response.body = {
-      success: true,
-      config: sanitized,
-      validationResult: {
-        valid: result.valid,
-        issues: result.issues,
-        summary: formatValidationSummary(result),
-      },
-    };
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to sanitize config: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-});
 
 // ============================================================================
 // GET /editor/registry/building/:name/metadata — Get Config Metadata
