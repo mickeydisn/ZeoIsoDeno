@@ -18,6 +18,7 @@ import { FaceEditor } from "../components/faceEditor.ts";
 import { AssetListEditor } from "../components/assetList.ts";
 import { Canvas2DPreview } from "../components/canvas2d.ts";
 import { AssetPreviewService } from "../services/assetPreview.ts";
+import { TilePropertiesEditor } from "../components/tilePropertiesEditor.ts";
 
 // ============================================================================
 // Tile Edit Context
@@ -57,6 +58,7 @@ export class TileEditorPanel {
 
   // Component instances
   private faceEditor: FaceEditor | null = null;
+  private propertiesEditor: TilePropertiesEditor | null = null;
   private assetListEditor: AssetListEditor | null = null;
   private canvasPreview: Canvas2DPreview | null = null;
   private assetPreviewService: AssetPreviewService;
@@ -224,7 +226,7 @@ export class TileEditorPanel {
   }
 
   /**
-   * Render header with tile ID and source info.
+   * Render header with tile title and source info.
    */
   private renderHeader(): HTMLElement {
     const header = document.createElement("div");
@@ -246,22 +248,6 @@ export class TileEditorPanel {
     titleRow.appendChild(closeBtn);
 
     header.appendChild(titleRow);
-
-    // Tile ID input
-    const idRow = document.createElement("div");
-    idRow.className = "tile-id-row";
-    idRow.innerHTML = `
-      <label>Tile ID:</label>
-      <input type="text" class="tile-id-input" value="${this.currentTile?.id || ""}" />
-    `;
-    const idInput = idRow.querySelector("input") as HTMLInputElement;
-    idInput.addEventListener("input", () => {
-      if (this.currentTile) {
-        this.currentTile.id = idInput.value;
-        this.isDirty = true;
-      }
-    });
-    header.appendChild(idRow);
 
     // Source info (read-only)
     if (this.context?.sourceInfo) {
@@ -310,7 +296,7 @@ export class TileEditorPanel {
   }
 
   /**
-   * Render properties section.
+   * Render properties section using TilePropertiesEditor component.
    */
   private renderPropertiesSection(): HTMLElement {
     const section = document.createElement("div");
@@ -322,86 +308,21 @@ export class TileEditorPanel {
 
     if (!this.currentTile) return section;
 
-    const form = document.createElement("div");
-    form.className = "tile-properties-form";
+    const container = document.createElement("div");
+    container.className = "tile-properties-container";
+    section.appendChild(container);
 
-    // Weight
-    const weightRow = document.createElement("div");
-    weightRow.className = "prop-row";
-    weightRow.innerHTML = `
-      <label>Weight (0-∞):</label>
-      <input type="number" class="prop-input" min="0" value="${this.currentTile.weight ?? 0}" />
-    `;
-    const weightInput = weightRow.querySelector("input") as HTMLInputElement;
-    weightInput.addEventListener("change", () => {
-      const val = Math.max(0, parseInt(weightInput.value, 10) || 0);
-      weightInput.value = String(val);
-      if (this.currentTile) {
-        this.currentTile.weight = val;
+    // Initialize properties editor component
+    this.propertiesEditor = new TilePropertiesEditor(
+      container,
+      this.currentTile,
+      () => {
         this.isDirty = true;
+        this.renderCanvasPreview();
       }
-    });
-    form.appendChild(weightRow);
+    );
+    this.propertiesEditor.render();
 
-    // Checkboxes
-    const checkboxes: Array<{ key: keyof TileConfig; label: string; title: string }> = [
-      { key: "allowMove", label: "Allow Move", title: "Allow terrain modification on this tile" },
-      { key: "isFrise", label: "Is Frise", title: "Decorative tile (no collision)" },
-      { key: "empty", label: "Empty", title: "Empty tile (no assets rendered)" },
-    ];
-
-    checkboxes.forEach(({ key, label, title }) => {
-      const row = document.createElement("div");
-      row.className = "prop-row prop-checkbox";
-      row.innerHTML = `
-        <label title="${title}">
-          <input type="checkbox" ${this.currentTile?.[key] ? "checked" : ""} />
-          ${label}
-        </label>
-      `;
-      const checkbox = row.querySelector("input") as HTMLInputElement;
-      checkbox.addEventListener("change", () => {
-        if (this.currentTile) {
-          (this.currentTile[key] as boolean) = checkbox.checked;
-          this.isDirty = true;
-        }
-      });
-      form.appendChild(row);
-    });
-
-    // Optional Height
-    const heightRow = document.createElement("div");
-    heightRow.className = "prop-row";
-    heightRow.innerHTML = `
-      <label>Height (h):</label>
-      <input type="number" class="prop-input" min="0" value="${this.currentTile.h ?? ""}" />
-    `;
-    const heightInput = heightRow.querySelector("input") as HTMLInputElement;
-    heightInput.addEventListener("change", () => {
-      if (this.currentTile) {
-        this.currentTile.h = heightInput.value ? parseInt(heightInput.value, 10) : undefined;
-        this.isDirty = true;
-      }
-    });
-    form.appendChild(heightRow);
-
-    // Optional Level
-    const levelRow = document.createElement("div");
-    levelRow.className = "prop-row";
-    levelRow.innerHTML = `
-      <label>Level (lvl):</label>
-      <input type="number" class="prop-input" value="${this.currentTile.lvl ?? ""}" />
-    `;
-    const levelInput = levelRow.querySelector("input") as HTMLInputElement;
-    levelInput.addEventListener("change", () => {
-      if (this.currentTile) {
-        this.currentTile.lvl = levelInput.value ? parseInt(levelInput.value, 10) : undefined;
-        this.isDirty = true;
-      }
-    });
-    form.appendChild(levelRow);
-
-    section.appendChild(form);
     return section;
   }
 
@@ -885,6 +806,10 @@ export class TileEditorPanel {
     if (this.faceEditor) {
       this.faceEditor.destroy();
       this.faceEditor = null;
+    }
+    if (this.propertiesEditor) {
+      this.propertiesEditor.destroy();
+      this.propertiesEditor = null;
     }
     if (this.assetListEditor) {
       this.assetListEditor.destroy();

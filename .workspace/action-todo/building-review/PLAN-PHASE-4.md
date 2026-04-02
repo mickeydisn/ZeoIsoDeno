@@ -6,10 +6,11 @@
 
 ## Tasks
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/web/js/components/tilePropertiesEditor.ts`
-  - Detail: Extract the tile basic properties rendering and editing logic from `tile.ts` (section rendering methods for id, type, cost, connections, etc.).
-  - Detail: Export a class or function `TilePropertiesEditor` with methods `render(config, container)` and `getValues()`.
-  - Detail: Remove `innerHTML` usage in favor of `document.createElement` or a safe template approach (addresses tile.ts Issue #2).
+ - [x] Task: Create `IsoGame/wcBuilding2/editor/web/js/components/tilePropertiesEditor.ts`
+   - Detail: Extract the tile basic properties rendering and editing logic from `tile.ts` (tile ID, weight, boolean flags, height, level).
+   - Detail: Export a class `TilePropertiesEditor` with methods `render()` (uses tile from constructor) and `getValues()`.
+   - Detail: Remove `innerHTML` usage in favor of `document.createElement` for all form element creation (addresses tile.ts Issue #2).
+   - Detail: Integrated into `tile.ts` — replaced `renderPropertiesSection()` and `renderHeader()` tile ID input, added cleanup in `close()`.
 
 - [ ] Task: Create `IsoGame/wcBuilding2/editor/web/js/components/tileFaceEditor.ts`
   - Detail: Extract face-specific editing logic from `tile.ts` (the FaceEditor component integration, face rendering, face link handling).
