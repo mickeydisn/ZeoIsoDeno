@@ -39,6 +39,7 @@ import {
   ensureDir,
 } from "./configPaths.ts";
 import { duplicateConfig } from "./services/duplicateConfig.ts";
+import { buildTempConfig } from "./services/previewBuilder.ts";
 import sharp from "npm:sharp";
 
 // ============================================================================
@@ -1266,82 +1267,6 @@ editorRouter.get("/editor/asset-preview/:key", async (ctx) => {
     ctx.response.body = `Failed to load asset: ${error instanceof Error ? error.message : String(error)}`;
   }
 });
-
-/**
- * Build a temporary WcAbstractBuildConf from JSON config for preview generation.
- * Expands unique faceLinks to bidirectional pairs and maps tiles to game format.
- */
-function buildTempConfig(json: BuildingConfig): WcAbstractBuildConf {
-  const conf = new WcAbstractBuildConf({
-    growLoopCount: json.params?.growLoopCount ?? 50,
-    endLoopMax: json.params?.endLoopMax ?? 200,
-  });
-
-  // Copy face link weights
-  conf.faceLinkWeight = { ...json.faceLinkWeight };
-
-  // Expand unique faceLinks to bidirectional pairs
-  conf.faceLinks = json.faceLinks.flatMap(
-    ([a, b]: [string, string]) => [
-      [a, b] as [string, string],
-      [b, a] as [string, string],
-    ],
-  );
-
-  // Map start tiles
-  conf.startTileOptions = (json.startTiles || []).map(
-    tileFromJSON,
-  );
-
-  // Map tiles
-  conf.listTileOptions = (json.tiles || []).map(tileFromJSON);
-
-  return conf;
-}
-
-/**
- * Convert a TileConfig JSON object back to a WcConfTile.
- */
-function tileFromJSON(jsonTile: {
-  face: (string | null)[];
-  weight: number;
-  assets?: Array<{
-    key?: string;
-    keyR?: number;
-    sufix?: string;
-    h?: number;
-    off?: { x: number; y: number };
-  }>;
-  functions?: Array<{ key?: string; keyR?: number; sufix?: string; size?: number; off?: { x: number; y: number } }>;
-  allowMove?: boolean;
-  isFrise?: boolean;
-  empty?: boolean;
-  color?: [number, number, number];
-  colorT?: [number, number, number];
-  h?: number;
-  lvl?: number;
-}): any {
-  const tile: any = {
-    face: jsonTile.face as [string | null, string | null, string | null, string | null],
-    weight: jsonTile.weight,
-  };
-
-  if (jsonTile.assets?.length) {
-    tile.assets = jsonTile.assets.map((a) => ({ ...a }));
-  }
-  if (jsonTile.functions?.length) {
-    tile.functions = jsonTile.functions.map((f) => ({ ...f }));
-  }
-  if (jsonTile.allowMove !== undefined) tile.allowMove = jsonTile.allowMove;
-  if (jsonTile.isFrise !== undefined) tile.isFrise = jsonTile.isFrise;
-  if (jsonTile.empty !== undefined) tile.empty = jsonTile.empty;
-  if (jsonTile.color) tile.color = [...jsonTile.color];
-  if (jsonTile.colorT) tile.colorT = [...jsonTile.colorT];
-  if (jsonTile.h !== undefined) tile.h = jsonTile.h;
-  if (jsonTile.lvl !== undefined) tile.lvl = jsonTile.lvl;
-
-  return tile;
-}
 
 // ============================================================================
 // Export

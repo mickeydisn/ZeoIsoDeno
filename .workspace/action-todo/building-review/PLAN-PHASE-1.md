@@ -16,7 +16,7 @@
   - Detail: The function should return a typed result `{ success: boolean; path?: string; error?: string }`.
   - Update `server.ts` save-as and duplicate endpoints to call this shared function.
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/services/previewBuilder.ts` module
+- [x] Task: Create `IsoGame/wcBuilding2/editor/services/previewBuilder.ts` module
   - Detail: Move `buildTempConfig` and `tileFromJSON` helper functions from `server.ts` (lines 1489-1559) into this new service module.
   - Detail: Define proper return type for `tileFromJSON` as `WcConfTile` or a dedicated `TileFromJsonResult` interface instead of `any` (addresses Issue #4 in `server.ts`).
   - Detail: Update `server.ts` preview endpoint to import from `previewBuilder.ts`.
