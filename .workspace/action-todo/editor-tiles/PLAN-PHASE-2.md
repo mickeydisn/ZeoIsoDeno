@@ -5,11 +5,11 @@
 
 ## Tasks
 
-- [ ] Task: Import confsGroup_to_confsTile in loader.ts
+- [x] Task: Import confsGroup_to_confsTile in loader.ts
   - Detail: Add import from "../wcUtils.ts"
   - File: `IsoGame/wcBuilding2/editor/loader.ts`
 
-- [ ] Task: Implement group expansion in loading pipeline
+- [x] Task: Implement group expansion in loading pipeline
   - Detail: When loading config, if groups exist, expand them to tiles and merge with existing tiles array
   - File: `IsoGame/wcBuilding2/editor/loader.ts`
   - Note: Expansion happens at load time, stored config remains untouched

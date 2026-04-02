@@ -11,14 +11,15 @@
  * Round-trip flow: extract (TS → JSON) → edit (UI) → save (JSON) → load (JSON → TS) → generate
  */
 
-import { WcAbstractBuildConf, WcConfTile, WcConfTileAsset, WcConfTileFunction } from "../wcAbstractBuildConf.ts";
+import { WcAbstractBuildConf, WcConfTile, WcConfTileAsset, WcConfTileFunction, WcConfRawGroup } from "../wcAbstractBuildConf.ts";
 import type { WcFace } from "../wcBuildFace.ts";
-import type { BuildingConfig, TileConfig } from "./types.ts";
+import type { BuildingConfig, TileConfig, TileGroupConfig } from "./types.ts";
 import { getBuildingConfigEntry } from "../../tools/buildingConfigRegistry.ts";
 import { CURRENT_VERSION } from "./types.ts";
 import { migrateBuildingConfig, migrateAssetCollectionConfig, MigrationResult, isSupportedVersion } from "./migration.ts";
 import { getBuildingPath, getBuildingsDir } from "./configPaths.ts";
 import { tryImportClass } from "./dynamicImport.ts";
+import { confsGroup_to_confsTile } from "../wcUtils.ts";
 
 // ============================================================================
 // Index type for face key indexing
@@ -178,9 +179,19 @@ export class ConfigLoader {
       ([a, b]) => [[a, b], [b, a]] as [string, string][],
     );
 
+    // Expand tile groups if present
+    if (json.groups && json.groups.length > 0) {
+      const expandedGroupTiles = confsGroup_to_confsTile(json.groups as unknown as WcConfRawGroup[]);
+      conf.listTileOptions = [
+        ...json.tiles.map((t) => this.tileFromJSON(t)),
+        ...expandedGroupTiles
+      ];
+    } else {
+      conf.listTileOptions = json.tiles.map((t) => this.tileFromJSON(t));
+    }
+    
     // Convert tiles from JSON format to runtime format
     conf.startTileOptions = json.startTiles.map((t) => this.tileFromJSON(t));
-    conf.listTileOptions = json.tiles.map((t) => this.tileFromJSON(t));
 
     // Set mainLvl at runtime (not stored in JSON)
     const mainLvl = 0;
