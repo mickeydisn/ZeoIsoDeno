@@ -17,7 +17,7 @@
   - Detail: Target file size: under 300 lines for the extraction engine. (~ 340 lines with code + comments)
   - Detail: Update imports in `server.ts` and other consumers. ✅ (`extractor.ts` now re-exports from `extractionEngine.ts` for backward compat)
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/sanitizer.ts` module
+- [x] Task: Create `IsoGame/wcBuilding2/editor/sanitizer.ts` module
   - Detail: Extract the `sanitizeBuildingConfig` function and related sanitization utilities from `validation.ts` into this new file.
   - Detail: This separates fix/repair logic from validation/checking logic.
 
