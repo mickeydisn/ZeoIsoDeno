@@ -8,7 +8,12 @@
  */
 
 import { ConfigExtractor, extractAllConfigs } from "./extractor.ts";
-import { isAssetCollectionConfig, isBuildingConfig } from "./types.ts";
+import {
+  CURRENT_VERSION,
+  isAssetCollectionConfig,
+  isBuildingConfig,
+  type TileGroupConfig,
+} from "./types.ts";
 
 // ============================================================================
 // Validation Functions
@@ -20,8 +25,8 @@ function validateBuildingConfig(
   const errors: string[] = [];
 
   // Check required fields
-  if (config.version !== "1.0") {
-    errors.push(`Expected version "1.0", got "${config.version}"`);
+  if (config.version !== CURRENT_VERSION) {
+    errors.push(`Expected version "${CURRENT_VERSION}", got "${config.version}"`);
   }
   if (config.type !== "building") {
     errors.push(`Expected type "building", got "${config.type}"`);
@@ -32,7 +37,7 @@ function validateBuildingConfig(
   if (!config.metadata.registryId) errors.push("Missing metadata.registryId");
 
   // Check params (mainLvl should NOT be present)
-  if ("mainLvl" in (config.params as any)) {
+  if ("mainLvl" in config.params) {
     errors.push("mainLvl should NOT be in params (it's a runtime value)");
   }
   if (typeof config.params.growLoopCount !== "number") {
@@ -55,6 +60,12 @@ function validateBuildingConfig(
     if (typeof tile.weight !== "number") {
       errors.push(`tiles[${i}]: weight must be a number`);
     }
+  }
+
+  // Check groups
+  if (config.groups) {
+    const groupErrors = validateTileGroups(config.groups, "building");
+    errors.push(...groupErrors);
   }
 
   // Check start tiles
@@ -88,8 +99,8 @@ function validateAssetCollectionConfig(
 ): string[] {
   const errors: string[] = [];
 
-  if (config.version !== "1.0") {
-    errors.push(`Expected version "1.0", got "${config.version}"`);
+  if (config.version !== CURRENT_VERSION) {
+    errors.push(`Expected version "${CURRENT_VERSION}", got "${config.version}"`);
   }
   if (config.type !== "assetCollection") {
     errors.push(`Expected type "assetCollection", got "${config.type}"`);
@@ -108,7 +119,142 @@ function validateAssetCollectionConfig(
     }
   }
 
+  // Check groups
+  if (config.groups) {
+    const groupErrors = validateTileGroups(config.groups, "assetCollection");
+    errors.push(...groupErrors);
+  }
+
   return errors;
+}
+
+// ============================================================================
+// Group Validation Functions
+// ============================================================================
+
+function validateTileGroups(
+  groups: TileGroupConfig[],
+  configType: string,
+): string[] {
+  const errors: string[] = [];
+  const groupIds = new Set<string>();
+
+  for (let i = 0; i < groups.length; i++) {
+    const group = groups[i];
+
+    // Check required group id
+    if (!group.id) {
+      errors.push(`${configType} groups[${i}]: Missing id`);
+    } else if (groupIds.has(group.id)) {
+      errors.push(`${configType} groups[${i}]: Duplicate id "${group.id}"`);
+    }
+    groupIds.add(group.id);
+
+    // Check face exists and has exactly 4 entries
+    if (!group.face || group.face.length !== 4) {
+      errors.push(
+        `${configType} groups[${i}]: Expected face array with 4 elements, got ${group.face?.length || 0}`,
+      );
+    }
+
+    // Check items array is not empty
+    if (!group.items || group.items.length === 0) {
+      errors.push(`${configType} groups[${i}]: items array must not be empty`);
+    }
+
+    // Check items do not have face property defined
+    if (group.items) {
+      for (let j = 0; j < group.items.length; j++) {
+        const item = group.items[j] as Record<string, unknown>;
+        if ("face" in item) {
+          errors.push(
+            `${configType} groups[${i}].items[${j}]: face property must not be defined (inherited from group)`,
+          );
+        }
+      }
+    }
+
+    // Check weight is valid number (if present)
+    if (group.weight !== undefined && typeof group.weight !== "number") {
+      errors.push(`${configType} groups[${i}]: weight must be a number`);
+    }
+  }
+
+  return errors;
+}
+
+// ============================================================================
+// Group Detection Tests
+// ============================================================================
+
+function testGroupDetection(): void {
+  console.log("\n=== Group Detection Tests ===\n");
+
+  const testTiles = [
+    { face: ["A", "B", "C", "D"], weight: 1, id: "tile1" },
+    { face: ["A", "B", "C", "D"], weight: 2, id: "tile2" },
+    { face: ["A", "B", "C", "D"], weight: 1, id: "tile3" },
+    { face: ["X", "Y", "Z", "W"], weight: 1, id: "tile4" },
+    { face: ["X", "Y", "Z", "W"], weight: 1, id: "tile5" },
+  ];
+
+  // Test detectTileGroups
+  const { groups, remainingTiles: _remainingTiles } = ConfigExtractor.detectTileGroups(testTiles, 2);
+
+  if (groups.length === 2) {
+    console.log(`✓ detectTileGroups: Found ${groups.length} groups`);
+  } else {
+    console.log(`❌ detectTileGroups: Expected 2 groups, got ${groups.length}`);
+  }
+
+  // Verify group items don't have face property
+  let allItemsValid = true;
+  for (const group of groups) {
+    for (const item of group.items) {
+      if ("face" in item) {
+        allItemsValid = false;
+        console.log(`❌ Group item has face property (should be omitted)`);
+      }
+    }
+  }
+  if (allItemsValid) {
+    console.log("✓ detectTileGroups: All group items correctly omit face property");
+  }
+
+  // Test compressTileGroups
+  const compressed = ConfigExtractor.compressTileGroups(testTiles, {
+    enableCompression: true,
+    minGroupSize: 2,
+  });
+
+  if (compressed.groups.length === 2 && compressed.tiles.length === 0) {
+    console.log(`✓ compressTileGroups: Compressed to ${compressed.groups.length} groups`);
+  } else {
+    console.log(
+      `❌ compressTileGroups: Expected 2 groups, 0 remaining tiles, got ${compressed.groups.length} groups, ${compressed.tiles.length} tiles`,
+    );
+  }
+
+  // Test with compression disabled
+  const uncompressed = ConfigExtractor.compressTileGroups(testTiles, {
+    enableCompression: false,
+  });
+
+  if (uncompressed.groups.length === 0 && uncompressed.tiles.length === testTiles.length) {
+    console.log("✓ compressTileGroups: Disabled mode returns all tiles unchanged");
+  } else {
+    console.log("❌ compressTileGroups: Disabled mode should return no groups");
+  }
+
+  // Test single tile should not form a group
+  const singleTile = [{ face: ["A", "A", "A", "A"], weight: 1 }];
+  const singleResult = ConfigExtractor.detectTileGroups(singleTile, 2);
+
+  if (singleResult.groups.length === 0 && singleResult.remainingTiles.length === 1) {
+    console.log("✓ detectTileGroups: Single tile does not form a group");
+  } else {
+    console.log("❌ detectTileGroups: Single tile should remain ungrouped");
+  }
 }
 
 // ============================================================================
@@ -185,6 +331,9 @@ for (const [id, config] of Object.entries(assetCollections)) {
     totalAssetErrors += errors.length;
   }
 }
+
+// Run group detection tests
+testGroupDetection();
 
 // ============================================================================
 // Summary
