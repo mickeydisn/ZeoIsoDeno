@@ -1338,6 +1338,15 @@ export class BuildingEditorPanel {
     });
     actions.appendChild(editBtn);
 
+    const ungroupBtn = document.createElement("button");
+    ungroupBtn.className = "btn-small btn-warning";
+    ungroupBtn.textContent = "Ungroup";
+    ungroupBtn.title = "Expand group into individual tiles";
+    ungroupBtn.addEventListener("click", () => {
+      this.ungroupTiles(config, index);
+    });
+    actions.appendChild(ungroupBtn);
+
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "btn-small btn-danger";
     deleteBtn.textContent = "Delete";
@@ -1482,6 +1491,59 @@ export class BuildingEditorPanel {
         c.groups.splice(index, 1);
       }
     });
+  }
+
+  /**
+   * Ungroup a tile group - expand it into individual tiles.
+   * Each item in the group becomes a separate tile with the group's shared face.
+   */
+  private ungroupTiles(config: BuildingConfig, index: number): void {
+    const groups = config.groups || [];
+    const group = groups[index];
+    
+    if (!group) {
+      this.stateManager.setError("Group not found.");
+      return;
+    }
+
+    if (!group.items || group.items.length === 0) {
+      this.stateManager.setError("Group has no items to ungroup.");
+      return;
+    }
+
+    const itemCount = group.items.length;
+    if (!confirm(`Ungroup "${group.id || `group_${index}`}" into ${itemCount} individual tile(s)?`)) {
+      return;
+    }
+
+    // Create individual tiles from group items
+    // Each item inherits the group's face
+    const newTiles: TileConfig[] = group.items.map((item, itemIndex) => ({
+      id: `${group.id || `group_${index}`}_item_${itemIndex}`,
+      face: [...(group.face || [null, null, null, null])],
+      weight: item.weight ?? 1,
+      assets: item.assets ? [...item.assets] : undefined,
+      functions: item.functions ? [...item.functions] : undefined,
+      empty: item.empty,
+      isFrise: item.isFrise,
+      allowMove: item.allowMove,
+      colorT: item.colorT,
+      color: item.color,
+      h: item.h,
+      lvl: item.lvl,
+    }));
+
+    // Add tiles and remove group
+    this.onConfigChange(config, (c) => {
+      if (!c.tiles) c.tiles = [];
+      c.tiles.push(...newTiles);
+      
+      if (c.groups) {
+        c.groups.splice(index, 1);
+      }
+    });
+
+    this.stateManager.setError(null);
   }
 
   /**

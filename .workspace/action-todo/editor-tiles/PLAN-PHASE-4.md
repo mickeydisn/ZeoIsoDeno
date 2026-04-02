@@ -25,6 +25,6 @@
   - Detail: Add "Create Group from Selected Tiles" button
   - File: `IsoGame/wcBuilding2/editor/web/js/panels/building.ts`
 
-- [ ] Task: Implement group ungroup action
+- [x] Task: Implement group ungroup action
   - Detail: Add "Ungroup" button that expands group into individual tiles
   - File: `IsoGame/wcBuilding2/editor/web/js/panels/building.ts`
