@@ -28,12 +28,12 @@
   - Detail: Import from `validation.ts` module.
   - Detail: Export the configured Oak `Router` instance.
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/routes/listing.ts` router module
+- [x] Task: Create `IsoGame/wcBuilding2/editor/routes/listing.ts` router module
   - Detail: Extract `/editor/list/classes`, `/editor/list`, and `/editor/assets/list` endpoints.
   - Detail: Import from `extractor.ts` and relevant asset listing utilities.
   - Detail: Export the configured Oak `Router` instance.
 
-- [ ] Task: Refactor `IsoGame/wcBuilding2/editor/server.ts` to be a thin router aggregator
+- [x] Task: Refactor `IsoGame/wcBuilding2/editor/server.ts` to be a thin router aggregator
   - Detail: Remove all extracted endpoint handlers. Keep only the main `editorRouter` setup that registers all sub-routers via `editorRouter.use(...)`.
   - Detail: Keep shared middleware, imports, and router aggregation logic only.
   - Detail: Target file size: under 100 lines.

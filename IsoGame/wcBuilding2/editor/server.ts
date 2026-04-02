@@ -27,12 +27,12 @@
  */
 
 import { Router } from "https://deno.land/x/oak/mod.ts";
-import { ConfigExtractor } from "./extractor.ts";
 import type { BuildingConfig } from "./types.ts";
 import { CURRENT_VERSION, SUPPORTED_VERSIONS } from "./types.ts";
 import { getBuildingsDir } from "./configPaths.ts";
 import { assetCollectionRouter } from "./routes/assetCollection.ts";
 import { buildingRouter } from "./routes/building.ts";
+import { listingRouter } from "./routes/listing.ts";
 import { previewRouter } from "./routes/preview.ts";
 import { validationRouter } from "./routes/validation.ts";
 
@@ -45,69 +45,9 @@ const editorRouter = new Router();
 // Register sub-routers
 editorRouter.use(assetCollectionRouter.routes(), assetCollectionRouter.allowedMethods());
 editorRouter.use(buildingRouter.routes(), buildingRouter.allowedMethods());
+editorRouter.use(listingRouter.routes(), listingRouter.allowedMethods());
 editorRouter.use(previewRouter.routes(), previewRouter.allowedMethods());
 editorRouter.use(validationRouter.routes(), validationRouter.allowedMethods());
-
-// ============================================================================
-// GET /editor/list/classes — List Extractable TS Classes
-// ============================================================================
-
-editorRouter.get("/editor/list/classes", (ctx) => {
-  try {
-    const buildingClasses = ConfigExtractor.listBuildingClasses();
-    const assetCollectionClasses = ConfigExtractor.listAssetCollectionClasses();
-
-    ctx.response.body = {
-      buildings: buildingClasses,
-      assetCollections: assetCollectionClasses,
-    };
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to list classes: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-});
-
-// ============================================================================
-// GET /editor/list — List All Configs (TS + JSON)
-// ============================================================================
-
-editorRouter.get("/editor/list", async (ctx) => {
-  try {
-    const tsBuildings = ConfigExtractor.listBuildingClasses();
-    const tsAssetCollections = ConfigExtractor.listAssetCollectionClasses();
-
-    const jsonBuildings: string[] = [];
-    const buildingsDir = getBuildingsDir();
-
-    try {
-      for await (const entry of Deno.readDir(buildingsDir)) {
-        if (entry.name.endsWith(".json")) {
-          jsonBuildings.push(entry.name.replace(".json", ""));
-        }
-      }
-    } catch {
-      // Directory doesn't exist yet — that's fine
-    }
-
-    ctx.response.body = {
-      tsBuildings,
-      tsAssetCollections,
-      jsonBuildings,
-    };
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-      success: false,
-      error: `Failed to list configs: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-});
-
 
 // ============================================================================
 // GET /editor/registry/building/:name/metadata — Get Config Metadata
