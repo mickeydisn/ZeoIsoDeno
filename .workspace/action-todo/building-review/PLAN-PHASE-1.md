@@ -21,7 +21,7 @@
   - Detail: Define proper return type for `tileFromJSON` as `WcConfTile` or a dedicated `TileFromJsonResult` interface instead of `any` (addresses Issue #4 in `server.ts`).
   - Detail: Update `server.ts` preview endpoint to import from `previewBuilder.ts`.
 
-- [ ] Task: Create `IsoGame/wcBuilding2/editor/services/assetPreview.ts` module
+- [x] Task: Create `IsoGame/wcBuilding2/editor/services/assetPreview.ts` module
   - Detail: Extract the asset preview image generation logic from `server.ts` (lines 1347-1452) into a dedicated service class or function `generateAssetPreview(key: string): Promise<Uint8Array>`.
   - Detail: Wrap the `npm:sharp` import in a try/catch and provide a graceful fallback (returns a placeholder PNG or throws a descriptive error) to address Issue #3 severity Medium.
   - Detail: Update `server.ts` `/editor/asset-preview/:key` endpoint to use the new service.

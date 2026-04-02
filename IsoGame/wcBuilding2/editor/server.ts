@@ -40,7 +40,7 @@ import {
 } from "./configPaths.ts";
 import { duplicateConfig } from "./services/duplicateConfig.ts";
 import { buildTempConfig } from "./services/previewBuilder.ts";
-import sharp from "npm:sharp";
+import { generateAssetPreview } from "./services/assetPreview.ts";
 
 // ============================================================================
 // Editor Router
@@ -1162,110 +1162,30 @@ editorRouter.get("/editor/versions", (ctx) => {
 // ============================================================================
 
 editorRouter.get("/editor/asset-preview/:key", async (ctx) => {
-  try {
-    const { key } = ctx.params;
+  const { key } = ctx.params;
 
-    if (!key) {
-      ctx.response.status = 400;
-      ctx.response.body = "Missing key parameter";
-      return;
-    }
-
-    // First, try to load as a standalone PNG file
-    const standalonePath = `${Deno.cwd()}/img/asset_opti/${key}.png`;
-    try {
-      await Deno.stat(standalonePath);
-      const file = await Deno.readFile(standalonePath);
-      ctx.response.headers.set("Content-Type", "image/png");
-      ctx.response.headers.set("Cache-Control", "public, max-age=86400");
-      ctx.response.body = file;
-      ctx.response.status = 200;
-      return;
-    } catch {
-      // Not a standalone file, try to extract from spritesheet config
-    }
-
-    // Parse key to extract from spritesheet: key can be "label" or "label_DIRECTION" or "label#filters"
-    const [baseKey] = key.split("#");
-    const directionMatch = baseKey.match(/^(.+?)_(NE|NW|SE|SW|N|S|E|W)$/);
-    const assetLabel = directionMatch ? directionMatch[1] : baseKey;
-    const direction = directionMatch ? directionMatch[2] : "NE";
-
-    // Load asset config to find the spritesheet
-    const { assetOptiConfig } = await import("../../mapIso/asset/assetOptiConfig.ts");
-    
-    let foundConfig: { src: string; top: number; imgHeight: number; imgWidth: number; scall?: boolean } | null = null;
-    
-    for (const group of assetOptiConfig) {
-      const imageConfig = group.images.find(img => img.label === assetLabel);
-      if (imageConfig) {
-        foundConfig = {
-          src: group.src,
-          top: imageConfig.top,
-          imgHeight: group.imgHeight,
-          imgWidth: group.imgWidth,
-          scall: group.scall,
-        };
-        break;
-      }
-    }
-
-    if (!foundConfig) {
-      ctx.response.status = 404;
-      ctx.response.body = `Asset not found: ${key} (label: ${assetLabel})`;
-      return;
-    }
-
-    // Load the spritesheet using sharp (Deno-compatible via npm:)
-    const spritesheetPath = `${Deno.cwd()}/${foundConfig.src.replace(/^\.\//, "")}`;
-    try {
-      await Deno.stat(spritesheetPath);
-    } catch {
-      ctx.response.status = 404;
-      ctx.response.body = `Spritesheet not found: ${spritesheetPath}`;
-      return;
-    }
-
-    // Calculate cut parameters (matching AssetLoaderOpti logic)
-    const wCutSize = 192; // 256 - 64
-    const hCutSize = 224; // 256 - 32
-    const scall = foundConfig.scall ? 0.7 : 1;
-
-    // Direction determines which column to extract (0=NE, 1=NW, 2=SW, 3=SE)
-    const directionColumns: Record<string, number> = {
-      "NE": 0, "NW": 1, "SW": 2, "SE": 3,
-      "N": 4, "W": 5, "S": 6, "E": 7,
-    };
-    const column = directionColumns[direction] ?? 0;
-
-    // Calculate the row index from the top value
-    const rowIndex = foundConfig.top / foundConfig.imgHeight;
-
-    // Calculate source rectangle for extraction
-    const srcX = wCutSize * column + Math.floor(wCutSize * ((1 - scall) / 2));
-    const srcY = hCutSize * rowIndex + Math.floor(hCutSize * (1 - scall));
-    const srcW = Math.floor(wCutSize * scall);
-    const srcH = hCutSize + 128;
-
-    // Use sharp to extract and resize the sprite
-    const extractedImage = await sharp(spritesheetPath)
-      .extract({ left: srcX, top: srcY, width: srcW, height: srcH })
-      .resize({
-        width: wCutSize,
-        height: Math.floor(hCutSize / scall) + 128,
-        fit: "fill",
-      })
-      .png()
-      .toBuffer();
-
-    ctx.response.headers.set("Content-Type", "image/png");
-    ctx.response.headers.set("Cache-Control", "public, max-age=86400");
-    ctx.response.body = extractedImage;
-    ctx.response.status = 200;
-  } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = `Failed to load asset: ${error instanceof Error ? error.message : String(error)}`;
+  if (!key) {
+    ctx.response.status = 400;
+    ctx.response.body = "Missing key parameter";
+    return;
   }
+
+  const result = await generateAssetPreview(key);
+
+  if ("error" in result) {
+    if (result.error.includes("not found")) {
+      ctx.response.status = 404;
+    } else {
+      ctx.response.status = 500;
+    }
+    ctx.response.body = result.error;
+    return;
+  }
+
+  ctx.response.headers.set("Content-Type", "image/png");
+  ctx.response.headers.set("Cache-Control", "public, max-age=86400");
+  ctx.response.body = result.buffer;
+  ctx.response.status = 200;
 });
 
 // ============================================================================
