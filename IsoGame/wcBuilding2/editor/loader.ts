@@ -17,6 +17,7 @@ import type { BuildingConfig, TileConfig } from "./types.ts";
 import { getBuildingConfigEntry } from "../../tools/buildingConfigRegistry.ts";
 import { CURRENT_VERSION } from "./types.ts";
 import { migrateBuildingConfig, migrateAssetCollectionConfig, MigrationResult, isSupportedVersion } from "./migration.ts";
+import { getBuildingPath, getBuildingsDir } from "./configPaths.ts";
 
 // ============================================================================
 // Index type for face key indexing
@@ -50,7 +51,7 @@ export class ConfigLoader {
   ): Promise<WcAbstractBuildConf> {
     // Step 1: Try JSON first
     try {
-      const jsonPath = `IsoGame/wcBuilding2/editor/conf/buildings/${id}.json`;
+      const jsonPath = getBuildingPath(id);
       const jsonText = await Deno.readTextFile(jsonPath);
       const jsonConfig: BuildingConfig = JSON.parse(jsonText);
 
@@ -308,7 +309,7 @@ export class ConfigLoader {
    */
   static async hasJSONConfig(id: string): Promise<boolean> {
     try {
-      const jsonPath = `IsoGame/wcBuilding2/editor/conf/buildings/${id}.json`;
+      const jsonPath = getBuildingPath(id);
       await Deno.stat(jsonPath);
       return true;
     } catch (_e) {
@@ -326,7 +327,7 @@ export class ConfigLoader {
     { id: string; version: string; tileCount: number }[]
   > {
     const configs: { id: string; version: string; tileCount: number }[] = [];
-    const dirPath = "IsoGame/wcBuilding2/editor/conf/buildings";
+    const dirPath = getBuildingsDir();
 
     try {
       for await (const entry of Deno.readDir(dirPath)) {

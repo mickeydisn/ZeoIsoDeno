@@ -33,6 +33,11 @@ import {
   needsMigration 
 } from "./migration.ts";
 import { CURRENT_VERSION, SUPPORTED_VERSIONS } from "./types.ts";
+import {
+  getBuildingsDir,
+  getAssetCollectionsDir,
+  ensureDir,
+} from "./configPaths.ts";
 import sharp from "npm:sharp";
 
 // ============================================================================
@@ -1450,37 +1455,6 @@ editorRouter.get("/editor/asset-preview/:key", async (ctx) => {
     ctx.response.body = `Failed to load asset: ${error instanceof Error ? error.message : String(error)}`;
   }
 });
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * Get the absolute path to the buildings config directory.
- */
-function getBuildingsDir(): string {
-  return `${Deno.cwd()}/IsoGame/wcBuilding2/editor/conf/buildings`;
-}
-
-/**
- * Get the absolute path to the asset collections config directory.
- */
-function getAssetCollectionsDir(): string {
-  return `${Deno.cwd()}/IsoGame/wcBuilding2/editor/conf/asset-collections`;
-}
-
-/**
- * Ensure a directory exists, creating it if necessary.
- */
-async function ensureDir(dir: string): Promise<void> {
-  try {
-    await Deno.mkdir(dir, { recursive: true });
-  } catch (error) {
-    if (!(error instanceof Deno.errors.AlreadyExists)) {
-      throw error;
-    }
-  }
-}
 
 /**
  * Build a temporary WcAbstractBuildConf from JSON config for preview generation.
