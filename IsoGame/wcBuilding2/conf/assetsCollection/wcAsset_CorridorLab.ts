@@ -11,6 +11,7 @@ export class WcAsset_CorridorLab {
   }
 
   // ==========================================================================
+ 
 
   // ["A", "Wout", "WoutD", "Wout"],
   get Door(): WcConfTile {

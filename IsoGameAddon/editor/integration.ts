@@ -16,7 +16,7 @@
  */
 
 import { ConfigLoader } from "./loader.ts";
-import { WcAbstractBuildConf } from "../wcAbstractBuildConf.ts";
+import { WcAbstractBuildConf } from "../../IsoGame/wcBuilding2/wcAbstractBuildConf.ts";
 
 // ============================================================================
 // Type definitions for the wrapper

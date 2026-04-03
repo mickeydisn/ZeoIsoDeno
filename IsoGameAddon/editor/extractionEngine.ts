@@ -12,8 +12,8 @@
  * Face links are deduplicated. Runtime value mainLvl is explicitly excluded.
  */
 
-import { WcAbstractBuildConf, WcConfTile } from "../wcAbstractBuildConf.ts";
-import type { WcConfRawTile } from "../wcAbstractBuildConf.ts";
+import { WcAbstractBuildConf, WcConfTile } from "../../IsoGame/wcBuilding2/wcAbstractBuildConf.ts";
+import type { WcConfRawTile } from "../../IsoGame/wcBuilding2/wcAbstractBuildConf.ts";
 
 import type {
   AssetCollectionConfig,

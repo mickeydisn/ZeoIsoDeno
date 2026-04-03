@@ -42,6 +42,7 @@ export class WcAsset_WallHouse {
   
 
   // ----------------
+  // ==========================================================================
 
   // ["Wr", "Wl", "Wout", "Wout"],
   get Corner(): WcConfTile {

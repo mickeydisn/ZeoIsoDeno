@@ -10,7 +10,7 @@ import { Context, send } from "https://deno.land/x/oak/mod.ts";
 import { denoPlugins } from "jsr:@luca/esbuild-deno-loader@^0.11.1";
 import * as esbuild from "npm:esbuild@0.20.2";
 
-const EDITOR_WEB_DIR = `${Deno.cwd()}/IsoGame/wcBuilding2/editor/web`;
+const EDITOR_WEB_DIR = `${Deno.cwd()}/IsoGameAddon/editor/web`;
 
 export const serveStatic = async (context: Context) => {
   const urlPath = context.request.url.pathname;

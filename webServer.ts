@@ -9,8 +9,8 @@ import {
 } from "https://deno.land/x/oak/mod.ts";
 import { denoPlugins } from "jsr:@luca/esbuild-deno-loader@^0.11.1";
 import * as esbuild from "npm:esbuild@0.20.2";
-import { editorRouter } from "./IsoGame/wcBuilding2/editor/server.ts";
-import { serveStatic as serveStaticEditor } from "./IsoGame/wcBuilding2/editor/web/serveEditor.ts";
+import { editorRouter } from "./IsoGameAddon/editor/server.ts";
+import { serveStatic as serveStaticEditor } from "./IsoGameAddon/editor/web/serveEditor.ts";
 
 export const serveStatic = async (context: Context) => {
   const filePath = context.request.url.pathname;

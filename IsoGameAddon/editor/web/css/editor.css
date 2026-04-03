@@ -1777,3 +1777,295 @@ html, body {
   border-top: 1px solid var(--border-color);
   line-height: 1.4;
 }
+
+/* ============================================================================
+   Phase 4: Group Editor Styles
+   ============================================================================ */
+
+/* --- Groups List --- */
+.groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* --- Group Card --- */
+.group-card {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.group-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.group-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.group-id {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: monospace;
+}
+
+.group-meta {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.group-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.group-face-preview {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: monospace;
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.group-items-summary {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* --- Group Editor Modal --- */
+.group-editor-modal {
+  width: 90vw;
+  max-width: 700px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.modal-close-btn:hover {
+  color: var(--text-primary);
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* --- Group Editor Component --- */
+.group-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.group-id-input {
+  flex: 1;
+  padding: 8px 12px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: monospace;
+}
+
+.group-id-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.group-weight-input {
+  width: 100px;
+  padding: 8px 12px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.group-weight-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+/* --- Group Face Section --- */
+.group-face-section {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.group-face-container {
+  margin-top: 8px;
+}
+
+/* --- Group Items Section --- */
+.group-items-section {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.items-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.add-item-button {
+  padding: 6px 12px;
+  background-color: var(--accent-color);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.add-item-button:hover {
+  background-color: var(--accent-hover);
+}
+
+/* --- Group Items List --- */
+.group-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.group-item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+.item-index {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 30px;
+}
+
+.item-weight-input {
+  width: 80px;
+  padding: 4px 8px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.item-weight-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.delete-item-button {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.delete-item-button:hover {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: var(--error-color);
+}
+
+/* --- Group Footer --- */
+.group-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+  margin-top: 4px;
+}
+
+.delete-group-button {
+  padding: 8px 16px;
+  background-color: rgba(244, 67, 54, 0.1);
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.delete-group-button:hover {
+  background-color: rgba(244, 67, 54, 0.2);
+}

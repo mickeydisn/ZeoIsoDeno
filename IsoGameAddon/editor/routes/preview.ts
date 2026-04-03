@@ -11,9 +11,9 @@
 
 import { Router } from "https://deno.land/x/oak/mod.ts";
 import type { BuildingConfig } from "../types.ts";
-import { World } from "../../../word.ts";
-import { WcBuildFactoryGenarator } from "../../wcBuildFactory.ts";
-import { WcBuildTile } from "../../wcBuildTile.ts";
+import { World } from "../../../IsoGame/word.ts";
+import { WcBuildFactoryGenarator } from "../../../IsoGame/wcBuilding2/wcBuildFactory.ts";
+import { WcBuildTile } from "../../../IsoGame/wcBuilding2/wcBuildTile.ts";
 import { buildTempConfig } from "../services/previewBuilder.ts";
 import { generateAssetPreview } from "../services/assetPreview.ts";
 

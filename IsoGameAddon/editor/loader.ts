@@ -11,10 +11,10 @@
  * Round-trip flow: extract (TS → JSON) → edit (UI) → save (JSON) → load (JSON → TS) → generate
  */
 
-import { WcAbstractBuildConf, WcConfTile, WcConfTileAsset, WcConfTileFunction, WcConfRawGroup } from "../wcAbstractBuildConf.ts";
-import type { WcFace } from "../wcBuildFace.ts";
+import { WcAbstractBuildConf, WcConfTile, WcConfTileAsset, WcConfTileFunction, WcConfR../../IsoGame/wcBuilding2/wcAbstractBuildConf.tsractBuildConf.ts";
+import type {../../IsoGame/wcBuilding2/wcBuildFace.ts./wcBuildFace.ts";
 import type { BuildingConfig, TileConfig, TileGroupConfig } from "./types.ts";
-import { getBuildingConfigEntry } from "../../tools/buildingConfigRegistry.ts";
+import ../../IsoGame/tools/buildingConfigRegistry.ts./tools/buildingConfigRegistry.ts";
 import { CURRENT_VERSION } from "./types.ts";
 import { migrateBuildingConfig, migrateAssetCollectionConfig, MigrationResult, isSupportedVersion } from "./migration.ts";
 import { getBuildingPath, getBuildingsDir } from "./configPaths.ts";

@@ -7,10 +7,12 @@
  * These functions were extracted from server.ts to improve modularity and type safety.
  */
 
-import { WcAbstractBuildConf, WcConfTile, WcConfRawGroup } from "../../wcAbstractBuildConf.ts";
 import type { BuildingConfig, TileConfig } from "../types.ts";
-import { confsGroup_to_confsTile } from "../../wcUtils.ts";
+import { WcAbstractBuildConf, WcConfRawGroup, WcConfTile } from "../../../IsoGame/wcBuilding2/wcAbstractBuildConf.ts";
+import { confsGroup_to_confsTile } from "../../../IsoGame/wcBuilding2/wcUtils.ts";
 
+// ============================================================================
+// Type Definitions
 // ============================================================================
 // Type Definitions
 // ============================================================================

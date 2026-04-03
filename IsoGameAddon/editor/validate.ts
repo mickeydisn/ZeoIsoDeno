@@ -15,18 +15,12 @@
 import { ConfigExtractor, BUILDING_CLASSES } from "./extractor.ts";
 import type { BuildingConfig } from "./types.ts";
 import { ConfigLoader } from "./loader.ts";
-import { REGISTRY_ID_MAP } from "./types.ts";
-import { getBuildingConfigEntry } from "../../tools/buildingConfigRegistry.ts";
-import { WcBuildFactoryGenarator } from "../wcBuildFactory.ts";
-import { WcAbstractBuildConf } from "../wcAbstractBuildConf.ts";
-import { World } from "../../word.ts";
 
 // ============================================================================
 // Constants
 // ============================================================================
 
 const BUILDINGS_DIR = "IsoGame/wcBuilding2/editor/conf/buildings";
-const ASSET_COLLECTIONS_DIR = "IsoGame/wcBuilding2/editor/conf/asset-collections";
 const RESULTS: { test: string; status: "PASS" | "FAIL" | "SKIP"; message: string }[] = [];
 
 // ============================================================================
@@ -90,7 +84,7 @@ async function testExtractAllBuildings(): Promise<Record<string, BuildingConfig>
       const config = ConfigExtractor.extractBuilding(className);
 
       // Validate structure
-      assert(config.version === "1.0", "version must be '1.0'");
+      assert(config.version === "1.1", "version must be '1.0'");
       assert(config.type === "building", "type must be 'building'");
       assert(config.id !== undefined && config.id !== "", "id must be present");
       assert(config.metadata.classRef === className, "metadata.classRef must match class name");
@@ -161,7 +155,7 @@ async function testExtractAssetCollections(): Promise<void> {
     const testName = `Extract ${className}`;
     try {
       const config = ConfigExtractor.extractAssetCollection(className);
-      assert(config.version === "1.0", "version must be '1.0'");
+      assert(config.version === "1.1", "version must be '1.0'");
       assert(config.type === "assetCollection", "type must be 'assetCollection'");
       assert(config.tag !== undefined, "tag must be present");
 
