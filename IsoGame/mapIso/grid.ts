@@ -20,6 +20,7 @@ export class GridMapDrawers {
   _heightScall: number;
 
   divTableGrid?: HTMLElement;
+  isVisible: boolean;
 
   constructor(
     gameWorker: Worker,
@@ -43,6 +44,8 @@ export class GridMapDrawers {
 
     this._init_grid_contener();
     this._init_gridMatrix();
+    this.isVisible = true;
+    this._initGridToggle();
   }
 
   _init_grid_contener() {
@@ -137,6 +140,9 @@ export class GridMapDrawers {
   }
 
   updateGrid = () => {
+    // Skip update if grid is hidden
+    if (!this.isVisible) return;
+    
     // Aline Grid with a player offset
     const divMapGrid = document.getElementById("mapGrid");
     if (divMapGrid == null) return;
@@ -160,8 +166,31 @@ export class GridMapDrawers {
         this._mapGrid[i][j].style.transform = `translate(${topAline}px, ${leftAline}px)`;
 
       }
+     }
+   };
+
+  toggleGridVisibility(show?: boolean) {
+    const divMapGrid = document.getElementById("mapGrid");
+    if (!divMapGrid) return;
+
+    this.isVisible = show !== undefined ? show : !this.isVisible;
+    
+    if (this.isVisible) {
+      divMapGrid.classList.remove("hidden");
+    } else {
+      divMapGrid.classList.add("hidden");
     }
-  };
+  }
+
+  _initGridToggle() {
+    const checkbox = document.getElementById("gridToggleCheckbox") as HTMLInputElement;
+    if (checkbox) {
+      checkbox.addEventListener("change", (event) => {
+        const target = event.target as HTMLInputElement;
+        this.toggleGridVisibility(target.checked);
+      });
+    }
+  }
 }
 
 /*

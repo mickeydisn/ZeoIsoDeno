@@ -449,7 +449,7 @@ export class CanvasMapDrawers {
     }
 
     // Draw grid overlay to show tile boundaries
-    this.drawGridOverlay();
+    // this.drawGridOverlay();
 
     // iso.addImage();
     this._cleanCache();

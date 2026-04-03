@@ -2,19 +2,32 @@
 export const initFlyMenu = (gameWorker: Worker) => {
   (document.getElementById("mapflyMenu") as HTMLElement)
     .innerHTML = `
+      <button id="mapflyMenu_Player">Player</button>
       <button id="mapflyMenu_Ground">Ground</button>
       <button id="mapflyMenu_Fly">Fly</button>
       <button id="mapflyMenu_Height">Height</button>
       <button id="mapflyMenu_Space">Space</button>
     `;
 
-  (document.getElementById("mapflyMenu_Ground") as HTMLElement)
+  (document.getElementById("mapflyMenu_Player") as HTMLElement)
     .addEventListener("click", () => {
       gameWorker.postMessage({
         action: "initCanvasMap",
         mapConf: {
           DRAW_TILE_COUNT: 40,
-          SCALE_SIZE: .85,
+          SCALE_SIZE: 1.5,
+          SCALE_MOD: 1,
+        },
+      });
+    });
+
+    (document.getElementById("mapflyMenu_Ground") as HTMLElement)
+    .addEventListener("click", () => {
+      gameWorker.postMessage({
+        action: "initCanvasMap",
+        mapConf: {
+          DRAW_TILE_COUNT: 40,
+          SCALE_SIZE: 1,
           SCALE_MOD: 1,
         },
       });
