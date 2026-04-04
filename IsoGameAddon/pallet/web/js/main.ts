@@ -23,8 +23,8 @@ import { ImageActionModule } from "./pallet/imageActionModule.ts";
 import "../../IsoGame/worker/main/InterfaceModule.ts";
 import { initializeActionInterfaceModule } from "../../IsoGame/worker/main/InterfaceModule.ts";
 */
-import { World } from "../../IsoGame/word.ts";
-import { CanvasMiniMap } from "../../IsoGame/mapIso/canvasMiniMap.ts";
+import { World } from "../../../../IsoGame/word.ts";
+import { CanvasMiniMap } from "../../../../IsoGame/mapIso/canvasMiniMap.ts";
 
 import { MenuIconModule } from "./pallet/MenuIconModule.ts";
 

@@ -3,7 +3,7 @@ import { initFlyMenu } from "./menu/flyMenu.ts";
 import { initToolMenu, handleToolList, handleToolExecuted, handlePickedColor, handleAssetGroups, handleAssetPreview, handleBuildingConfigList } from "./menu/toolMenu.ts";
 import { infoMenu, updateInfoCell } from "./menu/InfoMenu.ts";
 import { GameHandlerData } from "./gameWorker.ts";
-import { GlobalState, initMenu, updatGlobalJSON } from "./gobalState.ts";
+// import { GlobalState, initMenu, updatGlobalJSON } from "./gobalState.ts";
 import { GridMapDrawers } from "../../IsoGame/mapIso/grid.ts";
 import { initKeyBoard } from "./keyboad.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
@@ -13,8 +13,8 @@ import { MessageHandler } from "./worker/messageHandler.ts";
 // ============================================================================
 
 
-initMenu();
-updatGlobalJSON(GlobalState);
+// initMenu();
+// updatGlobalJSON(GlobalState);
 
 // ============================================================================
 // CREATE WORKER
@@ -48,6 +48,30 @@ const canvasImageMap = document.getElementById(
 ) as HTMLCanvasElement;
 
 let gridMapDrawer: GridMapDrawers | null = null;
+
+// Mouse tracking - send raw coordinates to worker
+canvasImageMap.addEventListener('mousemove', (e) => {
+  const rect = canvasImageMap.getBoundingClientRect();
+  handlers.send({
+    action: "mouseMove",
+    x: Math.floor(e.clientX - rect.left),
+    y: Math.floor(e.clientY - rect.top)
+  });
+});
+
+
+// Mouse tracking - send raw coordinates to worker
+canvasImageMap.addEventListener('click', (e) => {
+  const rect = canvasImageMap.getBoundingClientRect();
+  console.log("Mouse Click");
+  handlers.send({
+    action: "mouseClick",
+    x: Math.floor(e.clientX - rect.left),
+    y: Math.floor(e.clientY - rect.top)
+  });
+});
+
+
 
 // ============================================================================
 // == INIT

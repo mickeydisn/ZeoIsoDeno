@@ -30,6 +30,16 @@ interface EventGridClick extends BaseMessage {
   x: number;
   y: number;
 }
+interface EventMouseClick extends BaseMessage {
+  action: "mouseClick";
+  x: number;
+  y: number;
+}
+interface EventMouseScreen extends BaseMessage {
+  action: "mouseMove";
+  x: number;
+  y: number;
+}
 
 // ----
 
@@ -159,7 +169,9 @@ type WorkerInitMessage =
   | EventSetCanvasMap
   | EventInitCanvasMap
   | EventStartRender
-  | EventGridClick;
+  | EventGridClick
+  | EventMouseClick  
+  | EventMouseScreen;
 
 type ToolMessage =
   | EventSetActiveTool

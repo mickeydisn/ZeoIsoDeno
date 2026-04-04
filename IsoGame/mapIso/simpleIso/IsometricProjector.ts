@@ -182,13 +182,15 @@ export class PointIso {
         // Also accept clicks on the visible side walls (below the top face).
         // The walls extend downward from the left/right edges.
         // Allow a pixel slop of one tile-height downward.
+        
+        /*
         const wallHeight = halfH; // roughly the height of one side face in screen pixels
         if (
-            Math.abs(u) <= 1.0 &&
-            v > 1.0 &&
-            v <= 1.0 + wallHeight / halfH
+            Math.abs(u) <= 1.0 //&&
+            // v < 1.0 // &&
+            // v >= 1.0 + wallHeight / halfH
         ) return true;
-
+        */
         return false;
     }
     
@@ -227,13 +229,15 @@ export class PointIso {
         });
 
         // Return the first (frontmost) tile whose top face contains the point
+        let selectedTile: PointIso | null = null;
         for (const tile of candidates) {
             if (this._isPointInTileFace(tile, screenX, screenY)) {
-                return tile;
+                selectedTile = tile;
+                break
             }
         }
 
-        return null;
+        return selectedTile;
     }
 
 

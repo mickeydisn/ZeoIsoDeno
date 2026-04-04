@@ -70,7 +70,7 @@ export class CanvasMapDrawers {
   mapInfo: Float32Array; // [ 0:centreX , 1:centreY, 2:offX, 3:offY ]
 
   isomer: Isomer;
-  private isoProject: IsometricProjector;
+  public isoProject: IsometricProjector;
   private isoGenerator: IsometricTileGenerator;
   private tileCache: Map<string, OffscreenCanvas | ImageBitmap> = new Map();
 
@@ -450,7 +450,7 @@ export class CanvasMapDrawers {
 
     // Draw grid overlay to show tile boundaries
     // this.drawGridOverlay();
-
+    this.drawHoverOverlay();
     // iso.addImage();
     this._cleanCache();
 
@@ -554,7 +554,6 @@ export class CanvasMapDrawers {
 
     // Draw grid lines at average height (plan of the grid)
     // Use fixed height of 0 (average level) for all grid lines
-    const gridHeight = 0;
     const height = 1;
 
     // Draw grid lines for each tile
@@ -578,13 +577,63 @@ export class CanvasMapDrawers {
         this.drawShapePaths(shape2);
         
         // Create tile shape at average height (not individual tile height)
-        const shape = Shape.SurfaceFlat(new Point(xx, yy, 0 - height), 1, 1, height);
-        this.canvasCtx.strokeStyle = gridColor;
+        // const shape = Shape.SurfaceFlat(new Point(xx, yy, 0 - height), 1, 1, height);
+        // this.canvasCtx.strokeStyle = gridColor;
         // this.drawShapePaths(shape, undefined, `${metaTile.x},${metaTile.y}`); // Display grid coordinates for debugging
         // this.drawShapePaths(shape, undefined, `${xx}.${yy}`); // No text, just grid lines
       }
     }
   }
+
+
+  /**
+   * Draws a semi-transparent overlay on the hovered tile for visual feedback.
+   */
+  private drawHoverOverlay(): void {
+    if (!this.world) return;
+
+    const size = this.conf.DRAW_TILE_COUNT;
+    
+    // The hoveredTile is already in grid coordinates (0 to size-1)
+    // directly use these coordinates without additional transformation
+    const xx = Math.round(this.mouseWorldX);
+    const yy = Math.round(this.mouseWorldY);
+    // console.log(`[HoverOverlay] Hovered tile at grid coordinates (${xx}, ${yy}), height: ${this.hoveredTile.z}`);
+    // Bounds check
+    if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1) return;
+
+    // Check if tilesMatrix and the tile exist
+    if (!this.tilesMatrix?.tiles?.[xx]?.[yy]) return;
+
+    // Get the tile's display level from the matrix
+    const metaTile = this.tilesMatrix.tiles[xx][yy];
+    const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+    const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
+    const height = 1;
+    // Create the flat surface shape at the tile position
+    const shape = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height);
+    this.drawShapePaths(shape, 'rgba(255, 220, 50, 0.35)', `${xx},${yy}`); // Display hover coordinates for debugging
+  }
+
+  // Mouse tracking
+  mouseScreenX: number = 0;
+  mouseScreenY: number = 0;
+  mouseWorldX: number = 0;
+  mouseWorldY: number = 0;
+
+
+  public setMouseScreen(screenX: number, screenY: number): void {
+      const tile = this.screenToTileWithHeight(screenX, screenY);
+      // Use internal IsometricProjector for coordinate conversion
+        if (tile) {
+          // console.log("Mouse moved to tile:", tile);
+          this.mouseWorldX = tile.x;
+          this.mouseWorldY = tile.y;
+        }
+      }
+  public screenToTileWithHeight(screenX: number, screenY: number): PointIso | null {
+    return this.isoProject.screenToTileWithHeight(screenX, screenY, this.mapLvl, this.tilesMatrix.size, this.mapInfo);
+  } 
 
 }
 

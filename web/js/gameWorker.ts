@@ -15,7 +15,7 @@ import { getBuildingConfigList } from "../../IsoGame/tools/buildingConfigRegistr
 import { World } from "../../IsoGame/word.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
 
-export type GameHandlerData = unknown;
+export type GameHandlerData = any;
 
 export class GameWorker {
   private world = new World();
@@ -25,6 +25,7 @@ export class GameWorker {
   y: number = 0;
   xf: number = 0;
   yf: number = 0;
+
 
   private assetLoader!: AssetLoaderOpti;
   private canvasMap!: OffscreenCanvas;
@@ -320,17 +321,32 @@ export class GameWorker {
           success: true,
         });
 
-        // Handle tool-specific result data
-        if (result && result.pickedColor) {
-          const [r, g, b] = result.pickedColor as number[];
-          this.handler.send({
-            action: "pickedColor",
-            r,
-            g,
-            b,
-          });
-        }
       },
+    ],
+
+    [
+      "mouseMove",
+      (data: GameHandlerData) => {
+        this.canvasMapDrawer.setMouseScreen(data.x as number, data.y as number);
+      }
+    ],
+    [
+      "mouseClick",
+      (data: GameHandlerData) => {
+        this.canvasMapDrawer.setMouseScreen(data.x as number, data.y as number);
+        const x = this.canvasMapDrawer.mouseWorldX + this.x - this.canvasMapDrawer.tilesMatrix.size / 2;
+        const y = this.canvasMapDrawer.mouseWorldY + this.y - this.canvasMapDrawer.tilesMatrix.size / 2;
+        console.log("Mouse Click Worker x:", x, "y:", y);
+        const result = toolRegistry.executeAt(x, y, this.world);
+
+        this.handler.send({
+          action: "toolExecuted",
+          toolId: toolRegistry.getActiveId(),
+          success: true,
+        });
+
+
+      }
     ],
   ]);
 
