@@ -46,14 +46,14 @@ interface EventMouseScreen extends BaseMessage {
 export interface EventMainInit extends BaseMessage {
   action: "callback_initWorker";
 }
-
+/*
 export interface EventCallbackInitCanvasMap extends BaseMessage {
   action: "callback_initCanvasMap";
   mapConf: any;
   mapLvlBuffer: SharedArrayBuffer;
   mapInfoBuffer: SharedArrayBuffer;
 }
-
+*/
 export interface EventInfoFPS extends BaseMessage {
   action: "FPS";
   fps: number;
@@ -154,7 +154,7 @@ export interface EventSetBuildingParams extends BaseMessage {
 
 type ToMainMessage =
   | EventMainInit
-  | EventCallbackInitCanvasMap
+  // | EventCallbackInitCanvasMap
   | EventInfoCell
   | EventInfoFPS
   | EventToolExecuted

@@ -1,6 +1,7 @@
 // Tool Menu Render Module
 // Extracted from toolMenu.ts - handles all HTML template rendering
 
+import { renderAssetGroupList } from "./assetMenu.ts";
 import {
   categories,
   brushSizes,
@@ -144,7 +145,6 @@ export function renderAssetPanel(): string {
       ${renderSuffixSelector(activeAssetSuffix)}
       ${renderFilterControls(filterState)}
       ${renderSelectedAssetCard(activeAssetId, activeAssetSuffix)}
-      <div id="assetImageList">${renderAssetImageList()}</div>
       ${renderAssetGroupList()}
     </div>
   `;
@@ -202,7 +202,7 @@ function renderSelectedAssetCard(activeAssetId: string | null, activeAssetSuffix
     </div>
   `;
 }
-
+/*
 export function renderAssetGroupList(): string {
   const assetGroups = getAssetGroups();
   const selectedAssetGroup = getSelectedAssetGroup();
@@ -217,7 +217,6 @@ export function renderAssetGroupList(): string {
 
   return `
     <div id="assetGroupList">
-      <div class="asset-group-header">Asset Groups</div>
       ${assetGroups.map(group => `
         <button class="asset-group-btn ${group.group === selectedAssetGroup ? 'active' : ''}" data-group="${group.group}">
           ${group.group} (${group.images.length})
@@ -242,7 +241,6 @@ export function renderAssetImageList(): string {
   }
 
   return `
-    <div class="asset-image-header">${group.group}</div>
     <div class="asset-image-grid">
       ${group.images.map(image => `
         <button class="asset-image-btn ${image === activeAssetId ? 'active' : ''}" data-asset="${image}">
@@ -252,7 +250,7 @@ export function renderAssetImageList(): string {
     </div>
   `;
 }
-
+*/
 export function renderBuildingPanel(): string {
   const activeCategory = getActiveCategory();
   const buildingGrowLoop = getBuildingGrowLoop();

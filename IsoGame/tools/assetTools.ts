@@ -30,7 +30,7 @@ export const placeAssetTool = createTool({
     if (assetId) {
       console.log(`Placing asset ${assetId} at (${x}, ${y})`);
       tilesActions.doAction({
-        func: "itemAddKey",
+        func: "itemForceKey",
         x,
         y,
         assetKey: assetId,

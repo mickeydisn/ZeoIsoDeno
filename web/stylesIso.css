@@ -37,6 +37,7 @@ pre {
   font-size: 11px;
 }
 
+
 #righMenu {
   position: fixed;
   top: 30px;
@@ -213,7 +214,8 @@ pre {
   }
 
 }
-  /* ------------------ */
+
+/* ------------------ */
 /* Tool Menu Styles */
 /* ------------------ */
 
@@ -411,32 +413,17 @@ pre {
 }
 
 #assetGroupList {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 6px;
-}
-
-.asset-group-header {
-  font-size: 10px;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 4px;
-  padding: 0 4px;
+  display: flex;
 }
 
 .asset-group-btn {
   display: block;
-  width: 100%;
-  padding: 5px 8px;
-  margin-bottom: 2px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  color: #bbb;
-  font-size: 11px;
-  cursor: pointer;
+  background: rgba(255, 255, 255, 0.25);
+  color: #FFF;
+  font-size: 1.4rem;
+  cursor: none;
   text-align: left;
-  transition: all 0.2s;
+  /* transition: all 0.2s; */
 }
 
 .asset-group-btn:hover {
@@ -451,38 +438,21 @@ pre {
 }
 
 #assetImageList {
-  padding: 6px;
-  max-height: 150px;
-  overflow-y: auto;
-}
-
-.asset-image-header {
-  font-size: 10px;
-  color: #aaa;
-  margin-bottom: 6px;
-  padding: 0 4px;
-  font-weight: bold;
+  display: flex;
 }
 
 .asset-image-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+display: grid;
   gap: 4px;
 }
 
 .asset-image-btn {
-  padding: 4px 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  color: #bbb;
-  font-size: 9px;
-  cursor: pointer;
+  display: block;
+  background: rgba(255, 255, 255, 0.25);
+  color: #FFF;
+  font-size: 1.4rem;
+  cursor: none;
   text-align: left;
-  transition: all 0.2s;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .asset-image-btn:hover {

@@ -30,7 +30,7 @@ export class Isomer {
   private originY: number = 660; // Fixed Y-origin
   private lightPosition: Vector;
   private lightAngle: Vector;
-  private colorDifference: number = 0.2;
+  private colorDifference: number = 0.23;
   private lightColor: Color;
   private transformation: number[][];
 
@@ -52,7 +52,7 @@ export class Isomer {
     this.offsetX = 0;
     this.offsetY = 0;
 
-    this.lightPosition = new Vector(2, -1, 3);
+    this.lightPosition = new Vector(20, -10, 30);
     this.lightAngle = this.lightPosition.normalize();
     this.lightColor = new Color(255, 255, 255);
     

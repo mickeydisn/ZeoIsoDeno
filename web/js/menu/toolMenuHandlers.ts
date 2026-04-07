@@ -17,15 +17,14 @@ import {
 
 import {
   renderToolList,
-  renderAssetGroupList,
-  renderAssetImageList,
   renderBuildingConfigSelector,
 } from './toolMenuRender.ts';
+import { renderAssetGroupList, renderAssetImageList } from "./assetMenu.ts";
 
 // ============================================================================
 // Worker Message Handlers
 // ============================================================================
-
+/*
 export function handleToolList(tools: MapToolInfo[], container?: HTMLElement): void {
   // Organize tools by category
   clearToolsByCategory();
@@ -50,7 +49,7 @@ export function handleToolList(tools: MapToolInfo[], container?: HTMLElement): v
     updateToolListDOM(toolMenuEl as HTMLElement);
   }
 }
-
+*/
 export function handleToolExecuted(toolId: string, _success: boolean): void {
   const toolMenuEl = document.getElementById('toolMenu');
   if (!toolMenuEl) return;
@@ -99,7 +98,7 @@ export function handleAssetPreview(blobUrl: string): void {
   // Update preview with new image
   previewEl.innerHTML = `<img src="${blobUrl}" class="asset-preview-img" alt="Asset Preview">`;
 }
-
+/*
 export function handleAssetGroups(groups: Array<{ group: string; images: string[] }>, container?: HTMLElement): void {
   setAssetGroups(groups);
 
@@ -109,12 +108,12 @@ export function handleAssetGroups(groups: Array<{ group: string; images: string[
   }
 
   // Always re-render asset browser DOM so assets are visible when switching to asset category
-  const toolMenuEl = container || document.getElementById('toolMenu');
+  const toolMenuEl = container || document.getElementById('section-Struct');
   if (toolMenuEl) {
     updateAssetBrowserDOM(toolMenuEl as HTMLElement);
   }
 }
-
+*/
 export function handleBuildingConfigList(configs: BuildingConfigInfo[], container?: HTMLElement): void {
   setBuildingConfigs(configs);
 
@@ -130,7 +129,6 @@ export function handleBuildingConfigList(configs: BuildingConfigInfo[], containe
     updateBuildingConfigDOM(toolMenuEl as HTMLElement);
   }
 }
-
 // ============================================================================
 // DOM Update Helpers (for handlers)
 // ============================================================================
@@ -145,18 +143,6 @@ function updateToolListDOM(container: HTMLElement): void {
   // This is handled by the event delegation in toolMenu.ts
 }
 
-function updateAssetBrowserDOM(container: HTMLElement): void {
-  const assetGroupListEl = container.querySelector('#assetGroupList') as HTMLElement;
-  const assetImageListEl = container.querySelector('#assetImageList') as HTMLElement;
-
-  if (assetGroupListEl) {
-    assetGroupListEl.innerHTML = renderAssetGroupList();
-  }
-
-  if (assetImageListEl) {
-    assetImageListEl.innerHTML = renderAssetImageList();
-  }
-}
 
 function updateBuildingConfigDOM(container: HTMLElement): void {
   const selectorEl = container.querySelector('#buildingConfigSelector') as HTMLElement;

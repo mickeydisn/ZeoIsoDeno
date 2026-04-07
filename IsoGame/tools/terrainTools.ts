@@ -139,3 +139,12 @@ export const terrainTools: MapTool[] = [
   smoothTool,
   plateauTool,
 ];
+
+/*
+
+raise_terrain
+lower_terrain
+flatten
+smooth
+plateau
+*/

@@ -13,14 +13,8 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css?family=Open+Sans"
     >
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
-    >
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
-    >
+    <!-- https://fontawesome.com/v4/icons/ -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <title>HTMX Multi-Filter Table</title>
     <script src="https://unpkg.com/htmx.org@1.9.5"></script>
@@ -56,7 +50,10 @@
       style="display: flex; justify-content: center"
     >
       <div id="fps">FPS: 0</div>
-      <div id="righMenu">
+      <div id="HeadMenuIcons">
+      </div>
+      
+      <!-- div id="righMenu">
         <div class="grid-toggle-container">
           <label class="grid-toggle-label">
             <input type="checkbox" id="gridToggleCheckbox" checked>
@@ -69,7 +66,7 @@
         <div id="toolMenu"></div>
         <hr>
         <div id="infoMenu"></div>
-      </div>
+      </div -->
       <div
         id="mapRelative"
         style="width: 1400px; height: 800px; position: relative"
@@ -82,7 +79,7 @@
         ></canvas>
         <div style="position: absolute">
           <div
-            id="mapGrid"
+            id="mapGrid" class="hidden"
             style="transition: 0.3s; transform: rotateX(60deg) rotateY(0deg) rotateZ(45deg); transform-style: preserve-3d; display: grid; z-index: 40"
           >
           </div>

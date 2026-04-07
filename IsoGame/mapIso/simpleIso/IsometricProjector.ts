@@ -186,8 +186,8 @@ export class PointIso {
         /*
         const wallHeight = halfH; // roughly the height of one side face in screen pixels
         if (
-            Math.abs(u) <= 1.0 //&&
-            // v < 1.0 // &&
+            Math.abs(u) <= 1.0 &&
+            v < 1.0 // &&
             // v >= 1.0 + wallHeight / halfH
         ) return true;
         */

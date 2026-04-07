@@ -114,7 +114,7 @@ export class GameWorker {
       this.assetLoader,
       this.canvasMap,
     );
-
+    
     this.handler.send(
       {
         action: "callback_initCanvasMap",
@@ -274,7 +274,7 @@ export class GameWorker {
         console.log("setActiveAsset received:", data.assetId);
         toolRegistry.setActiveAssetId(data.assetId);
         console.log("Active asset set to:", toolRegistry.getActiveAssetId());
-
+        console.log("this.assetLoader:", this.assetLoader);
         // Generate asset preview using AssetLoaderOpti
         if (this.assetLoader && data.assetId) {
           try {
@@ -327,12 +327,18 @@ export class GameWorker {
     [
       "mouseMove",
       (data: GameHandlerData) => {
+        if (!this.canvasMapDrawer) {
+          return;
+        }
         this.canvasMapDrawer.setMouseScreen(data.x as number, data.y as number);
       }
     ],
     [
       "mouseClick",
       (data: GameHandlerData) => {
+        if (!this.canvasMapDrawer) {
+          return;
+        }
         this.canvasMapDrawer.setMouseScreen(data.x as number, data.y as number);
         const x = this.canvasMapDrawer.mouseWorldX + this.x - this.canvasMapDrawer.tilesMatrix.size / 2;
         const y = this.canvasMapDrawer.mouseWorldY + this.y - this.canvasMapDrawer.tilesMatrix.size / 2;

@@ -1,13 +1,24 @@
 import { CanvasMapDrawersConf } from "../../IsoGame/mapIso/canvasMapDrawer.ts";
-import { initFlyMenu } from "./menu/flyMenu.ts";
-import { initToolMenu, handleToolList, handleToolExecuted, handlePickedColor, handleAssetGroups, handleAssetPreview, handleBuildingConfigList } from "./menu/toolMenu.ts";
+import { flyMenuTab } from "./menu/flyMenu.ts";
+import { initHeadMenu } from "./menu/headMenu.ts";
+
+import { 
+  initToolMenu, 
+  handleToolExecuted,
+  handlePickedColor,
+  handleBuildingConfigList,
+} from "./menu/toolMenu.ts";
+
 import { infoMenu, updateInfoCell } from "./menu/InfoMenu.ts";
 import { GameHandlerData } from "./gameWorker.ts";
 // import { GlobalState, initMenu, updatGlobalJSON } from "./gobalState.ts";
 import { GridMapDrawers } from "../../IsoGame/mapIso/grid.ts";
-import { initKeyBoard } from "./keyboad.ts";
+import { initCanvaMouse, initKeyBoard } from "./keyboad.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
-
+import { MenuTab } from "./menu/headMenu.ts";
+import { terrainMenuTab } from "./menu/terrainMenu.ts";
+import { assetMenuTab, handleAssetGroups, handleAssetPreview, initAssetGroups } from "./menu/assetMenu.ts";
+ 
 // ============================================================================
 // CREATE WORKER
 // ============================================================================
@@ -28,48 +39,100 @@ const gameWorker = new Worker(
 );
 
 initKeyBoard(gameWorker);
-initFlyMenu(gameWorker);
-initToolMenu(gameWorker);
-infoMenu(gameWorker);
+
+const config_tag : MenuTab[] = [
+    { id: "inspect",  icon: "👀", 
+      params: [
+        { id: "inspectInfo", type: "div", mount: (container) => {
+            container.innerHTML = `
+              <div id="infoCell">  
+                <div class="inspect-empty">Hover over the map to see cell info...</div>
+              </div>
+            `; 
+          }
+        },
+      ],
+
+    },
+    terrainMenuTab(gameWorker),
+    { id: "color",  icon: "🎨",
+        sub: [
+        { id: "paint", icon: "🫟" ,
+          params: [
+            { id: "colorPicker", type: "color", default: "#ff0000" , 
+              callback_change: (value) => {
+                console.log("Color picker changed:", value);
+                const [r, g, b] = (value as string).match(/\w\w/g)?.map(c => parseInt(c, 16)) || [255, 0, 0];
+                gameWorker.postMessage({
+                  action: "setColor",
+                  r: r,g: g, b: b,
+                });
+              }
+            }
+          ],
+          callback_select: () => {
+            gameWorker.postMessage({action: "setActiveTool",toolId: "paint_color"});
+          } },
+        { id: "random", icon: "🎲" , 
+          params: [
+            { id: "brushStrength", type: "range", min: 0, max: 1, step: 0.01, default: 0.5, callback_change: () => {} },
+          ],
+          callback_select: () => {
+            gameWorker.postMessage({action: "setActiveTool",toolId: "random_shade"});
+          } },
+      ],
+      params: [
+        { id: "brushSize", type: "range", min: 1, max: 10, default: 1, callback_change: (value) => {
+            gameWorker.postMessage({
+              action: "setBrushSize",
+              size: value,
+            });
+          }
+        },
+      ]
+     },
+    flyMenuTab(gameWorker),
+    assetMenuTab(gameWorker),
+  ]
+
+
+const menu = initHeadMenu({ tabs: config_tag, defaultIndex: 0 });
+
+// Hide terrain, disable inspect, hide terrain's "smooth" sub
+menu.updateDisplay([
+  { 
+    id: "terrain", display: "visible",
+    sub: [
+      { id: "raise_terrain", display: "visible" },
+      { id: "lower_terrain", display: "visible" },
+      { id: "flatten", display: "visible" },
+      { id: "smooth", display: "visible" },
+      { id: "plateau", display: "hidden" },
+    ]
+  },
+  { 
+    id: "color",
+    sub: [
+      { id: "random", display: "disabled" }
+    ]
+  },
+  { id: "fly", display: "visible" },
+]);
+
+// Reset to defaults — call with empty array or re-pass full state
+// menu.updateDisplay([]);
+
+// Panels become: #section-tools, #section-layers, #section-paint
+
+// initFlyMenu(gameWorker);
+// initTerrainMenu(gameWorker);
+// initToolMenu(gameWorker);
+// infoMenu(gameWorker);
 
 // ============================================================================
 // == Event Handeler
 // ============================================================================
 const handlers = new MessageHandler(gameWorker);
-
-/* */
-// ============================================================================
-// CREATE SHARE ELEMENT
-// ============================================================================
-
-// Canvas For display Map
-const canvasImageMap = document.getElementById(
-  "map-image",
-) as HTMLCanvasElement;
-
-let gridMapDrawer: GridMapDrawers | null = null;
-
-// Mouse tracking - send raw coordinates to worker
-canvasImageMap.addEventListener('mousemove', (e) => {
-  const rect = canvasImageMap.getBoundingClientRect();
-  handlers.send({
-    action: "mouseMove",
-    x: Math.floor(e.clientX - rect.left),
-    y: Math.floor(e.clientY - rect.top)
-  });
-});
-
-
-// Mouse tracking - send raw coordinates to worker
-canvasImageMap.addEventListener('click', (e) => {
-  const rect = canvasImageMap.getBoundingClientRect();
-  console.log("Mouse Click");
-  handlers.send({
-    action: "mouseClick",
-    x: Math.floor(e.clientX - rect.left),
-    y: Math.floor(e.clientY - rect.top)
-  });
-});
 
 
 
@@ -80,14 +143,7 @@ canvasImageMap.addEventListener('click', (e) => {
 // After The Game worker Initialiser . we cant send Shared Array
 const callback_initWorker = (_data: GameHandlerData): void => {
   console.log("✅ Game Worker initialized!");
-  const offscreen = canvasImageMap.transferControlToOffscreen();
-
-  handlers.sendDataSync({
-    action: "setCanvasMap",
-    canvas: offscreen,
-  }, [
-    offscreen,
-  ]);
+  initCanvaMouse(handlers, gameWorker);
 
   handlers.send({
     action: "initCanvasMap",
@@ -108,15 +164,17 @@ const callback_initWorker = (_data: GameHandlerData): void => {
 };
 
 // ----------------------------------------------------------------------------
+
 const callback_initCanvasMap = (data: GameHandlerData): void => {
   const mapconf = data.mapConf as CanvasMapDrawersConf;
   const bufferMapLvl = data.mapLvlBuffer;
   const bufferMapInfo = data.mapInfoBuffer;
   console.log("===== Call BackRender");
 
-  gridMapDrawer = new GridMapDrawers(gameWorker, bufferMapLvl, bufferMapInfo);
-  gridMapDrawer.mod = mapconf.DRAW_TILE_COUNT / 40;
+  // gridMapDrawer = new GridMapDrawers(gameWorker, bufferMapLvl, bufferMapInfo);
+  // gridMapDrawer.mod = mapconf.DRAW_TILE_COUNT / 40;
 };
+
 
 // ============================================================================
 // == Interface Responce Handlers.
@@ -124,7 +182,7 @@ const callback_initCanvasMap = (data: GameHandlerData): void => {
 
 handlers.append([
   ["callback_initWorker", callback_initWorker],
-  ["callback_initCanvasMap", callback_initCanvasMap],
+  // ["callback_initCanvasMap", callback_initCanvasMap],
 ]);
 handlers.send({ action: "initWorker" });
 // handlers.send({ action: "initWorker" });
@@ -137,9 +195,11 @@ let iFrame = 0;
 let _shouldRun = true;
 
 function frameTick() {
+  /*
   if (gridMapDrawer) {
     gridMapDrawer.updateGrid();
   }
+  */
 }
 
 // 🌟 Read Matrix & Update Grid Efficiently
@@ -188,9 +248,6 @@ handlers.append([
   ["infoCell", (data) => {
     updateInfoCell(data);
   }],
-  ["toolList", (data) => {
-    handleToolList(data.tools);
-  }],
   ["toolExecuted", (data) => {
     handleToolExecuted(data.toolId, data.success);
   }],
@@ -198,6 +255,7 @@ handlers.append([
     handlePickedColor(data.r, data.g, data.b);
   }],
   ["assetGroups", (data) => {
+    initAssetGroups(gameWorker);
     handleAssetGroups(data.groups);
   }],
   ["assetPreview", (data) => {

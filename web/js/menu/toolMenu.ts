@@ -30,18 +30,16 @@ import {
 import {
   renderToolMenu,
   renderToolList,
-  renderAssetImageList,
-  renderAssetGroupList,
   renderBuildingConfigSelector,
 } from './toolMenuRender.ts';
+import { renderAssetGroupList, renderAssetImageList } from "./assetMenu.ts";
 
 // Import handlers
 export {
-  handleToolList,
+  // handleToolList,
   handleToolExecuted,
   handlePickedColor,
   handleAssetPreview,
-  handleAssetGroups,
   handleBuildingConfigList,
 } from './toolMenuHandlers.ts';
 // ============================================================================
@@ -396,7 +394,7 @@ function renderAssetBrowserDOM(container: HTMLElement, gameWorker: Worker): void
   assetGroupListEl.innerHTML = renderAssetGroupList();
 
   // Render images for selected group
-  assetImageListEl.innerHTML = renderAssetImageList();
+  // assetImageListEl.innerHTML = renderAssetImageList();
 
   // Click handlers are managed via event delegation in wireEventHandlers
 }

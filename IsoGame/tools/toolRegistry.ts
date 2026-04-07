@@ -1,3 +1,4 @@
+import { cp } from "node:fs";
 import { World } from "../word.ts";
 
 export interface MapTool {
@@ -34,6 +35,7 @@ export class ToolRegistry {
     const tool = this.tools.get(toolId);
     if (tool) {
       this.activeTool = tool;
+      this.brushSize = 1;
     }
   }
 

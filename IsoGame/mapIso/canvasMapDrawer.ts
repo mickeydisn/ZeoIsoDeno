@@ -21,6 +21,7 @@ import { IsometricProjector, PointIso } from "./simpleIso/IsometricProjector.ts"
 import { IsometricTileGenerator } from "./simpleIso/IsometricTileGenerator.ts";
 import { ColorIso } from "./simpleIso/Color.ts";
 import { Tile } from "../map/object/tile.ts";
+import { toolRegistry } from "../tools/toolRegistry.ts";
 
 // --- Constants for Readability and Maintenance ---
 // The factor used to scale the tile level (z-axis) difference for isometric rendering.
@@ -174,8 +175,8 @@ export class CanvasMapDrawers {
 
   private getTileImage( 
     tile:Tile,
-      diffLvlSE: number , 
-     diffLvlSW: number
+    diffLvlSE: number , 
+    diffLvlSW: number
   ) {
     const key = `${tile.x}:${tile.y}`;
     
@@ -453,7 +454,6 @@ export class CanvasMapDrawers {
     this.drawHoverOverlay();
     // iso.addImage();
     this._cleanCache();
-
   }
 
 
@@ -482,7 +482,6 @@ export class CanvasMapDrawers {
         if (x < xMin || x > xMax || y < yMin || y > yMax) {
             this.tileCache.delete(key);
             console.log('tileDelete');
-
         }
     }
   }
@@ -586,33 +585,65 @@ export class CanvasMapDrawers {
   }
 
 
+
+  private drawHoverOverlayTile(xx: number, yy: number): void {
+
+      const size = this.conf.DRAW_TILE_COUNT;
+      // Bounds check
+      if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1) return;
+
+      // Check if tilesMatrix and the tile exist
+      if (!this.tilesMatrix?.tiles?.[xx]?.[yy]) return;
+
+      // Get the tile's display level from the matrix
+      const metaTile = this.tilesMatrix.tiles[xx][yy];
+      const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+      const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
+      const height = 1;
+
+      const shape = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height);
+      this.drawShapePaths(shape, 'rgba(255, 220, 50, 0.35)'); // Display hover coordinates for debugging
+  }
+
+
   /**
    * Draws a semi-transparent overlay on the hovered tile for visual feedback.
    */
   private drawHoverOverlay(): void {
     if (!this.world) return;
-
-    const size = this.conf.DRAW_TILE_COUNT;
-    
-    // The hoveredTile is already in grid coordinates (0 to size-1)
-    // directly use these coordinates without additional transformation
+    // Directly use these coordinates without additional transformation
     const xx = Math.round(this.mouseWorldX);
     const yy = Math.round(this.mouseWorldY);
-    // console.log(`[HoverOverlay] Hovered tile at grid coordinates (${xx}, ${yy}), height: ${this.hoveredTile.z}`);
     // Bounds check
+    const size = this.conf.DRAW_TILE_COUNT;
     if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1) return;
-
     // Check if tilesMatrix and the tile exist
     if (!this.tilesMatrix?.tiles?.[xx]?.[yy]) return;
 
-    // Get the tile's display level from the matrix
-    const metaTile = this.tilesMatrix.tiles[xx][yy];
-    const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
-    const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
-    const height = 1;
-    // Create the flat surface shape at the tile position
-    const shape = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height);
-    this.drawShapePaths(shape, 'rgba(255, 220, 50, 0.35)', `${xx},${yy}`); // Display hover coordinates for debugging
+    // Check for current tools config. 
+    const bsize = toolRegistry.getBrushSize()
+    if (bsize > 1 && toolRegistry.getActive() in ) {
+      const rangeX = Array.from(
+            { length: bsize },
+            (_, index) =>
+              (this.conf.SCALE_MOD * index) -
+              (this.conf.SCALE_MOD * Math.floor(bsize / 2)) + xx,
+          );
+      const rangeY = Array.from(
+            { length: bsize },
+            (_, index) =>
+              (this.conf.SCALE_MOD * index) -
+              (this.conf.SCALE_MOD * Math.floor(bsize / 2)) + yy,
+          );
+
+        rangeX.forEach((rx, _idx) => {
+          rangeY.forEach((ry, _idy) => {   
+            this.drawHoverOverlayTile(rx, ry)
+        })
+      })
+      return
+    }
+    this.drawHoverOverlayTile(xx, yy)
   }
 
   // Mouse tracking
