@@ -32,7 +32,6 @@ import {
   renderToolList,
   renderBuildingConfigSelector,
 } from './toolMenuRender.ts';
-import { renderAssetGroupList, renderAssetImageList } from "./assetMenu.ts";
 
 // Import handlers
 export {
@@ -391,7 +390,6 @@ function renderAssetBrowserDOM(container: HTMLElement, gameWorker: Worker): void
   if (!assetGroupListEl || !assetImageListEl) return;
 
   // Render group list
-  assetGroupListEl.innerHTML = renderAssetGroupList();
 
   // Render images for selected group
   // assetImageListEl.innerHTML = renderAssetImageList();

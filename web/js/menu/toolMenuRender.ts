@@ -1,7 +1,6 @@
 // Tool Menu Render Module
 // Extracted from toolMenu.ts - handles all HTML template rendering
 
-import { renderAssetGroupList } from "./assetMenu.ts";
 import {
   categories,
   brushSizes,
@@ -11,9 +10,7 @@ import {
   getActiveBrushSize,
   getActiveColor,
   getToolsByCategory,
-  getAssetGroups,
   getActiveAssetId,
-  getSelectedAssetGroup,
   getActiveAssetSuffix,
   getColorFilterState,
   getBuildingGrowLoop,
@@ -145,7 +142,6 @@ export function renderAssetPanel(): string {
       ${renderSuffixSelector(activeAssetSuffix)}
       ${renderFilterControls(filterState)}
       ${renderSelectedAssetCard(activeAssetId, activeAssetSuffix)}
-      ${renderAssetGroupList()}
     </div>
   `;
 }

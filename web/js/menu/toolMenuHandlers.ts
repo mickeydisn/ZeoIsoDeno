@@ -2,14 +2,10 @@
 // Extracted from toolMenu.ts - handles worker message responses
 
 import {
-  MapToolInfo,
+
   BuildingConfigInfo,
   setActiveColor as setColorState,
-  getActiveCategory,
-  setToolsByCategory,
-  clearToolsByCategory,
-  setAssetGroups,
-  setSelectedAssetGroup,
+
   setBuildingConfigs,
   setActiveBuildingConfigId,
   setBuildingParams,
@@ -19,7 +15,6 @@ import {
   renderToolList,
   renderBuildingConfigSelector,
 } from './toolMenuRender.ts';
-import { renderAssetGroupList, renderAssetImageList } from "./assetMenu.ts";
 
 // ============================================================================
 // Worker Message Handlers

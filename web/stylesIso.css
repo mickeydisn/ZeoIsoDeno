@@ -10,6 +10,11 @@ body {
   justify-content: center;
   align-items: center;
 }
+ul, li {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
 
 pre {
   text-wrap-mode: wrap;
@@ -37,6 +42,35 @@ pre {
   font-size: 11px;
 }
 
+dialog {
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 1rem;
+    border:none;
+    height: 50vh;
+    width: 60vw;
+    z-index: 1;
+    
+
+    justify-content: center;
+    align-items: flex-start;
+    overflow: scroll;
+
+     ul {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-content: flex-start;
+      gap: 1.6rem;
+    }
+
+     ul > li {
+      display: grid;
+      width: 10rem;
+      min-height: 3rem;
+    }
+
+}
 
 #righMenu {
   position: fixed;

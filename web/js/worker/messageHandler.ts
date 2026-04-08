@@ -115,6 +115,10 @@ export interface EventSetActiveAsset extends BaseMessage {
   action: "setActiveAsset";
   assetId: string;
 }
+export interface EventGetAsset extends BaseMessage {
+  action: "getAsset";
+  assetId: string;
+}
 
 export interface EventPickedColor extends BaseMessage {
   action: "pickedColor";
@@ -179,6 +183,7 @@ type ToolMessage =
   | EventToolClick
   | EventSetColor
   | EventSetActiveAsset
+  | EventGetAsset
   | EventSetBuildingConfig
   | EventSetBuildingParams;
 
@@ -245,11 +250,11 @@ export class MessageHandler {
     const handler = this.handlers.get(action);
     if (handler) {
       const result = await handler(message);
-      if (id) {
+      if (id && result) {
         this.worker.postMessage({ type: "response", id, result: result });
       }
     } else {
-      console.warn(`[MessageHandler] No handler for type "${action}"`);
+      console.warn(`[MessageHandler] No handler for type "${JSON.stringify(message)}"`);
     }
   }
 

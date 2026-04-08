@@ -622,7 +622,7 @@ export class CanvasMapDrawers {
 
     // Check for current tools config. 
     const bsize = toolRegistry.getBrushSize()
-    if (bsize > 1 && toolRegistry.getActive() in ) {
+    if (bsize > 1 ) {
       const rangeX = Array.from(
             { length: bsize },
             (_, index) =>

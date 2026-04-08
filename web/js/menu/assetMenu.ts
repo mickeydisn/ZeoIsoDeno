@@ -1,8 +1,10 @@
 // Main thread (e.g., main.ts)
 
+import { MessageHandler } from "../worker/messageHandler.ts";
+import { dialogMgr } from "./dialog.ts";
 import { MenuTab } from "./headMenu.ts";
 
-export const assetMenuTab = (gameWorker: Worker) => {
+export const assetMenuTab = (gameWorker: Worker, init_handlers: MessageHandler) => {
   return{ 
     id: "Struct",  icon: "X" , 
     sub: [
@@ -12,12 +14,16 @@ export const assetMenuTab = (gameWorker: Worker) => {
         callback_select: () => {
           gameWorker.postMessage({action: "setActiveTool",toolId: "clear_items"});
         },
-        params: [{ id: "brushSize", type: "range", min: 1, max: 9, step: 2, default: 3, callback_change: (value) => {
+        params: [
+          { 
+            id: "brushSize", type: "range", min: 1, max: 9, step: 2, default: 3, 
+            callback_change: (value) => {
               gameWorker.postMessage({
                 action: "setBrushSize",
                 size: value,
               });
-            }},
+            }
+          },
         ],
       },
       { 
@@ -27,17 +33,6 @@ export const assetMenuTab = (gameWorker: Worker) => {
           gameWorker.postMessage({action: "setActiveTool",toolId: "place_asset"});
         },
         params: [
-          { 
-            id: "groupsList2",
-            type:"div",
-            mount: (container) => {
-              container.innerHTML = `
-                <div id="assetGroupList">  
-                  <div class="asset-empty">Loading assets...</div>
-                </div>
-              `; 
-            }
-          },
           { 
             id: "assetsList2",
             type:"div",
@@ -67,18 +62,19 @@ export const assetMenuTab = (gameWorker: Worker) => {
 
 
 
-
-// ------------ 
+// ============================================================================
+// GLOBAL
 let assetGroups: Array<{ group: string; images: string[] }> = [];
-let assetGroupSelected: string | null = null;
-let assetImageSelected: string | null = null;
+let assetGroupSelected: { group: string; images: string[] } | null = null;
+let assetImageSelectedID: string | null = null;
 let assetDirectionSelected: string = "_NE";
 let gameWorker: Worker;
-let assetGroupListEl: HTMLElement | null = null;
+let handlers: MessageHandler;
 let assetImageListEl: HTMLElement | null = null;
 let assetImageEl: HTMLElement | null = null;
 
-
+// ============================================================================
+// UTILS
 function rotateDirection() {
   // const directions = ["_N", "_NE", "_E", "_SE", "_S", "_SW", "_W", "_NW"];
   const directions = ["_NE", "_SE", "_SW", "_NW"];
@@ -87,51 +83,52 @@ function rotateDirection() {
   const newIdx = (idx + 1) % directions.length;
   assetDirectionSelected = directions[newIdx];
 }
-// ------------ 
 
-export function initAssetGroups(init_gameWorker: Worker): void {
+function setAssetGroupSelected(id:string) {
+   const group = assetGroups.find(g => g.group === id);
+   assetGroupSelected = group || null;
+}
+
+// ============================================================================
+// INIT
+export function initAssetGroups(init_gameWorker: Worker, init_handlers: MessageHandler): void {
   gameWorker = init_gameWorker;
-  gameWorker = init_gameWorker; // Store reference to gameWorker for later use in callbacks
+  handlers = init_handlers;
   const toolMenuEl = document.getElementById('section-Struct');
   if (!toolMenuEl) return;
-  assetGroupListEl = toolMenuEl.querySelector('#assetGroupList') as HTMLElement;
   assetImageListEl = toolMenuEl.querySelector('#assetImageList') as HTMLElement;
   assetImageEl = toolMenuEl.querySelector('#selectedAssetPreview') as HTMLElement;
 
-
   assetImageEl.addEventListener('click', () => {
     rotateDirection();
-    if (assetImageSelected) {
+    if (assetImageSelectedID) {
       gameWorker.postMessage({
         action: "setActiveAsset",
-        assetId: assetImageSelected + assetDirectionSelected,
+        assetId: assetImageSelectedID + assetDirectionSelected,
       });
     }
   }); 
 }
 
+// ============================================================================
+// HANDEL
 export function handleAssetGroups(groups: Array<{ group: string; images: string[] }>): void {
   
-  if (!assetGroupListEl || !assetImageListEl) return;
+  if (!assetImageListEl) return;
 
   console.log("===============Received asset groups:", groups);
   assetGroups = groups;
   if (groups.length <= 0) {
-    assetGroupListEl.innerHTML = `<div class="asset-empty">No asset groups found</div>`;
     assetImageListEl.innerHTML = `<div class="asset-empty">No assets found</div>`;
     return;
   }
-  assetGroupSelected = groups[0].group;
-  assetImageSelected = groups[0].images[0] || null;
+  assetGroupSelected = groups[0]
+  assetImageSelectedID = groups[0].images[0] || null;
 
-  renderAssetGroupList();
   renderAssetImageList();
  
 }
 
-
-// rotateDirection
-// ------------ 
 
 export function handleAssetPreview(blobUrl: string): void {
   if (!assetImageEl) return;
@@ -148,68 +145,158 @@ export function handleAssetPreview(blobUrl: string): void {
 
 // ============================================================================
 // RENDERERS
-export function renderAssetGroupList():void {
-  if (!assetGroupListEl) return;
 
+
+
+function _renderGroupList(el: HTMLElement, call : () => void): void {
+  // 1. Set the content
+      el.innerHTML = `
+        <ul>
+          ${assetGroups.map((group) => `
+            <li class="group-item" data-group-name="${group.group}">
+              <button class="select-btn">${group.group} (${group.images.length})</button>
+            </li>
+          `).join('')}
+        </ul>
+      `;
+
+      // 3. Query all the buttons that were just added to the DOM
+      const lis = el.querySelectorAll('li.group-item');
+
+      // 4. Loop through and attach a specific listener to each
+      lis?.forEach((li) => {
+
+        li.addEventListener('click', (e) => {
+          // Find the parent LI to get the data attribute
+          const groupName = (e.currentTarget as HTMLElement).getAttribute('data-group-name') || '';
+          console.log("Selected Group:", groupName);
+          setAssetGroupSelected(groupName);
+          call()
+        });
+      });
+}
+
+function _renderImagesList(el: HTMLElement, call : () => void): void {
+    if (!assetGroupSelected) return;
+
+  // 1. Set the content
+  el.innerHTML = `
+    <ul>
+        ${assetGroupSelected.images.map((image, _idx) => `
+        <li class="images-item" data-image-name="${image}">
+          <button class="select-btn">${image}</button>
+        </li>
+      `).join('')}
+    </ul>
+  `;
+
+
+  let currentBlobUrl : string | null = null;
+
+  // 3. Query all the buttons that were just added to the DOM
+  const li_list = dialogMgr.getElement()?.querySelectorAll('li.images-item');
+
+  // 4. Loop through and attach a specific listener to each
+  li_list?.forEach((item) => {
+    const imageName = item?.getAttribute('data-image-name') || '';
+    item.innerHTML = `<span>${imageName}</span>`
+
+    handlers.sendMessageWithResponse({
+      action: "getAsset",
+      assetId: imageName + "_NE",
+    }).then((data) => {
+        console.log("----------------------------", data)
+        const newUrl = data?.result?.blobUrl;
+
+        const img = new Image();
+
+        img.onload = () => {
+          // 🔥 cleanup AFTER new one is loaded
+          if (currentBlobUrl) {
+            URL.revokeObjectURL(currentBlobUrl);
+          }
+          currentBlobUrl = newUrl;
+        };
+
+        img.src = newUrl;
+        img.classList.add("asset-preview-img")
+        //  class="" alt="Asset Preview"
+        item.innerHTML = "";
+        item.appendChild(img);
+        
+    })
+
+    item.addEventListener('click', (e) => {
+      // Find the parent LI to get the data attribute
+      console.log("Selected Image:", imageName);
+      assetImageSelectedID = imageName;
+      gameWorker.postMessage({
+            action: "setActiveAsset",
+            assetId: assetImageSelectedID + "_NE",
+      });
+      call()
+    });
+  });
+
+}
+
+// ============================================================================
+// RENDERERS
+
+
+export function renderAssetImageList(): void {
+  if (!assetImageListEl) return;
+  
+  // IF No Groups
   if (assetGroups.length === 0) {
-    assetGroupListEl.innerHTML =  `
+    assetImageListEl.innerHTML =  `
       <div class="asset-empty">Loading assets...</div>
     `;
     return
   }
-  assetGroupListEl.innerHTML =  `
-      <select id="assetGroupListSelect">
 
-      ${assetGroups.map((group, idx) => `
-        <option value="${group.group}" ${idx == 0 ? 'selected' : ''}>
-          ${group.group} (${group.images.length})
-        </option>
-      `).join('')}
-
-      </select>
-  `;
-
-  // Add event listener for group selection
-  const groupSelect = assetGroupListEl.getElementsByTagName('select')[0]
-  groupSelect.addEventListener('change', (event) => {
-    const selectEl = event.target as HTMLSelectElement;
-    assetGroupSelected = selectEl.value;
-    renderAssetImageList();
-    groupSelect.blur()
-  });
-}
-
-export function renderAssetImageList(): void {
-  if (!assetImageListEl) return;
-
-  const group = assetGroups.find(g => g.group === assetGroupSelected);
-  console.log("Rendering asset image list for group:", assetGroupSelected, "Found group:", group);
-  if (!group) {
+  // IF NO Group Selected 
+  if (!assetGroupSelected) {
+    assetGroupSelected = assetGroups[0];
     assetImageListEl.innerHTML =  '<div class="asset-empty">Select a group</div>';
     return
   }
-
-  assetImageListEl.innerHTML =   `
-      <select id="assetImageSelect">
-
-        ${group.images.map((image, idx) => `
-          <option value="${image}" ${idx == 0 ? 'selected' : ''}>${image}</option>
-        `).join('')}
-
-      </select>
-  `;
-
-  // Add event listener for group selection
-  const imageSelect = assetImageListEl.getElementsByTagName('select')[0]
-    imageSelect.addEventListener('change', (event) => {
-      const selectEl = event.target as HTMLSelectElement;
-      assetImageSelected = selectEl.value;
-      gameWorker.postMessage({
-        action: "setActiveAsset",
-        assetId: assetImageSelected + "_NE",
-      });
-      imageSelect.blur()
-
+  
+  // IF NO Image Selected 
+  const image = assetGroupSelected.images.find(i => i === assetImageSelectedID);
+  if (!image) {
+    assetImageSelectedID = assetGroupSelected.images[0];
+    gameWorker.postMessage({
+          action: "setActiveAsset",
+          assetId: assetImageSelectedID + "_NE",
     });
+  }
+  // Set Label
+  assetImageListEl.innerHTML =  `
+      <label id="assetImageListSelect">${assetImageSelectedID}</label>
+    `
+  // ---------------
+  // Set Click 
+  assetImageListEl.querySelector("label")?.addEventListener("click", () => {
+
+      // 2. Open the dialog
+      dialogMgr.open();
+      dialogMgr.setContent(`
+        <div id="dialog-tool-asset-group-list"></div>
+        <div id="dialog-tool-asset-image-list"></div>
+        `)
+      const elGroup= dialogMgr.getElement()?.querySelector('#dialog-tool-asset-group-list') as HTMLElement
+      _renderGroupList(elGroup, () => {
+        const elImages= dialogMgr.getElement()?.querySelector('#dialog-tool-asset-image-list') as HTMLElement
+        _renderImagesList(elImages, ()=> { dialogMgr.close();})
+        renderAssetImageList();
+      })
+
+      const elImages= dialogMgr.getElement()?.querySelector('#dialog-tool-asset-image-list') as HTMLElement
+      _renderImagesList(elImages, ()=> { dialogMgr.close();})
+
+
+  });  
+
 }
 

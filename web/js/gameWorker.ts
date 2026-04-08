@@ -20,7 +20,7 @@ export type GameHandlerData = any;
 export class GameWorker {
   private world = new World();
 
-  private handler: MessageHandler;
+  public handler: MessageHandler;
   x: number = 0;
   y: number = 0;
   xf: number = 0;
@@ -39,7 +39,11 @@ export class GameWorker {
 
   constructor() {
     this.handler = new MessageHandler(self);
-    self.onmessage = (e) => this.handlers.get(e.data.action)?.(e.data);
+    // self.onmessage = (e) => this.handlers.get(e.data.action)?.(e.data);
+    self.onmessage = (e) => this.handler.handleIncoming(e.data);
+
+    this.handler.append(Array.from(this.handlers.entries()));
+
   }
 
   // ============================================================================
@@ -295,6 +299,34 @@ export class GameWorker {
             }
           } catch (error) {
             console.error("Error generating asset preview:", error);
+          }
+        }
+      },
+    ],
+    [
+      "getAsset",
+      async (data: GameHandlerData) => {
+        toolRegistry.setActiveAssetId(data.assetId);
+        console.log("====this.assetLoader:", this.assetLoader);
+        console.log("====setActiveAsset received:", data.assetId);
+        // Generate asset preview using AssetLoaderOpti
+        if (this.assetLoader && data.assetId) {
+          console.log("A")
+          try {
+            const canvas = this.assetLoader.getAsset(data.assetId);
+            console.log(canvas)
+            if (canvas) {
+              // Convert canvas to blob URL
+              const blob = await canvas.convertToBlob();
+              const blobUrl = URL.createObjectURL(blob);
+              // Send preview to main thread
+              console.log("== Resutn Blog")
+              return {blobUrl:blobUrl}             
+            } else {
+              console.log("== Asset not found:", data.assetId);
+            }
+          } catch (error) {
+            console.log("== Error generating asset preview:", error);
           }
         }
       },

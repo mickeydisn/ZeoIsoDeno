@@ -37,8 +37,13 @@ const gameWorker = new Worker(
     type: "module",
   },
 );
-
 initKeyBoard(gameWorker);
+
+// ============================================================================
+// == Event Handeler
+// ============================================================================
+const handlers = new MessageHandler(gameWorker);
+
 
 const config_tag : MenuTab[] = [
     { id: "inspect",  icon: "👀", 
@@ -92,7 +97,7 @@ const config_tag : MenuTab[] = [
       ]
      },
     flyMenuTab(gameWorker),
-    assetMenuTab(gameWorker),
+    assetMenuTab(gameWorker, handlers),
   ]
 
 
@@ -128,11 +133,6 @@ menu.updateDisplay([
 // initTerrainMenu(gameWorker);
 // initToolMenu(gameWorker);
 // infoMenu(gameWorker);
-
-// ============================================================================
-// == Event Handeler
-// ============================================================================
-const handlers = new MessageHandler(gameWorker);
 
 
 
@@ -255,7 +255,7 @@ handlers.append([
     handlePickedColor(data.r, data.g, data.b);
   }],
   ["assetGroups", (data) => {
-    initAssetGroups(gameWorker);
+    initAssetGroups(gameWorker, handlers);
     handleAssetGroups(data.groups);
   }],
   ["assetPreview", (data) => {
