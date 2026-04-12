@@ -10,7 +10,10 @@ import {
 import { denoPlugins } from "jsr:@luca/esbuild-deno-loader@^0.11.1";
 import * as esbuild from "npm:esbuild@0.20.2";
 import { editorRouter } from "./IsoGameAddon/editor/server.ts";
+
+import { serveStatic as StaticRouterIso } from "./IsoGameAddon/iso/web/serveIso.ts";
 import { serveStatic as serveStaticEditor } from "./IsoGameAddon/editor/web/serveEditor.ts";
+import { serveStatic as serveStaticPallet } from "./IsoGameAddon/pallet/web/servePallet.ts";
 
 export const serveStatic = async (context: Context) => {
   const filePath = context.request.url.pathname;
@@ -49,14 +52,10 @@ export const serveStatic2 = async (ctx: Context) => {
 };
 
 const router = new Router();
-router.get("/card/(.*)", serveStatic2);
-router.get("/img/(.*)", serveStatic2);
-router.get("/web/(.*)", serveStatic2);
 router.get("/img/(.*)", serveStatic2);
 
 // Editor static file router — serves /editor/* web files
-const editorStaticRouter = new Router();
-editorStaticRouter.get("/editor/(.*)", serveStaticEditor);
+
 
 const app = new Application();
 const port = 8081;
@@ -79,10 +78,33 @@ app.use(editorRouter.allowedMethods());
 app.use(router.routes());
 app.use(router.allowedMethods());
 
+
+
+const isoStaticRouter = new Router();
+isoStaticRouter.get("/iso/(.*)", StaticRouterIso);
+
+app.use(isoStaticRouter.routes());
+app.use(isoStaticRouter.allowedMethods());
+
+
+const editorStaticRouter = new Router();
+editorStaticRouter.get("/editor/(.*)", serveStaticEditor);
+
+
 // Finally mount editor static file router (lowest priority)
 app.use(editorStaticRouter.routes());
 app.use(editorStaticRouter.allowedMethods());
+
+
+const palletStaticRouter = new Router();
+palletStaticRouter.get("/pallet/(.*)", serveStaticPallet);
+
+app.use(palletStaticRouter.routes());
+app.use(palletStaticRouter.allowedMethods());
+
 console.log(`Server running on http://localhost:${port}`);
+
+
 
 app.listen({ port: port });
 

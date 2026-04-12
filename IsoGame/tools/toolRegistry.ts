@@ -19,7 +19,7 @@ export class ToolRegistry {
   private activeAssetId: string | null = null;
 
   // Building configuration state
-  private activeBuildingConfigId: string = "grave_a";
+  private activeBuildingConfigId: string = "WcBuildConf_GraveA";
   private buildingGrowLoop: number = 20;
   private buildingEndLoop: number = 100;
 

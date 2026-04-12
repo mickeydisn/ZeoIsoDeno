@@ -1,12 +1,15 @@
 // Main thread (e.g., main.ts)
 
-import { MessageHandler } from "../worker/messageHandler.ts";
-import { dialogMgr } from "./dialog.ts";
-import { MenuTab } from "./headMenu.ts";
+import { MessageHandler } from "../../worker/messageHandler.ts";
+import { dialogMgr } from "../dialog.ts";
+import { MenuTab } from "../headMenu.ts";
 
+
+// ============================================================================
+// CONFIG
 export const assetMenuTab = (gameWorker: Worker, init_handlers: MessageHandler) => {
   return{ 
-    id: "Struct",  icon: "X" , 
+    id: "Struct",  icon: "🧩" , 
     sub: [
       { 
         id: "clean_asset", 
@@ -146,7 +149,27 @@ export function handleAssetPreview(blobUrl: string): void {
 // ============================================================================
 // RENDERERS
 
+export const assetCssClass = /*css*/`
 
+#dialog-tool-asset {
+  display: grid;
+  grid-template-columns: 1fr 5fr;
+  height: 100%;
+
+  #dialog-tool-asset-group-list {
+    display: flex;
+    overflow: scroll;
+  }
+
+
+  #dialog-tool-asset-image-list {
+    display: flex;
+    overflow: scroll;
+  }
+
+}
+
+`;
 
 function _renderGroupList(el: HTMLElement, call : () => void): void {
   // 1. Set the content
@@ -282,8 +305,10 @@ export function renderAssetImageList(): void {
       // 2. Open the dialog
       dialogMgr.open();
       dialogMgr.setContent(`
-        <div id="dialog-tool-asset-group-list"></div>
-        <div id="dialog-tool-asset-image-list"></div>
+        <div id="dialog-tool-asset">
+          <div id="dialog-tool-asset-group-list"></div>
+          <div id="dialog-tool-asset-image-list"></div>
+        </div>
         `)
       const elGroup= dialogMgr.getElement()?.querySelector('#dialog-tool-asset-group-list') as HTMLElement
       _renderGroupList(elGroup, () => {

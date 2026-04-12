@@ -1,3 +1,5 @@
+import { assetCssClass } from "./sections/assetMenu.ts";
+
 /* ═══════════════════════════════════════════════════════════════
    Types
 ═══════════════════════════════════════════════════════════════ */
@@ -68,11 +70,13 @@ const buildCss = (tabs: MenuTab[]): string => {
 
   return /* css */`
     #HeadMenuIcons,  #HeadMenuPanel  {
+      --back-hieght: 3.3rem;
       --opacity-hover: 0.9;
       --opacity-disabled: 0.25;
       --color-back-tranp : rgba(0, 0, 0, 0);
       --color-back-white: rgba(255, 255, 255, 0.5);
-      --color-back: rgba(0, 0, 0, 0.5);
+      /* --color-back: rgba(0, 0, 0, 0.5); */
+      --color-back: #3A3A3A;     
       --color-active: rgba(0, 0, 0, 1);
     }
 
@@ -80,7 +84,8 @@ const buildCss = (tabs: MenuTab[]): string => {
       position: fixed;
       top: 10px;
       left: 50%;
-      height: 3.2rem;
+      height: var(--back-hieght);
+      border-radius:var(--back-hieght);
       transform: translateX(-50%);
       display: flex;
       flex-direction: row;
@@ -90,8 +95,10 @@ const buildCss = (tabs: MenuTab[]): string => {
       font-family: monospace;
       align-items: center;
       justify-content: center;
-      background: #ffffff;
+      background-color: var( --color-back);
+      /*
       background: linear-gradient(180deg, var(--color-back-tranp) 0%, var(--color-back-tranp) 40%, var(--color-back) 40%, var(--color-back) 60%, var(--color-back-tranp) 60%, var(--color-back-tranp) 100%);
+      */
     }
 
     #HeadMenuIcons input[type="radio"] { display: none; }
@@ -120,14 +127,15 @@ const buildCss = (tabs: MenuTab[]): string => {
     }
 
     .hm-label.nav {
-      font-size: 3rem;
+      font-size: var(--back-hieght);
       padding: .4rem;
-      height: 3rem;
-      width: 3rem;
+      height: calc(2 var(--back-hieght));
+      width: calc(var(--back-hieght));
       border-radius: 100%;
       line-height: 0;
+      opacity: .3;
     }
-      .hm-label.nav::before {
+    .hm-label.nav::before {
         content: "";
         position: absolute;
         z-index: -1;
@@ -137,8 +145,10 @@ const buildCss = (tabs: MenuTab[]): string => {
     }
     .hm-label.nav:hover     { background: rgba(64, 64, 64, 0.9); }
     .hm-label.nav.disabled  { opacity: 0.25; cursor: default; pointer-events: none; }
-    .hm-label.nav.left { margin-right: 2rem; } 
-    .hm-label.nav.right { margin-left: 1rem; } 
+
+    .hm-label.nav.left { margin-right: 2rem;} 
+    .hm-label.nav.right { margin-left: 2rem; } 
+
     .hm-label.menu-icone {
       opacity: .4;
       background-color: var(--color-active);
@@ -164,18 +174,44 @@ const buildCss = (tabs: MenuTab[]): string => {
 
     /*--------------*/    
     #HeadMenuPanel {
+      z-index: 2000;
       position: fixed;
-      bottom: 10vh;
       left: 50%;
       transform: translateX(-50%);
       width: 60vw;
-      height: 10vh;
-      z-index: 2000;
-      border-radius: .75rem;
-      overflow: hidden;
+      height: var(--back-hieght);
+      border-bottom: calc(var(--back-hieght)/2) solid var(--color-back);
+      bottom:0px;
+
+
+
+      .panel-section {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+
+        background-color: var(--color-back);
+        border-radius: calc(var(--back-hieght)/2) calc(var(--back-hieght)/2) 0 0;
+        padding: 0 .75rem;
+        gap: .5rem;
+
+        color: white;
+        font-family: monospace;
+        pointer-events: none;
+
+        transform: translateY(12px) scale(0.98);
+        opacity: 0;
+        transition:
+          opacity   0.45s cubic-bezier(0.34, 1.3, 0.64, 1),
+          transform 0.45s cubic-bezier(0.34, 1.3, 0.64, 1);
+      }
+
     }
 
     #HeadMenuPanel {
+
+
       select {
         appearance: base-select;
         background-color:  var(--color-active);
@@ -229,24 +265,6 @@ const buildCss = (tabs: MenuTab[]): string => {
       }
     }
 
-    .panel-section {
-      position: absolute;
-      inset: 0;
-      background-color: var(--color-back);
-      border-radius: .75rem;
-      display: flex;
-      align-items: center;
-      padding: 0 .75rem;
-      gap: .5rem;
-      color: white;
-      font-family: monospace;
-      opacity: 0;
-      transform: translateY(12px) scale(0.98);
-      pointer-events: none;
-      transition:
-        opacity   0.45s cubic-bezier(0.34, 1.3, 0.64, 1),
-        transform 0.45s cubic-bezier(0.34, 1.3, 0.64, 1);
-    }
 
     .hm-sub-strip {
       display: flex;
@@ -321,7 +339,10 @@ const buildCss = (tabs: MenuTab[]): string => {
     }
 
     ${sectionRules}
-  ` /* css */;
+
+    ${assetCssClass}
+    
+  `  /* css */;
 };
 
 /* ═══════════════════════════════════════════════════════════════

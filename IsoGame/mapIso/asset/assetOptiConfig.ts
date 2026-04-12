@@ -1,3 +1,5 @@
+import { asset_items_low_grokclean_04 } from "./conf/grok_a.ts";
+
 export type TypeAssetImageConfig = {
   label: string;
   top: number;
@@ -1802,7 +1804,7 @@ const asset_NatureTree : TypeAssetGroupConfig = {
   "imgWidth": 192,
 }
 const asset_AstroBase2 : TypeAssetGroupConfig = {
-  "src": "./img/asset_opti/AstroBase2.png",
+  "src": "./img/AstroBase2_fixed.png",
   "group": "AstroBase2",
   "images": [
     /*
@@ -1987,27 +1989,31 @@ const asset_AstroBase5 : TypeAssetGroupConfig = {
   "imgWidth": 192,
 }
 
+
 export const assetOptiConfig: TypeAssetGroupConfig[] = [
-  asset_ItemTech,
   asset_AstroBase,
   asset_AstroBase2,
   asset_AstroBase3,
   asset_AstroBase4,
   asset_AstroBase5,
-  asset_Wall,
-  asset_ItemPilar,
-  asset_NatureRock,
-  asset_AstroRocket,
+  asset_Town1,
   asset_Town2,
+  asset_Wall,
+  asset_NatureTree,
   asset_NatureFlower,
-  asset_AstroPlatform,
-  asset_MyTower,
+  asset_NatureRock,
+  asset_ItemTech,
+  asset_ItemPilar,
   asset_ItemOther,
   asset_ItemGrave,
+  asset_AstroPlatform,
   asset_Train,
+  asset_AstroRocket,
+  asset_items_low_grokclean_04,
+
+  asset_MyTower,
   asset_UserAstro,
-  asset_Town1,
-  asset_NatureTree,
+
 
   // ----------- 8 axes
   {

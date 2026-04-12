@@ -1,4 +1,4 @@
-import { TileInfo } from "../../../IsoGame/map/object/tile.ts";
+import { TileInfo } from "../../../../../IsoGame/map/object/tile.ts";
 
 interface BaseMessage {
   action: string;

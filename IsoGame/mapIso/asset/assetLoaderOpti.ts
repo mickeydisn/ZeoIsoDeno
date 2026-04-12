@@ -1,20 +1,3 @@
-/*
-import {
-  createCanvas,
-  EmulatedCanvas2D,
-  Image,
-  loadImage,
-} from "https://deno.land/x/canvas@v1.4.2/mod.ts";
-*/
-// import { Canvas, Image } from "jsr:@gfx/canvas@0.5.6";
-
-/*
-import {
-  Canvas,
-  CanvasRenderingContext2D,
-  Image,
-} from "https://deno.land/x/skia_canvas@0.2.0/mod.ts";
-*/
 
 // Define a compatible canvas type for both Deno and browser
 type CanvasType = OffscreenCanvas; // | import("jsr:@gfx/canvas@0.5.6").Canvas;
@@ -64,16 +47,6 @@ export class AssetLoaderOpti {
       }
       return createImageBitmap(await response.blob()); // No <img>, direct GPU data
     }
-    /*
-    function loadImage(src: string): Promise<ImageType> {
-      return new Promise((resolve, reject) => {
-        const img = new HTMLImageElement();
-        img.onload = () => resolve(img);
-        img.onerror = (err: Event | string) => reject(err);
-        img.src = src;
-      });
-    }
-    */
 
     // Use absolute path from origin to ensure correct resolution in web worker context
     const baseUrl = typeof self !== 'undefined' && self.location ? self.location.origin : '';

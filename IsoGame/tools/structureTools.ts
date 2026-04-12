@@ -2,6 +2,7 @@ import { MapTool, toolRegistry } from "./toolRegistry.ts";
 import { World } from "../word.ts";
 import { createBuildingConfig } from "./buildingConfigRegistry.ts";
 import { WcBuildFactoryGenarator } from "../wcBuilding2/wcBuildFactory.ts";
+import { WcBuildActions } from "../wcBuilding2/wcBuildAction.ts";
 import { createTool } from "./toolBuilder.ts";
 
 /**
@@ -23,11 +24,23 @@ export const placeBuildingTool = createTool({
       `Place Building: config=${configId}, growLoop=${params.growLoop}, endLoop=${params.endLoop}, pos=(${x}, ${y})`,
     );
 
+    WcBuildActions.getInstance().doAction({
+      func: "createBuilding",
+      x: x,
+      y: y,
+      buildingType: configId,
+      growLoopCount: params.growLoop ? params.growLoop : 50,
+      endLoopMax: params.endLoop ? params.endLoop : 2000,
+    });
+
+    /*
+
     // Create building configuration using registry
     const buildingConf = createBuildingConfig(configId, {
       growLoopCount: params.growLoop,
       endLoopMax: params.endLoop,
     });
+
 
     if (!buildingConf) {
       console.error(`Failed to create building config: ${configId}`);
@@ -43,8 +56,9 @@ export const placeBuildingTool = createTool({
     } else {
       console.error(`Failed to place building at (${x}, ${y})`);
     }
-
     return { success, configId, x, y };
+    */
+
   },
 });
 

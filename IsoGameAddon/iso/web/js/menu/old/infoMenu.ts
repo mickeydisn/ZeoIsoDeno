@@ -1,5 +1,5 @@
-import { TileInfo } from "../../../IsoGame/map/object/tile.ts";
-import { WcBuildTileInfo } from "../../../IsoGame/wcBuilding2/wcBuildTile.ts";
+import { TileInfo } from "../../../../../../IsoGame/map/object/tile.ts";
+import { WcBuildTileInfo } from "../../../../../../IsoGame/wcBuilding2/wcBuildTile.ts";
 
 interface InfoMessage {
   data: TileInfo;

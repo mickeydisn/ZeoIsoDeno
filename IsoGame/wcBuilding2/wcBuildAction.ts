@@ -87,6 +87,9 @@ export class WcBuildActions {
         const typeBuildingConf: typeof WcAbstractBuildConf =
           indexBuildingConfigClass[conf.buildingType];
 
+        console.log(Object.keys(indexBuildingConfigClass))
+        console.log('', conf.buildingType, typeBuildingConf)
+
         const buildingConf = new typeBuildingConf({
           growLoopCount: conf.growLoopCount ? conf.growLoopCount : 50,
           endLoopMax: conf.endLoopMax ? conf.endLoopMax : 200,

@@ -1,6 +1,6 @@
 // Main thread (e.g., main.ts)
 
-import { MenuTab } from "./headMenu.ts";
+import { MenuTab } from "../headMenu.ts";
 
 export const terrainMenuTab = (gameWorker: Worker) => {
   return { 
@@ -46,7 +46,7 @@ export const terrainMenuTab = (gameWorker: Worker) => {
 
     ],
     params: [
-      { id: "brushSize", type: "range", min: 1, max: 9, step: 2, default: 1, callback_change: (value) => {
+      { id: "brushSize", type: "range", min: 1, max: 21, step: 1, default: 1, callback_change: (value) => {
           gameWorker.postMessage({
             action: "setBrushSize",
             size: value,

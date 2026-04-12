@@ -1,6 +1,6 @@
 // Main thread (e.g., main.ts)
 
-import { MenuTab } from "./headMenu.ts";
+import { MenuTab } from "../headMenu.ts";
 
 export const flyMenuTab = (gameWorker: Worker) => {
   return {   

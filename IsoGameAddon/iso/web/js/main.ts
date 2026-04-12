@@ -1,7 +1,8 @@
-import { CanvasMapDrawersConf } from "../../IsoGame/mapIso/canvasMapDrawer.ts";
-import { flyMenuTab } from "./menu/flyMenu.ts";
+import { CanvasMapDrawersConf } from "../../../../IsoGame/mapIso/canvasMapDrawer.ts";
+import { flyMenuTab } from "./menu/sections/flyMenu.ts";
 import { initHeadMenu } from "./menu/headMenu.ts";
 
+/*
 import { 
   initToolMenu, 
   handleToolExecuted,
@@ -10,14 +11,17 @@ import {
 } from "./menu/toolMenu.ts";
 
 import { infoMenu, updateInfoCell } from "./menu/InfoMenu.ts";
+*/
 import { GameHandlerData } from "./gameWorker.ts";
 // import { GlobalState, initMenu, updatGlobalJSON } from "./gobalState.ts";
-import { GridMapDrawers } from "../../IsoGame/mapIso/grid.ts";
+import { GridMapDrawers } from "../../../../IsoGame/mapIso/grid.ts";
 import { initCanvaMouse, initKeyBoard } from "./keyboad.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
 import { MenuTab } from "./menu/headMenu.ts";
-import { terrainMenuTab } from "./menu/terrainMenu.ts";
-import { assetMenuTab, handleAssetGroups, handleAssetPreview, initAssetGroups } from "./menu/assetMenu.ts";
+import { terrainMenuTab } from "./menu/sections/terrainMenu.ts";
+import { assetMenuTab, handleAssetGroups, handleAssetPreview, initAssetGroups } from "./menu/sections/assetMenu.ts";
+import { colorMenuTab } from "./menu/sections/colorMenu.ts";
+import { buildingMenuTab } from "./menu/sections/buildingMenu.ts";
  
 // ============================================================================
 // CREATE WORKER
@@ -46,6 +50,7 @@ const handlers = new MessageHandler(gameWorker);
 
 
 const config_tag : MenuTab[] = [
+    flyMenuTab(gameWorker),
     { id: "inspect",  icon: "👀", 
       params: [
         { id: "inspectInfo", type: "div", mount: (container) => {
@@ -60,48 +65,13 @@ const config_tag : MenuTab[] = [
 
     },
     terrainMenuTab(gameWorker),
-    { id: "color",  icon: "🎨",
-        sub: [
-        { id: "paint", icon: "🫟" ,
-          params: [
-            { id: "colorPicker", type: "color", default: "#ff0000" , 
-              callback_change: (value) => {
-                console.log("Color picker changed:", value);
-                const [r, g, b] = (value as string).match(/\w\w/g)?.map(c => parseInt(c, 16)) || [255, 0, 0];
-                gameWorker.postMessage({
-                  action: "setColor",
-                  r: r,g: g, b: b,
-                });
-              }
-            }
-          ],
-          callback_select: () => {
-            gameWorker.postMessage({action: "setActiveTool",toolId: "paint_color"});
-          } },
-        { id: "random", icon: "🎲" , 
-          params: [
-            { id: "brushStrength", type: "range", min: 0, max: 1, step: 0.01, default: 0.5, callback_change: () => {} },
-          ],
-          callback_select: () => {
-            gameWorker.postMessage({action: "setActiveTool",toolId: "random_shade"});
-          } },
-      ],
-      params: [
-        { id: "brushSize", type: "range", min: 1, max: 10, default: 1, callback_change: (value) => {
-            gameWorker.postMessage({
-              action: "setBrushSize",
-              size: value,
-            });
-          }
-        },
-      ]
-     },
-    flyMenuTab(gameWorker),
+    colorMenuTab(gameWorker),
     assetMenuTab(gameWorker, handlers),
+    buildingMenuTab(gameWorker),
   ]
 
 
-const menu = initHeadMenu({ tabs: config_tag, defaultIndex: 0 });
+const menu = initHeadMenu({ tabs: config_tag, defaultIndex: 1 });
 
 // Hide terrain, disable inspect, hide terrain's "smooth" sub
 menu.updateDisplay([
@@ -148,18 +118,18 @@ const callback_initWorker = (_data: GameHandlerData): void => {
   handlers.send({
     action: "initCanvasMap",
     mapConf: {
-      DRAW_TILE_COUNT: 40,
-      SCALE_SIZE: 1,
+      DRAW_TILE_COUNT: 20,
+      SCALE_SIZE: 1.8,
       SCALE_MOD: 1,
     },
   });
-  /* CITY
+  /* / CITY
   handlers.send({
     action: "gridClick",
     x: -19,
     y: 70,
   });
-  /**/
+  /* */
   handlers.send({ action: "startRender" });
 };
 
@@ -246,14 +216,16 @@ handlers.append([
     fpsDisplay.textContent = `FPS: ${data.fps}`;
   }],
   ["infoCell", (data) => {
-    updateInfoCell(data);
+    // updateInfoCell(data);
   }],
+  /*
   ["toolExecuted", (data) => {
     handleToolExecuted(data.toolId, data.success);
   }],
   ["pickedColor", (data) => {
     handlePickedColor(data.r, data.g, data.b);
   }],
+  */
   ["assetGroups", (data) => {
     initAssetGroups(gameWorker, handlers);
     handleAssetGroups(data.groups);
@@ -261,9 +233,11 @@ handlers.append([
   ["assetPreview", (data) => {
     handleAssetPreview(data.blobUrl);
   }],
+  /*
   ["buildingConfigList", (data) => {
     handleBuildingConfigList(data.configs);
   }],
+  */
 ]);
 
 // ============================================================================

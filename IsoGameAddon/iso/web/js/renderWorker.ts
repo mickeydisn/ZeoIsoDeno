@@ -1,6 +1,6 @@
-import { AssetLoaderOpti } from "../../IsoGame/mapIso/asset/assetLoaderOpti.ts";
-import { CanvasMapDrawers } from "../../IsoGame/mapIso/canvasMapDrawer.ts";
-import { World } from "../../IsoGame/word.ts";
+import { AssetLoaderOpti } from "../../../../IsoGame/mapIso/asset/assetLoaderOpti.ts";
+import { CanvasMapDrawers } from "../../../../IsoGame/mapIso/canvasMapDrawer.ts";
+import { World } from "../../../../IsoGame/word.ts";
 
 type RenderHandlerData = any;
 

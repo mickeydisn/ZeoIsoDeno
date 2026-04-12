@@ -1,18 +1,18 @@
-import { City } from "../../IsoGame/city/city.ts";
-import { FactoryMap } from "../../IsoGame/map/factory/factoryMap.ts";
-import { TilesActions } from "../../IsoGame/map/tileActions.ts";
-import { AssetLoaderOpti } from "../../IsoGame/mapIso/asset/assetLoaderOpti.ts";
+import { City } from "../../../../IsoGame/city/city.ts";
+import { FactoryMap } from "../../../../IsoGame/map/factory/factoryMap.ts";
+import { TilesActions } from "../../../../IsoGame/map/tileActions.ts";
+import { AssetLoaderOpti } from "../../../../IsoGame/mapIso/asset/assetLoaderOpti.ts";
 import {
   CanvasMapDrawers,
   CanvasMapDrawersConf,
-} from "../../IsoGame/mapIso/canvasMapDrawer.ts";
-import { toolRegistry } from "../../IsoGame/tools/toolRegistry.ts";
-import { terrainTools } from "../../IsoGame/tools/terrainTools.ts";
-import { colorTools } from "../../IsoGame/tools/colorTools.ts";
-import { assetTools } from "../../IsoGame/tools/assetTools.ts";
-import { structureTools } from "../../IsoGame/tools/structureTools.ts";
-import { getBuildingConfigList } from "../../IsoGame/tools/buildingConfigRegistry.ts";
-import { World } from "../../IsoGame/word.ts";
+} from "../../../../IsoGame/mapIso/canvasMapDrawer.ts";
+import { toolRegistry } from "../../../../IsoGame/tools/toolRegistry.ts";
+import { terrainTools } from "../../../../IsoGame/tools/terrainTools.ts";
+import { colorTools } from "../../../../IsoGame/tools/colorTools.ts";
+import { assetTools } from "../../../../IsoGame/tools/assetTools.ts";
+import { structureTools } from "../../../../IsoGame/tools/structureTools.ts";
+import { getBuildingConfigList } from "../../../../IsoGame/tools/buildingConfigRegistry.ts";
+import { World } from "../../../../IsoGame/word.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
 
 export type GameHandlerData = any;
@@ -65,6 +65,7 @@ export class GameWorker {
     assetTools.forEach((tool) => toolRegistry.register(tool));
     structureTools.forEach((tool) => toolRegistry.register(tool));
 
+    /*
     // Send tool list to main thread for UI rendering
     this.handler.send({
       action: "toolList",
@@ -76,7 +77,7 @@ export class GameWorker {
       action: "buildingConfigList",
       configs: getBuildingConfigList(),
     });
-
+    */
     // Send asset groups to main thread for asset browser
     const assetGroups = this.assetLoader.assetList.map((g) => ({
       group: g.group,
@@ -112,13 +113,13 @@ export class GameWorker {
       data.height | 800,
       data.mapConf as CanvasMapDrawersConf || {
         DRAW_TILE_COUNT: 40,
-        SCALE_SIZE: 1, // 2 / 3,
+        SCALE_SIZE: 1.2, // 2 / 3,
         SCALE_MOD: 1,
       },
       this.assetLoader,
       this.canvasMap,
     );
-    
+    /*
     this.handler.send(
       {
         action: "callback_initCanvasMap",
@@ -127,6 +128,7 @@ export class GameWorker {
         mapInfoBuffer: this.canvasMapDrawer.bufferMapInfo,
       },
     );
+    */
   };
 
   // ============================================================================
@@ -169,7 +171,7 @@ export class GameWorker {
         const diffX = pm.up ? 1 : pm.down ? -1 : 0;
         const diffY = pm.left ? 1 : pm.right ? -1 : 0;
         const mapMod = this.canvasMapDrawer.conf.SCALE_MOD;
-        const speed = .5 * mapMod;
+        const speed = .1 * mapMod;
         // if move :
         if (diffX != 0 || diffY != 0) {
           this.xf += diffY != 0 ? diffX * speed * .70 : diffX * speed;
