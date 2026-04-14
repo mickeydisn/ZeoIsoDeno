@@ -14,8 +14,8 @@
       label: "Corner",
       face: ["r", "l", "out", "out"],
       assets: [
-        { h: 1, key: "Corner", keyR: 3, sufix: "" },
-        { h: 0, key: "Corner", keyR: 2, sufix: "" },
+        { h: 1, key: "Corner", keyR: 3 },
+        { h: 0, key: "Corner", keyR: 2 },
       ],
     },
 
@@ -24,8 +24,8 @@
       label: "Corner_B",
       face: ["r", "l", "out", "out"],
       assets: [
-        { h: 1, key: "CornerRound", keyR: 3, sufix: "" },
-        { h: 0, key: "CornerDiagonal", keyR: 2, sufix: "" },
+        { h: 1, key: "CornerRound", keyR: 3 },
+        { h: 0, key: "CornerDiagonal", keyR: 2 },
       ],
     },
 
@@ -35,8 +35,8 @@
       label: "Wall_Door",
       face: ["r", "in", "l", "outD"],
       assets: [
-        { h: 1, key: "", keyR: 3, sufix: "" },
-        { h: 0, key: "Door", keyR: 1, sufix: "" },
+        { h: 1, key: "", keyR: 3 },
+        { h: 0, key: "Door", keyR: 1 },
       ],
     },
   //  ["Wr", "A", "Wl", "Wout"]
@@ -44,8 +44,8 @@
       label: "Wall",
       face: ["r", "in", "l", "out"],
       assets: [
-        { h: 1, key: "", keyR: 3, sufix: "" },
-        { h: 0, key: "", keyR: 1, sufix: "" },
+        { h: 1, key: "", keyR: 3 },
+        { h: 0, key: "", keyR: 1 },
       ],
     },
   //  ["Wr", "A", "Wl", "Wout"]
@@ -53,8 +53,8 @@
       label: "Wall_RoofWindows",
       face: ["r", "in", "l", "out"],
       assets: [
-        { h: 1, key: "", keyR: 3, sufix: "" },
-        { h: 0, key: "WindowGlass", keyR: 1, sufix: "" },
+        { h: 1, key: "", keyR: 3 },
+        { h: 0, key: "WindowGlass", keyR: 1 },
       ],
     },
   //  ["Wr", "A", "Wl", "Wout"]
@@ -62,8 +62,8 @@
       label: "Wall_Windows",
       face: ["r", "in", "l", "out"],
       assets: [
-        { h: 1, key: "Window", keyR: 3, sufix: "" },
-        { h: 0, key: "WindowGlass", keyR: 1, sufix: "" },
+        { h: 1, key: "Window", keyR: 3 },
+        { h: 0, key: "WindowGlass", keyR: 1 },
       ],
     },
   // ----------------
@@ -72,7 +72,7 @@
       label: "InnerCorner",
       face: ["in", "in", "l", "r"],
       assets: [
-        { h: 1, key: "CornerInner", keyR: 3, sufix: "" },
+        { h: 1, key: "CornerInner", keyR: 3 },
       ],
     },
   // ----------------
@@ -81,7 +81,7 @@
       label: "InnerCorner_X",
       face: ["in", "in", "lX", "rX"],
       assets: [
-        { h: 1, key: "CornerInner", keyR: 3, sufix: "" },
+        { h: 1, key: "CornerInner", keyR: 3 },
       ],
     },
 
@@ -91,8 +91,8 @@
       label: "Inside_Full",
       face: ["in", "in", "in", "in"],
       assets: [
-        { h: 2, key: "Point", keyR: 3, sufix: "" },
-        { h: 1, key: "Block", keyR: 0, sufix: "" },
+        { h: 2, key: "Point", keyR: 3 },
+        { h: 1, key: "Block", keyR: 0 },
       ],
     },
   // =========================================

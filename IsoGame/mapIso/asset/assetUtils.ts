@@ -1,4 +1,21 @@
 // ------------------------------------------------------------
+// ASSET LIST FUNCTION 
+// ------------------------------------------------------------
+
+const ASSET_HEIGHT = 224
+
+export const list_to_asset = (list_asset: string[]) => {
+
+    return list_asset.map((value, idx) => { return {
+      "label": value,
+      "top": idx * ASSET_HEIGHT,
+    }})
+   
+
+}
+
+
+// ------------------------------------------------------------
 // COLOR FILTER FUNCTION
 // ------------------------------------------------------------
 

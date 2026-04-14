@@ -12,9 +12,9 @@ const jo = {
       label: "Corner_X",
       face: ["rX", "lX", "out", "out"],
       assets: [
-        { h: 2, key: "Corner", keyR: 3, sufix: "" },
-        { h: 1, key: "Corner", keyR: 2, sufix: "" },
-        { h: 0, key: "Corner", keyR: 2, sufix: "" },
+        { h: 2, key: "Corner", keyR: 3 },
+        { h: 1, key: "Corner", keyR: 2 },
+        { h: 0, key: "Corner", keyR: 2 },
       ],
     },
   // ["Wr", "Wl", "Wout", "Wout"],
@@ -22,9 +22,9 @@ const jo = {
       label: "Corner",
       face: ["r", "l", "out", "out"],
       assets: [
-        { h: 2, key: "Corner", keyR: 3, sufix: "" },
-        { h: 1, key: "Corner", keyR: 2, sufix: "" },
-        { h: 0, key: "Corner", keyR: 2, sufix: "" },
+        { h: 2, key: "Corner", keyR: 3 },
+        { h: 1, key: "Corner", keyR: 2 },
+        { h: 0, key: "Corner", keyR: 2 },
       ],
     },
 
@@ -33,9 +33,9 @@ const jo = {
       label: "Corner_B",
       face: ["r", "l", "out", "out"],
       assets: [
-        { h: 2, key: "CornerRound", keyR: 3, sufix: "" },
-        { h: 1, key: "CornerDiagonal", keyR: 2, sufix: "" },
-        { h: 0, key: "CornerDiagonal", keyR: 2, sufix: "" },
+        { h: 2, key: "CornerRound", keyR: 3 },
+        { h: 1, key: "CornerDiagonal", keyR: 2 },
+        { h: 0, key: "CornerDiagonal", keyR: 2 },
       ],
     },
 
@@ -46,9 +46,9 @@ const jo = {
       label: "Door",
       face: ["r", "in", "l", "outD"],
       assets: [
-        { h: 2, key: "", keyR: 3, sufix: "" },
-        { h: 1, key: "WindowGlass", keyR: 1, sufix: "" },
-        { h: 0, key: "Door", keyR: 1, sufix: "" },
+        { h: 2, key: "", keyR: 3 },
+        { h: 1, key: "WindowGlass", keyR: 1 },
+        { h: 0, key: "Door", keyR: 1 },
       ],
     },
 
@@ -57,9 +57,9 @@ const jo = {
       label: "Wall",
       face: ["r", "in", "l", "out"],
       assets: [
-        { h: 2, key: "", keyR: 3, sufix: "" },
-        { h: 1, key: "WindowGlass", keyR: 1, sufix: "" },
-        { h: 0, key: "WindowGlass", keyR: 1, sufix: "" },
+        { h: 2, key: "", keyR: 3 },
+        { h: 1, key: "WindowGlass", keyR: 1 },
+        { h: 0, key: "WindowGlass", keyR: 1 },
       ],
     },
 
@@ -68,9 +68,9 @@ const jo = {
       label: "Wall_Windows",
       face: ["r", "in", "l", "out"],
       assets: [
-        { h: 2, key: "Window", keyR: 3, sufix: "" },
-        { h: 1, key: "WindowGlass", keyR: 1, sufix: "" },
-        { h: 0, key: "WindowGlass", keyR: 1, sufix: "" },
+        { h: 2, key: "Window", keyR: 3 },
+        { h: 1, key: "WindowGlass", keyR: 1 },
+        { h: 0, key: "WindowGlass", keyR: 1 },
       ],
     },
 
@@ -81,7 +81,7 @@ const jo = {
       label: "InnerCorner",
       face: ["in", "in", "l", "r"],
       assets: [
-        { h: 2, key: "CornerInner", keyR: 3, sufix: "" },
+        { h: 2, key: "CornerInner", keyR: 3 },
       ],
     },
 
@@ -91,8 +91,8 @@ const jo = {
       label: "Inside_Full",
       face: ["in", "in", "in", "in"],
       assets: [
-        { h: 3, key: "Point", keyR: 3, sufix: "" },
-        { h: 2, key: "Block", keyR: 0, sufix: "" },
+        { h: 3, key: "Point", keyR: 3 },
+        { h: 2, key: "Block", keyR: 0 },
       ],
     },
 

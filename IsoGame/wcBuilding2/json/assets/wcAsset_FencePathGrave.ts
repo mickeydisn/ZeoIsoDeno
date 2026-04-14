@@ -18,14 +18,14 @@ const jo = {
       label: "Flat_Bonne",
       face: ["in", "l", "out", "r"],
       assets: [
-        { h: 0, key: "bones", keyR: 0, sufix: "" },
+        { h: 0, key: "bones", keyR: 0 },
       ],
     },
 "Flat_Altar": { 
       label: "Flat_Altar",
       face: ["in", "l", "out", "r"],
       assets: [
-        { h: 0, key: "altarWood", keyR: 1, sufix: "" },
+        { h: 0, key: "altarWood", keyR: 1 },
       ],
     },
 

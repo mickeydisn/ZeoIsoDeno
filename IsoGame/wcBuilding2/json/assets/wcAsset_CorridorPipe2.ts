@@ -10,7 +10,7 @@ const jo = {
       label: "Door2",
       face: ["in", "out", "outD", "out"],
       assets: [
-        { h: 1, key: "pipe_end", keyR: 2, sufix: "" },
+        { h: 1, key: "pipe_end", keyR: 2 },
       ],
     },
   // ["A", "Wout", "WoutD", "Wout"],
@@ -18,7 +18,7 @@ const jo = {
       label: "Door",
       face: ["in", "out", "outD", "out"],
       assets: [
-        { h: 1, key: "pipe_entrance", keyR: 2, sufix: "" },
+        { h: 1, key: "pipe_entrance", keyR: 2 },
       ],
     },
 
@@ -29,8 +29,8 @@ const jo = {
       label: "Flat",
       face: ["in", "out", "in", "out"],
       assets: [
-        { h: 0, key: "pipe_supportHigh", keyR: 0, sufix: "" },
-        { h: 1, key: "pipe_straight", keyR: 0, sufix: "" },
+        { h: 0, key: "pipe_supportHigh", keyR: 0 },
+        { h: 1, key: "pipe_straight", keyR: 0 },
       ],
     },
 
@@ -39,7 +39,7 @@ const jo = {
       label: "Flat_NoSupport",
       face: ["in", "out", "in", "out"],
       assets: [
-        { h: 1, key: "pipe_straight", keyR: 0, sufix: "" },
+        { h: 1, key: "pipe_straight", keyR: 0 },
       ],
     },
 
@@ -48,7 +48,7 @@ const jo = {
       label: "Flat_Open",
       face: ["in", "out", "in", "out"],
       assets: [
-        { h: 1, key: "pipe_open", keyR: 0, sufix: "" },
+        { h: 1, key: "pipe_open", keyR: 0 },
       ],
     },
 
@@ -57,8 +57,8 @@ const jo = {
       label: "Flat_Ring",
       face: ["in", "out", "in", "out"],
       assets: [
-        { h: 0, key: "pipe_supportHigh", keyR: 0, sufix: "" },
-        { h: 1, key: "pipe_ring", keyR: 0, sufix: "" },
+        { h: 0, key: "pipe_supportHigh", keyR: 0 },
+        { h: 1, key: "pipe_ring", keyR: 0 },
       ],
     },
 
@@ -69,7 +69,7 @@ const jo = {
       label: "Corner",
       face: ["in", "in", "out", "out"],
       assets: [
-        { h: 1, key: "pipe_corner", keyR: 3, sufix: "" },
+        { h: 1, key: "pipe_corner", keyR: 3 },
       ],
     },
   //["A", "A", "Wout", "Wout"],
@@ -77,7 +77,7 @@ const jo = {
       label: "Corner_Round",
       face: ["in", "in", "out", "out"],
       assets: [
-        { h: 1, key: "pipe_cornerRound", keyR: 3, sufix: "" },
+        { h: 1, key: "pipe_cornerRound", keyR: 3 },
       ],
     },
   // pipe_cornerDiagonal
@@ -88,8 +88,8 @@ const jo = {
       label: "TJoin",
       face: ["in", "in", "in", "out"],
       assets: [
-        { h: 0, key: "pipe_supportHigh", keyR: 0, sufix: "" },
-        { h: 1, key: "pipe_split", keyR: 3, sufix: "" },
+        { h: 0, key: "pipe_supportHigh", keyR: 0 },
+        { h: 1, key: "pipe_split", keyR: 3 },
       ],
     },
   // ["A", "A", "A", "A"]
@@ -97,8 +97,8 @@ const jo = {
       label: "CrossJoin",
       face: ["in", "in", "in", "in"],
       assets: [
-        { h: 0, key: "pipe_supportHigh", keyR: 0, sufix: "" },
-        { h: 1, key: "pipe_cross", keyR: 0, sufix: "" },
+        { h: 0, key: "pipe_supportHigh", keyR: 0 },
+        { h: 1, key: "pipe_cross", keyR: 0 },
       ],
     },
 
@@ -106,19 +106,19 @@ const jo = {
       label: "Silo",
       face: ["silo", "silo", "silo", "silo"],
       assets: [
-        { h: 0, key: "rocket_fuelB", keyR: 0, sufix: "" },
-        { h: .8, key: "rocket_fuelB", keyR: 0, sufix: "" },
-        { h: .2, key: "rocket_finsA", keyR: 0, sufix: "" },
-        { h: 1, key: "rocket_finsA", keyR: 0, sufix: "" },
+        { h: 0, key: "rocket_fuelB", keyR: 0 },
+        { h: .8, key: "rocket_fuelB", keyR: 0 },
+        { h: .2, key: "rocket_finsA", keyR: 0 },
+        { h: 1, key: "rocket_finsA", keyR: 0 },
       ],
     },
 "SiloUP": { 
       label: "SiloUP",
       face: ["silo", "silo", "silo", "silo"],
       assets: [
-        { h: 0, key: "supports_high", keyR: 0, sufix: "" },
-        { h: .8, key: "rocket_fuelB", keyR: 0, sufix: "" },
-        { h: 1, key: "rocket_finsA", keyR: 0, sufix: "" },
+        { h: 0, key: "supports_high", keyR: 0 },
+        { h: .8, key: "rocket_fuelB", keyR: 0 },
+        { h: 1, key: "rocket_finsA", keyR: 0 },
       ],
     },
 

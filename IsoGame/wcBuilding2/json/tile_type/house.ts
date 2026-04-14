@@ -13,8 +13,9 @@
 ╚═════════╩═════════╩═════════╩═════════╩═════════╩═════════╝
 
 */
+ 
 
-export const conf = {
+export const assetLayerHouse = {
     "HouseSingle": {
         label: "HouseSingle",
         face: ['out'  , 'out'   , 'out' , 'out'  ],
@@ -40,3 +41,5 @@ export const conf = {
         face: ['eq'   , 'eq'    , 'eq' , 'eq'    ],
     },
 }
+
+

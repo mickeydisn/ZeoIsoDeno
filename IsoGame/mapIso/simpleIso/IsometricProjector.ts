@@ -199,12 +199,11 @@ export class PointIso {
         screenY: number,
         mapLvl: Float32Array,
         mapSize: number,
-        mapInfo: Float32Array,
     ): PointIso | null {
 
         const { originX, offsetX, offsetY, SCALE_SIZE, SCALE_MOD } = this.conf;
         const sx = 32 * SCALE_SIZE;
-        const avgLvl = mapInfo[8];
+        // const avgLvl = mapInfo[8];
         const ratio = ISO_LVL_SCALE / SCALE_MOD / (2 * 16 * SCALE_SIZE);
 
         const candidates: PointIso[] = [];

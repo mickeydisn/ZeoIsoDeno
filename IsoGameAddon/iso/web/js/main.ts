@@ -14,7 +14,6 @@ import { infoMenu, updateInfoCell } from "./menu/InfoMenu.ts";
 */
 import { GameHandlerData } from "./gameWorker.ts";
 // import { GlobalState, initMenu, updatGlobalJSON } from "./gobalState.ts";
-import { GridMapDrawers } from "../../../../IsoGame/mapIso/grid.ts";
 import { initCanvaMouse, initKeyBoard } from "./keyboad.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
 import { MenuTab } from "./menu/headMenu.ts";

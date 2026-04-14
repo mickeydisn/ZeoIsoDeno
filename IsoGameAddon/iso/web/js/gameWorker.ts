@@ -14,6 +14,7 @@ import { structureTools } from "../../../../IsoGame/tools/structureTools.ts";
 import { getBuildingConfigList } from "../../../../IsoGame/tools/buildingConfigRegistry.ts";
 import { World } from "../../../../IsoGame/word.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
+import { updatePlayerMovement } from "./worker/player.ts";
 
 export type GameHandlerData = any;
 
@@ -25,11 +26,11 @@ export class GameWorker {
   y: number = 0;
   xf: number = 0;
   yf: number = 0;
-
+  direction: string = "NE";
 
   private assetLoader!: AssetLoaderOpti;
   private canvasMap!: OffscreenCanvas;
-  private canvasMapDrawer!: CanvasMapDrawers;
+  public canvasMapDrawer!: CanvasMapDrawers;
   private sharedMapLvl!: Float32Array;
   /*
   private sharedMapInfo!: Float32Array;
@@ -142,14 +143,8 @@ export class GameWorker {
     ["setCanvasMap", this.setCanvasMap.bind(this)],
     ["setMapLvl", this.setMapLvl.bind(this)],
 
-    [
-      "startRender",
-      (_data) => this.startLoop(),
-    ],
-    [
-      "stopRender",
-      (_data) => this.stopLoop(),
-    ],
+    ["startRender", (_data) => this.startLoop()],
+    ["stopRender", (_data) => this.stopLoop()],
     // ----
     [
       "setCenter",
@@ -161,36 +156,8 @@ export class GameWorker {
       },
     ],
 
-    [
-      "updatePlayerMovement",
-      (data: GameHandlerData) => {
-        if (!this.canvasMapDrawer) {
-          return;
-        }
-        const pm = data.playerMovement;
-        const diffX = pm.up ? 1 : pm.down ? -1 : 0;
-        const diffY = pm.left ? 1 : pm.right ? -1 : 0;
-        const mapMod = this.canvasMapDrawer.conf.SCALE_MOD;
-        const speed = .1 * mapMod;
-        // if move :
-        if (diffX != 0 || diffY != 0) {
-          this.xf += diffY != 0 ? diffX * speed * .70 : diffX * speed;
-          this.yf += diffX != 0 ? diffY * speed * .70 : diffY * speed;
-
-          this.x = Math.floor(this.xf);
-          this.y = Math.floor(this.yf);
-
-          const tile = FactoryMap.getInstance().getTile(this.x - 1, this.y - 1);
-          this.handler.send(
-            {
-              action: "infoCell",
-              data: tile.toJsonInfo(),
-            },
-          );
-        }
-      },
-    ],
-
+    [ "updatePlayerMovement", updatePlayerMovement(this) ],
+    /*
     ["gridClick", (data: GameHandlerData) => {
       const x = (data as Record<string, unknown>).x as number;
       const y = (data as Record<string, unknown>).y as number;
@@ -199,7 +166,6 @@ export class GameWorker {
 
       const _city = new City(this.world, x, y);
     }],
-
     [
       "init_test",
       (data) => {
@@ -216,6 +182,7 @@ export class GameWorker {
         }]);
       },
     ],
+    */
 
     [
       "query_infoCell",
@@ -439,7 +406,7 @@ export class GameWorker {
       console.log("Draw");
 
       this.world.tick();
-
+      this.canvasMapDrawer.direction = this.direction;
       this.canvasMapDrawer.drawUpdate(
         this.x,
         this.y,

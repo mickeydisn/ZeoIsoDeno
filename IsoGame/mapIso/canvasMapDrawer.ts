@@ -15,12 +15,8 @@ import { World } from "../word.ts";
 import { Shape } from "./iso/shape.ts";
 import { Point } from "./iso/point.ts";
 import { AssetLoaderOpti } from "./asset/assetLoaderOpti.ts";
-import { CHUNK_SIZE } from "../map/object/chunk.ts";
-import { cp } from "node:fs";
 import { IsometricProjector, PointIso } from "./simpleIso/IsometricProjector.ts";
-import { IsometricTileGenerator } from "./simpleIso/IsometricTileGenerator.ts";
-import { ColorIso } from "./simpleIso/Color.ts";
-import { Tile } from "../map/object/tile.ts";
+// import { IsometricTileGenerator } from "./simpleIso/IsometricTileGenerator.ts";
 import { toolRegistry } from "../tools/toolRegistry.ts";
 
 // --- Constants for Readability and Maintenance ---
@@ -69,10 +65,11 @@ export class CanvasMapDrawers {
 
   bufferMapInfo: SharedArrayBuffer;
   mapInfo: Float32Array; // [ 0:centreX , 1:centreY, 2:offX, 3:offY ]
+  direction: string = "NE";
 
   isomer: Isomer;
   public isoProject: IsometricProjector;
-  private isoGenerator: IsometricTileGenerator;
+  // private isoGenerator: IsometricTileGenerator;
   private tileCache: Map<string, OffscreenCanvas | ImageBitmap> = new Map();
 
   frameSubCount: number;
@@ -119,10 +116,11 @@ export class CanvasMapDrawers {
       SCALE_SIZE:this.conf.SCALE_SIZE,
       SCALE_MOD:this.conf.SCALE_MOD,
     })
+    /*
     this.isoGenerator = new IsometricTileGenerator({
       SCALE_SIZE:this.conf.SCALE_SIZE,
     })
-
+    */
     this.c = {
       selected: new Color(160, 60, 50, 1),
       red: new Color(160, 60, 50, 1),
@@ -161,9 +159,7 @@ export class CanvasMapDrawers {
       SCALE_MOD : Math.max(1, 1 / 8),
       offsetX : offx,
       offsetY : offy, 
-  
     })
-  
     // Update Shared Info Buffer
     this.mapInfo[0] = centreX;
     this.mapInfo[1] = centreY;
@@ -173,6 +169,7 @@ export class CanvasMapDrawers {
     this.drawIso();
   }
 
+  /*
   private getTileImage( 
     tile:Tile,
     diffLvlSE: number , 
@@ -194,9 +191,9 @@ export class CanvasMapDrawers {
     this.tileCache.set(key, canvas);
     return canvas;
   }
-  
+    */
   // --- Drawing Helpers (Refactored from drawTileItem) ---
-  /** Draws an isometric asset (image/svg) on the tile. */
+  /** Draws an isometric asset (image/svg) on the tile. * /
   private drawTileBase(
     tile:Tile,
      x: number, y:number,
@@ -212,11 +209,6 @@ export class CanvasMapDrawers {
         const lvl = currentlvl + (0) * this.conf.SCALE_SIZE;
         
         const p = this.isoProject.translatePoint(new PointIso(x + off.x, y + off.y, lvl))
-        /*
-        const p = this.isomer.translatePoint(
-          new Point(x + off.x, y + off.y, lvl),
-        );
-        */
         const scale = this.conf.SCALE_SIZE;
         
         // Use named constants for offsets
@@ -231,7 +223,7 @@ export class CanvasMapDrawers {
       console.error(`Error drawing baseItem`, e);
     }
   }
-
+  */
 
   /** Draws an isometric asset (image/svg) on the tile. */
   private drawAsset(
@@ -292,17 +284,6 @@ export class CanvasMapDrawers {
   }
 
   
-  /** Draws a selected marker prism on the tile. * /
-  private drawSelected(x: number, y: number, itemConf: any, currentlvl: number) {
-    const height = itemConf.height || .1;
-    const lvl = currentlvl + (itemConf.lvl || 0) * this.conf.SCALE_SIZE;
-
-    this.isomer.add(
-      Shape.Prism(new Point(x, y, lvl), 1, 1, height),
-      this.c.selected,
-    );
-  }
-  */
   /**
    * Draws a single item onto a tile using the correct drawing function.
    */
@@ -397,13 +378,14 @@ export class CanvasMapDrawers {
     );
 
 
-
     // South-East Border (comparing with tile at yy-1)
     const lvlYNeighbor = this.tilesMatrix.tiles[xx][yy - 1].lvl;
-    const diffLvlSE = (metaTile.lvl - lvlYNeighbor) * LVL_DISPLAY_SCALE;
+    const diffLvlSE = yy == 1  ? 30 * LVL_DISPLAY_SCALE : (metaTile.lvl - lvlYNeighbor) * LVL_DISPLAY_SCALE;
     // South-West Border (comparing with tile at xx-1)
     const lvlXNeighbor = this.tilesMatrix.tiles[xx - 1][yy].lvl;
-    const diffLvlSW = (metaTile.lvl - lvlXNeighbor) * LVL_DISPLAY_SCALE;
+    const diffLvlSW = xx == 1  ? 30 * LVL_DISPLAY_SCALE :  (metaTile.lvl - lvlXNeighbor) * LVL_DISPLAY_SCALE;
+
+
 
     this.drawTileOld(xx, yy, currentlvl, color,  diffLvlSE, diffLvlSW);
     
@@ -437,6 +419,48 @@ export class CanvasMapDrawers {
 
   }
 
+
+  /**
+   * Draws the base tile geometry, including floor and borders.
+   */
+  drawPlayer(x: number, y: number) {
+    const size = this.conf.DRAW_TILE_COUNT;
+    const xx = size - x - 1;
+    const yy = size - y - 1;
+    // Get the Matrix to display
+    const metaTile = this.tilesMatrix.tiles[xx][yy];
+    // Factor applied to raw level difference to get display level
+    const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+    // Calculate the tile's current display level (Z coordinate)
+    const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
+   // Update Shared GridLvl Matrix Buffer
+    this.mapLvl[xx * size + yy] = currentlvl;
+
+    /*
+    // South-East Border (comparing with tile at yy-1)
+    const lvlYNeighbor = this.tilesMatrix.tiles[xx][yy - 1].lvl;
+    const diffLvlSE = (metaTile.lvl - lvlYNeighbor) * LVL_DISPLAY_SCALE;
+    // South-West Border (comparing with tile at xx-1)
+    const lvlXNeighbor = this.tilesMatrix.tiles[xx - 1][yy].lvl;
+    const diffLvlSW = (metaTile.lvl - lvlXNeighbor) * LVL_DISPLAY_SCALE;
+    */
+    const items = [];
+    items.push({ t: "Svg", key: "astronautB_" + this.direction, off : {x: this.mapInfo[2], y: this.mapInfo[3]} });
+
+    if (this.conf.DRAW_TILE_COUNT < 60 ) {
+        // Create tile shape at average height (not individual tile height)
+        const shape2 = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - 1), 1, 1, 1);
+        this.canvasCtx.strokeStyle = "#FF0000";
+        this.drawShapePaths(shape2);
+      // 4. Draw Each Item (Z-sorted locally)
+      items
+        .sort((a: any, b: any) => (a.lvl || 0) - (b.lvl || 0))
+        .forEach((item: any) => this.drawTileItem(xx, yy, metaTile, item, currentlvl));
+    }
+
+
+  }
+
   drawIso() {
     const size = this.conf.DRAW_TILE_COUNT;
     this.canvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -446,6 +470,9 @@ export class CanvasMapDrawers {
     for (let x = 1; x < size - 1; x++) {
       for (let y = 1; y < size - 1; y++) {
         this.drawTile(x, y);
+        if (x == size / 2 && y == size / 2) {
+          this.drawPlayer(x, y)
+        }
       }
     }
 
@@ -663,7 +690,7 @@ export class CanvasMapDrawers {
         }
       }
   public screenToTileWithHeight(screenX: number, screenY: number): PointIso | null {
-    return this.isoProject.screenToTileWithHeight(screenX, screenY, this.mapLvl, this.tilesMatrix.size, this.mapInfo);
+    return this.isoProject.screenToTileWithHeight(screenX, screenY, this.mapLvl, this.tilesMatrix.size);
   } 
 
 }

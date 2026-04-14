@@ -13,7 +13,7 @@
 ╚═════════╩═════════╩═════════╩═════════╩═════════╝
 */
 
-export const conf = {
+export const assetLayerFence = {
     "FenceSingle": {
         label: "FenceSingle",
         face: ['out'  , 'out'   , 'out' , 'out'  ],

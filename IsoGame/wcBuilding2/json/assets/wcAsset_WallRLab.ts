@@ -12,8 +12,8 @@ const jo = {
       label: "Corner",
       face: ["r", "l", "out", "out"],
       assets: [
-        { h: 0, key: "corridor_corner", keyR: 3, sufix: "" },
-        { h: .8, key: "corridor_corner", keyR: 3, sufix: "" },
+        { h: 0, key: "corridor_corner", keyR: 3 },
+        { h: .8, key: "corridor_corner", keyR: 3 },
       ],
     },
 
@@ -24,9 +24,9 @@ const jo = {
       label: "Corner_Round",
       face: ["r", "l", "out", "out"],
       assets: [
-        { h: 0, key: "platform_center", keyR: 0, sufix: "" },
-        { h: 0, key: "corridor_cornerRound", keyR: 3, sufix: "" },
-        { h: .8, key: "corridor_cornerRound", keyR: 3, sufix: "" },
+        { h: 0, key: "platform_center", keyR: 0 },
+        { h: 0, key: "corridor_cornerRound", keyR: 3 },
+        { h: .8, key: "corridor_cornerRound", keyR: 3 },
       ],
     },
 
@@ -36,9 +36,9 @@ const jo = {
       label: "Wall_Open",
       face: ["r", "in", "l", "out"],
       assets: [
-        { h: 0, key: "structure_closed", keyR: 2, sufix: "" },
+        { h: 0, key: "structure_closed", keyR: 2 },
         { h: .8, key: "corridor_split", // IN
-          keyR: 0, sufix: "" },
+          keyR: 0 },
       ],
     },
   //  ["Wr", "Win", "Wl", "Wout"],
@@ -46,8 +46,8 @@ const jo = {
       label: "Wall",
       face: ["r", "in", "l", "out"],
       assets: [
-        { h: 0, key: "corridor_", keyR: 2, sufix: "" },
-        { h: .8, key: "corridor_split", keyR: 0, sufix: "" },
+        { h: 0, key: "corridor_", keyR: 2 },
+        { h: .8, key: "corridor_split", keyR: 0 },
       ],
     },
   // ["Wr", "Win", "Wl", "Wout"],
@@ -55,8 +55,8 @@ const jo = {
       label: "Wall_DS",
       face: ["r", "in", "l", "out"],
       assets: [
-        { h: 0, key: "corridor_detailed", keyR: 2, sufix: "" },
-        { h: .8, key: "corridor_split", keyR: 0, sufix: "" },
+        { h: 0, key: "corridor_detailed", keyR: 2 },
+        { h: .8, key: "corridor_split", keyR: 0 },
       ],
     },
 
@@ -65,8 +65,8 @@ const jo = {
       label: "Wall_WS",
       face: ["r", "in", "l", "out"],
       assets: [
-        { h: 0, key: "corridor_window", keyR: 2, sufix: "" },
-        { h: .8, key: "corridor_split", keyR: 0, sufix: "" },
+        { h: 0, key: "corridor_window", keyR: 2 },
+        { h: .8, key: "corridor_split", keyR: 0 },
       ],
     },
 
@@ -79,7 +79,7 @@ const jo = {
       label: "InnerCorner",
       face: ["in", "in", "l", "r"],
       assets: [
-        { h: .8, key: "corridor_cross", keyR: 3, sufix: "" },
+        { h: .8, key: "corridor_cross", keyR: 3 },
       ],
     },
 
@@ -88,7 +88,7 @@ const jo = {
       label: "Inside_Full",
       face: ["in", "in", "in", "in"],
       assets: [
-        { h: .8, key: "platform_center", keyR: 2, sufix: "" },
+        { h: .8, key: "platform_center", keyR: 2 },
       ],
     },
 
@@ -100,8 +100,8 @@ const jo = {
       label: "Wall_ToCorridor",
       face: ["r", "in", "l", "out"],
       assets: [
-        { h: .8, key: "corridor_split", keyR: 0, sufix: "" },
-        { h: 0, key: "corridor_cross", keyR: 1, sufix: "" },
+        { h: .8, key: "corridor_split", keyR: 0 },
+        { h: 0, key: "corridor_cross", keyR: 1 },
       ],
     },
 
@@ -110,8 +110,8 @@ const jo = {
       label: "Corridor_DD",
       face: ["in", "out", "in", "out"],
       assets: [
-        { h: 0, key: "corridor_detailed", keyR: 2, sufix: "" },
-        { h: .8, key: "corridor_detailed", keyR: 2, sufix: "" },
+        { h: 0, key: "corridor_detailed", keyR: 2 },
+        { h: .8, key: "corridor_detailed", keyR: 2 },
       ],
     },
 
