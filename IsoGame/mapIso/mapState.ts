@@ -185,6 +185,7 @@ export class MapState {
         
 
         if (vecD.x == 0 && vecD.y == 0) {
+            
             this.xf = this.x
             this.yf = this.y
             return;

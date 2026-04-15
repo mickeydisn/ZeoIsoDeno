@@ -1,6 +1,5 @@
 import { City } from "../../../../IsoGame/city/city.ts";
 import { FactoryMap } from "../../../../IsoGame/map/factory/factoryMap.ts";
-import { TilesActions } from "../../../../IsoGame/map/tileActions.ts";
 import { AssetLoaderOpti } from "../../../../IsoGame/mapIso/asset/assetLoaderOpti.ts";
 import {
   CanvasMapDrawers,
@@ -11,10 +10,8 @@ import { terrainTools } from "../../../../IsoGame/tools/terrainTools.ts";
 import { colorTools } from "../../../../IsoGame/tools/colorTools.ts";
 import { assetTools } from "../../../../IsoGame/tools/assetTools.ts";
 import { structureTools } from "../../../../IsoGame/tools/structureTools.ts";
-import { getBuildingConfigList } from "../../../../IsoGame/tools/buildingConfigRegistry.ts";
 import { World } from "../../../../IsoGame/word.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
-import { updateKeyboard } from "./worker/player.ts";
 import { mapState } from "../../../../IsoGame/mapIso/MapState.ts";
 import { TypeKeysActionUpdate } from "./main/keyboad.ts";
 
@@ -24,19 +21,13 @@ export class GameWorker {
   private world = new World();
 
   public handler: MessageHandler;
-  // x: number = 0;
-  // y: number = 0;
-  // xf: number = 0;
-  // yf: number = 0;
-  // direction: string = "NE";
+
 
   private assetLoader!: AssetLoaderOpti;
   private canvasMap!: OffscreenCanvas;
   public canvasMapDrawer!: CanvasMapDrawers;
   private sharedMapLvl!: Float32Array;
-  /*
-  private sharedMapInfo!: Float32Array;
-  */
+
   framId: number = 0;
   private _shouldRun = false;
 

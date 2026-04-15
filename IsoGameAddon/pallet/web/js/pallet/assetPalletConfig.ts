@@ -31,11 +31,11 @@ export const assetFileConfig: TypeAssetFileConfig[] = [
   fileToGroup("AstroBase5"),
   fileToGroup("GrokClean1"),
   
-  // fileToGroup("Wall"),
+  fileToGroup("Wall"),
   // fileToGroup("ItemPilar"),
   // fileToGroup("NatureRock"),
   // fileToGroup("AstroRocket"),
-  fileToGroup("Town2"),
+  // fileToGroup("Town2"),
   // fileToGroup("NatureFlower"),
   // fileToGroup("AstroPlatform"),
   // fileToGroup("MyTower"),
@@ -43,6 +43,6 @@ export const assetFileConfig: TypeAssetFileConfig[] = [
   // fileToGroup("ItemGrave"),
   // fileToGroup("Train"),
   // fileToGroup("UserAstro"),
-  fileToGroup("Town1"),
+  // fileToGroup("Town1"),
   // fileToGroup("NatureTree"),
 ];

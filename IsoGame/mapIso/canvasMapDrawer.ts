@@ -465,14 +465,7 @@ export class CanvasMapDrawers {
    // Update Shared GridLvl Matrix Buffer
     this.mapLvl[xx * size + yy] = currentlvl;
 
-    /*
-    // South-East Border (comparing with tile at yy-1)
-    const lvlYNeighbor = this.tilesMatrix.tiles[xx][yy - 1].lvl;
-    const diffLvlSE = (metaTile.lvl - lvlYNeighbor) * LVL_DISPLAY_SCALE;
-    // South-West Border (comparing with tile at xx-1)
-    const lvlXNeighbor = this.tilesMatrix.tiles[xx - 1][yy].lvl;
-    const diffLvlSW = (metaTile.lvl - lvlXNeighbor) * LVL_DISPLAY_SCALE;
-    */
+
     const items = [];
     items.push({ t: "Svg", key: "astronautB_" + this.direction, off : {x: this.mapInfo[2], y: this.mapInfo[3]} });
 
@@ -498,9 +491,6 @@ export class CanvasMapDrawers {
     // when accessing neighbors (yy-1, xx-1) inside drawTile.
     for (let x = 1; x < size - 1; x++) {
       for (let y = 1; y < size - 1; y++) {
-
-
-
 
         this.drawTile(x, y);
 

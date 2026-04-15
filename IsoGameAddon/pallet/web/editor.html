@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asset Pipeline — Batch Processor</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --pink:#f093fb; --pink2:#f5576c;
+  --purple:#667eea; --purple2:#764ba2;
+  --green:#28a745; --teal:#20c997;
+  --bg:#1a1a2e; --panel:#16213e; --card:#0f3460;
+  --border:#2a3f6f; --text:#e0e0f0; --muted:#8890a8;
+}
+body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
+
+.header { background:linear-gradient(135deg,var(--purple),var(--purple2)); padding:10px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-shrink:0; }
+.header h1 { font-size:1em; font-weight:700; }
+.header-actions { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+
+.tabs { display:flex; background:var(--panel); border-bottom:2px solid var(--border); flex-shrink:0; }
+.tab { padding:9px 18px; cursor:pointer; font-size:.83em; font-weight:600; color:var(--muted); border-bottom:3px solid transparent; transition:all .2s; user-select:none; }
+.tab:hover { color:var(--text); }
+.tab.active { color:var(--purple); border-bottom-color:var(--purple); }
+
+.app-body { display:flex; flex:1; overflow:hidden; min-height:0; }
+
+/* SIDEBAR */
+.sidebar { width:200px; min-width:200px; background:var(--panel); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+.sidebar-header { padding:8px 10px; font-size:.72em; font-weight:700; color:var(--purple); text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.asset-list { flex:1; overflow-y:auto; padding:5px; display:flex; flex-direction:column; gap:3px; }
+.asset-entry { background:var(--card); border:2px solid var(--border); border-radius:5px; padding:5px 7px; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:7px; font-size:.75em; }
+.asset-entry:hover { border-color:var(--purple); }
+.asset-entry.active { border-color:var(--purple); background:#1a2a5e; }
+.asset-entry.done-fix .status-dot { background:#ffc107; }
+.asset-entry.done-compose .status-dot { background:var(--teal); }
+.asset-entry.done-both .status-dot { background:var(--green); }
+.asset-entry.done-mask .status-dot { background:var(--pink2); }
+.status-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex-shrink:0; }
+.asset-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.progress-bar-wrap { background:var(--card); border-radius:10px; height:5px; overflow:hidden; margin:5px 8px; }
+.progress-bar { height:100%; background:linear-gradient(90deg,var(--purple),var(--teal)); transition:width .3s; }
+
+.content { flex:1; display:flex; overflow:hidden; }
+.panel-view { display:none; flex:1; overflow:hidden; }
+.panel-view.visible { display:flex; }
+
+/* FIX PANEL */
+.fix-layout { display:grid; grid-template-columns:220px 1fr 250px; flex:1; overflow:hidden; }
+.fix-controls { background:var(--panel); border-right:1px solid var(--border); padding:10px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
+.fix-canvas-wrap { background:#111; overflow:auto; padding:16px; }
+#sourceCanvas { image-rendering:pixelated; display:block; }
+.fix-preview { background:var(--panel); border-left:1px solid var(--border); overflow-y:auto; padding:10px; }
+.preview-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:3px; margin-top:6px; }
+.preview-cell { border:1px solid var(--border); border-radius:3px; overflow:hidden; background:#000; }
+.preview-cell canvas { width:100%; height:auto; display:block; image-rendering:pixelated; }
+
+/* COMPOSE PANEL */
+.compose-layout { display:grid; grid-template-columns:210px 1fr; flex:1; overflow:hidden; }
+.compose-controls { background:var(--panel); border-right:1px solid var(--border); padding:10px; overflow-y:auto; display:flex; flex-direction:column; gap:7px; }
+.compose-canvas-wrap { background:#111; overflow:auto; padding:16px; position:relative; }
+#mainCanvas { image-rendering:pixelated; display:block; user-select:none; }
+
+/* TRASH */
+.trash-zone { position:absolute; bottom:14px; right:14px; width:54px; height:54px; border-radius:50%; background:rgba(245,87,108,.12); border:2px dashed rgba(245,87,108,.35); display:flex; align-items:center; justify-content:center; font-size:1.5em; pointer-events:none; transition:all .18s; opacity:0; }
+.trash-zone.visible { opacity:1; pointer-events:all; }
+.trash-zone.hot { background:rgba(245,87,108,.5); border-color:#f5576c; transform:scale(1.18); }
+
+/* CONTROLS */
+.ctrl-group { display:flex; flex-direction:column; gap:3px; }
+.ctrl-label { font-size:.7em; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; }
+.ctrl-input { background:var(--card); border:1px solid var(--border); border-radius:4px; color:var(--text); padding:4px 7px; font-size:.8em; width:100%; }
+.ctrl-input:focus { outline:none; border-color:var(--purple); }
+.ctrl-sep { border:none; border-top:1px solid var(--border); margin:3px 0; }
+.slider-row { display:flex; gap:5px; align-items:center; }
+.slider-row input[type=range] { flex:1; accent-color:var(--purple); }
+.slider-row input[type=number] { width:52px; background:var(--card); border:1px solid var(--border); border-radius:4px; color:var(--text); padding:3px; font-size:.75em; text-align:center; }
+.col-offset-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px; }
+.col-offset-grid input { background:var(--card); border:1px solid var(--border); border-radius:3px; color:var(--text); padding:3px; font-size:.73em; text-align:center; width:100%; }
+
+.btn { padding:6px 10px; border:none; border-radius:5px; font-size:.78em; font-weight:600; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.btn:hover { filter:brightness(1.12); transform:translateY(-1px); }
+.btn:active { transform:translateY(0); }
+.btn-primary { background:linear-gradient(135deg,var(--purple),var(--purple2)); color:#fff; }
+.btn-success { background:linear-gradient(135deg,var(--green),var(--teal)); color:#fff; }
+.btn-warn { background:linear-gradient(135deg,#ffc107,#ff9800); color:#fff; }
+.btn-pink { background:linear-gradient(135deg,var(--pink),var(--pink2)); color:#fff; }
+.btn-danger { background:linear-gradient(135deg,#dc3545,#c82333); color:#fff; }
+.btn-sm { padding:3px 7px; font-size:.7em; }
+.btn-full { width:100%; margin-top:3px; }
+.btn-group { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
+.badge { display:inline-block; padding:2px 6px; border-radius:9px; font-size:.68em; font-weight:700; }
+.badge-purple { background:var(--purple); color:#fff; }
+.sec-title { font-size:.7em; font-weight:700; color:var(--purple); text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px; }
+.checkbox-row { display:flex; align-items:center; gap:5px; font-size:.78em; cursor:pointer; }
+.checkbox-row input { accent-color:var(--purple); }
+.info-badge { background:var(--purple); color:#fff; padding:2px 7px; border-radius:9px; font-size:.7em; font-weight:700; display:inline-block; margin-bottom:4px; }
+.stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px; font-size:.7em; }
+.stats-grid dt { color:var(--muted); }
+.stats-grid dd { color:var(--pink2); font-weight:600; text-align:right; }
+.empty-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--muted); font-size:.88em; }
+.empty-icon { font-size:2.5em; }
+.row-bar { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.hint-box { font-size:.68em; color:var(--muted); line-height:1.65; padding:5px; background:rgba(255,255,255,.03); border-radius:4px; border:1px solid var(--border); }
+.hint-box b { color:var(--text); }
+
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+#dragGhost { position:fixed; pointer-events:none; image-rendering:pixelated; opacity:.8; z-index:9999; display:none; border:2px solid #ffc107; border-radius:3px; }
+
+/* HSCB sliders */
+.hscb-row { display:flex; align-items:center; gap:5px; margin-bottom:3px; }
+.hscb-row label { font-size:.65em; font-weight:700; color:var(--muted); width:18px; flex-shrink:0; text-align:right; }
+.hscb-row input[type=range] { flex:1; accent-color:var(--purple); height:3px; }
+.hscb-row input[type=number] { width:44px; background:var(--card); border:1px solid var(--border); border-radius:3px; color:var(--text); padding:2px 3px; font-size:.68em; text-align:center; }
+.hscb-active { background:rgba(102,126,234,.12); border-radius:4px; padding:3px 4px; }
+
+/* MASK PANEL */
+.mask-layout { display:grid; grid-template-columns:240px 1fr; flex:1; overflow:hidden; }
+.mask-controls { background:var(--panel); border-right:1px solid var(--border); padding:10px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
+.mask-canvas-wrap { background:#111; overflow:auto; padding:16px; display:flex; align-items:flex-start; justify-content:center; }
+#maskCanvas { image-rendering:pixelated; display:block; cursor:crosshair; }
+
+.mask-card { background:var(--card); border:2px solid var(--border); border-radius:6px; padding:8px; transition:border-color .15s; }
+.mask-card.active-mask { border-color:var(--purple); }
+.mask-card-header { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+.mask-card-title { font-size:.75em; font-weight:700; color:var(--text); flex:1; }
+.mask-toggle { accent-color:var(--purple); }
+.mask-offset-row { display:flex; align-items:center; gap:4px; font-size:.68em; color:var(--muted); margin-top:4px; }
+.mask-offset-row span { width:14px; text-align:right; flex-shrink:0; }
+.mask-offset-row input[type=range] { flex:1; accent-color:var(--teal); }
+.mask-offset-row input[type=number] { width:42px; background:var(--bg); border:1px solid var(--border); border-radius:3px; color:var(--text); padding:2px 3px; font-size:.9em; text-align:center; }
+.mask-preview-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; margin-top:8px; }
+.mask-preview-cell { border:1px solid var(--border); border-radius:3px; overflow:hidden; background:#000; aspect-ratio:192/224; }
+.mask-preview-cell canvas { width:100%; height:100%; display:block; image-rendering:pixelated; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚙️ Asset Pipeline</h1>
+  <div class="header-actions">
+    <span style="font-size:.72em;color:rgba(255,255,255,.75);">Suffixe</span>
+    <input id="exportSuffix" type="text" value="_fixed" style="width:72px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:4px;color:#fff;padding:3px 6px;font-size:.75em;">
+    <label class="btn btn-pink btn-sm" style="cursor:pointer;">📁 Importer PNG<input type="file" id="batchInput" accept="image/png" multiple style="display:none"></label>
+    <button class="btn btn-warn btn-sm" id="saveJsonBtn">💾 Sauvegarder</button>
+    <label class="btn btn-warn btn-sm" style="cursor:pointer;">📂 Charger JSON<input type="file" id="loadJsonInput" accept=".json" style="display:none"></label>
+    <button class="btn btn-success btn-sm" id="exportAllBtn">📦 Exporter tout</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="fix">✂️ Étape 1 — Recadrage</div>
+  <div class="tab" data-tab="compose">🎨 Étape 2 — Composition</div>
+  <div class="tab" data-tab="mask">🎭 Étape 3 — Masques</div>
+</div>
+
+<div class="app-body">
+  <div class="sidebar">
+    <div class="sidebar-header">Assets <span id="assetCountBadge" class="badge badge-purple">0</span></div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <div class="asset-list" id="assetList"><div style="padding:16px;text-align:center;color:var(--muted);font-size:.75em;">Importez des PNG</div></div>
+    <div style="padding:5px 8px;border-top:1px solid var(--border);font-size:.66em;color:var(--muted);line-height:1.8;">
+      <span style="color:var(--muted);">●</span> À faire &nbsp;
+      <span style="color:#ffc107;">●</span> Fix &nbsp;
+      <span style="color:var(--green);">●</span> Composé &nbsp;
+      <span style="color:var(--pink2);">●</span> Masqué
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══════════════ FIX ═══════════════ -->
+    <div class="panel-view visible" id="panelFix">
+      <div class="fix-layout">
+        <div class="fix-controls">
+          <div class="sec-title">Source</div>
+          <div class="ctrl-group">
+            <label class="ctrl-label">Nb. lignes</label>
+            <input type="number" class="ctrl-input" id="sourceRowCountInput" value="1" min="1">
+          </div>
+          <div class="ctrl-group">
+            <label class="ctrl-label">Zoom vue</label>
+            <input type="number" class="ctrl-input" id="zoomInput" min=".25" max="4" step=".1" value="1">
+          </div>
+          <hr class="ctrl-sep">
+          <div class="sec-title">Transformation</div>
+          <div class="ctrl-group"><label class="ctrl-label">Scale global</label><input type="number" class="ctrl-input" id="scaleInput" min=".1" max="5" step=".01" value="1"></div>
+          <div class="ctrl-group"><label class="ctrl-label">Offset X global</label><input type="number" class="ctrl-input" id="offsetXInput" min="-500" max="500" step="1" value="0"></div>
+          <div class="ctrl-group"><label class="ctrl-label">Offset Y global</label><input type="number" class="ctrl-input" id="offsetYInput" min="-500" max="500" step="1" value="0"></div>
+          <hr class="ctrl-sep">
+          <div class="sec-title">Offset col X</div>
+          <div class="col-offset-grid">
+            <input type="number" class="column-offset-x" data-col="0" value="0" min="-500" max="500" step="1" title="Col 1">
+            <input type="number" class="column-offset-x" data-col="1" value="0" min="-500" max="500" step="1" title="Col 2">
+            <input type="number" class="column-offset-x" data-col="2" value="0" min="-500" max="500" step="1" title="Col 3">
+            <input type="number" class="column-offset-x" data-col="3" value="0" min="-500" max="500" step="1" title="Col 4">
+          </div>
+          <div class="sec-title" style="margin-top:4px;">Offset col Y</div>
+          <div class="col-offset-grid">
+            <input type="number" class="column-offset-y" data-col="0" value="0" min="-500" max="500" step="1" title="Col 1">
+            <input type="number" class="column-offset-y" data-col="1" value="0" min="-500" max="500" step="1" title="Col 2">
+            <input type="number" class="column-offset-y" data-col="2" value="0" min="-500" max="500" step="1" title="Col 3">
+            <input type="number" class="column-offset-y" data-col="3" value="0" min="-500" max="500" step="1" title="Col 4">
+          </div>
+          <hr class="ctrl-sep">
+          <label class="checkbox-row"><input type="checkbox" id="removeBgCheck"> Supprimer BG</label>
+          <div id="smoothEdgeGroup" style="display:none;" class="ctrl-group">
+            <label class="ctrl-label">Érosion (px)</label>
+            <input type="number" class="ctrl-input" id="smoothEdgeInput" min="0" max="10" step="1" value="2">
+          </div>
+          <label class="checkbox-row"><input type="checkbox" id="showTilesCheckFix" checked> Overlay tiles iso</label>
+          <hr class="ctrl-sep">
+          <div class="sec-title">🎨 Couleurs (global)</div>
+          <div id="fixHscbWrap">
+            <div class="hscb-row">
+              <label>H°</label>
+              <input type="range" id="fixHue" min="-180" max="180" value="0" step="1">
+              <input type="number" id="fixHueN" min="-180" max="180" value="0" step="1">
+            </div>
+            <div class="hscb-row">
+              <label>Sat</label>
+              <input type="range" id="fixSat" min="-100" max="100" value="0" step="1">
+              <input type="number" id="fixSatN" min="-100" max="100" value="0" step="1">
+            </div>
+            <div class="hscb-row">
+              <label>Con</label>
+              <input type="range" id="fixCon" min="-100" max="100" value="0" step="1">
+              <input type="number" id="fixConN" min="-100" max="100" value="0" step="1">
+            </div>
+            <div class="hscb-row">
+              <label>Lum</label>
+              <input type="range" id="fixBri" min="-100" max="100" value="0" step="1">
+              <input type="number" id="fixBriN" min="-100" max="100" value="0" step="1">
+            </div>
+          </div>
+          <button class="btn btn-danger btn-full btn-sm" id="fixHscbResetBtn" style="margin-top:2px;">↺ Reset couleurs</button>
+          <hr class="ctrl-sep">
+          <dl class="stats-grid" id="fixStats" style="display:none;">
+            <dt>Source</dt><dd id="statSrc">-</dd>
+            <dt>Output</dt><dd id="statOut">-</dd>
+            <dt>Grille</dt><dd id="statGrid">-</dd>
+          </dl>
+          <button class="btn btn-success btn-full" id="fixApplyBtn" disabled>✅ Valider</button>
+          <button class="btn btn-primary btn-full" id="fixNextBtn" disabled>➡️ Suivant</button>
+        </div>
+
+        <div class="fix-canvas-wrap" id="fixCanvasWrap">
+          <div class="empty-state" id="fixEmptyState"><div class="empty-icon">✂️</div><span>Sélectionnez un asset</span></div>
+          <canvas id="sourceCanvas"></canvas>
+        </div>
+
+        <div class="fix-preview">
+          <div class="sec-title">Prévisualisation sortie</div>
+          <div style="font-size:.68em;color:var(--muted);margin-bottom:4px;">
+            🔴 lignes = rows &nbsp; 🟢 lignes = cols (glisser pour ajuster)
+          </div>
+          <div class="preview-grid" id="previewGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ COMPOSE ═══════════════ -->
+    <div class="panel-view" id="panelCompose">
+      <div class="compose-layout">
+        <div class="compose-controls">
+          <div class="sec-title">Workspace</div>
+          <div class="row-bar">
+            <button class="btn btn-primary btn-sm" id="addRowBtn">+ Ligne</button>
+            <button class="btn btn-danger btn-sm" id="removeRowBtn">− Ligne</button>
+          </div>
+          <label class="checkbox-row"><input type="checkbox" id="showGridCheck" checked> Grille</label>
+          <label class="checkbox-row"><input type="checkbox" id="showTilesCheck" checked> Tiles iso</label>
+          <hr class="ctrl-sep">
+          <div class="hint-box">
+            <b>Clic</b> — sélectionner<br>
+            <b>Drag</b> — déplacer le sprite (offset X/Y)<br>
+            <b>Shift+drag</b> — déplacer/dupliquer/échanger<br>
+            &nbsp;&nbsp;↳ remplie→vide : <i>copie</i><br>
+            &nbsp;&nbsp;↳ remplie→remplie : échange<br>
+            &nbsp;&nbsp;↳ vers 🗑 : vider la case<br>
+            <b style="color:#00dc64;">Shift+⌘/Ctrl+drag</b> — <i>fusionner</i><br>
+            &nbsp;&nbsp;↳ case drop = fond<br>
+            &nbsp;&nbsp;↳ case dragged = devant<br>
+            &nbsp;&nbsp;↳ résultat aplati dans la case drop
+          </div>
+          <hr class="ctrl-sep">
+          <div id="spriteControls" style="display:none;">
+            <div class="sec-title">Case sélectionnée</div>
+            <span class="info-badge" id="selectedInfo">—</span>
+            <div class="ctrl-group">
+              <label class="ctrl-label">Offset X</label>
+              <div class="slider-row">
+                <input type="range" id="spriteXSlider" min="-192" max="192" value="0" step="1">
+                <input type="number" id="spriteXInput" min="-192" max="192" value="0" step="1">
+              </div>
+            </div>
+            <div class="ctrl-group">
+              <label class="ctrl-label">Offset Y</label>
+              <div class="slider-row">
+                <input type="range" id="spriteYSlider" min="-224" max="224" value="0" step="1">
+                <input type="number" id="spriteYInput" min="-224" max="224" value="0" step="1">
+              </div>
+            </div>
+            <div class="ctrl-group">
+              <label class="ctrl-label">Scale</label>
+              <div class="slider-row">
+                <input type="range" id="spriteScaleSlider" min=".1" max="2" value="1" step=".01">
+                <input type="number" id="spriteScaleInput" min=".1" max="2" value="1" step=".01">
+              </div>
+            </div>
+            <div class="btn-group" style="margin-top:6px;">
+              <button class="btn btn-warn btn-sm" id="flipHBtn">↔ Flip H</button>
+              <button class="btn btn-primary btn-sm" id="resetSprScaleBtn">⤡ Scale×1</button>
+            </div>
+            <div class="btn-group" style="margin-top:4px;">
+              <button class="btn btn-warn btn-sm" id="mirrorLBtn">⇐ Mirror G</button>
+              <button class="btn btn-warn btn-sm" id="mirrorRBtn">Mirror D ⇒</button>
+            </div>
+            <hr class="ctrl-sep">
+            <div class="sec-title">🎨 Couleurs</div>
+            <div id="cmpHscbWrap">
+              <div class="hscb-row">
+                <label>H°</label>
+                <input type="range" id="cmpHue" min="-180" max="180" value="0" step="1">
+                <input type="number" id="cmpHueN" min="-180" max="180" value="0" step="1">
+              </div>
+              <div class="hscb-row">
+                <label>Sat</label>
+                <input type="range" id="cmpSat" min="-100" max="100" value="0" step="1">
+                <input type="number" id="cmpSatN" min="-100" max="100" value="0" step="1">
+              </div>
+              <div class="hscb-row">
+                <label>Con</label>
+                <input type="range" id="cmpCon" min="-100" max="100" value="0" step="1">
+                <input type="number" id="cmpConN" min="-100" max="100" value="0" step="1">
+              </div>
+              <div class="hscb-row">
+                <label>Lum</label>
+                <input type="range" id="cmpBri" min="-100" max="100" value="0" step="1">
+                <input type="number" id="cmpBriN" min="-100" max="100" value="0" step="1">
+              </div>
+            </div>
+            <button class="btn btn-danger btn-full btn-sm" id="cmpHscbResetBtn" style="margin-top:2px;">↺ Reset couleurs</button>
+            <hr class="ctrl-sep">
+            <button class="btn btn-danger btn-full btn-sm" id="clearSpriteBtn">🗑 Vider case</button>
+            <button class="btn btn-primary btn-full btn-sm" id="resetSpriteBtn">↺ Reset</button>
+          </div>
+          <hr class="ctrl-sep">
+          <button class="btn btn-success btn-full" id="composeApplyBtn" disabled>✅ Valider composition</button>
+          <button class="btn btn-primary btn-full" id="composeNextBtn" disabled>➡️ Suivant</button>
+        </div>
+
+        <div class="compose-canvas-wrap" id="composeCanvasWrap">
+          <div class="empty-state" id="composeEmpty"><div class="empty-icon">🎨</div><span>Validez d'abord l'étape 1</span></div>
+          <canvas id="mainCanvas"></canvas>
+          <div class="trash-zone" id="trashZone">🗑</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ MASK ═══════════════ -->
+    <div class="panel-view" id="panelMask">
+      <div class="mask-layout">
+
+        <div class="mask-controls">
+          <div class="sec-title">🎭 Masques de tiles</div>
+          <div style="font-size:.7em;color:var(--muted);line-height:1.5;">
+            Chaque masque découpe l'image selon la forme isométrique de la tile.
+            Activez, puis ajustez la position avec les sliders.
+          </div>
+
+          <!-- MASK BAS -->
+          <div class="mask-card" id="maskCardBottom">
+            <div class="mask-card-header">
+              <input type="checkbox" class="mask-toggle" id="maskBottomOn">
+              <span class="mask-card-title">▽ Masque Bas</span>
+              <span style="font-size:.65em;color:var(--muted);">V vers le bas</span>
+            </div>
+            <div class="mask-offset-row"><span>X</span>
+              <input type="range" id="maskBottomX" min="-96" max="96" value="0" step="1">
+              <input type="number" id="maskBottomXN" min="-96" max="96" value="0" step="1">
+            </div>
+            <div class="mask-offset-row"><span>Y</span>
+              <input type="range" id="maskBottomY" min="-112" max="112" value="0" step="1">
+              <input type="number" id="maskBottomYN" min="-112" max="112" value="0" step="1">
+            </div>
+          </div>
+
+          <!-- MASK HAUT -->
+          <div class="mask-card" id="maskCardTop">
+            <div class="mask-card-header">
+              <input type="checkbox" class="mask-toggle" id="maskTopOn">
+              <span class="mask-card-title">△ Masque Haut</span>
+              <span style="font-size:.65em;color:var(--muted);">V vers le haut</span>
+            </div>
+            <div class="mask-offset-row"><span>X</span>
+              <input type="range" id="maskTopX" min="-96" max="96" value="0" step="1">
+              <input type="number" id="maskTopXN" min="-96" max="96" value="0" step="1">
+            </div>
+            <div class="mask-offset-row"><span>Y</span>
+              <input type="range" id="maskTopY" min="-112" max="112" value="0" step="1">
+              <input type="number" id="maskTopYN" min="-112" max="112" value="0" step="1">
+            </div>
+          </div>
+
+          <!-- MASK GAUCHE -->
+          <div class="mask-card" id="maskCardLeft">
+            <div class="mask-card-header">
+              <input type="checkbox" class="mask-toggle" id="maskLeftOn">
+              <span class="mask-card-title">◁ Masque Gauche</span>
+              <span style="font-size:.65em;color:var(--muted);">coupe verticalement</span>
+            </div>
+            <div class="mask-offset-row"><span>X</span>
+              <input type="range" id="maskLeftX" min="-96" max="96" value="0" step="1">
+              <input type="number" id="maskLeftXN" min="-96" max="96" value="0" step="1">
+            </div>
+            <div class="mask-offset-row"><span>Y</span>
+              <input type="range" id="maskLeftY" min="-112" max="112" value="0" step="1">
+              <input type="number" id="maskLeftYN" min="-112" max="112" value="0" step="1">
+            </div>
+          </div>
+
+          <!-- MASK DROITE -->
+          <div class="mask-card" id="maskCardRight">
+            <div class="mask-card-header">
+              <input type="checkbox" class="mask-toggle" id="maskRightOn">
+              <span class="mask-card-title">▷ Masque Droite</span>
+              <span style="font-size:.65em;color:var(--muted);">coupe verticalement</span>
+            </div>
+            <div class="mask-offset-row"><span>X</span>
+              <input type="range" id="maskRightX" min="-96" max="96" value="0" step="1">
+              <input type="number" id="maskRightXN" min="-96" max="96" value="0" step="1">
+            </div>
+            <div class="mask-offset-row"><span>Y</span>
+              <input type="range" id="maskRightY" min="-112" max="112" value="0" step="1">
+              <input type="number" id="maskRightYN" min="-112" max="112" value="0" step="1">
+            </div>
+          </div>
+
+          <hr class="ctrl-sep">
+          <label class="checkbox-row"><input type="checkbox" id="maskShowTiles" checked> Afficher tiles iso</label>
+          <label class="checkbox-row"><input type="checkbox" id="maskShowMaskOverlay" checked> Afficher overlay masques</label>
+          <hr class="ctrl-sep">
+          <button class="btn btn-danger btn-full btn-sm" id="maskResetBtn">↺ Reset tous les masques</button>
+          <button class="btn btn-success btn-full" id="maskApplyBtn" disabled>✅ Valider masques</button>
+          <button class="btn btn-primary btn-full" id="maskNextBtn" disabled>➡️ Suivant</button>
+
+          <hr class="ctrl-sep">
+          <div class="sec-title">Prévisualisation sortie</div>
+          <div class="mask-preview-strip" id="maskPreviewStrip"></div>
+        </div>
+
+        <div class="mask-canvas-wrap" id="maskCanvasWrap">
+          <div class="empty-state" id="maskEmpty"><div class="empty-icon">🎭</div><span>Validez d'abord l'étape 2</span></div>
+          <canvas id="maskCanvas"></canvas>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<canvas id="dragGhost"></canvas>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  CONSTANTS
+// ════════════════════════════════════════════════════════
+const FINAL_W = 192, FINAL_H = 224;
+const DEFAULT_COLS = 4;
+const TILE_W = 128, TILE_H = 64;
+const TILE_PAD_F = 6, TILE_PAD_C = 10;
+const SP_W = 192, SP_H = 224;
+
+// ════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════
+let assets = [], currentAssetIdx = -1, currentTab = 'fix';
+
+// fix
+let fixImage = null;
+let rowYPos = [];  // array of y-boundary positions
+let colXPos = [];  // array of x-boundary positions (now draggable)
+let activeDragLine = 0; // 0=none, >0 = row index, <0 = -(col index)
+let fixScale = 1;
+let fixHscb = { hue:0, sat:0, con:0, bri:0 }; // global color adjustments for fix step
+
+// composer
+let workspace = []; // [{row,col,imgData,imgDataURL,offsetX,offsetY,scale,flipH,mirrorSide,hue,sat,con,bri}]
+// mirrorSide: 0=none, 1=mirror-left (right half mirrors from left), 2=mirror-right (left half mirrors from right)
+let selectedCell = null;
+let compRows = 1, compCols = DEFAULT_COLS;
+
+// normal drag (offset X/Y inside cell)
+let normalDrag = null; // {sp, startMouseX, startMouseY, startOffsetX, startOffsetY}
+
+// shift-drag
+let shiftDrag = null; // {srcRow,srcCol,composite}
+let shiftDragPos = {x:0,y:0};
+let shiftDragOver = null; // {row,col} | null
+
+// mask state — one set of 4 masks, shared (applied per-asset via maskParams saved)
+const MASK_DEFS = [
+    { id:'bottom', label:'Bas',    icon:'▽' },
+    { id:'top',    label:'Haut',   icon:'△' },
+    { id:'left',   label:'Gauche', icon:'◁' },
+    { id:'right',  label:'Droite', icon:'▷' },
+];
+function defaultMaskState() {
+    return {
+        bottom: { on:false, x:0, y:0 },
+        top:    { on:false, x:0, y:0 },
+        left:   { on:false, x:0, y:0 },
+        right:  { on:false, x:0, y:0 },
+    };
+}
+let maskState = defaultMaskState(); // current UI state
+let maskSourceImg = null; // the composer output image loaded into mask panel
+
+// ════════════════════════════════════════════════════════
+//  DOM
+// ════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const batchInput      = $('batchInput');
+const loadJsonInput   = $('loadJsonInput');
+const assetListEl     = $('assetList');
+const assetCountBadge = $('assetCountBadge');
+const progressBar     = $('progressBar');
+const sourceCanvas    = $('sourceCanvas');
+const sCtx            = sourceCanvas.getContext('2d');
+const fixCanvasWrap   = $('fixCanvasWrap');
+const fixEmptyState   = $('fixEmptyState');
+const previewGrid     = $('previewGrid');
+const zoomInput       = $('zoomInput');
+const scaleInput      = $('scaleInput');
+const offsetXInput    = $('offsetXInput');
+const offsetYInput    = $('offsetYInput');
+const rowCountInput   = $('sourceRowCountInput');
+const removeBgCheck   = $('removeBgCheck');
+const smoothEdgeInput = $('smoothEdgeInput');
+const smoothEdgeGroup = $('smoothEdgeGroup');
+const showTilesFixChk = $('showTilesCheckFix');
+const fixApplyBtn     = $('fixApplyBtn');
+const fixNextBtn      = $('fixNextBtn');
+const fixStats        = $('fixStats');
+const mainCanvas      = $('mainCanvas');
+const mCtx            = mainCanvas.getContext('2d');
+const showGridChk     = $('showGridCheck');
+const showTilesChk    = $('showTilesCheck');
+const spriteControls  = $('spriteControls');
+const selectedInfo    = $('selectedInfo');
+const sprXSlider      = $('spriteXSlider');
+const sprXInput       = $('spriteXInput');
+const sprYSlider      = $('spriteYSlider');
+const sprYInput       = $('spriteYInput');
+const sprSSlider      = $('spriteScaleSlider');
+const sprSInput       = $('spriteScaleInput');
+const trashZone       = $('trashZone');
+const dragGhost       = $('dragGhost');
+
+// ════════════════════════════════════════════════════════
+//  TABS
+// ════════════════════════════════════════════════════════
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+    currentTab = t.dataset.tab;
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    $('panelFix').classList.toggle('visible', currentTab === 'fix');
+    $('panelCompose').classList.toggle('visible', currentTab === 'compose');
+    $('panelMask').classList.toggle('visible', currentTab === 'mask');
+    if (currentTab === 'mask') refreshMaskPanel();
+}));
+
+// ════════════════════════════════════════════════════════
+//  IMPORT
+// ════════════════════════════════════════════════════════
+batchInput.addEventListener('change', e => {
+    const files = Array.from(e.target.files); if (!files.length) return;
+    let n = 0;
+    files.forEach(file => {
+        const r = new FileReader();
+        r.onload = ev => {
+            if (!assets.find(a => a.originalName === file.name))
+                assets.push({ originalName:file.name, dataURL:ev.target.result, fixParams:null, composerParams:null, maskParams:null, fixCanvasDataURL:null, composerCanvasDataURL:null, maskedCanvasDataURL:null });
+            if (++n === files.length) { renderSidebar(); if (currentAssetIdx === -1) selectAsset(0); }
+        };
+        r.readAsDataURL(file);
+    });
+    batchInput.value = '';
+});
+
+// ════════════════════════════════════════════════════════
+//  SIDEBAR
+// ════════════════════════════════════════════════════════
+function renderSidebar() {
+    assetCountBadge.textContent = assets.length;
+    if (!assets.length) { assetListEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:.75em;">Importez des PNG</div>'; progressBar.style.width='0%'; return; }
+    const done = assets.filter(a => a.fixCanvasDataURL && a.composerCanvasDataURL).length;
+    progressBar.style.width = Math.round(done/assets.length*100) + '%';
+    assetListEl.innerHTML = '';
+    assets.forEach((a,i) => {
+        const div = document.createElement('div');
+        const hF = !!a.fixCanvasDataURL, hC = !!a.composerCanvasDataURL, hM = !!a.maskedCanvasDataURL;
+        div.className = `asset-entry ${hM?'done-mask':hC?'done-both':hF?'done-fix':''} ${i===currentAssetIdx?'active':''}`;
+        div.innerHTML = `<span class="status-dot"></span><span class="asset-name" title="${a.originalName}">${a.originalName}</span>`;
+        div.addEventListener('click', () => selectAsset(i));
+        assetListEl.appendChild(div);
+    });
+}
+
+// ════════════════════════════════════════════════════════
+//  SELECT ASSET
+// ════════════════════════════════════════════════════════
+function selectAsset(idx) {
+    if (idx < 0 || idx >= assets.length) return;
+    currentAssetIdx = idx;
+    renderSidebar();
+    const a = assets[idx];
+    loadFixImage(a.dataURL, a.fixParams);
+    if (a.fixCanvasDataURL) loadComposer(a.fixCanvasDataURL, a.composerParams);
+    else resetComposer();
+}
+
+// ════════════════════════════════════════════════════════
+//  FIX — LOAD
+// ════════════════════════════════════════════════════════
+function loadFixImage(dataURL, saved) {
+    const img = new Image();
+    img.onload = () => {
+        fixImage = img;
+        sourceCanvas.style.display = 'block';
+        fixEmptyState.style.display = 'none';
+        if (saved) {
+            applyFixParams(saved);
+        } else {
+            const cw = img.width / DEFAULT_COLS;
+            const calcRows = Math.max(1, Math.round(img.height / cw));
+            rowCountInput.value = calcRows;
+            scaleInput.value = 1; offsetXInput.value = 0; offsetYInput.value = 0;
+            document.querySelectorAll('.column-offset-x,.column-offset-y').forEach(el => el.value = 0);
+            removeBgCheck.checked = false; smoothEdgeGroup.style.display = 'none'; smoothEdgeInput.value = 2;
+            fixHscb = {hue:0,sat:0,con:0,bri:0}; setFixHscbUI();
+            initGridLines(calcRows);
+        }
+        fixStats.style.display = 'grid';
+        $('statSrc').textContent = img.width + 'x' + img.height;
+        fixApplyBtn.disabled = false;
+        fixNextBtn.disabled = currentAssetIdx >= assets.length - 1;
+        updateFixOutput();
+    };
+    img.src = dataURL;
+}
+
+function applyFixParams(p) {
+    rowCountInput.value = p.sourceRows;
+    scaleInput.value = p.scale; offsetXInput.value = p.offsetX; offsetYInput.value = p.offsetY;
+    removeBgCheck.checked = p.removeBg;
+    smoothEdgeGroup.style.display = p.removeBg ? 'block' : 'none';
+    smoothEdgeInput.value = p.erosion; zoomInput.value = p.zoom || 1;
+    document.querySelectorAll('.column-offset-x').forEach((el,i) => el.value = p.colOffsetX[i]||0);
+    document.querySelectorAll('.column-offset-y').forEach((el,i) => el.value = p.colOffsetY[i]||0);
+    rowYPos = [...p.rowPositions];
+    colXPos = p.colPositions ? [...p.colPositions] : buildDefaultColPositions();
+    fixScale = p.zoom || 1;
+    // restore HSCB
+    fixHscb = p.hscb ? {...p.hscb} : {hue:0,sat:0,con:0,bri:0};
+    setFixHscbUI();
+    drawSourceCanvas(); updateFixOutput();
+}
+
+// ════════════════════════════════════════════════════════
+//  FIX — GRID INIT
+// ════════════════════════════════════════════════════════
+function buildDefaultColPositions() {
+    if (!fixImage) return [0, fixImage ? fixImage.width : 100];
+    const pos = [0];
+    const step = fixImage.width / DEFAULT_COLS;
+    for (let i = 1; i < DEFAULT_COLS; i++) pos.push(Math.round(i * step));
+    pos.push(fixImage.width);
+    return pos;
+}
+
+function initGridLines(rows) {
+    if (!fixImage || rows <= 0) return;
+    rows = Math.min(rows, 100);
+    rowYPos = [0];
+    const rStep = fixImage.height / rows;
+    for (let i = 1; i < rows; i++) rowYPos.push(Math.round(i * rStep));
+    rowYPos.push(fixImage.height);
+    colXPos = buildDefaultColPositions();
+    drawSourceCanvas(); updateFixOutput();
+}
+
+// ════════════════════════════════════════════════════════
+//  FIX — DRAW SOURCE CANVAS
+// ════════════════════════════════════════════════════════
+function drawSourceCanvas() {
+    if (!fixImage) return;
+    sourceCanvas.width  = fixImage.width;
+    sourceCanvas.height = fixImage.height;
+    fixScale = parseFloat(zoomInput.value) || 1;
+    sourceCanvas.style.transform = `scale(${fixScale})`;
+    sourceCanvas.style.transformOrigin = 'top left';
+    sCtx.imageSmoothingEnabled = false;
+    sCtx.clearRect(0, 0, sourceCanvas.width, sourceCanvas.height);
+    sCtx.drawImage(fixImage, 0, 0);
+
+    // ROW dividers — red
+    for (let i = 1; i < rowYPos.length - 1; i++) {
+        const y = rowYPos[i], hot = (activeDragLine === i);
+        sCtx.strokeStyle = hot ? 'rgba(255,255,0,1)' : 'rgba(255,60,60,.9)';
+        sCtx.lineWidth = hot ? 4 : 2;
+        sCtx.beginPath(); sCtx.moveTo(0,y); sCtx.lineTo(fixImage.width,y); sCtx.stroke();
+        sCtx.fillStyle = hot ? '#ffff00' : '#ff5050';
+        sCtx.font = 'bold 16px sans-serif'; sCtx.textAlign = 'left';
+        sCtx.fillText('R'+i, 4, y-4);
+    }
+    // COL dividers — green
+    for (let i = 1; i < colXPos.length - 1; i++) {
+        const x = colXPos[i], hot = (activeDragLine === -i);
+        sCtx.strokeStyle = hot ? 'rgba(255,255,0,1)' : 'rgba(60,255,60,.9)';
+        sCtx.lineWidth = hot ? 4 : 2;
+        sCtx.beginPath(); sCtx.moveTo(x,0); sCtx.lineTo(x,fixImage.height); sCtx.stroke();
+        sCtx.fillStyle = hot ? '#ffff00' : '#50ff50';
+        sCtx.font = 'bold 16px sans-serif'; sCtx.textAlign = 'left';
+        sCtx.fillText('C'+i, x+3, 18);
+    }
+}
+
+// ════════════════════════════════════════════════════════
+//  FIX — MOUSE (drag rows & cols)
+// ════════════════════════════════════════════════════════
+sourceCanvas.addEventListener('mousedown', e => {
+    if (!fixImage) return;
+    const {x,y} = fixMouse(e);
+    const HIT = 8 / fixScale;
+    for (let i = 1; i < rowYPos.length-1; i++) if (Math.abs(y - rowYPos[i]) < HIT) { activeDragLine = i; drawSourceCanvas(); return; }
+    for (let i = 1; i < colXPos.length-1; i++) if (Math.abs(x - colXPos[i]) < HIT) { activeDragLine = -i; drawSourceCanvas(); return; }
+});
+
+sourceCanvas.addEventListener('mousemove', e => {
+    if (!fixImage) return;
+    const {x,y} = fixMouse(e);
+    const HIT = 8 / fixScale;
+    if (activeDragLine === 0) {
+        // just update cursor
+        let cur = 'crosshair';
+        for (let i = 1; i < rowYPos.length-1; i++) if (Math.abs(y-rowYPos[i]) < HIT) { cur='ns-resize'; break; }
+        if (cur==='crosshair') for (let i = 1; i < colXPos.length-1; i++) if (Math.abs(x-colXPos[i]) < HIT) { cur='ew-resize'; break; }
+        sourceCanvas.style.cursor = cur;
+        return;
+    }
+    if (activeDragLine > 0) {
+        const i = activeDragLine;
+        const newY = Math.round(y);
+        const fin = Math.max(rowYPos[i-1]+1, Math.min(rowYPos[i+1]-1, Math.min(fixImage.height-1, newY)));
+        if (rowYPos[i] !== fin) { rowYPos[i] = fin; drawSourceCanvas(); updateFixOutput(); }
+    } else {
+        const i = -activeDragLine;
+        const newX = Math.round(x);
+        const fin = Math.max(colXPos[i-1]+1, Math.min(colXPos[i+1]-1, Math.min(fixImage.width-1, newX)));
+        if (colXPos[i] !== fin) { colXPos[i] = fin; drawSourceCanvas(); updateFixOutput(); }
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    if (activeDragLine !== 0) { activeDragLine = 0; if (fixImage) drawSourceCanvas(); }
+});
+
+function fixMouse(e) {
+    const rect = sourceCanvas.getBoundingClientRect();
+    return { x:(e.clientX-rect.left)/fixScale, y:(e.clientY-rect.top)/fixScale };
+}
+
+// ════════════════════════════════════════════════════════
+//  FIX — OUTPUT HELPERS
+// ════════════════════════════════════════════════════════
+function getFixParams() {
+    const colOffsetX=[], colOffsetY=[];
+    document.querySelectorAll('.column-offset-x').forEach(el => colOffsetX.push(parseInt(el.value)||0));
+    document.querySelectorAll('.column-offset-y').forEach(el => colOffsetY.push(parseInt(el.value)||0));
+    return { scale:parseFloat(scaleInput.value), offsetX:parseInt(offsetXInput.value)||0, offsetY:parseInt(offsetYInput.value)||0, removeBg:removeBgCheck.checked, erosion:parseInt(smoothEdgeInput.value)||0, zoom:parseFloat(zoomInput.value)||1, sourceRows:parseInt(rowCountInput.value)||1, rowPositions:[...rowYPos], colPositions:[...colXPos], colOffsetX, colOffsetY, hscb:{...fixHscb} };
+}
+
+function getScaledImage() {
+    if (!fixImage) return null;
+    const p = getFixParams();
+    const tmp = document.createElement('canvas');
+    tmp.width = fixImage.width*p.scale; tmp.height = fixImage.height*p.scale;
+    const tc = tmp.getContext('2d'); tc.imageSmoothingEnabled = false;
+    tc.drawImage(fixImage, 0, 0, tmp.width, tmp.height);
+    if (p.removeBg) applyRemoveBg(tmp, getBgColor(fixImage), p.erosion);
+    applyHSCB(tmp, fixHscb.hue, fixHscb.sat, fixHscb.con, fixHscb.bri);
+    return tmp;
+}
+
+function getBgColor(img) {
+    const t=document.createElement('canvas'); t.width=img.width; t.height=img.height;
+    t.getContext('2d').drawImage(img,0,0);
+    const d=t.getContext('2d').getImageData(0,0,1,1).data;
+    return {r:d[0],g:d[1],b:d[2]};
+}
+
+function applyRemoveBg(canvas, bg, erosion) {
+    const w=canvas.width, h=canvas.height, tc=canvas.getContext('2d');
+    const id=tc.getImageData(0,0,w,h); const D=id.data; const tol=40;
+    for (let i=0;i<D.length;i+=4) D[i+3] = (Math.abs(D[i]-bg.r)+Math.abs(D[i+1]-bg.g)+Math.abs(D[i+2]-bg.b))<tol?0:255;
+    if (erosion>0) {
+        const orig=new Uint8ClampedArray(D), na=new Uint8Array(w*h);
+        for (let y=0;y<h;y++) for (let x=0;x<w;x++) {
+            if (orig[(y*w+x)*4+3]===0){na[y*w+x]=0;continue;}
+            let near=false;
+            outer: for (let dy=-erosion;dy<=erosion;dy++) for (let dx=-erosion;dx<=erosion;dx++){
+                const cy=y+dy,cx2=x+dx;
+                if (cy>=0&&cy<h&&cx2>=0&&cx2<w&&orig[(cy*w+cx2)*4+3]===0&&Math.sqrt(dx*dx+dy*dy)<=erosion){near=true;break outer;}
+            }
+            na[y*w+x]=near?0:255;
+        }
+        for (let i=0;i<D.length;i+=4) D[i+3]=na[i/4];
+    }
+    tc.putImageData(id,0,0);
+}
+
+// ═══ HSCB pixel adjustment ═══
+// hue: -180..180 degrees  sat: -100..100  con: -100..100  bri: -100..100
+function applyHSCB(canvas, hue, sat, con, bri) {
+    if (hue===0 && sat===0 && con===0 && bri===0) return;
+    const tc=canvas.getContext('2d');
+    const w=canvas.width, h=canvas.height;
+    const id=tc.getImageData(0,0,w,h); const D=id.data;
+    const hRad=hue*(Math.PI/180);
+    const satF=1+sat/100;
+    const conF=con===0?1:(con>0?(1+con/100*3):(1+con/100));
+    const briF=bri/100;
+
+    for (let i=0;i<D.length;i+=4) {
+        if (D[i+3]===0) continue; // skip transparent
+        let r=D[i]/255, g=D[i+1]/255, b=D[i+2]/255;
+
+        // ── Brightness ──
+        r = Math.min(1, Math.max(0, r+briF));
+        g = Math.min(1, Math.max(0, g+briF));
+        b = Math.min(1, Math.max(0, b+briF));
+
+        // ── Contrast (around 0.5) ──
+        r = Math.min(1, Math.max(0, (r-0.5)*conF+0.5));
+        g = Math.min(1, Math.max(0, (g-0.5)*conF+0.5));
+        b = Math.min(1, Math.max(0, (b-0.5)*conF+0.5));
+
+        // ── RGB→HSL ──
+        const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn;
+        let hl=0, sl=0, ll=(mx+mn)/2;
+        if (d>0) {
+            sl=ll>0.5?d/(2-mx-mn):d/(mx+mn);
+            if (mx===r) hl=((g-b)/d+(g<b?6:0))/6;
+            else if (mx===g) hl=((b-r)/d+2)/6;
+            else hl=((r-g)/d+4)/6;
+        }
+
+        // ── Hue shift ──
+        hl=(hl+(hue/360)+2)%1;
+
+        // ── Saturation ──
+        sl=Math.min(1,Math.max(0,sl*satF));
+
+        // ── HSL→RGB ──
+        let nr,ng,nb;
+        if (sl===0) { nr=ng=nb=ll; }
+        else {
+            const q=ll<0.5?ll*(1+sl):ll+sl-ll*sl;
+            const p=2*ll-q;
+            const hue2rgb=(p,q,t)=>{ if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p; };
+            nr=hue2rgb(p,q,hl+1/3); ng=hue2rgb(p,q,hl); nb=hue2rgb(p,q,hl-1/3);
+        }
+        D[i]=Math.round(nr*255); D[i+1]=Math.round(ng*255); D[i+2]=Math.round(nb*255);
+    }
+    tc.putImageData(id,0,0);
+}
+
+function drawIsoTileF(tc,x,y,w,h) {
+    const cx=x+w/2, by=y+h-TILE_PAD_F;
+    tc.fillStyle='rgba(100,200,255,.22)'; tc.strokeStyle='rgba(100,200,255,.7)'; tc.lineWidth=2;
+    tc.beginPath(); tc.moveTo(cx,by-TILE_H); tc.lineTo(cx+TILE_W/2,by-TILE_H/2); tc.lineTo(cx,by); tc.lineTo(cx-TILE_W/2,by-TILE_H/2); tc.closePath(); tc.fill(); tc.stroke();
+}
+
+function updateFixOutput() {
+    if (!fixImage || rowYPos.length<2 || colXPos.length<2) return;
+    const p = getFixParams();
+    const nR = rowYPos.length-1, nC = colXPos.length-1;
+    $('statOut').textContent = (FINAL_W*nC)+'x'+(FINAL_H*nR);
+    $('statGrid').textContent = nC+'x'+nR;
+    const sc = getScaledImage(); if (!sc) return;
+    previewGrid.innerHTML = '';
+    for (let row=0; row<nR; row++) {
+        const sy0=rowYPos[row]*p.scale, sh=(rowYPos[row+1]-rowYPos[row])*p.scale;
+        const vA=FINAL_H-sh;
+        for (let col=0; col<nC; col++) {
+            const sx0=colXPos[col]*p.scale, sw=(colXPos[col+1]-colXPos[col])*p.scale;
+            const hC=(FINAL_W-sw)/2;
+            const dx=hC+p.offsetX+(p.colOffsetX[col]||0), dy=vA+p.offsetY+(p.colOffsetY[col]||0);
+            const pc=document.createElement('canvas'); pc.width=FINAL_W; pc.height=FINAL_H;
+            const pctx=pc.getContext('2d'); pctx.imageSmoothingEnabled=false;
+            pctx.clearRect(0,0,FINAL_W,FINAL_H);
+            pctx.drawImage(sc, sx0,sy0,sw,sh, dx,dy,sw,sh);
+            if (showTilesFixChk.checked) drawIsoTileF(pctx,0,0,FINAL_W,FINAL_H);
+            const cell=document.createElement('div'); cell.className='preview-cell'; cell.appendChild(pc);
+            previewGrid.appendChild(cell);
+        }
+    }
+}
+
+function buildFixExport() {
+    if (!fixImage || rowYPos.length<2) return null;
+    const p = getFixParams();
+    const nR=rowYPos.length-1, nC=colXPos.length-1;
+    const exp=document.createElement('canvas'); exp.width=FINAL_W*nC; exp.height=FINAL_H*nR;
+    const ec=exp.getContext('2d'); ec.imageSmoothingEnabled=false;
+    const sc=getScaledImage(); if (!sc) return null;
+    for (let row=0; row<nR; row++) {
+        const sy0=rowYPos[row]*p.scale, sh=(rowYPos[row+1]-rowYPos[row])*p.scale, vA=FINAL_H-sh;
+        for (let col=0; col<nC; col++) {
+            const sx0=colXPos[col]*p.scale, sw=(colXPos[col+1]-colXPos[col])*p.scale, hC=(FINAL_W-sw)/2;
+            const dx=col*FINAL_W+hC+p.offsetX+(p.colOffsetX[col]||0);
+            const dy=row*FINAL_H+vA+p.offsetY+(p.colOffsetY[col]||0);
+            ec.drawImage(sc, sx0,sy0,sw,sh, dx,dy,sw,sh);
+        }
+    }
+    return exp;
+}
+
+// ════════════════════════════════════════════════════════
+//  FIX — EVENTS
+// ════════════════════════════════════════════════════════
+zoomInput.addEventListener('input', () => { fixScale = parseFloat(zoomInput.value)||1; drawSourceCanvas(); });
+[scaleInput,offsetXInput,offsetYInput,smoothEdgeInput].forEach(el => el.addEventListener('input', updateFixOutput));
+showTilesFixChk.addEventListener('change', updateFixOutput);
+document.querySelectorAll('.column-offset-x,.column-offset-y').forEach(el => el.addEventListener('input', updateFixOutput));
+rowCountInput.addEventListener('change', () => initGridLines(parseInt(rowCountInput.value)||1));
+removeBgCheck.addEventListener('change', () => { smoothEdgeGroup.style.display=removeBgCheck.checked?'block':'none'; updateFixOutput(); });
+fixApplyBtn.addEventListener('click', () => {
+    const exp=buildFixExport(); if (!exp) return;
+    const a=assets[currentAssetIdx];
+    a.fixCanvasDataURL=exp.toDataURL('image/png'); a.fixParams=getFixParams();
+    a.composerParams=null; a.composerCanvasDataURL=null; // always reset composition when fix is re-validated
+    renderSidebar(); loadComposer(a.fixCanvasDataURL, null);
+    fixApplyBtn.textContent='✅ Validé !';
+    setTimeout(()=>fixApplyBtn.textContent='✅ Valider',1500);
+});
+// ════════════════════════════════════════════════════════
+//  FIX — HSCB CONTROLS
+// ════════════════════════════════════════════════════════
+function setFixHscbUI() {
+    $('fixHue').value=$('fixHueN').value=fixHscb.hue;
+    $('fixSat').value=$('fixSatN').value=fixHscb.sat;
+    $('fixCon').value=$('fixConN').value=fixHscb.con;
+    $('fixBri').value=$('fixBriN').value=fixHscb.bri;
+    const active=fixHscb.hue!==0||fixHscb.sat!==0||fixHscb.con!==0||fixHscb.bri!==0;
+    $('fixHscbWrap').classList.toggle('hscb-active', active);
+}
+function syncFixHscb(rangId, numId, key) {
+    const update=()=>{ fixHscb[key]=parseInt($('fixHue'===rangId?rangId:rangId).value)||0; updateFixOutput(); $('fixHscbWrap').classList.toggle('hscb-active', fixHscb.hue!==0||fixHscb.sat!==0||fixHscb.con!==0||fixHscb.bri!==0); };
+    [['fixHue','fixHueN','hue'],['fixSat','fixSatN','sat'],['fixCon','fixConN','con'],['fixBri','fixBriN','bri']].forEach(([r,n,k])=>{
+        const sync=()=>{ const v=parseInt(event.target.value)||0; fixHscb[k]=v; $('fixHscbWrap').classList.toggle('hscb-active',fixHscb.hue!==0||fixHscb.sat!==0||fixHscb.con!==0||fixHscb.bri!==0); updateFixOutput(); };
+        // listeners added below
+    });
+}
+[['fixHue','fixHueN','hue'],['fixSat','fixSatN','sat'],['fixCon','fixConN','con'],['fixBri','fixBriN','bri']].forEach(([r,n,k])=>{
+    const onChange=e=>{ const v=parseInt(e.target.value)||0; fixHscb[k]=v; $(r).value=v; $(n).value=v; $('fixHscbWrap').classList.toggle('hscb-active',fixHscb.hue!==0||fixHscb.sat!==0||fixHscb.con!==0||fixHscb.bri!==0); updateFixOutput(); };
+    $(r).addEventListener('input',onChange); $(n).addEventListener('input',onChange);
+});
+$('fixHscbResetBtn').addEventListener('click',()=>{ fixHscb={hue:0,sat:0,con:0,bri:0}; setFixHscbUI(); updateFixOutput(); });
+fixNextBtn.addEventListener('click', () => { if (currentAssetIdx<assets.length-1) selectAsset(currentAssetIdx+1); });
+
+// ════════════════════════════════════════════════════════
+//  COMPOSER — LOAD
+// ════════════════════════════════════════════════════════
+function resetComposer() {
+    mainCanvas.style.display='none'; composeEmpty.style.display='flex';
+    composeApplyBtn.disabled=true; composeNextBtn.disabled=true;
+    workspace=[]; selectedCell=null; spriteControls.style.display='none';
+}
+
+function loadComposer(fixDataURL, savedParams) {
+    const img=new Image();
+    img.onload=()=>{
+        composeEmpty.style.display='none'; mainCanvas.style.display='block';
+        const nC=Math.max(1,Math.round(img.width/FINAL_W));
+        const nR=Math.max(1,Math.round(img.height/FINAL_H));
+        compCols=nC;
+
+        if (savedParams && savedParams.sprites) {
+            compRows=savedParams.rows||nR;
+            workspace=[];
+            for (let r=0;r<compRows;r++) for (let c=0;c<compCols;c++) {
+                const sp=savedParams.sprites.find(s=>s.row===r&&s.col===c)||null;
+                let cellCanvas=null;
+                if (sp && sp.imgDataURL) {
+                    // restore from saved data URL
+                    cellCanvas=document.createElement('canvas'); cellCanvas.width=SP_W; cellCanvas.height=SP_H;
+                    const tmpImg=new Image(); tmpImg.src=sp.imgDataURL;
+                    // draw synchronously after load — we queue a re-render
+                    (function(cc,ti){ ti.onload=()=>{ cc.getContext('2d').drawImage(ti,0,0,SP_W,SP_H); render(); }; })(cellCanvas,tmpImg);
+                } else if (sp && sp.srcRow!==undefined) {
+                    const srcR=sp.srcRow, srcC=sp.srcCol||0;
+                    if (srcR<nR&&srcC<nC) cellCanvas=extractCell(img,srcR,srcC,nC,nR);
+                }
+                workspace.push({row:r,col:c, imgData:cellCanvas, imgDataURL:sp?sp.imgDataURL||null:null, offsetX:sp?sp.offsetX||0:0, offsetY:sp?sp.offsetY||0:0, scale:sp?sp.scale||1:1, flipH:sp?sp.flipH||false:false, mirrorSide:sp?sp.mirrorSide||0:0, hue:sp?sp.hue||0:0, sat:sp?sp.sat||0:0, con:sp?sp.con||0:0, bri:sp?sp.bri||0:0});
+            }
+        } else {
+            compRows=nR; workspace=[];
+            for (let r=0;r<nR;r++) for (let c=0;c<nC;c++) {
+                const cell=extractCell(img,r,c,nC,nR);
+                workspace.push({row:r,col:c,imgData:cell,imgDataURL:null,offsetX:0,offsetY:0,scale:1,flipH:false,mirrorSide:0,hue:0,sat:0,con:0,bri:0});
+            }
+        }
+        resizeMC(); render();
+        composeApplyBtn.disabled=false;
+        composeNextBtn.disabled=currentAssetIdx>=assets.length-1;
+    };
+    img.src=fixDataURL;
+}
+
+function extractCell(img,row,col,nC,nR) {
+    const cw=Math.round(img.width/nC), ch=Math.round(img.height/nR);
+    const c2=document.createElement('canvas'); c2.width=SP_W; c2.height=SP_H;
+    const cx=c2.getContext('2d'); cx.imageSmoothingEnabled=false;
+    cx.drawImage(img,col*cw,row*ch,cw,ch,0,0,SP_W,SP_H);
+    return c2;
+}
+
+function cloneCanvas(src) {
+    if (!src) return null;
+    const c=document.createElement('canvas'); c.width=src.width; c.height=src.height;
+    c.getContext('2d').drawImage(src,0,0); return c;
+}
+
+function resizeMC() {
+    mainCanvas.width=SP_W*compCols; mainCanvas.height=SP_H*compRows;
+}
+
+// ════════════════════════════════════════════════════════
+//  COMPOSER — RENDER
+// ════════════════════════════════════════════════════════
+function drawIsoTileC(tc,x,y) {
+    const cx=x+SP_W/2, by=y+SP_H-TILE_PAD_C;
+    tc.fillStyle='rgba(102,126,234,.16)'; tc.strokeStyle='rgba(102,126,234,.5)'; tc.lineWidth=2;
+    tc.beginPath(); tc.moveTo(cx,by-TILE_H); tc.lineTo(cx+TILE_W/2,by-TILE_H/2); tc.lineTo(cx,by); tc.lineTo(cx-TILE_W/2,by-TILE_H/2); tc.closePath(); tc.fill(); tc.stroke();
+}
+
+function renderSprite(tc,sp,dx,dy) {
+    if (!sp.imgData) return;
+    tc.save();
+    if (sp.mirrorSide) {
+        // Step 1: render full sprite (offset+scale+flipH) into intermediate canvas
+        const mc=document.createElement('canvas'); mc.width=SP_W; mc.height=SP_H;
+        const mctx=mc.getContext('2d'); mctx.imageSmoothingEnabled=false;
+        mctx.save();
+        mctx.translate(SP_W/2+sp.offsetX, SP_H/2+sp.offsetY);
+        mctx.scale(sp.scale*(sp.flipH?-1:1), sp.scale);
+        mctx.drawImage(sp.imgData,-SP_W/2,-SP_H/2,SP_W,SP_H);
+        mctx.restore();
+        // Apply HSCB on intermediate
+        applyHSCB(mc, sp.hue||0, sp.sat||0, sp.con||0, sp.bri||0);
+        // Step 2: apply mirror cut exactly at tile center (SP_W/2)
+        const fc=document.createElement('canvas'); fc.width=SP_W; fc.height=SP_H;
+        const fctx=fc.getContext('2d'); fctx.imageSmoothingEnabled=false;
+        if (sp.mirrorSide===1) {
+            fctx.drawImage(mc, 0,0,SP_W/2,SP_H, 0,0,SP_W/2,SP_H);
+            fctx.save(); fctx.translate(SP_W,0); fctx.scale(-1,1);
+            fctx.drawImage(mc, 0,0,SP_W/2,SP_H, 0,0,SP_W/2,SP_H);
+            fctx.restore();
+        } else {
+            fctx.drawImage(mc, SP_W/2,0,SP_W/2,SP_H, SP_W/2,0,SP_W/2,SP_H);
+            fctx.save(); fctx.translate(SP_W,0); fctx.scale(-1,1);
+            fctx.drawImage(mc, SP_W/2,0,SP_W/2,SP_H, SP_W/2,0,SP_W/2,SP_H);
+            fctx.restore();
+        }
+        tc.drawImage(fc, dx, dy);
+    } else {
+        // Render to temp canvas so we can apply HSCB cleanly
+        const mc=document.createElement('canvas'); mc.width=SP_W; mc.height=SP_H;
+        const mctx=mc.getContext('2d'); mctx.imageSmoothingEnabled=false;
+        mctx.save();
+        mctx.translate(SP_W/2+sp.offsetX, SP_H/2+sp.offsetY);
+        mctx.scale(sp.scale*(sp.flipH?-1:1), sp.scale);
+        mctx.drawImage(sp.imgData,-SP_W/2,-SP_H/2,SP_W,SP_H);
+        mctx.restore();
+        applyHSCB(mc, sp.hue||0, sp.sat||0, sp.con||0, sp.bri||0);
+        tc.drawImage(mc, dx, dy);
+    }
+    tc.restore();
+}
+
+function render() {
+    mCtx.clearRect(0,0,mainCanvas.width,mainCanvas.height);
+    workspace.forEach(sp=>renderSprite(mCtx,sp,sp.col*SP_W,sp.row*SP_H));
+    if (showGridChk.checked) {
+        mCtx.strokeStyle='rgba(102,126,234,.45)'; mCtx.lineWidth=1;
+        for (let r=0;r<=compRows;r++){mCtx.beginPath();mCtx.moveTo(0,r*SP_H);mCtx.lineTo(mainCanvas.width,r*SP_H);mCtx.stroke();}
+        for (let c=0;c<=compCols;c++){mCtx.beginPath();mCtx.moveTo(c*SP_W,0);mCtx.lineTo(c*SP_W,mainCanvas.height);mCtx.stroke();}
+    }
+    if (showTilesChk.checked) workspace.forEach(sp=>drawIsoTileC(mCtx,sp.col*SP_W,sp.row*SP_H));
+    if (selectedCell) {
+        mCtx.strokeStyle='#667eea'; mCtx.lineWidth=3;
+        mCtx.strokeRect(selectedCell.col*SP_W+1,selectedCell.row*SP_H+1,SP_W-2,SP_H-2);
+    }
+    if (shiftDrag && shiftDragOver) {
+        const isComposite = shiftDrag.composite;
+        mCtx.strokeStyle = isComposite ? 'rgba(0,220,100,.95)' : 'rgba(255,200,0,.9)';
+        mCtx.lineWidth=3;
+        mCtx.strokeRect(shiftDragOver.col*SP_W+1,shiftDragOver.row*SP_H+1,SP_W-2,SP_H-2);
+        if (isComposite) {
+            // also draw a small "merge" indicator
+            mCtx.fillStyle='rgba(0,220,100,.18)';
+            mCtx.fillRect(shiftDragOver.col*SP_W+2,shiftDragOver.row*SP_H+2,SP_W-4,SP_H-4);
+        }
+    }
+}
+
+// ════════════════════════════════════════════════════════
+//  COMPOSER — MOUSE EVENTS
+// ════════════════════════════════════════════════════════
+function canvasCell(e) {
+    const rect=mainCanvas.getBoundingClientRect();
+    return {row:Math.floor((e.clientY-rect.top)/SP_H), col:Math.floor((e.clientX-rect.left)/SP_W)};
+}
+function getWS(row,col) { return workspace.find(s=>s.row===row&&s.col===col)||null; }
+
+mainCanvas.addEventListener('mousedown', e => {
+    if (e.shiftKey) { startShiftDrag(e); return; }
+
+    const {row,col}=canvasCell(e);
+    const sp=getWS(row,col);
+
+    // select
+    selectedCell=sp||null;
+    spriteControls.style.display=sp?'block':'none';
+    if (sp) {
+        selectedInfo.textContent=`R${row+1} C${col+1}`;
+        sprXSlider.value=sprXInput.value=sp.offsetX;
+        sprYSlider.value=sprYInput.value=sp.offsetY;
+        sprSSlider.value=sprSInput.value=sp.scale;
+        setCmpHscbUI(sp);
+    }
+
+    // start normal drag for offset (only if cell has content)
+    if (sp && sp.imgData) {
+        const rect=mainCanvas.getBoundingClientRect();
+        normalDrag={sp, startMouseX:e.clientX-rect.left, startMouseY:e.clientY-rect.top, startOffsetX:sp.offsetX, startOffsetY:sp.offsetY};
+        mainCanvas.style.cursor='grabbing';
+    }
+
+    render();
+    e.preventDefault();
+});
+
+mainCanvas.addEventListener('mousemove', e => {
+    if (shiftDrag) return; // handled globally
+    if (!normalDrag) return;
+    const rect=mainCanvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+    normalDrag.sp.offsetX=Math.round(normalDrag.startOffsetX+(mx-normalDrag.startMouseX));
+    normalDrag.sp.offsetY=Math.round(normalDrag.startOffsetY+(my-normalDrag.startMouseY));
+    // update sliders
+    sprXSlider.value=sprXInput.value=normalDrag.sp.offsetX;
+    sprYSlider.value=sprYInput.value=normalDrag.sp.offsetY;
+    render();
+});
+
+mainCanvas.addEventListener('mouseup', () => {
+    if (normalDrag) { normalDrag=null; mainCanvas.style.cursor='default'; }
+});
+mainCanvas.addEventListener('mouseleave', () => {
+    if (normalDrag) { normalDrag=null; mainCanvas.style.cursor='default'; }
+});
+
+// ════════════════════════════════════════════════════════
+//  COMPOSER — SHIFT+DRAG
+// ════════════════════════════════════════════════════════
+function startShiftDrag(e) {
+    const {row,col}=canvasCell(e);
+    // build ghost
+    dragGhost.width=SP_W; dragGhost.height=SP_H;
+    const gctx=dragGhost.getContext('2d'); gctx.clearRect(0,0,SP_W,SP_H);
+    const sp=getWS(row,col);
+    if (sp&&sp.imgData) renderSprite(gctx,sp,0,0);
+    else { gctx.strokeStyle='rgba(255,200,0,.5)'; gctx.lineWidth=2; gctx.setLineDash([5,4]); gctx.strokeRect(4,4,SP_W-8,SP_H-8); gctx.setLineDash([]); }
+    dragGhost.style.display='block';
+    dragGhost.style.width=Math.round(SP_W*.32)+'px';
+    dragGhost.style.height=Math.round(SP_H*.32)+'px';
+    // border color: green = composite merge mode, yellow = swap/copy mode
+    dragGhost.style.borderColor = (e.metaKey||e.ctrlKey) ? '#00dc64' : '#ffc107';
+    shiftDrag={srcRow:row, srcCol:col, composite:e.metaKey||e.ctrlKey};
+    shiftDragOver=null;
+    trashZone.classList.add('visible');
+    moveGhost(e); render(); e.preventDefault();
+}
+
+function moveGhost(e) {
+    const hw=parseInt(dragGhost.style.width)/2, hh=parseInt(dragGhost.style.height)/2;
+    dragGhost.style.left=(e.clientX-hw)+'px';
+    dragGhost.style.top=(e.clientY-hh)+'px';
+}
+
+document.addEventListener('mousemove', e => {
+    if (!shiftDrag) return;
+    moveGhost(e);
+    const rect=mainCanvas.getBoundingClientRect();
+    const inCanvas=e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom;
+    if (inCanvas) {
+        shiftDragOver={row:Math.floor((e.clientY-rect.top)/SP_H),col:Math.floor((e.clientX-rect.left)/SP_W)};
+    } else shiftDragOver=null;
+    const tr=trashZone.getBoundingClientRect();
+    trashZone.classList.toggle('hot', e.clientX>=tr.left&&e.clientX<=tr.right&&e.clientY>=tr.top&&e.clientY<=tr.bottom);
+    render();
+});
+
+document.addEventListener('mouseup', e => {
+    if (!shiftDrag) return;
+    const sd=shiftDrag;
+    shiftDrag=null; shiftDragOver=null;
+    dragGhost.style.display='none';
+    trashZone.classList.remove('visible','hot');
+
+    // trash?
+    const tr=trashZone.getBoundingClientRect();
+    if (e.clientX>=tr.left&&e.clientX<=tr.right&&e.clientY>=tr.top&&e.clientY<=tr.bottom) {
+        const s=getWS(sd.srcRow,sd.srcCol);
+        if (s) { s.imgData=null; s.imgDataURL=null; s.offsetX=0; s.offsetY=0; s.scale=1; s.flipH=false; s.mirrorSide=0; s.hue=0; s.sat=0; s.con=0; s.bri=0; }
+        render(); return;
+    }
+
+    const rect=mainCanvas.getBoundingClientRect();
+    const inCanvas=e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom;
+    if (!inCanvas) { render(); return; }
+    const dstRow=Math.floor((e.clientY-rect.top)/SP_H), dstCol=Math.floor((e.clientX-rect.left)/SP_W);
+    if (dstRow===sd.srcRow && dstCol===sd.srcCol) { render(); return; }
+
+    const src=getWS(sd.srcRow,sd.srcCol), dst=getWS(dstRow,dstCol);
+    if (!src||!dst) { render(); return; }
+
+    // ── COMPOSITE MODE (Shift+Cmd/Ctrl+drag): merge src ON TOP of dst ──
+    if (sd.composite) {
+        if (!src.imgData && !dst.imgData) { render(); return; }
+        // Build a merged canvas: dst rendered as background, src rendered on top
+        const merged = document.createElement('canvas'); merged.width=SP_W; merged.height=SP_H;
+        const mrgCtx = merged.getContext('2d'); mrgCtx.imageSmoothingEnabled=false;
+        // Draw dst first (background), then src (foreground) — both with their own transforms+HSCB
+        if (dst.imgData) renderSprite(mrgCtx, dst, 0, 0);
+        if (src.imgData) renderSprite(mrgCtx, src, 0, 0);
+        // Replace dst with the merged result, reset all transforms (baked in)
+        dst.imgData = merged;
+        dst.imgDataURL = null; // will be re-snapshotted on save
+        dst.offsetX=0; dst.offsetY=0; dst.scale=1;
+        dst.flipH=false; dst.mirrorSide=0;
+        dst.hue=0; dst.sat=0; dst.con=0; dst.bri=0;
+        // src is untouched
+        if (selectedCell&&selectedCell.row===dstRow&&selectedCell.col===dstCol) {
+            setCmpHscbUI(dst);
+            sprXSlider.value=sprXInput.value=0;
+            sprYSlider.value=sprYInput.value=0;
+            sprSSlider.value=sprSInput.value=1;
+        }
+        render(); return;
+    }
+
+    // ── NORMAL SHIFT+DRAG: swap / copy ──
+    const srcHasContent = !!src.imgData;
+    const dstHasContent = !!dst.imgData;
+
+    if (srcHasContent && !dstHasContent) {
+        // COPY: source stays, destination gets a copy
+        dst.imgData=cloneCanvas(src.imgData); dst.imgDataURL=src.imgDataURL;
+        dst.offsetX=src.offsetX; dst.offsetY=src.offsetY; dst.scale=src.scale;
+        dst.flipH=src.flipH; dst.mirrorSide=src.mirrorSide;
+        dst.hue=src.hue||0; dst.sat=src.sat||0; dst.con=src.con||0; dst.bri=src.bri||0;
+    } else {
+        // SWAP
+        const tmp={imgData:src.imgData,imgDataURL:src.imgDataURL,offsetX:src.offsetX,offsetY:src.offsetY,scale:src.scale,flipH:src.flipH,mirrorSide:src.mirrorSide,hue:src.hue||0,sat:src.sat||0,con:src.con||0,bri:src.bri||0};
+        src.imgData=dst.imgData; src.imgDataURL=dst.imgDataURL; src.offsetX=dst.offsetX; src.offsetY=dst.offsetY; src.scale=dst.scale; src.flipH=dst.flipH; src.mirrorSide=dst.mirrorSide; src.hue=dst.hue||0; src.sat=dst.sat||0; src.con=dst.con||0; src.bri=dst.bri||0;
+        dst.imgData=tmp.imgData; dst.imgDataURL=tmp.imgDataURL; dst.offsetX=tmp.offsetX; dst.offsetY=tmp.offsetY; dst.scale=tmp.scale; dst.flipH=tmp.flipH; dst.mirrorSide=tmp.mirrorSide; dst.hue=tmp.hue; dst.sat=tmp.sat; dst.con=tmp.con; dst.bri=tmp.bri;
+        if (selectedCell&&selectedCell.row===sd.srcRow&&selectedCell.col===sd.srcCol) selectedCell=src;
+        else if (selectedCell&&selectedCell.row===dstRow&&selectedCell.col===dstCol) selectedCell=dst;
+    }
+    render();
+});
+
+// ════════════════════════════════════════════════════════
+//  COMPOSER — ADD/REMOVE ROW
+// ════════════════════════════════════════════════════════
+$('addRowBtn').addEventListener('click', () => {
+    if (!mainCanvas.width) return;
+    for (let c=0;c<compCols;c++) workspace.push({row:compRows,col:c,imgData:null,imgDataURL:null,offsetX:0,offsetY:0,scale:1,flipH:false,mirrorSide:0});
+    compRows++; resizeMC(); render();
+});
+$('removeRowBtn').addEventListener('click', () => {
+    if (compRows<=1) return;
+    compRows--;
+    workspace=workspace.filter(s=>s.row<compRows);
+    if (selectedCell&&selectedCell.row>=compRows){selectedCell=null;spriteControls.style.display='none';}
+    resizeMC(); render();
+});
+
+// ════════════════════════════════════════════════════════
+//  COMPOSER — CONTROLS
+// ════════════════════════════════════════════════════════
+function syncSliders(sl,inp,cb){sl.addEventListener('input',()=>{inp.value=sl.value;cb();});inp.addEventListener('input',()=>{sl.value=inp.value;cb();});}
+function updateSel(){if(!selectedCell)return;selectedCell.offsetX=parseFloat(sprXInput.value);selectedCell.offsetY=parseFloat(sprYInput.value);selectedCell.scale=parseFloat(sprSInput.value);render();}
+syncSliders(sprXSlider,sprXInput,updateSel);
+syncSliders(sprYSlider,sprYInput,updateSel);
+syncSliders(sprSSlider,sprSInput,updateSel);
+showGridChk.addEventListener('change',render);
+showTilesChk.addEventListener('change',render);
+$('flipHBtn').addEventListener('click',()=>{ if(selectedCell){selectedCell.flipH=!selectedCell.flipH;render();}});
+$('mirrorLBtn').addEventListener('click',()=>{ if(!selectedCell)return; selectedCell.mirrorSide=selectedCell.mirrorSide===1?0:1; render(); });
+$('mirrorRBtn').addEventListener('click',()=>{ if(!selectedCell)return; selectedCell.mirrorSide=selectedCell.mirrorSide===2?0:2; render(); });
+$('resetSprScaleBtn').addEventListener('click',()=>{ if(!selectedCell)return; selectedCell.scale=1; sprSSlider.value=sprSInput.value=1; render(); });
+
+// ── Composer HSCB ──
+function setCmpHscbUI(sp) {
+    if (!sp) return;
+    $('cmpHue').value=$('cmpHueN').value=sp.hue||0;
+    $('cmpSat').value=$('cmpSatN').value=sp.sat||0;
+    $('cmpCon').value=$('cmpConN').value=sp.con||0;
+    $('cmpBri').value=$('cmpBriN').value=sp.bri||0;
+    const active=(sp.hue||0)!==0||(sp.sat||0)!==0||(sp.con||0)!==0||(sp.bri||0)!==0;
+    $('cmpHscbWrap').classList.toggle('hscb-active', active);
+}
+[['cmpHue','cmpHueN','hue'],['cmpSat','cmpSatN','sat'],['cmpCon','cmpConN','con'],['cmpBri','cmpBriN','bri']].forEach(([r,n,k])=>{
+    const onChange=e=>{
+        if (!selectedCell) return;
+        const v=parseInt(e.target.value)||0;
+        selectedCell[k]=v; $(r).value=v; $(n).value=v;
+        const active=(selectedCell.hue||0)!==0||(selectedCell.sat||0)!==0||(selectedCell.con||0)!==0||(selectedCell.bri||0)!==0;
+        $('cmpHscbWrap').classList.toggle('hscb-active', active);
+        render();
+    };
+    $(r).addEventListener('input',onChange); $(n).addEventListener('input',onChange);
+});
+$('cmpHscbResetBtn').addEventListener('click',()=>{
+    if (!selectedCell) return;
+    selectedCell.hue=0; selectedCell.sat=0; selectedCell.con=0; selectedCell.bri=0;
+    setCmpHscbUI(selectedCell); render();
+});
+$('clearSpriteBtn').addEventListener('click',()=>{if(!selectedCell)return;selectedCell.imgData=null;selectedCell.imgDataURL=null;selectedCell.offsetX=0;selectedCell.offsetY=0;selectedCell.scale=1;selectedCell.flipH=false;selectedCell.mirrorSide=0;selectedCell.hue=0;selectedCell.sat=0;selectedCell.con=0;selectedCell.bri=0;setCmpHscbUI(selectedCell);render();});
+$('resetSpriteBtn').addEventListener('click',()=>{if(!selectedCell)return;selectedCell.offsetX=0;selectedCell.offsetY=0;selectedCell.scale=1;selectedCell.flipH=false;selectedCell.mirrorSide=0;selectedCell.hue=0;selectedCell.sat=0;selectedCell.con=0;selectedCell.bri=0;sprXSlider.value=sprXInput.value=0;sprYSlider.value=sprYInput.value=0;sprSSlider.value=sprSInput.value=1;setCmpHscbUI(selectedCell);render();});
+
+function buildComposeExport(){
+    const exp=document.createElement('canvas'); exp.width=mainCanvas.width; exp.height=mainCanvas.height;
+    const ec=exp.getContext('2d'); ec.imageSmoothingEnabled=false;
+    workspace.forEach(sp=>renderSprite(ec,sp,sp.col*SP_W,sp.row*SP_H));
+    return exp;
+}
+
+composeApplyBtn.addEventListener('click',()=>{
+    // Always snapshot current raw imgData → imgDataURL (so HSCB stays editable, image is always fresh)
+    workspace.forEach(sp=>{
+        if (sp.imgData) sp.imgDataURL = sp.imgData.toDataURL('image/png');
+    });
+    const exp=buildComposeExport();
+    const a=assets[currentAssetIdx];
+    a.composerCanvasDataURL=exp.toDataURL('image/png');
+    a.composerParams={
+        rows:compRows,
+        sprites:workspace.map(sp=>({
+            row:sp.row, col:sp.col,
+            imgDataURL:sp.imgDataURL||null,
+            offsetX:sp.offsetX, offsetY:sp.offsetY,
+            scale:sp.scale, flipH:sp.flipH, mirrorSide:sp.mirrorSide,
+            hue:sp.hue||0, sat:sp.sat||0, con:sp.con||0, bri:sp.bri||0
+        }))
+    };
+    renderSidebar();
+    composeApplyBtn.textContent='✅ Validé !';
+    setTimeout(()=>composeApplyBtn.textContent='✅ Valider composition',1500);
+});
+composeNextBtn.addEventListener('click',()=>{if(currentAssetIdx<assets.length-1)selectAsset(currentAssetIdx+1);});
+
+// ════════════════════════════════════════════════════════
+//  MASK — ENGINE
+// ════════════════════════════════════════════════════════
+const maskCanvas  = $('maskCanvas');
+const maskCtx     = maskCanvas.getContext('2d');
+const maskEmpty   = $('maskEmpty');
+const maskApplyBtn = $('maskApplyBtn');
+const maskNextBtn  = $('maskNextBtn');
+
+// Build the isometric V-shape clipping path for a cell (tile dims from constants)
+// SP_W=192, SP_H=224, TILE_W=128, TILE_H=64, TILE_PAD_C=10
+// The isometric tile diamond is centered horizontally at SP_W/2,
+// its bottom tip is at y = SP_H - TILE_PAD_C, top tip at y = SP_H - TILE_PAD_C - TILE_H
+// left tip at x = SP_W/2 - TILE_W/2, right tip at x = SP_W/2 + TILE_W/2
+
+function buildMaskPath(ctx, type, ox, oy, w, h) {
+    // Tile geometry (per cell)
+    const cx    = w / 2 + ox;
+    const tipB  = h - TILE_PAD_C + oy;          // bottom tip Y
+    const tipT  = tipB - TILE_H;                 // top tip Y
+    const tipL  = cx - TILE_W / 2;              // left tip X
+    const tipR  = cx + TILE_W / 2;              // right tip X
+
+    ctx.beginPath();
+    if (type === 'bottom') {
+        // Keep everything ABOVE the bottom V  — clip away below
+        // The V bottom: left→bottomTip→right + wrap around bottom+sides
+        ctx.moveTo(0, 0);
+        ctx.lineTo(w, 0);
+        ctx.lineTo(w, tipB - TILE_H/2);   // down right side to mid-level
+        ctx.lineTo(tipR, tipB - TILE_H/2);
+        ctx.lineTo(cx, tipB);              // down to bottom tip
+        ctx.lineTo(tipL, tipB - TILE_H/2);
+        ctx.lineTo(0, tipB - TILE_H/2);
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+    } else if (type === 'top') {
+        // Keep everything BELOW the top V — clip away above
+        ctx.moveTo(0, h);
+        ctx.lineTo(w, h);
+        ctx.lineTo(w, tipT + TILE_H/2);
+        ctx.lineTo(tipR, tipT + TILE_H/2);
+        ctx.lineTo(cx, tipT);              // up to top tip
+        ctx.lineTo(tipL, tipT + TILE_H/2);
+        ctx.lineTo(0, tipT + TILE_H/2);
+        ctx.lineTo(0, h);
+        ctx.closePath();
+    } else if (type === 'left') {
+        // Keep everything to the RIGHT of a vertical line at tipL
+        ctx.rect(tipL, 0, w - tipL, h);
+    } else if (type === 'right') {
+        // Keep everything to the LEFT of a vertical line at tipR
+        ctx.rect(0, 0, tipR, h);
+    }
+}
+
+// Apply all active masks to a single source canvas → return masked canvas
+function applyMasks(srcCanvas, ms) {
+    const w = srcCanvas.width, h = srcCanvas.height;
+    const nC = Math.round(w / SP_W), nR = Math.round(h / SP_H);
+
+    const out = document.createElement('canvas'); out.width = w; out.height = h;
+    const octx = out.getContext('2d'); octx.imageSmoothingEnabled = false;
+
+    for (let r = 0; r < nR; r++) {
+        for (let c = 0; c < nC; c++) {
+            const dx = c * SP_W, dy = r * SP_H;
+            // Draw the source cell into an offscreen canvas, apply mask, draw result
+            const cell = document.createElement('canvas'); cell.width = SP_W; cell.height = SP_H;
+            const cctx = cell.getContext('2d'); cctx.imageSmoothingEnabled = false;
+            cctx.drawImage(srcCanvas, dx, dy, SP_W, SP_H, 0, 0, SP_W, SP_H);
+
+            // Apply each active mask as a clip
+            ['bottom','top','left','right'].forEach(type => {
+                if (!ms[type] || !ms[type].on) return;
+                const ox = ms[type].x || 0, oy = ms[type].y || 0;
+                // We use destination-in on a temp canvas to intersect
+                const tmp = document.createElement('canvas'); tmp.width = SP_W; tmp.height = SP_H;
+                const tctx = tmp.getContext('2d'); tctx.imageSmoothingEnabled = false;
+                // Draw cell onto tmp
+                tctx.drawImage(cell, 0, 0);
+                // Use clip region — draw a white fill into the KEPT area, then composite
+                const maskC = document.createElement('canvas'); maskC.width = SP_W; maskC.height = SP_H;
+                const mctx2 = maskC.getContext('2d');
+                mctx2.fillStyle = '#fff';
+                buildMaskPath(mctx2, type, ox, oy, SP_W, SP_H);
+                mctx2.fill();
+                // Apply: keep only pixels where maskC is white (destination-in trick)
+                tctx.globalCompositeOperation = 'destination-in';
+                tctx.drawImage(maskC, 0, 0);
+                tctx.globalCompositeOperation = 'source-over';
+                // Replace cell content
+                cctx.clearRect(0, 0, SP_W, SP_H);
+                cctx.drawImage(tmp, 0, 0);
+            });
+
+            octx.drawImage(cell, dx, dy);
+        }
+    }
+    return out;
+}
+
+// Draw preview on the mask canvas: source image + mask overlays
+function renderMaskCanvas() {
+    if (!maskSourceImg) return;
+    const w = maskSourceImg.width, h = maskSourceImg.height;
+    maskCanvas.width = w; maskCanvas.height = h;
+
+    // Draw source
+    maskCtx.imageSmoothingEnabled = false;
+    maskCtx.clearRect(0, 0, w, h);
+    maskCtx.drawImage(maskSourceImg, 0, 0);
+
+    const showOverlay = $('maskShowMaskOverlay').checked;
+    const showTiles   = $('maskShowTiles').checked;
+    const nC = Math.round(w / SP_W), nR = Math.round(h / SP_H);
+
+    for (let r = 0; r < nR; r++) {
+        for (let c = 0; c < nC; c++) {
+            const dx = c * SP_W, dy = r * SP_H;
+
+            // Draw iso tile overlay
+            if (showTiles) {
+                const cx = dx + SP_W/2, by = dy + SP_H - TILE_PAD_C;
+                maskCtx.fillStyle = 'rgba(102,126,234,.12)';
+                maskCtx.strokeStyle = 'rgba(102,126,234,.5)';
+                maskCtx.lineWidth = 1;
+                maskCtx.beginPath();
+                maskCtx.moveTo(cx, by-TILE_H); maskCtx.lineTo(cx+TILE_W/2, by-TILE_H/2);
+                maskCtx.lineTo(cx, by); maskCtx.lineTo(cx-TILE_W/2, by-TILE_H/2);
+                maskCtx.closePath(); maskCtx.fill(); maskCtx.stroke();
+            }
+
+            if (!showOverlay) continue;
+
+            // Draw each active mask as a colored overlay showing the CUT zone
+            const maskColors = { bottom:'rgba(245,87,108,.35)', top:'rgba(255,200,0,.35)', left:'rgba(0,220,100,.35)', right:'rgba(102,126,234,.35)' };
+            ['bottom','top','left','right'].forEach(type => {
+                if (!maskState[type] || !maskState[type].on) return;
+                const ox = maskState[type].x, oy = maskState[type].y;
+                // Draw the CLIPPED OUT zone (inverse of keep zone)
+                maskCtx.save();
+                maskCtx.translate(dx, dy);
+                // Full rect minus keep path = clipped region
+                maskCtx.beginPath();
+                maskCtx.rect(0, 0, SP_W, SP_H);
+                buildMaskPath(maskCtx, type, ox, oy, SP_W, SP_H);
+                // Use evenOdd to get the difference
+                maskCtx.fillStyle = maskColors[type];
+                // For clip we want the COMPLEMENT — fill full rect then clip keep zone
+                maskCtx.fillRect(0, 0, SP_W, SP_H);
+                maskCtx.globalCompositeOperation = 'destination-out';
+                maskCtx.beginPath();
+                buildMaskPath(maskCtx, type, ox, oy, SP_W, SP_H);
+                maskCtx.fill();
+                maskCtx.globalCompositeOperation = 'source-over';
+                maskCtx.restore();
+            });
+        }
+    }
+    updateMaskPreviewStrip();
+}
+
+function updateMaskPreviewStrip() {
+    const strip = $('maskPreviewStrip'); strip.innerHTML = '';
+    if (!maskSourceImg) return;
+    const nC = Math.round(maskSourceImg.width / SP_W);
+    const nR = Math.round(maskSourceImg.height / SP_H);
+    const masked = applyMasks(maskSourceImg, maskState);
+    for (let r = 0; r < nR; r++) {
+        for (let c = 0; c < nC; c++) {
+            const pc = document.createElement('canvas'); pc.width=SP_W; pc.height=SP_H;
+            pc.getContext('2d').drawImage(masked, c*SP_W, r*SP_H, SP_W, SP_H, 0, 0, SP_W, SP_H);
+            const cell = document.createElement('div'); cell.className='mask-preview-cell'; cell.appendChild(pc);
+            strip.appendChild(cell);
+        }
+    }
+}
+
+// ─── UI sync helpers ───
+function syncMaskSlider(rangeId, numId, stateKey, axis) {
+    const onChange = e => {
+        const v = parseInt(e.target.value)||0;
+        maskState[stateKey][axis] = v;
+        $(rangeId).value = v; $(numId).value = v;
+        renderMaskCanvas();
+    };
+    $(rangeId).addEventListener('input', onChange);
+    $(numId).addEventListener('input', onChange);
+}
+syncMaskSlider('maskBottomX','maskBottomXN','bottom','x');
+syncMaskSlider('maskBottomY','maskBottomYN','bottom','y');
+syncMaskSlider('maskTopX','maskTopXN','top','x');
+syncMaskSlider('maskTopY','maskTopYN','top','y');
+syncMaskSlider('maskLeftX','maskLeftXN','left','x');
+syncMaskSlider('maskLeftY','maskLeftYN','left','y');
+syncMaskSlider('maskRightX','maskRightXN','right','x');
+syncMaskSlider('maskRightY','maskRightYN','right','y');
+
+['bottom','top','left','right'].forEach(id => {
+    $('mask'+id[0].toUpperCase()+id.slice(1)+'On').addEventListener('change', e => {
+        maskState[id].on = e.target.checked;
+        $('maskCard'+id[0].toUpperCase()+id.slice(1)).classList.toggle('active-mask', e.target.checked);
+        renderMaskCanvas();
+    });
+});
+$('maskShowTiles').addEventListener('change', renderMaskCanvas);
+$('maskShowMaskOverlay').addEventListener('change', renderMaskCanvas);
+
+$('maskResetBtn').addEventListener('click', () => {
+    maskState = defaultMaskState();
+    setMaskUI();
+    renderMaskCanvas();
+});
+
+function setMaskUI() {
+    ['bottom','top','left','right'].forEach(id => {
+        const cap = id[0].toUpperCase()+id.slice(1);
+        const ms = maskState[id];
+        $('mask'+cap+'On').checked = ms.on;
+        $('maskCard'+cap).classList.toggle('active-mask', ms.on);
+        $('mask'+cap+'X').value = $('mask'+cap+'XN').value = ms.x;
+        $('mask'+cap+'Y').value = $('mask'+cap+'YN').value = ms.y;
+    });
+}
+
+// ─── Load into mask panel ───
+function refreshMaskPanel() {
+    const a = currentAssetIdx >= 0 ? assets[currentAssetIdx] : null;
+    const src = a ? (a.composerCanvasDataURL || a.fixCanvasDataURL) : null;
+    if (!src) {
+        maskCanvas.style.display='none'; maskEmpty.style.display='flex';
+        maskApplyBtn.disabled=true; maskNextBtn.disabled=true; return;
+    }
+    maskEmpty.style.display='none'; maskCanvas.style.display='block';
+    maskApplyBtn.disabled=false;
+    maskNextBtn.disabled = currentAssetIdx >= assets.length-1;
+    // Restore saved mask params if any
+    if (a.maskParams) {
+        maskState = JSON.parse(JSON.stringify(a.maskParams));
+        setMaskUI();
+    }
+    const img = new Image();
+    img.onload = () => { maskSourceImg = img; renderMaskCanvas(); };
+    img.src = src;
+}
+
+maskApplyBtn.addEventListener('click', () => {
+    if (!maskSourceImg) return;
+    const a = assets[currentAssetIdx];
+    const masked = applyMasks(maskSourceImg, maskState);
+    a.maskedCanvasDataURL = masked.toDataURL('image/png');
+    a.maskParams = JSON.parse(JSON.stringify(maskState));
+    renderSidebar();
+    maskApplyBtn.textContent = '✅ Validé !';
+    setTimeout(() => maskApplyBtn.textContent = '✅ Valider masques', 1500);
+});
+
+maskNextBtn.addEventListener('click', () => {
+    if (currentAssetIdx < assets.length-1) selectAsset(currentAssetIdx+1);
+});
+
+// ════════════════════════════════════════════════════════
+
+$('saveJsonBtn').addEventListener('click',()=>{
+    const data={version:4, suffix:$('exportSuffix').value||'_fixed', assets:assets.map(a=>({
+        originalName:a.originalName,
+        fixParams:a.fixParams,
+        composerParams:a.composerParams,
+        maskParams:a.maskParams||null,
+        fixCanvasDataURL:a.fixCanvasDataURL,
+        composerCanvasDataURL:a.composerCanvasDataURL,
+        maskedCanvasDataURL:a.maskedCanvasDataURL||null,
+    }))};
+    const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+    const l=document.createElement('a'); l.download='asset-pipeline-session.json'; l.href=url; l.click(); URL.revokeObjectURL(url);
+});
+
+loadJsonInput.addEventListener('change',e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const r=new FileReader();
+    r.onload=ev=>{
+        try {
+            const data=JSON.parse(ev.target.result);
+            assets=data.assets.map(en=>({
+                originalName:en.originalName,
+                dataURL:en.fixCanvasDataURL||null,
+                fixParams:en.fixParams||null,
+                composerParams:en.composerParams||null,
+                maskParams:en.maskParams||null,
+                fixCanvasDataURL:en.fixCanvasDataURL||null,
+                composerCanvasDataURL:en.composerCanvasDataURL||null,
+                maskedCanvasDataURL:en.maskedCanvasDataURL||null,
+            }));
+            if(data.suffix) $('exportSuffix').value=data.suffix;
+            renderSidebar(); if(assets.length) selectAsset(0);
+        } catch(err){alert('Erreur JSON: '+err.message);}
+    };
+    r.readAsText(file); loadJsonInput.value='';
+});
+
+$('exportAllBtn').addEventListener('click',async()=>{
+    const suffix=$('exportSuffix').value||'_fixed';
+    const list=assets.filter(a=>a.maskedCanvasDataURL||a.composerCanvasDataURL||a.fixCanvasDataURL);
+    if(!list.length){alert('Aucun asset validé.');return;}
+    const getBest = a => a.maskedCanvasDataURL || a.composerCanvasDataURL || a.fixCanvasDataURL;
+    if(window.showDirectoryPicker){
+        try{
+            const dir=await window.showDirectoryPicker({mode:'readwrite'});
+            for(const a of list){
+                const src=getBest(a);
+                const fname=a.originalName.replace(/\.png$/i,'')+suffix+'.png';
+                const blob=await (await fetch(src)).blob();
+                const fh=await dir.getFileHandle(fname,{create:true});
+                const w=await fh.createWritable(); await w.write(blob); await w.close();
+            }
+            alert('✅ '+list.length+' fichier(s) exporté(s).'); return;
+        }catch(err){if(err.name==='AbortError')return;}
+    }
+    list.forEach((a,i)=>setTimeout(()=>{
+        const l=document.createElement('a');
+        l.download=a.originalName.replace(/\.png$/i,'')+suffix+'.png';
+        l.href=getBest(a); l.click();
+    },i*220));
+});
+</script>
+</body>
+</html>
