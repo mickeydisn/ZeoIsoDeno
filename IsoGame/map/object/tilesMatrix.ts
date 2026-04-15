@@ -154,3 +154,124 @@ export class TilesMatrix {
     this.avgLvl /= this.size * this.size;
   }
 }
+
+
+
+
+
+export class TilesMatrixAvg {
+  world: World;
+  fm: FactoryMap;
+  size: number;
+  tiles: Tile[][];
+  avgLvl: number;
+  x: number = 0;
+  y: number = 0;
+  xoff: number = 0;
+  yoff: number = 0;
+  
+  tileScaleMod: number;
+  rangeX: number[] = [];
+  rangeY: number[] = [];
+
+  constructor(
+    size: number = 20,
+    x: number = 0,
+    y: number = 0,
+    tileScaleMod: number = 1,
+  ) {
+    this.world = World.getInstance();
+    this.fm = FactoryMap.getInstance();
+    this.size = size;
+    const tile = new Tile(0, 0, 0, 0);
+    this.tiles = Array.from(
+      { length: this.size },
+      () =>
+        Array.from(
+          { length: this.size },
+          () => tile,
+        ),
+    );
+
+    this.tileScaleMod = tileScaleMod;
+    this.avgLvl = 0;
+    this.setCenter(x, y);
+    this.update();
+  }
+
+  getPos(): [number, number] {
+    return [this.x, this.y];
+  }
+
+  move(diffx: number, diffy: number): void {
+    this.setCenter(this.x + diffx, this.y + diffy);
+  }
+
+  setCenter(x: number, y: number): void {
+    this.x = x - x % this.tileScaleMod;
+    this.y = y - y % this.tileScaleMod;
+    this.rangeX = Array.from(
+      { length: this.size },
+      (_, index) =>
+        (this.tileScaleMod * index) -
+        (this.tileScaleMod * Math.floor(this.size / 2)) + this.x,
+    );
+    this.rangeY = Array.from(
+      { length: this.size },
+      (_, index) =>
+        (this.tileScaleMod * index) -
+        (this.tileScaleMod * Math.floor(this.size / 2)) + this.y,
+    );
+    this.update(this.tileScaleMod == 1);
+  }
+  setOff(offx: number, offy: number): void {
+    this.xoff = offx / this.tileScaleMod;
+    this.yoff = offy / this.tileScaleMod;
+  }
+
+  update(generateChunk: boolean = false): void {
+    this.avgLvl = 0;
+    let count = 0;
+    let avgborder = 0;
+    let countborder = 0;
+
+    this.rangeX.forEach((x, idx) => {
+      this.rangeY.forEach((y, idy) => {
+        const tile = generateChunk
+          ? this.fm.getTile(x, y)
+          : this.fm.getTileNoGen(x, y);
+        if (!tile) {
+          console.error("---ERROR", x, y, tile, this);
+        } else {
+          this.tiles[idx][idy] = tile;
+          let weith = 1
+
+          if (idx == 0) {
+            weith = .5  - this.xoff;
+            countborder += weith;
+            avgborder += tile.lvl * weith;
+          } else if (idx == this.size - 1) {
+             weith = .5  + this.xoff;
+            countborder += weith;
+             avgborder += tile.lvl * weith;
+          } else if (idy == 0) {
+             weith = .5  - this.yoff;
+            countborder += weith;
+             avgborder += tile.lvl * weith;
+          } else if (idy == this.size - 1) {
+             weith = .5  + this.yoff;
+             countborder += weith;
+             avgborder += tile.lvl * weith;
+          }  
+          this.avgLvl += tile.lvl * weith;
+          count += weith
+        }
+      });
+    });
+
+    
+    this.avgLvl /= count;
+    // console.log(this.x, this.y, this.xoff.toFixed(2), this.yoff.toFixed(2), this.avgLvl.toFixed(2), count.toFixed(2), (avgborder / countborder).toFixed(2), countborder.toFixed(2))
+
+  }
+}

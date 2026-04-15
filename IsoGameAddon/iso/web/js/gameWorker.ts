@@ -14,7 +14,9 @@ import { structureTools } from "../../../../IsoGame/tools/structureTools.ts";
 import { getBuildingConfigList } from "../../../../IsoGame/tools/buildingConfigRegistry.ts";
 import { World } from "../../../../IsoGame/word.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
-import { updatePlayerMovement } from "./worker/player.ts";
+import { updateKeyboard } from "./worker/player.ts";
+import { mapState } from "../../../../IsoGame/mapIso/MapState.ts";
+import { TypeKeysActionUpdate } from "./main/keyboad.ts";
 
 export type GameHandlerData = any;
 
@@ -22,11 +24,11 @@ export class GameWorker {
   private world = new World();
 
   public handler: MessageHandler;
-  x: number = 0;
-  y: number = 0;
-  xf: number = 0;
-  yf: number = 0;
-  direction: string = "NE";
+  // x: number = 0;
+  // y: number = 0;
+  // xf: number = 0;
+  // yf: number = 0;
+  // direction: string = "NE";
 
   private assetLoader!: AssetLoaderOpti;
   private canvasMap!: OffscreenCanvas;
@@ -89,47 +91,47 @@ export class GameWorker {
       groups: assetGroups,
     });
 
-    this.handler.send({ action: "callback_initWorker" });
+    // this.handler.send({ action: "callback_initWorker" });
+    return true
   };
 
   // ============================================================================
   // SET SHARED
   // ============================================================================
 
-  private setCanvasMap = (data: GameHandlerData) => {
+  private setOffScreenCanvas = (data: GameHandlerData) => {
     const canvas = data.canvas as OffscreenCanvas;
     this.canvasMap = canvas;
   };
-
+  /*
   private setMapLvl = (data: GameHandlerData) => {
     const buffer = data.buffer as SharedArrayBuffer;
     this.sharedMapLvl = new Float32Array(buffer);
   };
-
+  */
+ 
   private initCanvasMap = (data: GameHandlerData) => {
     console.log("=== Init Render Worker");
+
+    const isoConf =  data.mapConf as CanvasMapDrawersConf || {
+        DRAW_TILE_COUNT: 40,
+        SCALE_SIZE: 1.2, // 2 / 3,
+        SCALE_MOD: 1,
+      }
+    mapState.setIsoConf({
+      mapSize: isoConf.DRAW_TILE_COUNT,      // Replaced DRAW_TILE_COUNT
+      tileScaleSize: isoConf.SCALE_SIZE,          // Replaced SCALE_SIZE
+      tileScaleMod : isoConf.SCALE_MOD,          // Replaced SCALE_MOD
+    })
+
     this.canvasMapDrawer = new CanvasMapDrawers(
       this.world,
       data.width | 1600,
       data.height | 800,
-      data.mapConf as CanvasMapDrawersConf || {
-        DRAW_TILE_COUNT: 40,
-        SCALE_SIZE: 1.2, // 2 / 3,
-        SCALE_MOD: 1,
-      },
+      isoConf,
       this.assetLoader,
       this.canvasMap,
     );
-    /*
-    this.handler.send(
-      {
-        action: "callback_initCanvasMap",
-        mapConf: data.mapConf,
-        mapLvlBuffer: this.canvasMapDrawer.bufferMapLvl,
-        mapInfoBuffer: this.canvasMapDrawer.bufferMapInfo,
-      },
-    );
-    */
   };
 
   // ============================================================================
@@ -139,25 +141,21 @@ export class GameWorker {
   private handlers = new Map<string, (_data: GameHandlerData) => void>([
     ["initWorker", this.initWorker.bind(this)],
     ["initCanvasMap", this.initCanvasMap.bind(this)],
-
-    ["setCanvasMap", this.setCanvasMap.bind(this)],
-    ["setMapLvl", this.setMapLvl.bind(this)],
-
+    ["setOffScreenCanvas", this.setOffScreenCanvas.bind(this)],
+    // ["setMapLvl", this.setMapLvl.bind(this)],
     ["startRender", (_data) => this.startLoop()],
     ["stopRender", (_data) => this.stopLoop()],
     // ----
     [
       "setCenter",
       (data) => {
-        this.x = data.x;
-        this.y = data.y;
-        this.xf = data.x;
-        this.yf = data.y;
+        mapState.setCenter(data.x, data.y);
+        // this.x = data.x;
+        // this.y = data.y;
+        // this.xf = data.x;
+        // this.yf = data.y;
       },
     ],
-
-    [ "updatePlayerMovement", updatePlayerMovement(this) ],
-    /*
     ["gridClick", (data: GameHandlerData) => {
       const x = (data as Record<string, unknown>).x as number;
       const y = (data as Record<string, unknown>).y as number;
@@ -166,45 +164,18 @@ export class GameWorker {
 
       const _city = new City(this.world, x, y);
     }],
-    [
-      "init_test",
+    [ "updateKeyboard", 
       (data) => {
-        TilesActions.getInstance().doActions([{
-          func: "lvlFlatSquare",
-          x: data.x,
-          y: data.y,
-          size: 80,
-        }, {
-          func: "clearItemSquare",
-          x: data.x,
-          y: data.y,
-          size: 80,
-        }]);
-      },
-    ],
-    */
+        mapState.tickUpdateKeyboard(data.keyboardAction as TypeKeysActionUpdate);
+    }],
 
     [
       "query_infoCell",
       (data) => {
-        const x = data.x !== undefined
-          ? data.x
-          : data.gridX !== undefined
-          ? data.gridX + this.x - 1
-          : this.x;
-        const y = data.y !== undefined
-          ? data.y
-          : data.gridY !== undefined
-          ? data.gridY + this.y - 1
-          : this.y;
-
+        const x = data.x !== undefined ? data.x : mapState.x;
+        const y = data.y !== undefined ? data.y : mapState.y;
         const tile = FactoryMap.getInstance().getTile(x, y);
-        this.handler.send(
-          {
-            action: "infoCell",
-            data: tile.toJsonInfo(),
-          },
-        );
+        return tile.toJsonInfo();
       },
     ],
 
@@ -304,15 +275,15 @@ export class GameWorker {
       "toolClick",
       (data: GameHandlerData) => {
         const x = data.gridX !== undefined
-          ? data.gridX + this.x - 1
+          ? data.gridX + mapState.x - 1
           : data.x !== undefined
           ? data.x
-          : this.x;
+          : mapState.x;
         const y = data.gridY !== undefined
-          ? data.gridY + this.y - 1
+          ? data.gridY + mapState.y - 1
           : data.y !== undefined
           ? data.y
-          : this.y;
+          : mapState.y;
 
         const result = toolRegistry.executeAt(x, y, this.world);
 
@@ -328,6 +299,7 @@ export class GameWorker {
     [
       "mouseMove",
       (data: GameHandlerData) => {
+        mapState.setMouseScreen(data.x as number, data.y as number);
         if (!this.canvasMapDrawer) {
           return;
         }
@@ -337,12 +309,13 @@ export class GameWorker {
     [
       "mouseClick",
       (data: GameHandlerData) => {
+        mapState.setMouseScreen(data.x as number, data.y as number);
         if (!this.canvasMapDrawer) {
           return;
         }
         this.canvasMapDrawer.setMouseScreen(data.x as number, data.y as number);
-        const x = this.canvasMapDrawer.mouseWorldX + this.x - this.canvasMapDrawer.tilesMatrix.size / 2;
-        const y = this.canvasMapDrawer.mouseWorldY + this.y - this.canvasMapDrawer.tilesMatrix.size / 2;
+        const x = this.canvasMapDrawer.mouseWorldX + mapState.x - this.canvasMapDrawer.tilesMatrix.size / 2;
+        const y = this.canvasMapDrawer.mouseWorldY + mapState.y - this.canvasMapDrawer.tilesMatrix.size / 2;
         console.log("Mouse Click Worker x:", x, "y:", y);
         const result = toolRegistry.executeAt(x, y, this.world);
 
@@ -403,15 +376,15 @@ export class GameWorker {
     this.framId = (this.framId + 1) % 1024;
     if (this.framId % 4 == 0) {
       this.updateFPS();
-      console.log("Draw");
+      // console.log("Draw");
 
       this.world.tick();
-      this.canvasMapDrawer.direction = this.direction;
+      this.canvasMapDrawer.direction =mapState.direction;
       this.canvasMapDrawer.drawUpdate(
-        this.x,
-        this.y,
-        this.xf - this.x,
-        this.yf - this.y,
+        mapState.x,
+        mapState.y,
+        (mapState.xf - mapState.x) / mapState.isoConf.tileScaleMod,
+        (mapState.yf - mapState.y) / mapState.isoConf.tileScaleMod,
       );
     }
     requestAnimationFrame(this.updateFram.bind(this));

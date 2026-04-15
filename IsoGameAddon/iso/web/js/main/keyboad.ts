@@ -1,4 +1,5 @@
-import { MessageHandler } from "./worker/messageHandler.ts";
+import { MessageHandler } from "../worker/messageHandler.ts";
+
 
 const keyCheck: Record<string, boolean> = {};
 const keyBind = {
@@ -7,6 +8,12 @@ const keyBind = {
   left: ["ArrowLeft", "q"],
   right: ["ArrowRight", "d"],
 };
+
+type TypeKeysAction = keyof typeof keyBind;
+
+export type TypeKeysActionUpdate = Partial<Record<TypeKeysAction, number>>;
+
+
 
 // Main thread (e.g., main.ts)
 export const initKeyBoard = (gameWorker: Worker) => {
@@ -21,7 +28,7 @@ export const initKeyBoard = (gameWorker: Worker) => {
 
   // Update player position based on input
   function updatePlayerPosition() {
-    const playerMovement = {
+    const keyboardAction = {
       up: keyBind.up.map((k) => keyCheck[k]).includes(true),
       down: keyBind.down.map((k) => keyCheck[k]).includes(true),
       left: keyBind.left.map((k) => keyCheck[k]).includes(true),
@@ -29,11 +36,11 @@ export const initKeyBoard = (gameWorker: Worker) => {
     };
 
     // Send the updated player position to the worker (GameWorker)
-    gameWorker.postMessage({ action: "updatePlayerMovement", playerMovement });
+    gameWorker.postMessage({ action: "updateKeyboard", keyboardAction });
   }
 
   // Call the update loop
-  setInterval(updatePlayerPosition, 16); // Update at ~60 FPS
+  setInterval(updatePlayerPosition, 16 * 2); // Update at ~60 FPS
 };
 
 
@@ -42,14 +49,17 @@ export const initKeyBoard = (gameWorker: Worker) => {
 // CREATE SHARE ELEMENT
 // ============================================================================
 // Main thread (e.g., main.ts)
-export const initCanvaMouse = (handlers: MessageHandler,  gameWorker: Worker) => {
-
-  
+export const initCanvas = (handlers: MessageHandler) => {
   // Canvas For display Map
   const canvasImageMap = document.getElementById(
     "map-image",
   ) as HTMLCanvasElement;
 
+  // Sync Canva with the worker 
+  const offscreen = canvasImageMap.transferControlToOffscreen();
+  handlers.sendDataSync({
+    action: "setOffScreenCanvas", canvas: offscreen,
+  }, [offscreen]);
 
   // Mouse tracking - send raw coordinates to worker
   canvasImageMap.addEventListener('mousemove', (e) => {
@@ -72,14 +82,6 @@ export const initCanvaMouse = (handlers: MessageHandler,  gameWorker: Worker) =>
     });
   });
 
-  const offscreen = canvasImageMap.transferControlToOffscreen();
-
-  handlers.sendDataSync({
-    action: "setCanvasMap",
-    canvas: offscreen,
-  }, [
-    offscreen,
-  ]);
 
 
 };

@@ -10,7 +10,7 @@ interface EventInitWorker extends BaseMessage {
   action: "initWorker";
 }
 interface EventSetCanvasMap extends BaseMessage {
-  action: "setCanvasMap";
+  action: "setOffScreenCanvas";
   canvas: OffscreenCanvas;
 }
 interface EventInitCanvasMap extends BaseMessage {

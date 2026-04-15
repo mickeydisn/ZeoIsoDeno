@@ -1,4 +1,3 @@
-import { CanvasMapDrawersConf } from "../../../../IsoGame/mapIso/canvasMapDrawer.ts";
 import { flyMenuTab } from "./menu/sections/flyMenu.ts";
 import { initHeadMenu } from "./menu/headMenu.ts";
 
@@ -14,7 +13,7 @@ import { infoMenu, updateInfoCell } from "./menu/InfoMenu.ts";
 */
 import { GameHandlerData } from "./gameWorker.ts";
 // import { GlobalState, initMenu, updatGlobalJSON } from "./gobalState.ts";
-import { initCanvaMouse, initKeyBoard } from "./keyboad.ts";
+import { initCanvas, initKeyBoard } from "./main/keyboad.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
 import { MenuTab } from "./menu/headMenu.ts";
 import { terrainMenuTab } from "./menu/sections/terrainMenu.ts";
@@ -26,26 +25,47 @@ import { buildingMenuTab } from "./menu/sections/buildingMenu.ts";
 // CREATE WORKER
 // ============================================================================
 
-
-// initMenu();
-// updatGlobalJSON(GlobalState);
-
-// ============================================================================
-// CREATE WORKER
-// ============================================================================
-
 const gameWorker = new Worker(
   new URL("./gameWorker.ts", import.meta.url).href,
-  {
-    type: "module",
-  },
+  { type: "module" } 
 );
+const handlers = new MessageHandler(gameWorker);
+
 initKeyBoard(gameWorker);
+initCanvas(handlers);
 
 // ============================================================================
-// == Event Handeler
+// == INIT
 // ============================================================================
-const handlers = new MessageHandler(gameWorker);
+
+// After The Game worker Initialiser . we cant send Shared Array
+const callback_initWorker = async (_data: GameHandlerData): Promise<void> => {
+  console.log("✅ Game Worker initialized!");
+
+  handlers.sendMessageWithResponse({
+    action: "initCanvasMap",
+    mapConf: {
+      DRAW_TILE_COUNT: 10,
+      SCALE_SIZE: 2,
+      SCALE_MOD: 1,
+    },
+  });
+  /* / CITY
+  handlers.send({
+    action: "gridClick",
+    x: -19,
+    y: 70,
+  });
+  /* */
+  return ;
+};
+
+
+
+// ============================================================================
+// ============================================================================
+// == Menu
+// ============================================================================
 
 
 const config_tag : MenuTab[] = [
@@ -93,69 +113,10 @@ menu.updateDisplay([
   { id: "fly", display: "visible" },
 ]);
 
-// Reset to defaults — call with empty array or re-pass full state
-// menu.updateDisplay([]);
-
-// Panels become: #section-tools, #section-layers, #section-paint
-
-// initFlyMenu(gameWorker);
-// initTerrainMenu(gameWorker);
-// initToolMenu(gameWorker);
-// infoMenu(gameWorker);
 
 
 
 // ============================================================================
-// == INIT
-// ============================================================================
-
-// After The Game worker Initialiser . we cant send Shared Array
-const callback_initWorker = (_data: GameHandlerData): void => {
-  console.log("✅ Game Worker initialized!");
-  initCanvaMouse(handlers, gameWorker);
-
-  handlers.send({
-    action: "initCanvasMap",
-    mapConf: {
-      DRAW_TILE_COUNT: 20,
-      SCALE_SIZE: 1.8,
-      SCALE_MOD: 1,
-    },
-  });
-  /* / CITY
-  handlers.send({
-    action: "gridClick",
-    x: -19,
-    y: 70,
-  });
-  /* */
-  handlers.send({ action: "startRender" });
-};
-
-// ----------------------------------------------------------------------------
-
-const callback_initCanvasMap = (data: GameHandlerData): void => {
-  const mapconf = data.mapConf as CanvasMapDrawersConf;
-  const bufferMapLvl = data.mapLvlBuffer;
-  const bufferMapInfo = data.mapInfoBuffer;
-  console.log("===== Call BackRender");
-
-  // gridMapDrawer = new GridMapDrawers(gameWorker, bufferMapLvl, bufferMapInfo);
-  // gridMapDrawer.mod = mapconf.DRAW_TILE_COUNT / 40;
-};
-
-
-// ============================================================================
-// == Interface Responce Handlers.
-// ============================================================================
-
-handlers.append([
-  ["callback_initWorker", callback_initWorker],
-  // ["callback_initCanvasMap", callback_initCanvasMap],
-]);
-handlers.send({ action: "initWorker" });
-// handlers.send({ action: "initWorker" });
-
 // ============================================================================
 // == LOOP
 // ============================================================================
@@ -205,6 +166,8 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
+
+// ============================================================================
 // ============================================================================
 // == Interface Responce Handlers.
 // ============================================================================
@@ -217,14 +180,6 @@ handlers.append([
   ["infoCell", (data) => {
     // updateInfoCell(data);
   }],
-  /*
-  ["toolExecuted", (data) => {
-    handleToolExecuted(data.toolId, data.success);
-  }],
-  ["pickedColor", (data) => {
-    handlePickedColor(data.r, data.g, data.b);
-  }],
-  */
   ["assetGroups", (data) => {
     initAssetGroups(gameWorker, handlers);
     handleAssetGroups(data.groups);
@@ -232,15 +187,19 @@ handlers.append([
   ["assetPreview", (data) => {
     handleAssetPreview(data.blobUrl);
   }],
-  /*
-  ["buildingConfigList", (data) => {
-    handleBuildingConfigList(data.configs);
-  }],
-  */
 ]);
 
+
+
+// ============================================================================
+// ============================================================================
 // ============================================================================
 // == Start Drawing and Worker Loop
 // ============================================================================
+await handlers.sendMessageWithResponse({ action: "initWorker" })
+await callback_initWorker("")
+handlers.send({ action: "startRender" });
+
+
 
 startLoop();

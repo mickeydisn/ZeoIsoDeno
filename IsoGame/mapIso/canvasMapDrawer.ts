@@ -10,7 +10,7 @@ function createCanvas(width: number, height: number): Canvas {
 import { Color } from "./iso/color.ts";
 import { Isomer } from "./iso/isomer.ts";
 import { FactoryMap } from "../map/factory/factoryMap.ts";
-import { TilesMatrix } from "../map/object/tilesMatrix.ts";
+import { TilesMatrix, TilesMatrixAvg } from "../map/object/tilesMatrix.ts";
 import { World } from "../word.ts";
 import { Shape } from "./iso/shape.ts";
 import { Point } from "./iso/point.ts";
@@ -18,6 +18,8 @@ import { AssetLoaderOpti } from "./asset/assetLoaderOpti.ts";
 import { IsometricProjector, PointIso } from "./simpleIso/IsometricProjector.ts";
 // import { IsometricTileGenerator } from "./simpleIso/IsometricTileGenerator.ts";
 import { toolRegistry } from "../tools/toolRegistry.ts";
+import { mapState } from "./MapState.ts";
+import { CHAR_0 } from "https://jsr.io/@std/path/1.0.8/_common/constants.ts";
 
 // --- Constants for Readability and Maintenance ---
 // The factor used to scale the tile level (z-axis) difference for isometric rendering.
@@ -54,7 +56,7 @@ export class CanvasMapDrawers {
   fm: FactoryMap;
   conf: CanvasMapDrawersConf;
   c: Record<string, Color>;
-  tilesMatrix: TilesMatrix;
+  tilesMatrix: TilesMatrixAvg;
   assetLoader: AssetLoaderOpti;
   canvas: Canvas;
   canvasCtx: CanvasRenderingContext2D;
@@ -126,9 +128,10 @@ export class CanvasMapDrawers {
       red: new Color(160, 60, 50, 1),
       blue: new Color(80, 100, 240, .5),
       flore: new Color(53, 148, 56),
+      wall: new Color(64, 64, 80),
     };
 
-    this.tilesMatrix = new TilesMatrix(
+    this.tilesMatrix = new TilesMatrixAvg(
       this.conf.DRAW_TILE_COUNT,
       0,
       0,
@@ -150,6 +153,7 @@ export class CanvasMapDrawers {
     offx: number = 0,
     offy: number = 0,
   ) {
+    this.tilesMatrix.setOff(offx, offy);
     this.tilesMatrix.setCenter(centreX, centreY);
     // Use the maximum of 1 or the scaled modifier for isomer
     this.isomer.SCALE_MOD = Math.max(1, 1 / 8); 
@@ -169,64 +173,9 @@ export class CanvasMapDrawers {
     this.drawIso();
   }
 
-  /*
-  private getTileImage( 
-    tile:Tile,
-    diffLvlSE: number , 
-    diffLvlSW: number
-  ) {
-    const key = `${tile.x}:${tile.y}`;
-    
-    if (this.tileCache.has(key)) {
-        // Type assertion is safe here as we control what goes into the Map
-        return this.tileCache.get(key) as OffscreenCanvas | ImageBitmap; 
-    }
-    console.log('tileGen');
-    const colorIso = new ColorIso(tile.color[0], tile.color[1], tile.color[2]);
-    const canvas : OffscreenCanvas | ImageBitmap  = this.isoGenerator.createTile(colorIso, diffLvlSE, diffLvlSW);
-
-    createImageBitmap(canvas).then( (optimizedDrawSource: ImageBitmap) => {
-        this.tileCache.set(key, optimizedDrawSource);
-    });
-    this.tileCache.set(key, canvas);
-    return canvas;
-  }
-    */
-  // --- Drawing Helpers (Refactored from drawTileItem) ---
-  /** Draws an isometric asset (image/svg) on the tile. * /
-  private drawTileBase(
-    tile:Tile,
-     x: number, y:number,
-     currentlvl:number,
-      diffLvlSE: number , 
-      diffLvlSW: number
-  ) {
-
-    const tileImage = this.getTileImage(tile, diffLvlSE, diffLvlSW)
-
-    try {
-        const off = { x: 0, y: 0 };
-        const lvl = currentlvl + (0) * this.conf.SCALE_SIZE;
-        
-        const p = this.isoProject.translatePoint(new PointIso(x + off.x, y + off.y, lvl))
-        const scale = this.conf.SCALE_SIZE;
-        
-        // Use named constants for offsets
-        this.canvasCtx.drawImage(
-          tileImage,
-          p.x - 32 * scale,
-          p.y - 32 * scale,
-          tileImage.width * scale,
-          tileImage.height * scale,
-        );
-    } catch (e) {
-      console.error(`Error drawing baseItem`, e);
-    }
-  }
-  */
 
   /** Draws an isometric asset (image/svg) on the tile. */
-  private drawAsset(
+  drawAsset(
     x: number,
     y: number,
     itemConf: any,
@@ -268,8 +217,9 @@ export class CanvasMapDrawers {
           new Point(x + off.x, y + off.y, lvl),
         );
         const scale = this.conf.SCALE_SIZE;
-        
         // Use named constants for offsets
+        this.canvasCtx.save();
+        // this.canvasCtx.globalAlpha = 0.5;
         this.canvasCtx.drawImage(
           cimage,
           p2.x + ASSET_OFFSET_X * scale,
@@ -277,13 +227,14 @@ export class CanvasMapDrawers {
           ASSET_WIDTH * scale,
           ASSET_WIDTH * scale,
         );
+        this.canvasCtx.restore();
       }
     } catch (e) {
       console.error(`Error drawing asset: ${itemConf.key}`, e);
     }
   }
 
-  
+
   /**
    * Draws a single item onto a tile using the correct drawing function.
    */
@@ -315,39 +266,90 @@ export class CanvasMapDrawers {
     }
   }
 
-  drawTileOld (xx: number, yy:number, currentlvl:number, color: Color, diffLvlSE: number , diffLvlSW: number) {
+  drawTileFloor (xx: number, yy:number, currentlvl:number, color: Color, diffLvlSE: number , diffLvlSW: number) {
     const height =1;
     // 1. Display the Floor (Horizontal Floor tile)
     this.isomer.add(
       Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height),
       color,
     );
-    
     // 2. Display Floor Borders (Vertical Faces based on neighbor level difference)
     // South-East Border (comparing with tile at yy-1)
     if (diffLvlSE > 0 && this.conf.SCALE_SIZE > .5) {
       this.isomer.add(
-        Shape.SurfaceSE(
-          new Point(xx, yy, currentlvl - diffLvlSE),
-          1,
-          1,
-          diffLvlSE,
-        ),
+        Shape.SurfaceSE(new Point(xx, yy, currentlvl - diffLvlSE), 1, 1, diffLvlSE),
         color,
       );
     }
     if (diffLvlSW > 0 && this.conf.SCALE_SIZE > .4 ) {
       this.isomer.add(
         Shape.SurfaceSW(
-          new Point(xx, yy, currentlvl - diffLvlSW),
-          1,
-          1,
-          diffLvlSW,
-        ),
-        color,
+         new Point(xx, yy, currentlvl - diffLvlSW), 1, 1, diffLvlSW),
+         color,
       );
     }
   }
+  drawTileFront (
+      p: {x: number, y:number, xoff: number, yoff:number}, 
+      currentlvl:number, 
+      color: Color, 
+      diffLvlSE: number , diffLvlSW: number
+    ) {
+    const height =1;
+    // 1. Display the Floor (Horizontal Floor tile)
+    this.isomer.add(
+      Shape.SurfaceFlat(new Point(p.x + p.xoff, p.y + p.yoff, currentlvl - height), 1 - p.xoff, 1 - p.yoff, height),
+      color
+    );
+    
+    // 2. Display Floor Borders (Vertical Faces based on neighbor level difference)
+    // South-East Border (comparing with tile at yy-1)
+    if (diffLvlSE > 0 && this.conf.SCALE_SIZE > .5) {
+      this.isomer.add(
+        Shape.SurfaceSE(new Point(p.x + p.xoff, p.y + p.yoff, currentlvl - diffLvlSE), 1 - p.xoff , 1 - p.yoff, diffLvlSE),
+        color,
+      );
+    }
+    if (diffLvlSW > 0 && this.conf.SCALE_SIZE > .4 ) {
+      this.isomer.add(
+        Shape.SurfaceSW(
+         new Point(p.x + p.xoff, p.y  + p.yoff, currentlvl - diffLvlSW), 1 - p.xoff , 1 - p.yoff, diffLvlSW),
+         color,
+      );
+    }
+      
+  }
+  drawTileBack (
+      p: {x: number, y:number, xoff: number, yoff:number}, 
+      currentlvl:number, 
+      color: Color, 
+      diffLvlSE: number , diffLvlSW: number
+    ) {
+    const height =1;
+    // 1. Display the Floor (Horizontal Floor tile)
+    this.isomer.add(
+      Shape.SurfaceFlat(new Point(p.x, p.y, currentlvl - height), 1 - p.xoff, 1 - p.yoff, height),
+      color
+    );
+    
+    // 2. Display Floor Borders (Vertical Faces based on neighbor level difference)
+    // South-East Border (comparing with tile at yy-1)
+    if (diffLvlSE > 0 && this.conf.SCALE_SIZE > .5) {
+      this.isomer.add(
+        Shape.SurfaceSE(new Point(p.x, p.y, currentlvl - diffLvlSE), 1 - p.xoff , 1 - p.yoff, diffLvlSE),
+        color,
+      );
+    }
+    if (diffLvlSW > 0 && this.conf.SCALE_SIZE > .4 ) {
+      this.isomer.add(
+        Shape.SurfaceSW(
+         new Point(p.x, p.y, currentlvl - diffLvlSW), 1 - p.xoff , 1 - p.yoff, diffLvlSW),
+         color,
+      );
+    }
+      
+  }
+
   /**
    * Draws the base tile geometry, including floor and borders.
    */
@@ -378,6 +380,7 @@ export class CanvasMapDrawers {
     );
 
 
+
     // South-East Border (comparing with tile at yy-1)
     const lvlYNeighbor = this.tilesMatrix.tiles[xx][yy - 1].lvl;
     const diffLvlSE = yy == 1  ? 30 * LVL_DISPLAY_SCALE : (metaTile.lvl - lvlYNeighbor) * LVL_DISPLAY_SCALE;
@@ -385,15 +388,42 @@ export class CanvasMapDrawers {
     const lvlXNeighbor = this.tilesMatrix.tiles[xx - 1][yy].lvl;
     const diffLvlSW = xx == 1  ? 30 * LVL_DISPLAY_SCALE :  (metaTile.lvl - lvlXNeighbor) * LVL_DISPLAY_SCALE;
 
+    const  drawFrontTile = (p: {x: number, y:number, xoff: number, yoff:number})  => {
+      this.drawTileFront(p, currentlvl, color,  diffLvlSE, diffLvlSW);
+    }
+    const  drawBackTile = (p: {x: number, y:number, xoff: number, yoff:number})  => {
+      this.drawTileBack(p, currentlvl, color, diffLvlSE, diffLvlSW);
+    }
 
 
-    this.drawTileOld(xx, yy, currentlvl, color,  diffLvlSE, diffLvlSW);
-    
+    let offx = (mapState.xf -  mapState.x) / this.conf.SCALE_MOD;
+    let offy = (mapState.yf -  mapState.y) / this.conf.SCALE_MOD;
+    // offx = offx > 0 ? offx : 1 + offx;
+    // offy = offy >= 0 ? offy : 1 + offy ;
+    offx = 0.5 + offx / 2
+    offy = 0.5 + offy / 2
+
+    this.canvasCtx.save()
+
+    if ( yy == 1) {
+      drawFrontTile({x:xx, y:yy, xoff: 0, yoff: offy});
+      this.canvasCtx.globalAlpha = 1-offy;
+    } else if ( xx == 1) {
+       drawFrontTile({x:xx, y:yy, xoff: offx, yoff: 0});
+      this.canvasCtx.globalAlpha = 1-offx;
+    } else if ( yy == size - 2) {
+       drawBackTile({x:xx, y:yy, xoff: 0, yoff: 1 - offy});
+      this.canvasCtx.globalAlpha =  offy;
+    } else if ( xx == size - 2) { 
+       drawBackTile({x:xx, y:yy, xoff: 1 - offx, yoff: 0});
+      this.canvasCtx.globalAlpha = offx;
+    } else {
+      this.drawTileFloor(xx, yy, currentlvl, color,  diffLvlSE, diffLvlSW);
+    }
+
     // this.drawTileBase(metaTile, xx, yy, currentlvl, diffLvlSE, diffLvlSW);
-    
-    
-    // 3. Collect Items/Entities for Display
 
+    // 3. Collect Items/Entities for Display
     // Flatten entities items into the main list
     const entitiesItems = metaTile.entities.flatMap((x: any) => x.items);
 
@@ -408,14 +438,13 @@ export class CanvasMapDrawers {
       items.push({ t: "Svg", key: metaTile.cityNode.asset.key });
     }
     
-
     if (this.conf.DRAW_TILE_COUNT < 60 ) {
       // 4. Draw Each Item (Z-sorted locally)
       items
         .sort((a: any, b: any) => (a.lvl || 0) - (b.lvl || 0))
         .forEach((item: any) => this.drawTileItem(xx, yy, metaTile, item, currentlvl));
     }
-
+    this.canvasCtx.restore()
 
   }
 
@@ -464,15 +493,21 @@ export class CanvasMapDrawers {
   drawIso() {
     const size = this.conf.DRAW_TILE_COUNT;
     this.canvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    
+
     // Draw tiles: loop from 1 to size-1 to avoid boundary checks 
     // when accessing neighbors (yy-1, xx-1) inside drawTile.
     for (let x = 1; x < size - 1; x++) {
       for (let y = 1; y < size - 1; y++) {
+
+
+
+
         this.drawTile(x, y);
+
         if (x == size / 2 && y == size / 2) {
           this.drawPlayer(x, y)
         }
+        
       }
     }
 
