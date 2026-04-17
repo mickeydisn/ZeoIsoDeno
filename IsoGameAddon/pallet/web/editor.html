@@ -474,7 +474,7 @@ body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:
 const FINAL_W = 192, FINAL_H = 224;
 const DEFAULT_COLS = 4;
 const TILE_W = 128, TILE_H = 64;
-const TILE_PAD_F = 6, TILE_PAD_C = 10;
+const TILE_PAD_F = 4, TILE_PAD_C = 6;
 const SP_W = 192, SP_H = 224;
 
 // ════════════════════════════════════════════════════════
@@ -1047,7 +1047,7 @@ function resizeMC() {
 //  COMPOSER — RENDER
 // ════════════════════════════════════════════════════════
 function drawIsoTileC(tc,x,y) {
-    const cx=x+SP_W/2, by=y+SP_H-TILE_PAD_C;
+    const cx=x+SP_W/2-2, by=y+SP_H-TILE_PAD_C;
     tc.fillStyle='rgba(102,126,234,.16)'; tc.strokeStyle='rgba(102,126,234,.5)'; tc.lineWidth=2;
     tc.beginPath(); tc.moveTo(cx,by-TILE_H); tc.lineTo(cx+TILE_W/2,by-TILE_H/2); tc.lineTo(cx,by); tc.lineTo(cx-TILE_W/2,by-TILE_H/2); tc.closePath(); tc.fill(); tc.stroke();
 }

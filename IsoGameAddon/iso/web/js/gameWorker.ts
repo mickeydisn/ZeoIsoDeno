@@ -14,6 +14,8 @@ import { World } from "../../../../IsoGame/word.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
 import { mapState } from "../../../../IsoGame/mapIso/MapState.ts";
 import { TypeKeysActionUpdate } from "./main/keyboad.ts";
+import { CityEntity } from "../../../../IsoGame/entity/cityEntity.ts";
+import { range } from "jsr:@oak/commons@1/range";
 
 export type GameHandlerData = any;
 
@@ -59,19 +61,6 @@ export class GameWorker {
     assetTools.forEach((tool) => toolRegistry.register(tool));
     structureTools.forEach((tool) => toolRegistry.register(tool));
 
-    /*
-    // Send tool list to main thread for UI rendering
-    this.handler.send({
-      action: "toolList",
-      tools: toolRegistry.getToolInfoList(),
-    });
-
-    // Send building config list to main thread for building UI
-    this.handler.send({
-      action: "buildingConfigList",
-      configs: getBuildingConfigList(),
-    });
-    */
     // Send asset groups to main thread for asset browser
     const assetGroups = this.assetLoader.assetList.map((g) => ({
       group: g.group,
@@ -82,8 +71,24 @@ export class GameWorker {
       groups: assetGroups,
     });
 
+
+    const  range = (start: number, end: number, step = 1): number[] =>  {
+      return Array.from(
+        { length: (end - start) / step + 1 },
+        (_, i) => start + i * step,
+      );
+    }
+
+    range(0, 200).forEach(() => {
+      const entity = new CityEntity(this.world)
+      this.world.entities.push(entity);
+    })
+
     // this.handler.send({ action: "callback_initWorker" });
     return true
+
+
+
   };
 
   // ============================================================================
@@ -94,12 +99,6 @@ export class GameWorker {
     const canvas = data.canvas as OffscreenCanvas;
     this.canvasMap = canvas;
   };
-  /*
-  private setMapLvl = (data: GameHandlerData) => {
-    const buffer = data.buffer as SharedArrayBuffer;
-    this.sharedMapLvl = new Float32Array(buffer);
-  };
-  */
  
   private initCanvasMap = (data: GameHandlerData) => {
     console.log("=== Init Render Worker");
@@ -133,7 +132,6 @@ export class GameWorker {
     ["initWorker", this.initWorker.bind(this)],
     ["initCanvasMap", this.initCanvasMap.bind(this)],
     ["setOffScreenCanvas", this.setOffScreenCanvas.bind(this)],
-    // ["setMapLvl", this.setMapLvl.bind(this)],
     ["startRender", (_data) => this.startLoop()],
     ["stopRender", (_data) => this.stopLoop()],
     // ----
@@ -141,10 +139,6 @@ export class GameWorker {
       "setCenter",
       (data) => {
         mapState.setCenter(data.x, data.y);
-        // this.x = data.x;
-        // this.y = data.y;
-        // this.xf = data.x;
-        // this.yf = data.y;
       },
     ],
     ["gridClick", (data: GameHandlerData) => {
@@ -154,6 +148,7 @@ export class GameWorker {
       console.log(data);
 
       const _city = new City(this.world, x, y);
+
     }],
     [ "updateKeyboard", 
       (data) => {

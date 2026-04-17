@@ -35,3 +35,4 @@ export const assetLayerFence = {
         face: ['in'   , 'l'    , 'outD' , 'r'    ],
     },
 }
+

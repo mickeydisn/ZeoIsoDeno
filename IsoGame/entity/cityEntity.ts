@@ -40,7 +40,7 @@ export class CityEntity {
     this.assetFilter = `#_H${randomHue}_C165_S225`;
     this.offset = { x: 0, y: 0 };
 
-    this.speed = .04;
+    this.speed = .015;
     this.directionCooldown = 0;
     this.direction = "S";
 

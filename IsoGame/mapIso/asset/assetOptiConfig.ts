@@ -2,6 +2,7 @@ import { asset_AstroBase } from "./conf/asset_AstroBase.ts";
 import { asset_AstroBase2, asset_AstroBase3, asset_AstroBase5 } from "./conf/asset_AstroBase2.ts";
 import { asset_AstroPlatform } from "./conf/asset_AstroPlatform.ts";
 import { asset_AstroRocket } from "./conf/asset_AstroRocket.ts";
+import { asset_edited_fences } from "./conf/asset_edited_Fences.ts";
 import { asset_ItemGrave } from "./conf/asset_ItemGrave.ts";
 import { asset_ItemOther } from "./conf/asset_ItemOther.ts";
 import { asset_ItemPilar } from "./conf/asset_ItemPilar.ts";
@@ -41,6 +42,7 @@ export const assetOptiConfig: TypeAssetGroupConfig[] = [
   asset_Town1,
   asset_Town2,
   asset_Wall,
+  asset_edited_fences,
   asset_NatureTree,
   asset_NatureFlower,
   asset_NatureRock,

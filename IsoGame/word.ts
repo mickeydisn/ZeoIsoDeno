@@ -16,6 +16,7 @@ export class World {
   }
 
   tick() {
+    console.log("word tick");
     for (const e of this.entities) {
       e.doTick();
     }
