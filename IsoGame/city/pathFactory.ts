@@ -171,7 +171,7 @@ export class PathFactory {
     this.fm = FactoryMap.getInstance();
     this.ta = TilesActions.getInstance();
 
-    this.maxLvlDiff = 2;
+    this.maxLvlDiff = 1;
     this.propagateLimit = 2000;
     this.colapseLimit = 500;
     this.axeCount = 8;

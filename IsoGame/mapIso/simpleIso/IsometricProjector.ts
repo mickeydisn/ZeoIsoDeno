@@ -1,8 +1,10 @@
 // --- 1. Copied Point Class ---
 
+import { TilesMatrix } from "../../map/object/tilesMatrix.ts";
+
 // Configure the main LVL Diff factor display on the grid ( Transform real Lvl Diff to Pixel Diff)
 const ISO_LVL_SCALE = 39;
-
+const LVL_Z_SCALE_FACTOR = 1/3;
 /**
  * Represents a 3D point (x, y, z) in the isometric space.
  */
@@ -156,6 +158,7 @@ export class PointIso {
     private _isPointInTileFace(tile: PointIso, screenX: number, screenY: number): boolean {
         const { x: tx, y: ty, z } = tile;
 
+
         const top    = this.translatePoint(new PointIso(tx,     ty,     z));
         const right  = this.translatePoint(new PointIso(tx + 1, ty,     z));
         const bottom = this.translatePoint(new PointIso(tx + 1, ty + 1, z));
@@ -176,6 +179,7 @@ export class PointIso {
         const u = (screenX - cx) / halfW;
         const v = (screenY - cy) / halfH;
 
+
         // Standard rhombus test for top face
         if (Math.abs(u) + Math.abs(v) <= 1.0) return true;
 
@@ -194,51 +198,6 @@ export class PointIso {
         return false;
     }
     
-    screenToTileWithHeight(
-        screenX: number,
-        screenY: number,
-        mapLvl: Float32Array,
-        mapSize: number,
-    ): PointIso | null {
-
-        const { originX, offsetX, offsetY, SCALE_SIZE, SCALE_MOD } = this.conf;
-        const sx = 32 * SCALE_SIZE;
-        // const avgLvl = mapInfo[8];
-        const ratio = ISO_LVL_SCALE / SCALE_MOD / (2 * 16 * SCALE_SIZE);
-
-        const candidates: PointIso[] = [];
-
-        for (let ty = 0; ty < mapSize; ty++) {
-            for (let tx = 0; tx < mapSize; tx++) {
-                const z = mapLvl[tx * mapSize + ty];
-
-                // Fast pre-filter on X: the rhombus spans ±sx around its center X
-                const cx = originX + sx * ((tx - offsetX) - (ty - offsetY));
-                if (Math.abs(screenX - cx) > sx) continue;
-
-                candidates.push(new PointIso(tx, ty, z));
-            }
-        }
-
-        // Sort front-to-back: lower depth value = rendered last = visually on top
-        candidates.sort((a, b) => {
-            const da = a.x + a.y - 2 * a.z * ratio;
-            const db = b.x + b.y - 2 * b.z * ratio;
-            return db - da;
-        });
-
-        // Return the first (frontmost) tile whose top face contains the point
-        let selectedTile: PointIso | null = null;
-        for (const tile of candidates) {
-            if (this._isPointInTileFace(tile, screenX, screenY)) {
-                selectedTile = tile;
-                break
-            }
-        }
-
-        return selectedTile;
-    }
-
 
 
     /**
@@ -297,5 +256,53 @@ export class PointIso {
 
         return coords;
     }
+
+
+
+    screenToTileWithHeight(
+        screenX: number,
+        screenY: number,
+        tilesMatrix: TilesMatrix,
+    ): PointIso | null {
+    
+        // SCALL FACTOR FOR Z . 
+        const lvlfactor = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
+    
+        const { originX, offsetX, offsetY, SCALE_SIZE, SCALE_MOD } = this.conf;
+        const sx = 32 * SCALE_SIZE;
+        const ratio = ISO_LVL_SCALE / SCALE_MOD / (2 * 16 * SCALE_SIZE);
+
+        const candidates: PointIso[] = [];
+        for (let ty = 0; ty < tilesMatrix.size; ty++) {
+            for (let tx = 0; tx < tilesMatrix.size; tx++) {
+                const metaTile = tilesMatrix.tiles[tx][ty]
+                const z = (metaTile.lvl - tilesMatrix.avgLvl) * lvlfactor ;
+
+                // Fast pre-filter on X: the rhombus spans ±sx around its center X
+                const cx = originX + sx * ((tx - offsetX) - (ty - offsetY));
+                if (Math.abs(screenX - cx) > sx) continue;
+
+                candidates.push(new PointIso(tx, ty, z));
+            }
+        }
+        // Sort front-to-back: lower depth value = rendered last = visually on top
+        candidates.sort((a, b) => {
+            const da = a.x + a.y - 2 * a.z * ratio;
+            const db = b.x + b.y - 2 * b.z * ratio;
+            return db - da;
+        });
+
+        // Return the first (frontmost) tile whose top face contains the point
+        let selectedTile: PointIso | null = null;
+        for (const tile of candidates) {
+            if (this._isPointInTileFace(tile, screenX, screenY)) {
+                selectedTile = tile;
+                break
+            }
+        }
+
+        return selectedTile;
+    }
+
 
   }

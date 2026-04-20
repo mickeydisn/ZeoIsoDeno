@@ -118,6 +118,7 @@ export class CanvasMapDrawers {
       SCALE_SIZE:this.conf.SCALE_SIZE,
       SCALE_MOD:this.conf.SCALE_MOD,
     })
+    mapState._isoProject = this.isoProject
     /*
     this.isoGenerator = new IsometricTileGenerator({
       SCALE_SIZE:this.conf.SCALE_SIZE,
@@ -137,6 +138,8 @@ export class CanvasMapDrawers {
       0,
       this.conf.SCALE_MOD,
     );
+    mapState._tilesMatrix = this.tilesMatrix
+
     this.assetLoader = assetLoadder;
     this.frameSubCount = 0;
     this.frameCount = 0;
@@ -463,8 +466,6 @@ export class CanvasMapDrawers {
     // Calculate the tile's current display level (Z coordinate)
     const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
    // Update Shared GridLvl Matrix Buffer
-    this.mapLvl[xx * size + yy] = currentlvl;
-
 
     const items = [];
     items.push({ t: "Svg", key: "astronautB_" + this.direction, off : {x: this.mapInfo[2], y: this.mapInfo[3]} });
@@ -638,7 +639,7 @@ export class CanvasMapDrawers {
 
 
 
-  private drawHoverOverlayTile(xx: number, yy: number): void {
+  private drawHoverOverlayTile(xx: number, yy: number, color: string = 'rgba(255, 220, 50, 0.35)'): void {
 
       const size = this.conf.DRAW_TILE_COUNT;
       // Bounds check
@@ -654,7 +655,7 @@ export class CanvasMapDrawers {
       const height = 1;
 
       const shape = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - height), 1, 1, height);
-      this.drawShapePaths(shape, 'rgba(255, 220, 50, 0.35)'); // Display hover coordinates for debugging
+      this.drawShapePaths(shape, color); // Display hover coordinates for debugging
   }
 
 
@@ -664,8 +665,9 @@ export class CanvasMapDrawers {
   private drawHoverOverlay(): void {
     if (!this.world) return;
     // Directly use these coordinates without additional transformation
-    const xx = Math.round(this.mouseWorldX);
-    const yy = Math.round(this.mouseWorldY);
+    const xx = Math.round(mapState.mouseWorldX);
+    const yy = Math.round(mapState.mouseWorldY);
+
     // Bounds check
     const size = this.conf.DRAW_TILE_COUNT;
     if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1) return;
@@ -695,28 +697,9 @@ export class CanvasMapDrawers {
       })
       return
     }
-    this.drawHoverOverlayTile(xx, yy)
+    this.drawHoverOverlayTile(xx, yy, 'rgba(255, 50, 50, 0.35)')
+
   }
-
-  // Mouse tracking
-  mouseScreenX: number = 0;
-  mouseScreenY: number = 0;
-  mouseWorldX: number = 0;
-  mouseWorldY: number = 0;
-
-
-  public setMouseScreen(screenX: number, screenY: number): void {
-      const tile = this.screenToTileWithHeight(screenX, screenY);
-      // Use internal IsometricProjector for coordinate conversion
-        if (tile) {
-          // console.log("Mouse moved to tile:", tile);
-          this.mouseWorldX = tile.x;
-          this.mouseWorldY = tile.y;
-        }
-      }
-  public screenToTileWithHeight(screenX: number, screenY: number): PointIso | null {
-    return this.isoProject.screenToTileWithHeight(screenX, screenY, this.mapLvl, this.tilesMatrix.size);
-  } 
 
 }
 

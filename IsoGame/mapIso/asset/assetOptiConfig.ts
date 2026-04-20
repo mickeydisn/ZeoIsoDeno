@@ -16,7 +16,7 @@ import { asset_Town2 } from "./conf/asset_Town2.ts";
 import { asset_Train } from "./conf/asset_Train.ts";
 import { asset_UserAstro } from "./conf/asset_UserAstro.ts";
 import { asset_Wall } from "./conf/asset_Wall.ts";
-import { asset_items_low_grokclean_04 } from "./conf/grok_a.ts";
+import { asset_Grok5, asset_items_low_grokclean_04 } from "./conf/grok_a.ts";
 
 export type TypeAssetImageConfig = {
   label: string;
@@ -54,6 +54,7 @@ export const assetOptiConfig: TypeAssetGroupConfig[] = [
   asset_Train,
   asset_AstroRocket,
   asset_items_low_grokclean_04,
+  asset_Grok5,
 
   asset_MyTower,
   asset_UserAstro,

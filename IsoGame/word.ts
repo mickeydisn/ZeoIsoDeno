@@ -22,6 +22,10 @@ export class World {
     }
   }
 
+  removeEntity(entity:CityEntity) {
+    this.entities = this.entities.filter(t => t !== entity)
+  }
+
   init() {
   }
 }

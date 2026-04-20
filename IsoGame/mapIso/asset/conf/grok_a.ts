@@ -1,8 +1,8 @@
 import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
 
 export const asset_items_low_grokclean_04 : TypeAssetGroupConfig = {
-  "src": "./img/asset-items/Grok01.png",
-  "group": "GrokClean1",
+  "src": "./img/asset-items/GrokClean1.png",
+  "group": "GrokItems",
   "images": [
   { "top": 0.   , "label": "GrokClean1_01_01" },
   { "top": 224  , "label": "GrokClean1_01_02" },
@@ -19,7 +19,7 @@ export const asset_items_low_grokclean_04 : TypeAssetGroupConfig = {
 
 
 export const asset_Grok5 : TypeAssetGroupConfig = {
-  "src": "./img/asset-items/low-detail/GrokClean01.png",
+  "src": "./img/asset_opti/GrokClean1.png",
   "group": "GrokClean1",
   "images": [
   { "top": 0.   , "label": "GrokClean1_01" },

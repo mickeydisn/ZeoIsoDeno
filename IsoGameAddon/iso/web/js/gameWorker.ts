@@ -16,6 +16,7 @@ import { mapState } from "../../../../IsoGame/mapIso/MapState.ts";
 import { TypeKeysActionUpdate } from "./main/keyboad.ts";
 import { CityEntity } from "../../../../IsoGame/entity/cityEntity.ts";
 import { range } from "jsr:@oak/commons@1/range";
+import { CityEntity2 } from "../../../../IsoGame/entity/cityEntity2.ts";
 
 export type GameHandlerData = any;
 
@@ -78,12 +79,22 @@ export class GameWorker {
         (_, i) => start + i * step,
       );
     }
+    
+    mapState.setCenter(1200, 500)
 
-    range(0, 200).forEach(() => {
+    // ENTITY 
+    range(0, 20).forEach(() => {
       const entity = new CityEntity(this.world)
       this.world.entities.push(entity);
     })
-
+    range(0, 50).forEach(() => {
+      const entity = new CityEntity2(this.world, {
+        x: 1200 + Math.round(Math.random()* 20) - 20,
+        y: 500 + Math.round(Math.random()* 20) - 20,
+      })
+      this.world.entities.push(entity);
+    })
+ 
     // this.handler.send({ action: "callback_initWorker" });
     return true
 
@@ -108,11 +119,6 @@ export class GameWorker {
         SCALE_SIZE: 1.2, // 2 / 3,
         SCALE_MOD: 1,
       }
-    mapState.setIsoConf({
-      mapSize: isoConf.DRAW_TILE_COUNT,      // Replaced DRAW_TILE_COUNT
-      tileScaleSize: isoConf.SCALE_SIZE,          // Replaced SCALE_SIZE
-      tileScaleMod : isoConf.SCALE_MOD,          // Replaced SCALE_MOD
-    })
 
     this.canvasMapDrawer = new CanvasMapDrawers(
       this.world,
@@ -122,6 +128,15 @@ export class GameWorker {
       this.assetLoader,
       this.canvasMap,
     );
+
+    mapState.setIsoConf({
+      mapSize: isoConf.DRAW_TILE_COUNT,      // Replaced DRAW_TILE_COUNT
+      tileScaleSize: isoConf.SCALE_SIZE,          // Replaced SCALE_SIZE
+      tileScaleMod : isoConf.SCALE_MOD,          // Replaced SCALE_MOD
+    })
+    mapState._isoProject = this.canvasMapDrawer.isoProject
+    mapState._tilesMatrix = this.canvasMapDrawer.tilesMatrix
+
   };
 
   // ============================================================================
@@ -286,22 +301,15 @@ export class GameWorker {
       "mouseMove",
       (data: GameHandlerData) => {
         mapState.setMouseScreen(data.x as number, data.y as number);
-        if (!this.canvasMapDrawer) {
-          return;
-        }
-        this.canvasMapDrawer.setMouseScreen(data.x as number, data.y as number);
       }
     ],
     [
       "mouseClick",
       (data: GameHandlerData) => {
         mapState.setMouseScreen(data.x as number, data.y as number);
-        if (!this.canvasMapDrawer) {
-          return;
-        }
-        this.canvasMapDrawer.setMouseScreen(data.x as number, data.y as number);
-        const x = this.canvasMapDrawer.mouseWorldX + mapState.x - this.canvasMapDrawer.tilesMatrix.size / 2;
-        const y = this.canvasMapDrawer.mouseWorldY + mapState.y - this.canvasMapDrawer.tilesMatrix.size / 2;
+        const x = mapState.mouseWorldX + mapState.x - mapState.tilesMatrix().size / 2;
+        const y = mapState.mouseWorldY + mapState.y - mapState.tilesMatrix().size / 2;
+
         console.log("Mouse Click Worker x:", x, "y:", y);
         const result = toolRegistry.executeAt(x, y, this.world);
 
