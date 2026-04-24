@@ -1,10 +1,7 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
-import { list_to_asset } from "../assetUtils.ts";
-
-export const asset_NatureRock : TypeAssetGroupConfig = {
+[{
   "src": "./img/asset-opti/NatureRock.png",
   "group": "NatureRock",
-  "images": list_to_asset([
+  "images": [
     "rock_largeA",
     "rockSmall",
     "debrisWood",
@@ -58,7 +55,7 @@ export const asset_NatureRock : TypeAssetGroupConfig = {
     "stone_tallG",
     "rockWide",
     "rock_crystalsLargeB",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
+}]

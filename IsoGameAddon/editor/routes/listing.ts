@@ -14,7 +14,7 @@ import { Router } from "https://deno.land/x/oak/mod.ts";
 import { ConfigExtractor } from "../extractor.ts";
 import { getBuildingsDir, getAssetCollectionsDir } from "../configPaths.ts";
 
-const ASSET_DIR = "img/asset_opti";
+const ASSET_DIR = "img/asset-opti";
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
 
 const router = new Router();

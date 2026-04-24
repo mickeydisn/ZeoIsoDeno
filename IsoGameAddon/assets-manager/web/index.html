@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assets Manager</title>
+  <link rel="stylesheet" href="css/assets-manager.css">
+</head>
+<body>
+  <div class="editor-layout">
+    <header class="header">
+      <h1>Assets Manager</h1>
+    </header>
+
+    <div id="error-banner" class="error-banner hidden"></div>
+
+    <div class="content-wrapper">
+      <div id="sidebar-panel" class="sidebar"></div>
+      <div id="main-panel" class="main-content">
+        <div class="placeholder-content">
+          <h2>Welcome to Assets Manager</h2>
+          <p>Asset management interface is ready.</p>
+          <p>Select an asset from the sidebar to get started.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal-content"></div>
+  </div>
+
+  <script type="module" src="js/main.ts"></script>
+</body>
+</html>

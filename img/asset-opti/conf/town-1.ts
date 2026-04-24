@@ -1,10 +1,7 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
-import { list_to_asset } from "../assetUtils.ts";
-
-export const asset_Town1 : TypeAssetGroupConfig = {
+[{
   "src": "./img/asset-opti/Town1.png",
   "group": "Town1",
-  "images": list_to_asset([
+  "images": [
     "wallCurved",
     "roofCornerRound",
     "wallDoor",
@@ -50,7 +47,7 @@ export const asset_Town1 : TypeAssetGroupConfig = {
     "wallCorner",
     "roofLeft",
     "wallWindowGlass",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
+}]

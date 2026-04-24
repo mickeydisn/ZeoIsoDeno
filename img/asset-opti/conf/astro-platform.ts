@@ -1,10 +1,7 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
-import { list_to_asset } from "../assetUtils.ts";
-
-export const asset_AstroPlatform : TypeAssetGroupConfig = {
+[{
   "src": "./img/asset-opti/AstroPlatform.png",
   "group": "AstroPlatform",
-  "images": list_to_asset([
+  "images": [
     "platform_center",
     "platform_small",
     "structure_closed",
@@ -24,7 +21,7 @@ export const asset_AstroPlatform : TypeAssetGroupConfig = {
     "supports_low",
     "platform_cornerDot",
     "platform_centerA",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
+}]

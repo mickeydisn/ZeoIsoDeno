@@ -137,7 +137,7 @@ export async function extractSpriteFromSpritesheet(
     throw new Error(`Spritesheet not found: ${spritesheetPath}`);
   }
 
-  const scall = config.scall ? 0.7 : 1;
+  const scall = 1 // config.scall ? 0.7 : 1;
   const column = DIRECTION_COLUMNS[direction] ?? 0;
   const rowIndex = config.top / config.imgHeight;
 
@@ -146,13 +146,13 @@ export async function extractSpriteFromSpritesheet(
     W_CUT_SIZE * column + Math.floor(W_CUT_SIZE * ((1 - scall) / 2));
   const srcY = H_CUT_SIZE * rowIndex + Math.floor(H_CUT_SIZE * (1 - scall));
   const srcW = Math.floor(W_CUT_SIZE * scall);
-  const srcH = H_CUT_SIZE + 128;
+  const srcH = H_CUT_SIZE ;
 
   const extractedImage = await sharp(spritesheetPath)
     .extract({ left: srcX, top: srcY, width: srcW, height: srcH })
     .resize({
       width: W_CUT_SIZE,
-      height: Math.floor(H_CUT_SIZE / scall) + 128,
+      height: Math.floor(H_CUT_SIZE / scall),
       fit: "fill",
     })
     .png()
@@ -207,6 +207,7 @@ export async function generateAssetPreview(
   }
 
   try {
+    console.log(config)
     return await extractSpriteFromSpritesheet(spritesheetPath, config, direction);
   } catch (error: unknown) {
     // Graceful fallback when sharp fails

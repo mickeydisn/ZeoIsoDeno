@@ -1,10 +1,7 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
-import { list_to_asset } from "../assetUtils.ts";
-
-export const asset_Train : TypeAssetGroupConfig ={
+[{
   "src": "./img/asset-opti/Train.png",
   "group": "Train",
-  "images":  list_to_asset([
+  "images":  [
     "monorail_trainFront",
     "monorail_trainEnd",
     "monorail_trackSlope",
@@ -32,7 +29,7 @@ export const asset_Train : TypeAssetGroupConfig ={
     "pipe_supportLow",
     "pipe_open",
     "pipe_ringSupport",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
+}]

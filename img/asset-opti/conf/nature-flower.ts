@@ -1,11 +1,8 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
-import { list_to_asset } from "../assetUtils.ts";
-
-export const asset_NatureFlower : TypeAssetGroupConfig = {
+[{
   "src": "./img/asset-opti/NatureFlower.png",
   "group": "NatureFlower",
   "scall": true,
-  "images": list_to_asset([
+  "images": [
     "mushroom_redTall",
     "crops_bambooStageB",
     "crops_cornStageA",
@@ -45,7 +42,7 @@ export const asset_NatureFlower : TypeAssetGroupConfig = {
     "crops_cornStageD",
     "crops_wheatStageA",
     "plant_bushLargeTriangle",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
+}]

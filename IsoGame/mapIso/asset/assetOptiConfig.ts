@@ -16,7 +16,7 @@ import { asset_Town2 } from "./conf/asset_Town2.ts";
 import { asset_Train } from "./conf/asset_Train.ts";
 import { asset_UserAstro } from "./conf/asset_UserAstro.ts";
 import { asset_Wall } from "./conf/asset_Wall.ts";
-import { asset_Grok5, asset_items_low_grokclean_04 } from "./conf/grok_a.ts";
+import { asset_Grok5 } from "./conf/grok_a.ts";
 
 export type TypeAssetImageConfig = {
   label: string;
@@ -53,7 +53,6 @@ export const assetOptiConfig: TypeAssetGroupConfig[] = [
   asset_AstroPlatform,
   asset_Train,
   asset_AstroRocket,
-  asset_items_low_grokclean_04,
   asset_Grok5,
 
   asset_MyTower,
@@ -62,7 +61,7 @@ export const assetOptiConfig: TypeAssetGroupConfig[] = [
 
   // ----------- 8 axes
   {
-    "src": "./img/asset_opti/UserAstro.png",
+    "src": "./img/asset-opti/UserAstro.png",
     "group": "UserAstro",
     "images": [
       {
@@ -85,7 +84,7 @@ export const assetOptiConfig: TypeAssetGroupConfig[] = [
     "imgWidth": 192,
   },
   {
-    "src": "./img/asset_opti/MyPerso2.png",
+    "src": "./img/asset-opti/MyPerso2.png",
     "group": "MyPerso2",
     "images": [
       {

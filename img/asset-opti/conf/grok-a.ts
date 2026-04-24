@@ -1,9 +1,22 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
+[{
+  "src": "./img/asset-items/GrokClean1.png",
+  "group": "GrokItems",
+  "images": [
+  { "top": 0.   , "label": "GrokClean1_01_01" },
+  { "top": 224  , "label": "GrokClean1_01_02" },
+  { "top": 448  , "label": "GrokClean1_01_03" },
+  { "top": 672  , "label": "GrokClean1_01_04" },
+  { "top": 896  , "label": "GrokClean1_01_05" },
+  { "top": 1120 , "label": "GrokClean1_01_06" },
+],
+  // "imgHeight": 224,
+  "imgHeight": 192,
+  "imgWidth": 192,
+}
 
-
-export const asset_Grok5 : TypeAssetGroupConfig = {
-  "src": "./img/asset-items/grok-clean-1.png",
-  "group": "Grok-Clean-1",
+,{
+  "src": "./img/asset-opti/GrokClean1.png",
+  "group": "GrokClean1",
   "images": [
   { "top": 0.   , "label": "GrokClean1_01" },
   { "top": 224  , "label": "GrokClean1_02" },
@@ -72,9 +85,4 @@ export const asset_Grok5 : TypeAssetGroupConfig = {
 ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
-
-
-
-
-
+}]

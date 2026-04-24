@@ -15,7 +15,7 @@ export type TypeAssetFileConfig = {
 
 function fileToGroup(filename:string) : TypeAssetFileConfig{
   return {
-    "src": "./img/asset_opti/"+filename+".png",
+    "src": "./img/asset-opti/"+filename+".png",
     "group": filename,
     "imgHeight": 224,
     "imgWidth": 192,

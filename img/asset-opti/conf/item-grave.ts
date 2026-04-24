@@ -1,10 +1,7 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
-import { list_to_asset } from "../assetUtils.ts";
-
-export const asset_ItemGrave : TypeAssetGroupConfig = {
+[{
   "src": "./img/asset-opti/ItemGrave.png",
   "group": "ItemGrave",
-  "images": list_to_asset([
+  "images": [
     "gravestoneDecorative",
     "coffinOld",
     "gravestoneRound",
@@ -17,7 +14,7 @@ export const asset_ItemGrave : TypeAssetGroupConfig = {
     "gravestoneWide",
     "coffin",
     "altarWood",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
+}]

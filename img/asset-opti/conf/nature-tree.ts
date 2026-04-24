@@ -1,11 +1,8 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
-import { list_to_asset } from "../assetUtils.ts";
-
-export const asset_NatureTree : TypeAssetGroupConfig = {
+[{
   "src": "./img/asset-opti/NatureTree.png",
   "group": "NatureTree",
   "scall": true,
-  "images":  list_to_asset([
+  "images":  [
     "tree_detailed",
     "tree_thin_fall",
     "tree_palmShort",
@@ -61,7 +58,7 @@ export const asset_NatureTree : TypeAssetGroupConfig = {
     "tree_small_dark",
     "tree_pineRoundB",
     "tree_plateau",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
+}]

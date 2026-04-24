@@ -12,8 +12,10 @@ import * as esbuild from "npm:esbuild@0.20.2";
 import { editorRouter } from "./IsoGameAddon/editor/server.ts";
 
 import { serveStatic as StaticRouterIso } from "./IsoGameAddon/iso/web/serveIso.ts";
+import { serveStatic as serveStaticAsset } from "./IsoGameAddon/assets-manager/web/serveStatic.ts";
 import { serveStatic as serveStaticEditor } from "./IsoGameAddon/editor/web/serveEditor.ts";
 import { serveStatic as serveStaticPallet } from "./IsoGameAddon/pallet/web/servePallet.ts";
+import { assetsManagerRouter } from "./IsoGameAddon/assets-manager/server.ts";
 
 export const serveStatic = async (context: Context) => {
   const filePath = context.request.url.pathname;
@@ -70,6 +72,10 @@ app.use(async (ctx: Context, next) => {
   await next();
 });
 
+app.use(assetsManagerRouter.routes());
+app.use(assetsManagerRouter.allowedMethods());
+
+
 // IMPORTANT: Mount editor API routes FIRST so they take precedence over static serving
 app.use(editorRouter.routes());
 app.use(editorRouter.allowedMethods());
@@ -79,23 +85,29 @@ app.use(router.routes());
 app.use(router.allowedMethods());
 
 
-
+// /iso/
 const isoStaticRouter = new Router();
 isoStaticRouter.get("/iso/(.*)", StaticRouterIso);
 
 app.use(isoStaticRouter.routes());
 app.use(isoStaticRouter.allowedMethods());
 
+// /assets-manager/
+const assetStaticRouter = new Router();
+assetStaticRouter.get("/assets-manager/(.*)", serveStaticAsset);
+app.use(assetStaticRouter.routes());
+app.use(assetStaticRouter.allowedMethods());
 
+
+// /editor/
 const editorStaticRouter = new Router();
 editorStaticRouter.get("/editor/(.*)", serveStaticEditor);
 
-
-// Finally mount editor static file router (lowest priority)
 app.use(editorStaticRouter.routes());
 app.use(editorStaticRouter.allowedMethods());
 
 
+// /pallet/
 const palletStaticRouter = new Router();
 palletStaticRouter.get("/pallet/(.*)", serveStaticPallet);
 

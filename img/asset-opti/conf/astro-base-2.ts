@@ -1,10 +1,7 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
-import { list_to_asset } from "../assetUtils.ts";
-
-export const asset_AstroBase2 : TypeAssetGroupConfig = {
+[{
   "src": "./img/AstroBase2_fixed.png",
   "group": "AstroBase2",
-  "images": list_to_asset([
+  "images": [
     "Lab2_corridor_cross",
     "Lab2_corridor_split",
     "Lab2_corridor_cornerRound",
@@ -14,15 +11,15 @@ export const asset_AstroBase2 : TypeAssetGroupConfig = {
     "Lab2_corridor_detailed",
     "Lab2_corridor_",
     "Lab2_corridor_end",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
 }
 
-export const asset_AstroBase3 : TypeAssetGroupConfig = {
+,{
   "src": "./img/asset-opti/AstroBase3.png",
   "group": "AstroBase3",
-  "images": list_to_asset([
+  "images": [
     "Lab3_corridor_cross",
     "Lab3_corridor_split",
     "Lab3_corridor_cornerRound",
@@ -32,14 +29,14 @@ export const asset_AstroBase3 : TypeAssetGroupConfig = {
     "Lab3_corridor_detailed",
     "Lab3_corridor_",
     "Lab3_corridor_end",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
 }
-const asset_AstroBase4 : TypeAssetGroupConfig = {
+,{
   "src": "./img/asset-opti/AstroBase4.png",
   "group": "AstroBase4",
-  "images": list_to_asset([
+  "images": [
     "Lab4_corridor_cross",
     "Lab4_corridor_split",
     "Lab4_corridor_cornerRound",
@@ -49,14 +46,14 @@ const asset_AstroBase4 : TypeAssetGroupConfig = {
     "Lab4_corridor_detailed",
     "Lab4_corridor_",
     "Lab4_corridor_end",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
 }
-export const asset_AstroBase5 : TypeAssetGroupConfig = {
+,{
   "src": "./img/asset-opti/AstroBase5.png",
   "group": "AstroBase5",
-  "images": list_to_asset([
+  "images": [
     "Lab5_corridor_cross",
     "Lab5_corridor_split",
     "Lab5_corridor_cornerRound",
@@ -66,7 +63,7 @@ export const asset_AstroBase5 : TypeAssetGroupConfig = {
     "Lab5_corridor_detailed",
     "Lab5_corridor_",
     "Lab5_corridor_end",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
+}]

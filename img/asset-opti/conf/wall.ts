@@ -1,10 +1,7 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
-import { list_to_asset } from "../assetUtils.ts";
-
-export const asset_Wall : TypeAssetGroupConfig = {
+[{
   "src": "./img/asset-opti/Wall.png",
   "group": "Wall",
-  "images": list_to_asset([
+  "images": [
     "fence_simpleLow",
     "fenceGate",
     "fence_bend",
@@ -42,7 +39,7 @@ export const asset_Wall : TypeAssetGroupConfig = {
     "ironFenceBorderCurve",
     "fenceDamaged",
     "rail",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
+}]

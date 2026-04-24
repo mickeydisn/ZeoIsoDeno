@@ -1,10 +1,7 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
-import { list_to_asset } from "../assetUtils.ts";
-
-export const asset_ItemOther : TypeAssetGroupConfig = {
+[{
   "src": "./img/asset-opti/ItemOther.png",
   "group": "ItemOther",
-  "images": list_to_asset([
+  "images": [
     "crate",
     "barrel",
     "detailPlate",
@@ -38,7 +35,7 @@ export const asset_ItemOther : TypeAssetGroupConfig = {
     "tent_detailedOpen",
     "campfire_stones",
     "coinBronze",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
+}]

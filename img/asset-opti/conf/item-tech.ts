@@ -1,10 +1,7 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
-import { list_to_asset } from "../assetUtils.ts";
-
-export const asset_ItemTech : TypeAssetGroupConfig = {
+[{
   "src": "./img/asset-opti/ItemTech.png",
   "group": "ItemTech",
-  "images": list_to_asset([
+  "images": [
     "barrels_rail",
     "satelliteDish_large",
     "barrels",
@@ -18,7 +15,7 @@ export const asset_ItemTech : TypeAssetGroupConfig = {
     "satelliteDish_detailed",
     "machine_wireless",
     "machine_barrelLarge",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
+}]

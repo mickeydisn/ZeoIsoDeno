@@ -1,10 +1,7 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
-import { list_to_asset } from "../assetUtils.ts";
-
-export const asset_AstroBase : TypeAssetGroupConfig = {
+[{
   "src": "./img/asset-opti/AstroBase.png",
   "group": "AstroBase",
-  "images": list_to_asset([
+  "images": [
     "corridor_open",
     "corridor_windowClosed",
     "corridor_",
@@ -19,7 +16,7 @@ export const asset_AstroBase : TypeAssetGroupConfig = {
     "corridor_split",
     "corridor_wallCorner",
     "corridor_wall",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
+}]

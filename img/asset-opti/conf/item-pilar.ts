@@ -1,10 +1,7 @@
-import { TypeAssetGroupConfig } from "../assetOptiConfig.ts";
-import { list_to_asset } from "../assetUtils.ts";
-
-export const asset_ItemPilar : TypeAssetGroupConfig = {
+[{
   "src": "./img/asset-opti/ItemPilar.png",
   "group": "ItemPilar",
-  "images": list_to_asset([
+  "images": [
     "statue_column",
     "statue_ring",
     "statue_obelisk",
@@ -17,7 +14,7 @@ export const asset_ItemPilar : TypeAssetGroupConfig = {
     "pillarSmall",
     "statue_columnDamaged",
     "columnLarge",
-  ]),
+  ],
   "imgHeight": 224,
   "imgWidth": 192,
-}
+}]
