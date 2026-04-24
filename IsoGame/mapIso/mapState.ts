@@ -167,6 +167,7 @@ export class MapState {
         mapY:  0,
     }
 
+    private _lastMouseUpdate: number = 0;
 
     public setCenter(x:number, y:number) {
         this.x = x;
@@ -251,13 +252,18 @@ export class MapState {
 
 
     public setMouseScreen(screenX: number, screenY: number): void {
+        // Throttle to max 60fps (16ms) to avoid object creation storm
+        const now = Date.now();
+        if (now - this._lastMouseUpdate < 16) return;
+        this._lastMouseUpdate = now;
+
         const tile = this.isoProject().screenToTileWithHeight(screenX, screenY, this.tilesMatrix());
         // Use internal IsometricProjector for coordinate conversion
         if (tile) {
             this.mouseWorldX = tile.x;
             this.mouseWorldY = tile.y;
-            }
         }
+    }
 
 }
 

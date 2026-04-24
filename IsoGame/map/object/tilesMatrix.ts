@@ -40,7 +40,7 @@ export class TilesMatrixSelected {
       () =>
         Array.from(
           { length: this.sizeY },
-          () => new Tile(0, 0, 0, 0),
+          () => this.fm.getTile(0,0),
         ),
     );
 
@@ -94,7 +94,7 @@ export class TilesMatrix {
     this.world = World.getInstance();
     this.fm = FactoryMap.getInstance();
     this.size = size;
-    const tile = new Tile(0, 0, 0, 0);
+    const tile = this.fm.getTile(0, 0);
     this.tiles = Array.from(
       { length: this.size },
       () =>
@@ -183,7 +183,7 @@ export class TilesMatrixAvg {
     this.world = World.getInstance();
     this.fm = FactoryMap.getInstance();
     this.size = size;
-    const tile = new Tile(0, 0, 0, 0);
+    const tile = this.fm.getTile(0,0);
     this.tiles = Array.from(
       { length: this.size },
       () =>

@@ -488,6 +488,15 @@ export class CanvasMapDrawers {
     const size = this.conf.DRAW_TILE_COUNT;
     this.canvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+    // Clear all temporary tile items after each render frame
+    for (let x = 0; x < this.tilesMatrix.size; x++) {
+      for (let y = 0; y < this.tilesMatrix.size; y++) {
+        if (this.tilesMatrix.tiles[x]?.[y]) {
+          this.tilesMatrix.tiles[x][y].clearTemporatyItem();
+        }
+      }
+    }
+
     // Draw tiles: loop from 1 to size-1 to avoid boundary checks 
     // when accessing neighbors (yy-1, xx-1) inside drawTile.
     for (let x = 1; x < size - 1; x++) {

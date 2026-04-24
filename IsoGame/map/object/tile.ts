@@ -41,9 +41,6 @@ export class Tile extends RawTile {
   isBlock: boolean = false;
   isFrise: boolean = false;
 
-  _nearTiles: Tile[] = [];
-  _nearTilesCross: Tile[] = [];
-
   items: RecordRawItem[] = [];
 
   entities: CityEntity[] = [];
@@ -149,22 +146,17 @@ export class Tile extends RawTile {
   }
 
   get nearTiles() {
-    if (this._nearTiles.length == 0) {
-      this._nearTiles = [0, 1, 2, 3].map((axe) => {
-        const [dx, dy] = AXE_DIRECTION[axe];
-        return FactoryMap.getInstance().getTile(this.x + dx, this.y + dy);
-      });
-    }
-    return this._nearTiles;
+    return [0, 1, 2, 3].map((axe) => {
+      const [dx, dy] = AXE_DIRECTION[axe];
+      return FactoryMap.getInstance().getTile(this.x + dx, this.y + dy);
+    });
   }
+
   get nearCrossTiles() {
-    if (this._nearTiles.length == 0) {
-      this._nearTilesCross = [0, 1, 2, 3].map((axe) => {
-        const [dx, dy] = AXE_DIRECTION2[axe];
-        return FactoryMap.getInstance().getTile(this.x + dx, this.y + dy);
-      });
-    }
-    return this._nearTilesCross;
+    return [0, 1, 2, 3].map((axe) => {
+      const [dx, dy] = AXE_DIRECTION2[axe];
+      return FactoryMap.getInstance().getTile(this.x + dx, this.y + dy);
+    });
   }
   nearTilesAxe(size = 1) {
     return [0, 1, 2, 3].map((axe) => {
