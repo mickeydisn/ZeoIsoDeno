@@ -182,7 +182,8 @@ export class CityEntity2 {
   tickLife = 0
   doTick() {
     this.tickLife += 1;
-    if (this.tickLife > 1000) {
+    const LIFE_LIME = 100000;
+    if (this.tickLife > LIFE_LIME) {
       this.tile.removeEntity(this)
       this.world.removeEntity(this)
     }

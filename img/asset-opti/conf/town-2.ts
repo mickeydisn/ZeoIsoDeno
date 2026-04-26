@@ -1,6 +1,6 @@
 [{
   "src": "./img/asset-opti/Town2.png",
-  "group": "Town2",
+  "name": "Town2",
   "images":  [
     "wallWoodArchTopDetail",
     "wallWoodCornerDiagonal",
@@ -51,4 +51,6 @@
   ],
   "imgHeight": 224,
   "imgWidth": 192,
+    "type": "building",
+
 }]

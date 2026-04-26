@@ -1,6 +1,6 @@
 import { FactoryMap } from "../map/factory/factoryMap.ts";
 import { Tile } from "../map/object/tile.ts";
-import { TilesActions } from "../map/tileActions.ts";
+import { TilesActions } from "../map/action/tileActions.ts";
 import { World } from "../word.ts";
 import { GraphTileNode } from "./graph.ts";
 

@@ -13,10 +13,12 @@ import { structureTools } from "../../../../IsoGame/tools/structureTools.ts";
 import { World } from "../../../../IsoGame/word.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
 import { mapState } from "../../../../IsoGame/mapIso/MapState.ts";
+import { actionDrawSpawn } from "../../../../IsoGame/map/action/ex/swapPoint.ts"
 import { TypeKeysActionUpdate } from "./main/keyboad.ts";
 import { CityEntity } from "../../../../IsoGame/entity/cityEntity.ts";
 import { range } from "jsr:@oak/commons@1/range";
 import { CityEntity2 } from "../../../../IsoGame/entity/cityEntity2.ts";
+import { TilesActions } from "../../../../IsoGame/map/action/tileActions.ts";
 
 export type GameHandlerData = any;
 
@@ -80,7 +82,8 @@ export class GameWorker {
       );
     }
     
-    mapState.setCenter(1200, 500)
+    // mapState.setCenter(1200, 500)
+    mapState.setCenter(0, 0)
 
     // ENTITY 
     range(0, 20).forEach(() => {
@@ -89,12 +92,15 @@ export class GameWorker {
     })
     range(0, 50).forEach(() => {
       const entity = new CityEntity2(this.world, {
-        x: 1200 + Math.round(Math.random()* 20) - 20,
-        y: 500 + Math.round(Math.random()* 20) - 20,
+        x: 0 + Math.round(Math.random()* 20) - 20,
+        y: 0 + Math.round(Math.random()* 20) - 20,
       })
       this.world.entities.push(entity);
     })
  
+    const action = actionDrawSpawn(0, 0)
+    TilesActions.getInstance().doActions(action)
+    
     // this.handler.send({ action: "callback_initWorker" });
     return true
 

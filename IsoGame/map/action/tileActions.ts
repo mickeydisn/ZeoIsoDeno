@@ -1,9 +1,9 @@
 import { off } from "node:process";
-import { World } from "../word.ts";
-import { FactoryMap } from "./factory/factoryMap.ts";
-import { RecordRawItem } from "./factory/factoryTileGenerator.ts";
-import { Tile } from "./object/tile.ts";
-import { TilesMatrix } from "./object/tilesMatrix.ts";
+import { World } from "../../word.ts";
+import { FactoryMap } from "../factory/factoryMap.ts";
+import { RecordRawItem } from "../factory/factoryTileGenerator.ts";
+import { Tile } from "../object/tile.ts";
+import { TilesMatrix } from "../object/tilesMatrix.ts";
 
 export type TypeTileAction = {
   func: (conf: TypeTileActionConfig) => void;
@@ -15,7 +15,6 @@ export type TypeTileActionConfig = {
   x: number;
   y: number;
   off?: { x: number; y: number };
-
   size?: number;
   h?: number;
   lvl?: number;
@@ -310,6 +309,7 @@ export class TilesActions {
     const x = conf.x;
     const y = conf.y;
     const size = conf.size || 1;
+    
 
     const fCenter = Math.floor(size / 2);
     const rangeX = Array.from(
@@ -322,12 +322,12 @@ export class TilesActions {
     );
 
     rangeX.forEach((xx: number) => {
-      this.lvlAvg({ x: xx, y: y - fCenter - 1, size: 3 });
-      this.lvlAvg({ x: xx, y: y + (size - fCenter), size: 3 });
+      this.lvlAvg({ x: xx, y: y - fCenter - 1, size: 5 });
+      this.lvlAvg({ x: xx, y: y + (size - fCenter), size: 5 });
     });
     rangeY.forEach((yy) => {
-      this.lvlAvg({ x: x - fCenter - 1, y: yy, size: 3 });
-      this.lvlAvg({ x: x + (size - fCenter), y: yy, size: 3 });
+      this.lvlAvg({ x: x - fCenter - 1, y: yy, size: 5 });
+      this.lvlAvg({ x: x + (size - fCenter), y: yy, size: 5 });
     });
   }
 

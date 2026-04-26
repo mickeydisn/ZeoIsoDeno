@@ -1,6 +1,6 @@
 [{
   "src": "./img/asset-opti/Wall.png",
-  "group": "Wall",
+  "name": "Wall",
   "images": [
     "fence_simpleLow",
     "fenceGate",
@@ -42,4 +42,6 @@
   ],
   "imgHeight": 224,
   "imgWidth": 192,
+  "type": "building",
+
 }]

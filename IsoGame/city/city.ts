@@ -1,5 +1,5 @@
 import { FactoryMap } from "../map/factory/factoryMap.ts";
-import { TilesActions } from "../map/tileActions.ts";
+import { TilesActions } from "../map/action/tileActions.ts";
 import { WcBuildActions } from "../wcBuilding2/wcBuildAction.ts";
 import { WcBuildFactory } from "../wcBuilding2/wcBuildFactory.ts";
 

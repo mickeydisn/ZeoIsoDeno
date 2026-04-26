@@ -154,3 +154,25 @@ html, body {
   min-width: 400px;
   padding: 16px;
 }
+
+
+/* --- Modal Overlay --- */
+
+.card-container {
+  position: relative;
+
+  /* Hide radios */
+  input {
+    display: none;
+  }
+  input + label {
+    display: none;
+  }
+
+  input:checked + label {
+    display: block;
+  }
+
+
+}
+

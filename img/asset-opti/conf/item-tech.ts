@@ -1,6 +1,6 @@
 [{
   "src": "./img/asset-opti/ItemTech.png",
-  "group": "ItemTech",
+  "name": "ItemTech",
   "images": [
     "barrels_rail",
     "satelliteDish_large",
@@ -18,4 +18,6 @@
   ],
   "imgHeight": 224,
   "imgWidth": 192,
+  "type": "items",
+
 }]

@@ -10,7 +10,6 @@ import {
 } from "./assetOptiConfig.ts";
 import { canvasFilterStrToValue, colorVariation } from "./assetUtils.ts";
 
-const SCALE_SIZE = 1;
 
 export type TypeAsset = {
   group: string;
@@ -87,32 +86,30 @@ export class AssetLoaderOpti {
     assetInfo: TypeAssetGroupConfig,
     sourceImg: ImageBitmap,
   ): void {
-    const wCutSize = 256 - 64;
-    const hCutSize = 256 - 32;
+    // "imgHeight": 224,
+    // "imgWidth": 192,
+    const imgWidth = assetInfo.imgWidth | 256 - 64;
+    const imgHeight = assetInfo.imgHeight | 256 - 32;
     const scall = assetInfo.scall ? .7 : 1;
 
     assetInfo.images.map((info: TypeAssetImageConfig, idx: number) => {
       const __cutImage = (wId: number, hId: number) => {
-        const destCanvas = new OffscreenCanvas(
-          256 * SCALE_SIZE,
-          256 * SCALE_SIZE,
-        );
+        const destCanvas = new OffscreenCanvas(192, 224);
         const ctx = destCanvas.getContext("2d", { willReadFrequently: true });
         if (ctx == null) return destCanvas;
+
         // Draw the cut portion of the source image onto the destination canvas
         ctx.drawImage(
           sourceImg,
+          imgWidth * wId, //  + Math.floor(imgWidth * ((1 - scall) / 2)),
+          imgHeight * hId, // + Math.floor(imgHeight * (1 - scall)),
+          Math.floor(imgWidth), // * scall),
+          imgHeight,
           
-          wCutSize * wId + Math.floor(wCutSize * ((1 - scall) / 2)),
-          hCutSize * hId + Math.floor(hCutSize * (1 - scall)),
-          Math.floor(wCutSize * scall),
-          hCutSize + 128,
-          
-          32 * SCALE_SIZE,
-          0 + (assetInfo.scall ? 32 : 0),
-          wCutSize * SCALE_SIZE,
-          Math.floor(hCutSize / scall) * SCALE_SIZE + 128,
-
+          0,
+          0, //  + (assetInfo.scall ? 32 : 0),
+          imgWidth,
+          imgHeight, // Math.floor(imgHeight / scall),
         );
         // dest.ctx.drawImage(cutImg,0, 0, dest.width, dest.height);
         return destCanvas;

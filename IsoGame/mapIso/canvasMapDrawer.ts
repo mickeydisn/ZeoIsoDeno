@@ -18,8 +18,8 @@ import { AssetLoaderOpti } from "./asset/assetLoaderOpti.ts";
 import { IsometricProjector, PointIso } from "./simpleIso/IsometricProjector.ts";
 // import { IsometricTileGenerator } from "./simpleIso/IsometricTileGenerator.ts";
 import { toolRegistry } from "../tools/toolRegistry.ts";
-import { mapState } from "./MapState.ts";
 import { CHAR_0 } from "https://jsr.io/@std/path/1.0.8/_common/constants.ts";
+import { mapState } from "./mapState.ts";
 
 // --- Constants for Readability and Maintenance ---
 // The factor used to scale the tile level (z-axis) difference for isometric rendering.
@@ -27,11 +27,16 @@ const LVL_Z_SCALE_FACTOR = 1 / 3;
 
 // Constants derived from an assumed 128x128 asset size for centering on a tile.
 // The offsets adjust the image position so its visual base is anchored to the tile's center point (0, 0, Z) in screen space.
-const ASSET_WIDTH = 128;
-const ASSET_HEIGHT = 172; // Assuming asset height includes transparent padding/shadows
-const ASSET_OFFSET_X = (-127 + 64) // (-ASSET_WIDTH / 2) + (ASSET_WIDTH / 4); // (-64) + (32) = -32 (The original code used -127+64 which is -63, let's use the actual center)
-const ASSET_OFFSET_Y = (-172 + 64 - 1) // (-ASSET_HEIGHT) + (ASSET_WIDTH / 2) - 1; // (-172) + 64 - 1 = -109 (Aligning the visual base, using ASSET_HEIGHT as the full image height)
+// const ASSET_WIDTH = 128; // 224
+// const ASSET_HEIGHT = 172; // 192 Assuming asset height includes transparent padding/shadows
+const ASSET_WIDTH = 192 / 2; // 224
+const ASSET_HEIGHT = 224 / 2; // 192 Assuming asset height includes transparent padding/shadows
+const TILE_2D_WIDTH = ASSET_WIDTH; // 224
 
+const ASSET_OFFSET_X = -TILE_2D_WIDTH / 2 // (-ASSET_WIDTH / 2) + (ASSET_WIDTH / 4); // (-64) + (32) = -32 (The original code used -127+64 which is -63, let's use the actual center)
+const ASSET_OFFSET_Y = (-ASSET_HEIGHT + 1) // (-ASSET_HEIGHT) + (ASSET_WIDTH / 2) - 1; // (-172) + 64 - 1 = -109 (Aligning the visual base, using ASSET_HEIGHT as the full image height)
+  // "imgHeight": 224,
+    // "imgWidth": 192,
 // --- Configuration Interfaces (Renamed for Clarity) ---
 interface CanvasMapDrawersConfOption {
   DRAW_TILE_COUNT?: number;
@@ -228,7 +233,7 @@ export class CanvasMapDrawers {
           p2.x + ASSET_OFFSET_X * scale,
           p2.y + ASSET_OFFSET_Y * scale,
           ASSET_WIDTH * scale,
-          ASSET_WIDTH * scale,
+          ASSET_HEIGHT * scale,
         );
         this.canvasCtx.restore();
       }

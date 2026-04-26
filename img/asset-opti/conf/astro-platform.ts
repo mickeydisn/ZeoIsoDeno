@@ -1,6 +1,6 @@
 [{
   "src": "./img/asset-opti/AstroPlatform.png",
-  "group": "AstroPlatform",
+  "name": "AstroPlatform",
   "images": [
     "platform_center",
     "platform_small",
@@ -24,4 +24,5 @@
   ],
   "imgHeight": 224,
   "imgWidth": 192,
+  "type": "building",
 }]

@@ -1,6 +1,6 @@
 [{
   "src": "./img/asset-opti/NatureRock.png",
-  "group": "NatureRock",
+  "name": "NatureRock",
   "images": [
     "rock_largeA",
     "rockSmall",
@@ -58,4 +58,6 @@
   ],
   "imgHeight": 224,
   "imgWidth": 192,
+      "type": "items-nature",
+
 }]

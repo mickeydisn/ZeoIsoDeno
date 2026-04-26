@@ -8,6 +8,8 @@
 import { Router } from "https://deno.land/x/oak/mod.ts";
 import { generateAssetPreview } from "./services/assetPreview.ts";
 import type { TypeAssetGroupConfig } from "../../IsoGame/mapIso/asset/assetOptiConfig.ts";
+import { loadAssetFromALLConf, TypeAssetImageGroup } from "./services/assetImageLoader.ts";
+import {  gen_asset_configs } from "./build-tools/configs-generated.ts";
 
 // ============================================================================
 // Assets Manager Router
@@ -32,23 +34,21 @@ assetsManagerRouter.get("/assets-manager/status", (ctx) => {
 // Asset Group endpoints
 // ============================================================================
 
+
 assetsManagerRouter.get("/assets-manager/groups", async (ctx) => {
   console.log("assets-manager/groups")
   try {
-    const { assetOptiConfig } = await import(
-      "../../IsoGame/mapIso/asset/assetOptiConfig.ts"
-    );
-    
-    const groups = (assetOptiConfig as TypeAssetGroupConfig[]).map((group, index) => ({
+   
+    const groups = gen_asset_configs.map((group, index) => ({
       id: index,
       name: group.name || `Group ${index}`,
       src: group.src,
-      assetCount: group.images.length
+      assetCount: group.images === undefined ? 0 : group.images.length
     }));
 
     ctx.response.body = {
       success: true,
-      groups
+      groups: configs
     };
     ctx.response.status = 200;
   } catch (error: unknown) {
@@ -90,7 +90,7 @@ assetsManagerRouter.get("/assets-manager/group/:groupId/assets", async (ctx) => 
       success: true,
       group: {
         id: groupId,
-        name: group.name,
+        name: group.group,
         src: group.src,
         imgHeight: group.imgHeight,
         imgWidth: group.imgWidth,

@@ -1,6 +1,6 @@
 [{
   "src": "./img/asset-opti/AstroRocket.png",
-  "group": "AstroRocket",
+  "name": "AstroRocket",
   "images": [
     "rocket_fuelB",
     "rocket_sidesA",
@@ -15,4 +15,6 @@
   ],
   "imgHeight": 224,
   "imgWidth": 192,
+  "type": "items",
+
 }]

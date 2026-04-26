@@ -1,6 +1,6 @@
 [{
   "src": "./img/asset-opti/ItemPilar.png",
-  "group": "ItemPilar",
+  "name": "ItemPilar",
   "images": [
     "statue_column",
     "statue_ring",
@@ -17,4 +17,6 @@
   ],
   "imgHeight": 224,
   "imgWidth": 192,
+    "type": "items",
+
 }]

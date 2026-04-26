@@ -122,6 +122,51 @@ export const flyMenuTab = (gameWorker: Worker) => {
             mapConf: {
               DRAW_TILE_COUNT: 100,
               SCALE_SIZE: .35,
+              SCALE_MOD: 2,
+            },
+          });
+        }
+      },
+      { 
+        id: "fly",
+        icon: "🚀",
+        callback_select: () => {
+          gameWorker.postMessage({action: "setActiveTool",toolId: ""});
+          gameWorker.postMessage({
+            action: "initCanvasMap",
+            mapConf: {
+              DRAW_TILE_COUNT: 100,
+              SCALE_SIZE: .35,
+              SCALE_MOD: 4,
+            },
+          });
+        }
+      },
+      { 
+        id: "fly",
+        icon: "🚀",
+        callback_select: () => {
+          gameWorker.postMessage({action: "setActiveTool",toolId: ""});
+          gameWorker.postMessage({
+            action: "initCanvasMap",
+            mapConf: {
+              DRAW_TILE_COUNT: 100,
+              SCALE_SIZE: .35,
+              SCALE_MOD: 8,
+            },
+          });
+        }
+      },
+      { 
+        id: "fly",
+        icon: "🚀",
+        callback_select: () => {
+          gameWorker.postMessage({action: "setActiveTool",toolId: ""});
+          gameWorker.postMessage({
+            action: "initCanvasMap",
+            mapConf: {
+              DRAW_TILE_COUNT: 100,
+              SCALE_SIZE: .35,
               SCALE_MOD: 16,
             },
           });
@@ -129,7 +174,35 @@ export const flyMenuTab = (gameWorker: Worker) => {
       },
       { 
         id: "space",
-        icon: "🚀",
+        icon: "🛰️",
+        callback_select: () => {
+          gameWorker.postMessage({
+            action: "initCanvasMap",
+            mapConf: {
+              DRAW_TILE_COUNT: 100,
+              SCALE_SIZE: .35,
+              SCALE_MOD: 32,
+            },
+          });
+        }
+      },
+      { 
+        id: "space",
+        icon: "🛰️",
+        callback_select: () => {
+          gameWorker.postMessage({
+            action: "initCanvasMap",
+            mapConf: {
+              DRAW_TILE_COUNT: 100,
+              SCALE_SIZE: .35,
+              SCALE_MOD: 48,
+            },
+          });
+        }
+      },
+      { 
+        id: "space",
+        icon: "🛰️",
         callback_select: () => {
           gameWorker.postMessage({
             action: "initCanvasMap",
@@ -137,6 +210,20 @@ export const flyMenuTab = (gameWorker: Worker) => {
               DRAW_TILE_COUNT: 100,
               SCALE_SIZE: .35,
               SCALE_MOD: 64,
+            },
+          });
+        }
+      },
+      { 
+        id: "space",
+        icon: "🛰️",
+        callback_select: () => {
+          gameWorker.postMessage({
+            action: "initCanvasMap",
+            mapConf: {
+              DRAW_TILE_COUNT: 100,
+              SCALE_SIZE: .35,
+              SCALE_MOD: 128,
             },
           });
         }

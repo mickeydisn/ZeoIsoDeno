@@ -77,7 +77,15 @@ export function actionDrawSpawn(x: number, y: number): TypeTileActionConfig[] {
     { func: "setFrise", x: x - 3, y: y, isFrise: false },
     { func: "setFrise", x: x, y: y + 3, isFrise: false },
     { func: "setFrise", x: x, y: y - 3, isFrise: false },
-    { func: "clearLvlSquare", x: x, y: y, size: 5 },
-    { func: "clearColorSquare", x: x, y: y, size: 5 },
+
+
+    { func: "clearColorSquare", x: x, y: y, size: 25 },
+
+    { func: "lvlFlatSquare", x: x, y: y, size: 55, color: [128, 128, 128, 255] },
+    { func: "lvlAvgBorder", x: x, y: y, size: 55, color: [128, 128, 128, 255] },
+    { func: "lvlAvgBorder", x: x, y: y, size: 55, color: [128, 128, 128, 255] },
+    { func: "lvlAvgBorder", x: x, y: y, size: 55, color: [128, 128, 128, 255] },
+    { func: "lvlAvgBorder", x: x, y: y, size: 55, color: [128, 128, 128, 255] },
+
   ];
 }

@@ -1,7 +1,9 @@
 [{
   "src": "./img/asset-opti/UserAstro.png",
-  "group": "UserAstro",
+  "name": "UserAstro",
   "images": [],
   "imgHeight": 224,
   "imgWidth": 192,
+    "type": "perso",
+
 }]

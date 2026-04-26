@@ -1,6 +1,6 @@
 [{
   "src": "./img/asset-opti/ItemOther.png",
-  "group": "ItemOther",
+  "name": "ItemOther",
   "images": [
     "crate",
     "barrel",
@@ -38,4 +38,6 @@
   ],
   "imgHeight": 224,
   "imgWidth": 192,
+    "type": "items",
+
 }]

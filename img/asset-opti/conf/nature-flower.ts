@@ -1,6 +1,6 @@
 [{
   "src": "./img/asset-opti/NatureFlower.png",
-  "group": "NatureFlower",
+  "name": "NatureFlower",
   "scall": true,
   "images": [
     "mushroom_redTall",
@@ -45,4 +45,6 @@
   ],
   "imgHeight": 224,
   "imgWidth": 192,
+      "type": "items-nature",
+
 }]

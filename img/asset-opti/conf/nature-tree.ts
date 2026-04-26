@@ -1,6 +1,6 @@
 [{
   "src": "./img/asset-opti/NatureTree.png",
-  "group": "NatureTree",
+  "name": "NatureTree",
   "scall": true,
   "images":  [
     "tree_detailed",
@@ -61,4 +61,6 @@
   ],
   "imgHeight": 224,
   "imgWidth": 192,
+    "type": "items-nature",
+
 }]

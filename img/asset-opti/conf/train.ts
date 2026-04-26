@@ -1,6 +1,6 @@
 [{
   "src": "./img/asset-opti/Train.png",
-  "group": "Train",
+  "name": "Train",
   "images":  [
     "monorail_trainFront",
     "monorail_trainEnd",
@@ -32,4 +32,6 @@
   ],
   "imgHeight": 224,
   "imgWidth": 192,
+  "type": "items-train",
+
 }]

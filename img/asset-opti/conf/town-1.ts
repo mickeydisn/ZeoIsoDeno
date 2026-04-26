@@ -1,6 +1,6 @@
 [{
   "src": "./img/asset-opti/Town1.png",
-  "group": "Town1",
+  "name": "Town1",
   "images": [
     "wallCurved",
     "roofCornerRound",
@@ -50,4 +50,6 @@
   ],
   "imgHeight": 224,
   "imgWidth": 192,
+  "type": "building",
+
 }]

@@ -1,6 +1,6 @@
 [{
   "src": "./img/asset-opti/AstroBase.png",
-  "group": "AstroBase",
+  "name": "AstroBase",
   "images": [
     "corridor_open",
     "corridor_windowClosed",
@@ -19,4 +19,5 @@
   ],
   "imgHeight": 224,
   "imgWidth": 192,
+  "type": "building",
 }]
