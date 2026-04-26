@@ -67,11 +67,11 @@ export class CanvasMapDrawers {
   canvasCtx: CanvasRenderingContext2D;
 
   // Shared buffers for worker communication
-  bufferMapLvl: SharedArrayBuffer;
-  mapLvl: Float32Array;
+  // bufferMapLvl: SharedArrayBuffer;
+  // mapLvl: Float32Array;
 
-  bufferMapInfo: SharedArrayBuffer;
-  mapInfo: Float32Array; // [ 0:centreX , 1:centreY, 2:offX, 3:offY ]
+  // bufferMapInfo: SharedArrayBuffer;
+  // mapInfo: Float32Array; // [ 0:centreX , 1:centreY, 2:offX, 3:offY ]
   direction: string = "NE";
 
   isomer: Isomer;
@@ -99,17 +99,17 @@ export class CanvasMapDrawers {
     this.canvas = canvas ? canvas : createCanvas(width, height);
     this.canvasCtx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
 
-    const bufferSize = this.conf.DRAW_TILE_COUNT * this.conf.DRAW_TILE_COUNT * Float32Array.BYTES_PER_ELEMENT;
+    // const bufferSize = this.conf.DRAW_TILE_COUNT * this.conf.DRAW_TILE_COUNT * Float32Array.BYTES_PER_ELEMENT;
     
     // Init the Worker-Shared Matrix to store Cell Lvl in a Grid
-    this.bufferMapLvl = new SharedArrayBuffer(bufferSize);
-    this.mapLvl = new Float32Array(this.bufferMapLvl);
+    // this.bufferMapLvl = new SharedArrayBuffer(bufferSize);
+    // this.mapLvl = new Float32Array(this.bufferMapLvl);
 
     // Init the Worker-Shared Matrix : [ 0:X , 1:Y, 2:offX, 3:offY ]
-    this.bufferMapInfo = new SharedArrayBuffer(
-      4 * Float32Array.BYTES_PER_ELEMENT,
-    );
-    this.mapInfo = new Float32Array(this.bufferMapInfo);
+    // this.bufferMapInfo = new SharedArrayBuffer(
+    //   4 * Float32Array.BYTES_PER_ELEMENT,
+    // );
+    // this.mapInfo = new Float32Array(this.bufferMapInfo);
 
     this.isomer = new Isomer(
       this.canvas,
@@ -173,10 +173,10 @@ export class CanvasMapDrawers {
       offsetY : offy, 
     })
     // Update Shared Info Buffer
-    this.mapInfo[0] = centreX;
-    this.mapInfo[1] = centreY;
-    this.mapInfo[2] = offx;
-    this.mapInfo[3] = offy;
+    // this.mapInfo[0] = centreX;
+    // this.mapInfo[1] = centreY;
+    // this.mapInfo[2] = offx;
+    // this.mapInfo[3] = offy;
 
     this.drawIso();
   }
@@ -376,7 +376,7 @@ export class CanvasMapDrawers {
     const currentlvl = (metaTile.lvl - this.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
 
     // Update Shared GridLvl Matrix Buffer
-    this.mapLvl[xx * size + yy] = currentlvl;
+    // this.mapLvl[xx * size + yy] = currentlvl;
 
     // Get Tile Floor color and properties
     const height = 1;
@@ -473,7 +473,12 @@ export class CanvasMapDrawers {
    // Update Shared GridLvl Matrix Buffer
 
     const items = [];
-    items.push({ t: "Svg", key: "astronautB_" + this.direction, off : {x: this.mapInfo[2], y: this.mapInfo[3]} });
+    // draw of .
+    items.push({
+       t: "Svg", 
+       key: "astronautB_" + this.direction,
+      off : {x: this.isoProject.conf.offsetX, y: this.isoProject.conf.offsetX} 
+    });
 
     if (this.conf.DRAW_TILE_COUNT < 60 ) {
         // Create tile shape at average height (not individual tile height)

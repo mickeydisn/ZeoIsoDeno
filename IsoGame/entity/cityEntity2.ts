@@ -2,7 +2,7 @@
 import { PathFactory } from "../city/pathFactory.ts";
 import { FactoryMap } from "../map/factory/factoryMap.ts";
 import { Tile } from "../map/object/tile.ts";
-import { TilesActions } from "../map/tileActions.ts";
+import { TilesActions } from "../map/action/tileActions.ts";
 import { World } from "../word.ts";
 import { CITIZEN_NAME } from "./CitizenTrais.ts";
 import { EntityBehavior, EntityGoal } from "./typeEntityBehavior.ts";

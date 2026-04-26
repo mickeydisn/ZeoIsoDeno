@@ -4,7 +4,7 @@ import { TilesMatrix } from "../map/object/tilesMatrix.ts";
 import { CanvasMapDrawersConf } from "./canvasMapDrawer.ts";
 import { IsometricProjector, PointIso } from "./simpleIso/IsometricProjector.ts";
 import { off } from "node:process";
-import { TilesActions } from "../map/tileActions.ts";
+import { TilesActions } from "../map/action/tileActions.ts";
 
 const CANVAS_WIDTH = 1600
 const CANVAS_HEIGHT = 800

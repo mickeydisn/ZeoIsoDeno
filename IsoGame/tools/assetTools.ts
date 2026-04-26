@@ -1,4 +1,4 @@
-import { TilesActions } from "../map/tileActions.ts";
+import { TilesActions } from "../map/action/tileActions.ts";
 import { MapTool, toolRegistry } from "./toolRegistry.ts";
 import { World } from "../word.ts";
 import { createTool } from "./toolBuilder.ts";
