@@ -11,7 +11,7 @@
  */
 
 import { ACTION_REGISTRY, RegistryAction } from "../actions/registry.ts";
-import { TileAction } from "../actions/types.ts";
+import { TileAction } from "../utils/types.ts";
 
 // 1. Extract the specific Config (C) from the TileAction
 type ExtractConfig<T> = T extends TileAction<infer K, infer C> ? C : never;

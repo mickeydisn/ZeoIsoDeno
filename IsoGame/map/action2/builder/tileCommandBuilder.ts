@@ -1,12 +1,11 @@
 /**
- * TileCommandBuilder.ts
  *
  * A minimal typed accumulator for BaseTileActionConfig lists.
  * The value is in cmd giving type-safe construction — the builder
  * is just a clean collector so scripts don't manage raw arrays.
  */
 
-import { BaseTileActionConfig } from "../actions/types.ts";
+import { BaseTileActionConfig } from "../utils/types.ts";
 
 export const GREY: [number, number, number, number] = [128, 128, 128, 255];
 

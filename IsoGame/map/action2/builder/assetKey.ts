@@ -6,7 +6,7 @@
  * e.g. "columnLarge_NE#_C110_S40_B90"
  */
 
-import { CompassDir } from "./compass.ts";
+import { CompassDir } from "../utils/compass.ts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

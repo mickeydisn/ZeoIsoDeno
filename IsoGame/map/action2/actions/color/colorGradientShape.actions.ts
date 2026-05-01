@@ -11,9 +11,9 @@
  * Shape and size work identically to all other shape actions.
  */
 
-import { iterShape } from "../geometry.ts";
-import { BaseTileActionConfig, defineAction } from "../types.ts";
-import { ShapeConfig } from "../withShape.ts";
+import { iterShape } from "../../utils/geometry.ts";
+import { BaseTileActionConfig, defineAction } from "../../utils/types.ts";
+import { ShapeConfig } from "../../utils/withShape.ts";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

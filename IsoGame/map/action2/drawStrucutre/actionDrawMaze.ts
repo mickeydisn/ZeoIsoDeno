@@ -22,16 +22,16 @@
  * When two adjacent cells are connected, the shared wall segment is carved.
  */
 
-import { BaseTileActionConfig } from "../actions/types.ts";
-import { cmd }                  from "../actions/cmd.ts";
-import { TileCommandBuilder }   from "../builder/TileCommandBuilder.ts";
+import { BaseTileActionConfig } from "../utils/types.ts";
+import { cmd }                  from "../builder/cmd.ts";
+import { TileCommandBuilder }   from "../builder/tileCommandBuilder.ts";
 
 // ─── Fixed structural constants ───────────────────────────────────────────────
 
-const WALL_THICK  = 1;
-const WALL_HEIGHT = 3;
-const PATH_THICK  = 3;
-const ROOM_MAX    = 9;
+const WALL_THICK  = 2;
+const WALL_HEIGHT = 6;
+const PATH_THICK  = 4;
+const ROOM_MAX    = 11;
 const CELL_SIZE   = PATH_THICK + WALL_THICK; // 4 tiles per cell
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ const CELL_SIZE   = PATH_THICK + WALL_THICK; // 4 tiles per cell
 const C = {
   PATH:  [90,  85,  78,  255] as number[],
   WALL:  [58,  54,  52,  255] as number[],
-  ROOM:  [100, 94,  86,  255] as number[],
+  ROOM:  [255, 0,  0,  255] as number[],
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -163,27 +163,26 @@ function cellCenter(
 
 function pushPath(b: TileCommandBuilder, x: number, y: number, size: number, color = C.PATH) {
   b.push(
-    cmd.lvlFlatSquare   ({ x, y, size }),
+    cmd.setFriseSquare({ x, y, size, shape: "square", isFrise: false }),
     cmd.colorSquare     ({ x, y, size, color }),
+    cmd.clearItemSquare ({ x, y, size , shape: "square"}  ),
     cmd.colorNoiseShape ({ x, y, size, shape: "square", color, noiseAmp: 6 }),
+    cmd.lvlAvgSquare   ({ x, y, size }),
+    cmd.lvlAvgSquare   ({ x, y, size }),
+    cmd.setFriseSquare({ x, y, size, shape: "square", isFrise: true }),
   );
 }
 
-function pushWall(b: TileCommandBuilder, x: number, y: number, size: number) {
-  b.push(
-    cmd.lvlFlatSquare ({ x, y, size }),
-    cmd.lvlUpSquare   ({ x, y, size, lvl: WALL_HEIGHT }),
-    cmd.colorSquare   ({ x, y, size, color: C.WALL }),
-    cmd.colorNoiseShape({ x, y, size, shape: "square", color: C.WALL, noiseAmp: 5 }),
-  );
-}
 
 function pushRoom(b: TileCommandBuilder, cx: number, cy: number, size: number) {
   b.push(
-    cmd.lvlFlatSquare   ({ x: cx, y: cy, size }),
+    cmd.setFriseSquare({x:cx, y:cy, size, shape: "square", isFrise: false }),
     cmd.colorSquare     ({ x: cx, y: cy, size, color: C.ROOM }),
-    cmd.colorNoiseShape ({ x: cx, y: cy, size, shape: "circle", color: C.ROOM, noiseAmp: 8 }),
-    cmd.colorSmoothShape({ x: cx, y: cy, size, shape: "circle", smoothRadius: 1, strength: 0.3 }),
+    cmd.colorNoiseShape ({ x: cx, y: cy, size, shape: "square", color: C.ROOM, noiseAmp: 8 }),
+    cmd.colorSmoothShape({ x: cx, y: cy, size, shape: "square", smoothRadius: 1, strength: 0.3 }),
+    cmd.lvlAvgSquare   ({ x: cx, y: cy, size }),
+    cmd.lvlAvgSquare   ({ x: cx, y: cy, size }),
+    cmd.setFriseSquare({x:cx, y:cy, size, shape: "square", isFrise: true }),
   );
 }
 
@@ -199,7 +198,7 @@ export type MazeParams = {
 export function actionDrawMaze(
   x: number,
   y: number,
-  { cols = 10, rows = 10, baseLvl = 0, seed }: MazeParams = {},
+  { cols = 20, rows = 20, baseLvl = 0, seed }: MazeParams = {},
 ): BaseTileActionConfig[] {
   const b   = new TileCommandBuilder();
   const rng = makePrng(seed ?? (x * 73856093 ^ y * 19349663));
@@ -212,9 +211,9 @@ export function actionDrawMaze(
 
   // ── 1. Flood fill the entire maze area with wall color + height
   b.push(
-    cmd.lvlFlatSquare ({ x: cx, y: cy, size: Math.max(totalW, totalH) }),
-    cmd.lvlUpSquare   ({ x: cx, y: cy, size: Math.max(totalW, totalH), lvl: baseLvl + WALL_HEIGHT }),
-    cmd.colorSquare   ({ x: cx, y: cy, size: Math.max(totalW, totalH), color: C.WALL }),
+    // cmd.lvlFlatSquare ({ x: cx, y: cy, size: Math.max(totalW, totalH) / 2 }),
+    // cmd.lvlUpSquare   ({ x: cx, y: cy, size: Math.max(totalW, totalH) / 2, lvl: baseLvl + WALL_HEIGHT }),
+    cmd.colorSquare   ({ x: cx, y: cy, size: Math.max(totalW, totalH) / 2, color: C.WALL }),
   );
 
   // ── 2. Generate cell grid via DFS from (0, 0)
@@ -256,8 +255,10 @@ export function actionDrawMaze(
 
   // ── 5. Outer border smoothing
   b.push(
-    cmd.lvlSmoothBorder({ x: cx, y: cy, size: Math.max(totalW, totalH), shape: "square", avgRadius: 3 }),
-    cmd.lvlAvgBorder   ({ x: cx, y: cy, size: Math.max(totalW, totalH) }),
+    // cmd.lvlSmoothBorder({ x: cx, y: cy, size: Math.max(totalW, totalH), shape: "square", avgRadius: 3 }),
+    // cmd.lvlAvgBorder   ({ x: cx, y: cy, size: Math.max(totalW, totalH) }),
+    cmd.lvlUpSquare   ({ x: cx, y: cy, size: Math.max(totalW, totalH) / 2, lvl: baseLvl + WALL_HEIGHT }),
+
   );
 
   return b.build();

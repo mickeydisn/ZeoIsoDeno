@@ -6,9 +6,9 @@
  * colorSmoothShape — blends each tile's color toward the average of its neighbours.
  */
 
-import { iterShape } from "../geometry.ts";
-import { withShape, ShapeConfig, withLine } from "../withShape.ts";
-import { BaseTileActionConfig, defineAction } from "../types.ts";
+import { iterShape } from "../../utils/geometry.ts";
+import { withShape, ShapeConfig, withLine } from "../../utils/withShape.ts";
+import { BaseTileActionConfig, defineAction } from "../../utils/types.ts";
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 

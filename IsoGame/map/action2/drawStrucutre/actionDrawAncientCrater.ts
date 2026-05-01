@@ -11,7 +11,7 @@
  *   bowl centre r=4   slightly deeper, pooled dark earth
  */
 
-import { BaseTileActionConfig } from "../actions/types.ts";
+import { BaseTileActionConfig } from "../utils/types.ts";
 import { cmd }                  from "../builder/cmd.ts";
 import { TileCommandBuilder }   from "../builder/tileCommandBuilder.ts";
 
@@ -49,14 +49,14 @@ export function actionDrawAncientCrater(
 
   // ── 2. Rim — low eroded ring, gradient from peak down to baseLvl at edge
   b.push(
-    cmd.lvlGradientShape({ x, y, size: radius, shape: "circle", fromLvl: baseLvl, toLvl: baseLvl + rimHeight }),
+    // cmd.lvlGradientShape({ x, y, size: radius, shape: "circle", fromLvl: baseLvl, toLvl: baseLvl + rimHeight }),
     cmd.colorSquare     ({ x, y, size: radius, color: C.MOSSY_ROCK }),
     cmd.colorNoiseShape ({ x, y, size: radius, shape: "circle", color: C.MOSSY_ROCK, noiseAmp: [8, 12, 6] }),
   );
 
   // ── 3. Inner slope — drops from rim height toward bowl
   b.push(
-    cmd.lvlGradientShape({ x, y, size: slopeR, shape: "circle", fromLvl: baseLvl - bowlDepth, toLvl: baseLvl + rimHeight }),
+    // cmd.lvlGradientShape({ x, y, size: slopeR, shape: "circle", fromLvl: baseLvl - bowlDepth, toLvl: baseLvl + rimHeight }),
     cmd.colorSquare     ({ x, y, size: slopeR, color: C.DARK_EARTH }),
     cmd.colorNoiseShape ({ x, y, size: slopeR, shape: "circle", color: C.DARK_EARTH, noiseAmp: 10 }),
   );
@@ -64,7 +64,7 @@ export function actionDrawAncientCrater(
   // ── 4. Bowl floor — flat, overgrown
   b.push(
     cmd.lvlFlatSquare   ({ x, y, size: bowlR }),
-    cmd.lvlUpSquare     ({ x, y, size: bowlR, lvl: baseLvl - bowlDepth }),
+    cmd.lvlUpSquare     ({ x, y, size: bowlR, lvl: - bowlDepth }),
     cmd.colorSquare     ({ x, y, size: bowlR, color: C.OVERGROWN }),
     cmd.colorNoiseShape ({ x, y, size: bowlR, shape: "circle", color: C.OVERGROWN, noiseAmp: [5, 12, 5] }),
   );
@@ -73,7 +73,7 @@ export function actionDrawAncientCrater(
   const centreR = Math.round(radius * 0.14);  // ~4 at default
   b.push(
     cmd.lvlFlatSquare     ({ x, y, size: centreR }),
-    cmd.lvlUpSquare       ({ x, y, size: centreR, lvl: baseLvl - bowlDepth - 1 }),
+    cmd.lvlUpSquare       ({ x, y, size: centreR, lvl: - bowlDepth - 1 }),
     cmd.colorGradientShape({ x, y, size: centreR, shape: "circle", fromColor: C.POOL, toColor: C.OVERGROWN }),
   );
 

@@ -21,10 +21,10 @@
  *   + gateway gaps cut into the wall at the 4 cardinal points
  */
 
-import { BaseTileActionConfig } from "../actions/types.ts";
+import { BaseTileActionConfig } from "../utils/types.ts";
 import { cmd }                  from "../builder/cmd.ts";
 import { TileCommandBuilder }   from "../builder/tileCommandBuilder.ts";
-import { compass }              from "../builder/compass.ts";
+import { compass }              from "../utils/compass.ts";
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 

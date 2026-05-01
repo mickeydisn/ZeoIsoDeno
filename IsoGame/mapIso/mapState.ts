@@ -8,6 +8,7 @@ import { TilesActions } from "../map/action/tileActions.ts";
 
 const CANVAS_WIDTH = 1600
 const CANVAS_HEIGHT = 800
+const PLAYER_SPEED = 0.5; // Base speed in tiles per tick, modulated by tileScaleMod        
 
 export interface CanvasMapConf {
   mapSize: number;                  // Replaced DRAW_TILE_COUNT
@@ -178,6 +179,7 @@ export class MapState {
 
 
     applyOnWalk () {
+        /*
         TilesActions.getInstance().doAction({
             x: this.x - 1,
             y: this.y - 1,
@@ -191,6 +193,7 @@ export class MapState {
             size: 3,
             color: [0, 0, 0],
         });
+        */
     }
 
     public tickUpdateKeyboard(keyboardAction: TypeKeysActionUpdate) {
@@ -199,7 +202,7 @@ export class MapState {
 
 
         const mapMod = this.isoConf.tileScaleMod;
-        const speed = .5 * mapMod;
+        const speed = PLAYER_SPEED * mapMod;
 
         const vecD = new directionVector(
             keyboardAction.up   ? 1 : keyboardAction.down   ? -1 : 0,

@@ -1,6 +1,6 @@
 import { TilesMatrix } from "../../../object/tilesMatrix.ts";
-import { ActionContext, BaseTileActionConfig, defineAction } from "../types.ts";
-import { withLine, withShape } from "../withShape.ts";
+import { ActionContext, BaseTileActionConfig, defineAction } from "../../utils/types.ts";
+import { withLine, withShape } from "../../utils/withShape.ts";
 
 // ---------------------
 // Config

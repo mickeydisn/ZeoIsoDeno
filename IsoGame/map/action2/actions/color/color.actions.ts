@@ -1,5 +1,5 @@
-import { BaseTileActionConfig, defineAction } from "../types.ts";
-import { withLine, withShape } from "../withShape.ts";
+import { BaseTileActionConfig, defineAction } from "../../utils/types.ts";
+import { withLine, withShape } from "../../utils/withShape.ts";
 
 // ---------------------
 // Config

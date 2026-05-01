@@ -1,6 +1,6 @@
 import { Tile } from "../../../object/tile.ts";
-import { ActionContext, BaseTileActionConfig, defineAction } from "../types.ts";
-import { withShape } from "../withShape.ts";
+import { ActionContext, BaseTileActionConfig, defineAction } from "../../utils/types.ts";
+import { withShape } from "../../utils/withShape.ts";
 
 // ---------------------
 // Config  (no extra fields needed beyond base)

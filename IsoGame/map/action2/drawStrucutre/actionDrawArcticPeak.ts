@@ -12,7 +12,7 @@
  *   summit    r=2   pure white peak, gradient crown
  */
 
-import { BaseTileActionConfig } from "../actions/types.ts";
+import { BaseTileActionConfig } from "../utils/types.ts";
 import { cmd }                  from "../builder/cmd.ts";
 import { TileCommandBuilder }   from "../builder/tileCommandBuilder.ts";
 

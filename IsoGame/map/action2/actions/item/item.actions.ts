@@ -1,6 +1,6 @@
 import { RecordRawItem } from "../../../factory/factoryTileGenerator.ts";
-import { BaseTileActionConfig, defineAction } from "../types.ts";
-import { withShape } from "../withShape.ts";
+import { BaseTileActionConfig, defineAction } from "../../utils/types.ts";
+import { withShape } from "../../utils/withShape.ts";
 
 // ---------------------
 // Config

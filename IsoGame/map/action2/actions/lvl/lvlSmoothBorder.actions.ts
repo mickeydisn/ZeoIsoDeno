@@ -8,9 +8,9 @@
  * back into the surrounding terrain without touching the interior.
  */
 
-import { iterShape } from "../geometry.ts";
-import { BaseTileActionConfig, defineAction } from "../types.ts";
-import { ShapeConfig } from "../withShape.ts";
+import { iterShape } from "../../utils/geometry.ts";
+import { BaseTileActionConfig, defineAction } from "../../utils/types.ts";
+import { ShapeConfig } from "../../utils/withShape.ts";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 

@@ -10,7 +10,7 @@
  *   deep pool r=2   darkest water point
  */
 
-import { BaseTileActionConfig } from "../actions/types.ts";
+import { BaseTileActionConfig } from "../utils/types.ts";
 import { cmd }                  from "../builder/cmd.ts";
 import { TileCommandBuilder }   from "../builder/tileCommandBuilder.ts";
 

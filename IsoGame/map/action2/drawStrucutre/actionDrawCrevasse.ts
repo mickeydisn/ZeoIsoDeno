@@ -9,7 +9,7 @@
  *   border       — smoothed back into surrounding terrain
  */
 
-import { BaseTileActionConfig } from "../actions/types.ts";
+import { BaseTileActionConfig } from "../utils/types.ts";
 import { cmd }                  from "../builder/cmd.ts";
 import { TileCommandBuilder }   from "../builder/tileCommandBuilder.ts";
 

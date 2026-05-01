@@ -12,10 +12,10 @@
  *   rubble     — scattered higher points inside from collapsed walls
  */
 
-import { BaseTileActionConfig } from "../actions/types.ts";
+import { BaseTileActionConfig } from "../utils/types.ts";
 import { cmd }                  from "../builder/cmd.ts";
 import { TileCommandBuilder }   from "../builder/tileCommandBuilder.ts";
-import { compass }              from "../builder/compass.ts";
+import { compass }              from "../utils/compass.ts";
 
 const C = {
   EARTH:       [100, 88,  65,  255] as number[],

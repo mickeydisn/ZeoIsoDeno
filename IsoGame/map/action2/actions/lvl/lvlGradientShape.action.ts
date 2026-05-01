@@ -17,9 +17,9 @@
  *   cmd.lvlGradientShape({ x, y, size: 30, shape: "diamond", fromLvl: 25, toLvl: 0 })
  */
 
-import { iterShape } from "../geometry.ts";
-import { BaseTileActionConfig, defineAction } from "../types.ts";
-import { ShapeConfig } from "../withShape.ts";
+import { iterShape } from "../../utils/geometry.ts";
+import { BaseTileActionConfig, defineAction } from "../../utils/types.ts";
+import { ShapeConfig } from "../../utils/withShape.ts";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 

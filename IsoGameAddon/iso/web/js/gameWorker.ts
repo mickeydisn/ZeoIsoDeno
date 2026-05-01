@@ -12,13 +12,18 @@ import { assetTools } from "../../../../IsoGame/tools/assetTools.ts";
 import { structureTools } from "../../../../IsoGame/tools/structureTools.ts";
 import { World } from "../../../../IsoGame/word.ts";
 import { MessageHandler } from "./worker/messageHandler.ts";
-import { mapState } from "../../../../IsoGame/mapIso/MapState.ts";
 import { actionDrawSpawn } from "../../../../IsoGame/map/action/ex/swapPoint.ts"
 import { TypeKeysActionUpdate } from "./main/keyboad.ts";
 import { CityEntity } from "../../../../IsoGame/entity/cityEntity.ts";
-import { range } from "jsr:@oak/commons@1/range";
 import { CityEntity2 } from "../../../../IsoGame/entity/cityEntity2.ts";
 import { TilesActions } from "../../../../IsoGame/map/action/tileActions.ts";
+import { TilesActions as TilesActions2 } from "../../../../IsoGame/map/action2/tilesActions.ts";
+import { mapState } from "../../../../IsoGame/mapIso/mapState.ts";
+import { actionDrawVolcanicCrater } from "../../../../IsoGame/map/action2/drawStrucutre/actionDrawVocanic.ts";
+import { actionDrawAncientCrater } from "../../../../IsoGame/map/action2/drawStrucutre/actionDrawAncientCrater.ts";
+import { actionDrawMazeAdvence } from "../../../../IsoGame/map/action2/drawStrucutre/actionDrawMazeAdvence.ts";
+import { actionDrawMaze2 } from "../../../../IsoGame/map/action2/drawStrucutre/actionDrawMaze2.ts";
+import { actionDrawMaze } from "../../../../IsoGame/map/action2/drawStrucutre/actionDrawMaze.ts";
 
 export type GameHandlerData = any;
 
@@ -81,33 +86,46 @@ export class GameWorker {
         (_, i) => start + i * step,
       );
     }
-    
-    // mapState.setCenter(1200, 500)
-    mapState.setCenter(0, 0)
 
-    // ENTITY 
-    range(0, 20).forEach(() => {
-      const entity = new CityEntity(this.world)
-      this.world.entities.push(entity);
-    })
-    range(0, 50).forEach(() => {
-      const entity = new CityEntity2(this.world, {
-        x: 0 + Math.round(Math.random()* 20) - 20,
-        y: 0 + Math.round(Math.random()* 20) - 20,
+    if (false)  {
+      // mapState.setCenter(1200, 500)
+      mapState.setCenter(0, 0)
+
+      // ENTITY 
+      range(0, 20).forEach(() => {
+        const entity = new CityEntity(this.world)
+        this.world.entities.push(entity);
       })
-      this.world.entities.push(entity);
-    })
+      range(0, 50).forEach(() => {
+        const entity = new CityEntity2(this.world, {
+          x: 0 + Math.round(Math.random()* 20) - 20,
+          y: 0 + Math.round(Math.random()* 20) - 20,
+        })
+        this.world.entities.push(entity);
+      })
+    }
  
-    const action = actionDrawSpawn(0, 0)
-    TilesActions.getInstance().doActions(action)
-    
+    if (false)  {
+      const action = actionDrawSpawn(0, 0)
+      TilesActions.getInstance().doActions(action)
+     }
+ 
+    if (true)  {
+      const baselvl = FactoryMap.getInstance().getTile(-50, 50).lvl;
+      // TilesActions2.getInstance().doActions(actionDrawVolcanicCrater(-50, 50, baselvl));
+      // TilesActions2.getInstance().doActions(actionDrawVolcanicCrater(-50, 50, baselvl));
+      // TilesActions2.getInstance().doActions(actionDrawVolcanicCrater(-50, 50, baselvl));
+      TilesActions2.getInstance().doActions(actionDrawMaze(-50, 50, ));
+      
+    }
+ 
+
     // this.handler.send({ action: "callback_initWorker" });
     return true
 
 
 
   };
-
   // ============================================================================
   // SET SHARED
   // ============================================================================

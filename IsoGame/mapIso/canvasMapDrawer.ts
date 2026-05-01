@@ -477,7 +477,10 @@ export class CanvasMapDrawers {
     items.push({
        t: "Svg", 
        key: "astronautB_" + this.direction,
-      off : {x: this.isoProject.conf.offsetX, y: this.isoProject.conf.offsetX} 
+      off : {
+        x: (mapState.xf - mapState.x) / this.conf.SCALE_MOD,
+        y: (mapState.yf - mapState.y) / this.conf.SCALE_MOD
+      } 
     });
 
     if (this.conf.DRAW_TILE_COUNT < 60 ) {
