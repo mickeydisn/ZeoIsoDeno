@@ -87,7 +87,7 @@ export class GameWorker {
       );
     }
 
-    if (false)  {
+    if (true)  {
       // mapState.setCenter(1200, 500)
       mapState.setCenter(0, 0)
 
@@ -105,17 +105,17 @@ export class GameWorker {
       })
     }
  
-    if (false)  {
+    if (true)  {
       const action = actionDrawSpawn(0, 0)
-      TilesActions.getInstance().doActions(action)
-     }
+      // TilesActions.getInstance().doActions(action)
+    }
  
     if (true)  {
       const baselvl = FactoryMap.getInstance().getTile(-50, 50).lvl;
       // TilesActions2.getInstance().doActions(actionDrawVolcanicCrater(-50, 50, baselvl));
       // TilesActions2.getInstance().doActions(actionDrawVolcanicCrater(-50, 50, baselvl));
       // TilesActions2.getInstance().doActions(actionDrawVolcanicCrater(-50, 50, baselvl));
-      TilesActions2.getInstance().doActions(actionDrawMaze(-50, 50, ));
+      // TilesActions2.getInstance().doActions(actionDrawMaze(-50, 50, ));
       
     }
  

@@ -129,7 +129,7 @@ export class CityEntity {
     this.direction = direction;
   }
 
-  moveOffet(dx: number, dy: number, dh: number) {
+  moveOffet(dx: number, dy: number, _dh: number) {
     // Tile not Change .
 
     const dox = dx != 0

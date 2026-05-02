@@ -40,11 +40,8 @@ function buildCmdMap(): CmdMap {
   for (const action of ACTION_REGISTRY) {
     const key = action.key;
     // Runtime injection of the 'func' property
-    // map[key] = (conf: FactoryInput<typeof action>) => ({ ...conf, func: key } as ExtractConfig<typeof action>);
-
     // deno-lint-ignore no-explicit-any
     (map as any)[key] = (conf: FactoryInput<typeof action>) => ({ ...conf, func: key } as ExtractConfig<typeof action>);
-    // map[key] = (conf: any) => ({ ...conf, func: key });
   }
 
   return map as CmdMap;

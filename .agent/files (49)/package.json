@@ -1,0 +1,14 @@
+{
+  "name": "@user-story/pi-extension",
+  "version": "1.0.0",
+  "description": "Pi extension for managing user stories, tasks, agents and skills via agent-fs",
+  "keywords": ["pi-package"],
+  "license": "MIT",
+  "pi": {
+    "extensions": ["./extensions"]
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-tui": "*"
+  }
+}

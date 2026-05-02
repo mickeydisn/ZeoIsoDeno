@@ -1,0 +1,11 @@
+{
+  "ignorePatterns": ["**2/**/*.ts", "**/*2.ts", "IsoGameAddon/**/*"],
+  "rules": {
+    "unused-files": "off",
+    "unused-exports": "off",
+    "unused-types": "off",
+    "circular-dependencies": "off",
+    "private-type-leaks": "off",
+    "unresolved-imports": "error"
+  }
+}

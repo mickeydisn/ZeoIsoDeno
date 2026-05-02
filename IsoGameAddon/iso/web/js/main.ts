@@ -52,13 +52,12 @@ const callback_initWorker = async (_data: GameHandlerData): Promise<void> => {
   });
   // CITY
   // 1200, 500
-  /*
+  
   handlers.send({
     action: "gridClick",
-    x: 1200,
-    y: 500,
+    x: 120,
+    y: 50,
   });
-  /* */
   return ;
 };
 

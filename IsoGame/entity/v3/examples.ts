@@ -1,6 +1,6 @@
+import { World } from "../../word.ts";
 import { CityEntity } from "./cityEntity.ts";
 import { goHome, randomMove, visitLocations, wait } from "./goals/goals.ts";
-import type { World } from "../word.ts";
 
 // ─────────────────────────────────────────────────────────────
 //  1. Basic wanderer — nothing special, all defaults

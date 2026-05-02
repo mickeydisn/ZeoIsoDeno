@@ -1,5 +1,3 @@
-// FILE: tileUtil.ts
-
 import { FactoryMap } from "../factory/factoryMap.ts";
 
 // Assuming:
