@@ -1,4 +1,5 @@
-import { TilesActions } from "../map/action/tileActions.ts";
+// import { TilesActions } from "../map/action/tileActions.ts";
+import { TilesActions } from "../map/action2/tilesActions.ts";
 import { FactoryMap } from "../map/factory/factoryMap.ts";
 import { MapTool } from "./toolRegistry.ts";
 import { World } from "../word.ts";
@@ -37,7 +38,7 @@ export const lowerTerrainTool = createTool({
   icon: "⬇️",
   category: "terrain",
   execute(x: number, y: number, brushSize: number, _world: World) {
-    if (brushSize <= 1) {
+    if (brushSize <= 1) { 
       tilesActions.doAction({
         func: "lvlUp",
         x,

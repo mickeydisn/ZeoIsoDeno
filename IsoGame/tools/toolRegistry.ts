@@ -19,9 +19,12 @@ export class ToolRegistry {
   private activeAssetId: string | null = null;
 
   // Building configuration state
-  private activeBuildingConfigId: string = "WcBuildConf_GraveA";
+  // private activeBuildingConfigId: string = "WcBuildConf_GraveA";
+  private activeBuildingConfigId: string = "WcBuildConf_LabPipeA";
+  // private activeBuildingConfigId: string = "WcBuildConf_GraveA";
+  // private activeBuildingConfigId: string = "WcBuildConf_HouseA";
+
   private buildingGrowLoop: number = 20;
-  private buildingEndLoop: number = 100;
 
   public static getInstance(): ToolRegistry {
     return ToolRegistry.instance ??= new ToolRegistry();
@@ -103,15 +106,13 @@ export class ToolRegistry {
     return this.activeBuildingConfigId;
   }
 
-  setBuildingParams(growLoop: number, endLoop: number): void {
+  setBuildingParams(growLoop: number): void {
     this.buildingGrowLoop = growLoop;
-    this.buildingEndLoop = endLoop;
   }
 
-  getBuildingParams(): { growLoop: number; endLoop: number } {
+  getBuildingParams(): { growLoop: number } {
     return {
       growLoop: this.buildingGrowLoop,
-      endLoop: this.buildingEndLoop,
     };
   }
 }

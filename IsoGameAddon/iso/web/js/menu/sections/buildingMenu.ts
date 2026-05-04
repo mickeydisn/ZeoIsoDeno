@@ -20,6 +20,7 @@ export const buildingMenuTab = (gameWorker: Worker) => {
             id: "growSize", type: "range", min: 20, max: 1000, step: 10, default: growSizeValue, 
             callback_change: (value) => {
               growSizeValue = Number(value)
+              gameWorker.postMessage({action: "setBuildingParams", growLoop: growSizeValue});
             }
           },
         ],

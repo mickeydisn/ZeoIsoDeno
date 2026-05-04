@@ -5,7 +5,7 @@
     "unused-exports": "off",
     "unused-types": "off",
     "circular-dependencies": "off",
-    "private-type-leaks": "off",
+    "private-type-leaks": "warn",
     "unresolved-imports": "error"
   }
 }

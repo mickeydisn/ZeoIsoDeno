@@ -2,7 +2,7 @@
 import { FactoryMap } from "../factory/factoryMap.ts";
 import { Tile } from "../object/tile.ts";
 import { ACTION_REGISTRY } from "./actions/registry.ts";
-import { ActionContext, BaseTileActionConfig } from "./actions/types.ts";
+import { ActionContext, BaseTileActionConfig } from "./utils/types.ts";
 
 
 export class TilesActions {

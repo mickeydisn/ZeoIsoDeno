@@ -115,7 +115,7 @@ export function createBuildingConfig(
   if (growLoopCount < 5) {
     console.warn(`growLoopCount ${growLoopCount} below minimum (5), clamping to 5`);
     growLoopCount = 5;
-  } else if (growLoopCount > 100) {
+  } else if (growLoopCount > 300) {
     console.warn(`growLoopCount ${growLoopCount} above maximum (100), clamping to 100`);
     growLoopCount = 100;
   }

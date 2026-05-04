@@ -1,10 +1,6 @@
-import { cp } from "node:fs";
 import { TypeKeysActionUpdate } from "../../IsoGameAddon/iso/web/js/main/keyboad.ts";
 import { TilesMatrix } from "../map/object/tilesMatrix.ts";
-import { CanvasMapDrawersConf } from "./canvasMapDrawer.ts";
-import { IsometricProjector, PointIso } from "./simpleIso/IsometricProjector.ts";
-import { off } from "node:process";
-import { TilesActions } from "../map/action/tileActions.ts";
+import { IsometricProjector } from "./simpleIso/IsometricProjector.ts";
 
 const CANVAS_WIDTH = 1600
 const CANVAS_HEIGHT = 800
@@ -179,21 +175,6 @@ export class MapState {
 
 
     applyOnWalk () {
-        /*
-        TilesActions.getInstance().doAction({
-            x: this.x - 1,
-            y: this.y - 1,
-            func: "lvlAvgSquare", 
-            size: Math.round(Math.random() * 8),
-        });
-        TilesActions.getInstance().doAction({
-            x: this.x - 1,
-            y: this.y - 1,
-            func: "colorSquare",
-            size: 3,
-            color: [0, 0, 0],
-        });
-        */
     }
 
     public tickUpdateKeyboard(keyboardAction: TypeKeysActionUpdate) {
