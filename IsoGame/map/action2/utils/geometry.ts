@@ -6,7 +6,7 @@
 
 export type Point = { x: number; y: number };
 
-export type Shape = "square" | "diamond" | "circle";
+export type Shape = "square" | "square2" | "diamond" | "circle";
 
 // ─── Shape iterators ──────────────────────────────────────────────────────────
 
@@ -27,6 +27,15 @@ export function* iterShape(
 
   switch (shape) {
     case "square": {
+
+      for (let dy = 0; dy < r; dy++) {
+        for (let dx = 0; dx < r; dx++) {
+          yield { x: cx + dx -  Math.floor(r / 2) , y: cy + dy -  Math.floor(r / 2)};
+        }
+      }
+      break;
+    }
+    case "square2": {
       for (let dy = -r; dy <= r; dy++) {
         for (let dx = -r; dx <= r; dx++) {
           yield { x: cx + dx, y: cy + dy };

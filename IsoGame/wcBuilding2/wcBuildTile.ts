@@ -1,13 +1,11 @@
-// import { AXE_DIRECTION } from "../utils.js";
 import { Tile } from "../map/object/tile.ts";
-import { AXE_DIRECTION } from "../map/object/tileRaw.ts";
+import { AXE_DIRECTION } from "../map/object/const.ts";
 import { World } from "../word.ts";
 import { WcConfTile } from "./wcAbstractBuildConf.ts";
 import {
   equalFaceList,
   filterAxeFacesKey,
-  WcFace,
-  WcKeyFace,
+  WcFace
 } from "./wcBuildFace.ts";
 import { WcBuildFactory } from "./wcBuildFactory.ts";
 import { WcBuildTileDrawer } from "./wcBuildTileDrawer.ts";

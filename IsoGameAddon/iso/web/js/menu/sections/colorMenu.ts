@@ -23,7 +23,15 @@ export const colorMenuTab = (gameWorker: Worker) => {
         ],
         callback_select: () => {
           gameWorker.postMessage({action: "setActiveTool",toolId: "paint_color"});
-        } },
+        } 
+      },
+      { 
+        id: "paintClear", icon: "🪣" ,
+        params: [],
+        callback_select: () => {
+          gameWorker.postMessage({action: "setActiveTool", toolId: "clear_color"});
+        } 
+      },
       { 
         id: "random", icon: "🎲" , 
         params: [
@@ -32,16 +40,16 @@ export const colorMenuTab = (gameWorker: Worker) => {
         callback_select: () => {
           gameWorker.postMessage({action: "setActiveTool",toolId: "random_shade"});
         } },
-    ],
-    params: [
-      { id: "brushSize", type: "range", min: 1, max: 10, default: 1, callback_change: (value) => {
-          gameWorker.postMessage({
-            action: "setBrushSize",
-            size: value,
-          });
-        }
-      },
-    ]
+      ],
+      params: [
+        { id: "brushSize", type: "range", min: 1, max: 10, default: 1, callback_change: (value) => {
+            gameWorker.postMessage({
+              action: "setBrushSize",
+              size: value,
+            });
+          }
+        },
+      ]
   } as MenuTab};
 
 

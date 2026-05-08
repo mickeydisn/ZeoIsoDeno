@@ -12,6 +12,7 @@ export class Chunk {
   sizeFull: number;
   matrixGen: Tile[][];
   matrix: Tile[][];
+  loaded: boolean = false;
 
   constructor(cx: number, cy: number) {
     this.cx = cx;
@@ -29,12 +30,12 @@ export class Chunk {
       () => Array(this.size).fill(null),
     );
 
-    this.initGenMatrix();
-    this.smoothMatrix();
-    this.smoothMatrix();
+    this._initGenMatrix();
+    this._smoothMatrix();
+    this._smoothMatrix();
     //this.smoothMatrix();
     // this.smoothMatrix();
-    this.copyMatrix();
+    this._copyMatrix();
     this.matrixGen = null!;
   }
 
@@ -42,7 +43,7 @@ export class Chunk {
     return this.matrix[x][y];
   }
 
-  initGenMatrix() {
+  _initGenMatrix() {
     for (let i = 0; i < this.sizeFull; i++) {
       for (let j = 0; j < this.sizeFull; j++) {
         this.matrixGen[i][j] = new Tile(
@@ -53,26 +54,8 @@ export class Chunk {
         );
       }
     }
-    /*
-    (async () => {
-      const isLoaded = await this.load();
-      if (!isLoaded) {
-        await this.save();
-      }
-    })();
-    */
   }
-
-  copyMatrix() {
-    const k = this.sizeBorder;
-    for (let i = 0; i < this.size; i++) {
-      for (let j = 0; j < this.size; j++) {
-        this.matrix[i][j] = this.matrixGen[i + k][j + k];
-      }
-    }
-  }
-
-  smoothMatrix() {
+  _smoothMatrix() {
     for (let i = 1; i < this.sizeFull - 1; i++) {
       for (let j = 1; j < this.sizeFull - 1; j++) {
         const sum = [
@@ -90,51 +73,65 @@ export class Chunk {
       }
     }
   }
-  /*
-  async load(): Promise<boolean> {
-    const chunkId = `${this.cx}_${this.cy}`;
-    const loadDataTiles = await db.MapTiles.where({ chunkId }).toArray();
-    if (loadDataTiles.length === this.size * this.size) {
-      loadDataTiles.forEach((tileData) => {
-        const xx = tileData.x >= 0
-          ? tileData.x % this.size
-          : this.size + (tileData.x % this.size) - 1;
-        const yy = tileData.y >= 0
-          ? tileData.y % this.size
-          : this.size + (tileData.y % this.size) - 1;
-        if (this.matrix[xx] && this.matrix[xx][yy]) {
-          this.matrix[xx][yy]!.fromJsonSave(tileData);
-        }
-      });
-      return true;
-    }
-    return false;
-  }
-
-  async save() {
-    const chunkId = `${this.cx}_${this.cy}`;
-    const tileSaveList = [];
+  _copyMatrix() {
+    const k = this.sizeBorder;
     for (let i = 0; i < this.size; i++) {
       for (let j = 0; j < this.size; j++) {
-        tileSaveList.push(this.matrix[i][j]!.toJsonSave());
+        this.matrix[i][j] = this.matrixGen[i + k][j + k];
       }
     }
-
-    try {
-      await window.db.MapTiles.bulkPut(tileSaveList);
-    } catch (e) {
-      console.error("DB Put Not OK", e);
-    }
-
-    try {
-      await window.db.MapChunks.bulkPut([{
-        id: chunkId,
-        cx: this.cx,
-        cy: this.cy,
-      }]);
-    } catch (e) {
-      console.error("DB Put Not OK", e);
-    }
   }
-  */
+
+
+  /* Delta system for synchronizing tile changes */
+
+  getDeltas(): any[] {
+    const deltas: any[] = [];
+    for (let i = 0; i < this.size; i++) {
+      for (let j = 0; j < this.size; j++) {
+        const tile = this.matrix[i][j];
+        if (tile.checkDirty()) {
+          const delta = tile.toDeltaJson();
+          if (delta) deltas.push(delta);
+        }
+      }
+    }
+    return deltas;
+  }
+
+  applyDeltas(deltas: any[]) {
+    deltas.forEach((delta) => {
+      try {
+        const x = delta.x >= 0 ? delta.x % this.size : this.size + (delta.x % this.size);
+        const y = delta.y >= 0 ? delta.y % this.size : this.size + (delta.y % this.size);
+        // Ensure positive modulo for negative coordinates
+        const rx = ((delta.x % this.size) + this.size) % this.size;
+        const ry = ((delta.y % this.size) + this.size) % this.size;
+
+        const colorLen = Array.isArray(delta.color) ? delta.color.length : (delta.color ? delta.color.length : 0);
+        const itemsLen = Array.isArray(delta.items) ? delta.items.length : 0;
+
+        // console.log(`[Chunk ${this.cx}_${this.cy}] applyDelta incoming x:${delta.x} y:${delta.y} -> rx:${rx} ry:${ry} lvl:${delta.lvl} colorLen:${colorLen} itemsLen:${itemsLen}`);
+
+        // Normalize color to RGBA array if present
+        if (delta.color !== undefined) {
+          const arr = Array.isArray(delta.color) ? delta.color.slice() : Array.from(delta.color);
+          if (arr.length === 3) arr.push(255);
+          delta.color = arr;
+        }
+
+        // Ensure items is an array if present
+        if (delta.items === undefined) delta.items = [];
+
+        if (this.matrix[rx] && this.matrix[rx][ry]) {
+          this.matrix[rx][ry].applyDelta(delta);
+        } else {
+          console.warn(`[Chunk ${this.cx}_${this.cy}] applyDelta target missing for rx:${rx} ry:${ry}`);
+        }
+      } catch (e) {
+        console.error(`[Chunk ${this.cx}_${this.cy}] applyDelta error for delta:`, delta, e);
+      }
+    });
+  }
+
 }

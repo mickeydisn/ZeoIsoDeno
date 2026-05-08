@@ -1,0 +1,128 @@
+import { FactoryMap } from "../../map/factory/factoryMap.ts";
+import { defineTool, ToolConfigBrush, ToolContext } from "../type.ts";
+
+import { cmd } from "../../map/action2/builder/cmd.ts";
+import { TilesActions } from "../../map/action2/tilesActions.ts";
+const tilesActions = TilesActions.getInstance();
+
+export const raiseTerrainTool = defineTool<"raise_terrain", ToolConfigBrush>(
+  "raise_terrain",
+  "Raise Terrain",
+  "⬆️",
+  "terrain",
+  (conf: ToolConfigBrush, _ctx: ToolContext) => {
+    if (conf.brushSize <= 1) {
+      tilesActions.doAction(cmd.lvlUp({
+        x: conf.x, y: conf.y, lvl: 1 
+       }));
+    } else {
+      tilesActions.doAction(cmd.lvlUpSquare({
+        x: conf.x, y: conf.y, lvl: 1, 
+        size: conf.brushSize 
+      }));
+    }
+  }
+);
+
+export const lowerTerrainTool =  defineTool<"lower_terrain", ToolConfigBrush>(
+  "lower_terrain",
+  "Lower Terrain",
+  "⬇️",
+  "terrain",
+  (conf: ToolConfigBrush, _ctx: ToolContext) => {
+    if (conf.brushSize <= 1) { 
+      tilesActions.doAction(cmd.lvlUp({ 
+        x: conf.x, y: conf.y, lvl: -1 
+      }));
+    } else {
+      tilesActions.doAction(cmd.lvlUpSquare({ 
+        x: conf.x, y: conf.y, lvl: -1, 
+        size: conf.brushSize 
+      }));
+    }
+  },
+);
+
+export const flattenTool = defineTool<"flatten", ToolConfigBrush>(
+  "flatten",
+  "Flatten",
+  "⏹️",
+  "terrain",
+   (conf: ToolConfigBrush, _ctx: ToolContext) => {
+    tilesActions.doAction(cmd.lvlFlatSquare({ 
+        x: conf.x, y: conf.y, size: conf.brushSize 
+      }));
+  }
+);
+
+export const smoothTool = defineTool<"smooth", ToolConfigBrush>(
+  "smooth",
+  "Smooth",
+  "〰️",
+  "terrain",
+  (conf: ToolConfigBrush, _ctx: ToolContext) => {
+    tilesActions.doAction(cmd.lvlAvgSquare({ 
+        x: conf.x, y: conf.y, size: conf.brushSize 
+      }));
+  });
+
+// Plateau tool uses two-click interaction
+let plateauTargetLevel: number | null = null;
+let _plateauStartPos: { x: number; y: number } | null = null;
+
+export const plateauTool = defineTool<"plateau", ToolConfigBrush>(
+  "plateau",
+  "Plateau",
+  "🏔️",
+  "terrain",
+
+  (conf: ToolConfigBrush, _ctx: ToolContext) => {
+    const fm = FactoryMap.getInstance();
+    if (plateauTargetLevel === null) {
+      // First click: store target level
+      const tile = fm.getTile(conf.x, conf.y);
+      plateauTargetLevel = tile.lvl;
+      _plateauStartPos = { x: conf.x, y: conf.y };
+      console.log(`Plateau: Target level set to ${plateauTargetLevel}`);
+    } else {
+      // Second click: flatten to target level
+      tilesActions.doAction(cmd.lvlFlatSquare({ 
+        x: conf.x, y: conf.y, size: conf.brushSize 
+      }));
+      // Then set all tiles in area to target level
+      tilesActions.doAction(cmd.lvlUpSquare({
+        x: conf.x, 
+        y: conf.y, 
+        lvl: plateauTargetLevel - fm.getTile(conf.x, conf.y).lvl, 
+         size: conf.brushSize 
+      }));
+
+      console.log(`Plateau: Flattened to level ${plateauTargetLevel}`);
+      // Reset state
+      plateauTargetLevel = null;
+      _plateauStartPos = null;
+    }
+  }
+);
+
+export function resetPlateauState() {
+  plateauTargetLevel = null;
+  _plateauStartPos = null;
+}
+
+export const terrainTools = [
+  raiseTerrainTool,
+  lowerTerrainTool,
+  flattenTool,
+  smoothTool,
+  plateauTool,
+];
+
+/*
+
+raise_terrain
+lower_terrain
+flatten
+smooth
+plateau
+*/

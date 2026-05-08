@@ -1,9 +1,8 @@
 // Main thread (e.g., main.ts)
 
-import { MessageHandler } from "../../worker/messageHandler.ts";
-import { dialogMgr } from "../dialog.ts";
+import { MessageHandler } from "@iso-game/handlers/messageHandler.ts";
+import { DialogManager } from "../dialog.ts";
 import { MenuTab } from "../headMenu.ts";
-
 
 // ============================================================================
 // CONFIG
@@ -301,7 +300,7 @@ export function renderAssetImageList(): void {
   // ---------------
   // Set Click 
   assetImageListEl.querySelector("label")?.addEventListener("click", () => {
-
+      const dialogMgr = DialogManager.getInstance()
       // 2. Open the dialog
       dialogMgr.open();
       dialogMgr.setContent(`

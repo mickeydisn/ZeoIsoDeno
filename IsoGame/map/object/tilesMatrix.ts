@@ -73,6 +73,8 @@ export class TilesMatrixSelected {
       .flat();
   }
 }
+
+
 export class TilesMatrix {
   world: World;
   fm: FactoryMap;
@@ -154,8 +156,6 @@ export class TilesMatrix {
     this.avgLvl /= this.size * this.size;
   }
 }
-
-
 
 
 

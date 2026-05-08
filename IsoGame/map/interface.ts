@@ -135,6 +135,9 @@ export interface ITile extends IRawTile {
 
   // Methods
   clearTemporary(): void;
+  checkDirty(): boolean;
+  toDeltaJson(): any;
+  applyDelta(delta: any): void;
   toJsonSave(): any;
   fromJsonSave(data: any): void;
 }
@@ -154,10 +157,13 @@ export interface IChunk {
 
   // Methods
   get(x: number, y: number): Tile;
+  getDeltas(): any[];
+  applyDeltas(deltas: any[]): void;
   initGenMatrix(): void;
   smoothMatrix(): void;
   copyMatrix(): void;
 }
+
 
 // --- 3. Factory Interfaces ---
 
@@ -210,4 +216,11 @@ export interface IFactoryTileRawGenerator {
   getRawFlore(x: number, y: number, t?: number): number;
   getRawDensity(x: number, y: number): number;
   getRawBuildTile(x: number, y: number, t?: number): number;
+}
+
+// --- 3. Persistence Interfaces ---
+
+export interface IMapPersistence {
+  saveChunkDeltas(cx: number, cy: number, deltas: any[]): Promise<void>;
+  loadChunkDeltas(cx: number, cy: number): Promise<any[]>;
 }

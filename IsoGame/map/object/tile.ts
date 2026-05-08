@@ -3,21 +3,7 @@ import { WcBuildTile, WcBuildTileInfo } from "../../wcBuilding2/wcBuildTile.ts";
 import { FactoryMap } from "../factory/factoryMap.ts";
 import { RecordRawItem } from "../factory/factoryTileGenerator.ts";
 import { RawTile } from "./tileRaw.ts";
-
-export const AXE_DIRECTION = [
-  [0, 1],
-  [1, 0],
-  [0, -1],
-  [-1, 0],
-];
-export const AXE_DIRECTION2 = [
-  [1, 1],
-  [-1, 1],
-  [1, -1],
-  [-1, -1],
-];
-
-export const TILE_GEN_ZOOM = 2;
+import { AXE_DIRECTION, AXE_DIRECTION2 } from "./const.ts";
 
 export type TileInfo = {
   x: number;
@@ -78,11 +64,13 @@ export class Tile extends RawTile {
   }
   set lvl(lvl: number) {
     if (this.isFrise) return;
-    this._currentLvl = lvl;
+    if (this._currentLvl !== lvl) {
+      this._currentLvl = lvl;
+    }
   }
   clearLvl() {
     if (this.isFrise) return;
-    this._currentLvl = this.genLvl2;
+    this.lvl = this.genLvl2;
   }
 
   get color() {
@@ -119,6 +107,62 @@ export class Tile extends RawTile {
   }
   clearTemporatyItem() {
     this.temporatyItems.splice(0, this.temporatyItems.length);
+  }
+
+  checkDirty(): boolean {
+    const isLvlDirty = this._currentLvl !== this.genLvl2;
+    const isColorDirty = this._currentColor.some((v, i) => v !== this.genColor[i]);
+    const isBlockDirty = this.isBlock !== false;
+    const isFriseDirty = this.isFrise !== false;
+    const isItemsDirty = JSON.stringify(this.items) !== JSON.stringify(this.genItems);
+
+    return isLvlDirty || isColorDirty || isBlockDirty || isFriseDirty || isItemsDirty;
+  }
+
+  toDeltaJson() {
+    const delta: any = {};
+    if (this._currentLvl !== this.genLvl2) delta.lvl = this._currentLvl;
+    if (this._currentColor.some((v, i) => v !== this.genColor[i])) {
+      delta.color = [...this._currentColor];
+    }
+    if (this.isBlock !== false) delta.isBlock = this.isBlock;
+    if (this.isFrise !== false) delta.isFrise = this.isFrise;
+    if (JSON.stringify(this.items) !== JSON.stringify(this.genItems)) {
+      delta.items = this.items;
+    }
+
+    if (Object.keys(delta).length === 0) return null;
+
+    return {
+      x: this.x,
+      y: this.y,
+      ...delta,
+    };
+  }
+
+  applyDelta(delta: any) {
+    const data = delta.data || delta; // Support both {data: {...}} and direct {...} formats
+    if (data === undefined) {
+      console.error("Invalid delta format: missing 'data' property", delta);
+      return;
+    }
+    if (data.lvl !== undefined) {
+      this._currentLvl = data.lvl;
+    }
+    if (data.color !== undefined) {
+      const colorArr = Array.isArray(data.color) ? data.color.slice() : Array.from(data.color);
+      const normColor = colorArr.length === 3 ? [...colorArr, 255] : colorArr;
+      this._currentColor = new Uint8Array(normColor);
+    }
+    if (data.isBlock !== undefined) {
+      this.isBlock = data.isBlock;
+    }
+    if (data.isFrise !== undefined) {
+      this.isFrise = data.isFrise;
+    }
+    if (data.items !== undefined) {
+      this.items = data.items;
+    }
   }
 
   toJsonSave() {

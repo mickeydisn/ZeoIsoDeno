@@ -4,7 +4,7 @@ import { IsometricProjector } from "./simpleIso/IsometricProjector.ts";
 
 const CANVAS_WIDTH = 1600
 const CANVAS_HEIGHT = 800
-const PLAYER_SPEED = 0.5; // Base speed in tiles per tick, modulated by tileScaleMod        
+const PLAYER_SPEED = 0.25; // Base speed in tiles per tick, modulated by tileScaleMod        
 
 export interface CanvasMapConf {
   mapSize: number;                  // Replaced DRAW_TILE_COUNT
@@ -180,8 +180,7 @@ export class MapState {
     public tickUpdateKeyboard(keyboardAction: TypeKeysActionUpdate) {
 
         this.applyOnWalk();
-
-
+    
         const mapMod = this.isoConf.tileScaleMod;
         const speed = PLAYER_SPEED * mapMod;
 

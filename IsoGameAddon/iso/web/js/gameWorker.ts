@@ -1,29 +1,31 @@
-import { World } from "../../../../IsoGame/word.ts";
-import { MessageHandler } from "./worker/messageHandler.ts";
-import { CanvasMapDrawers } from "../../../../IsoGame/mapIso/canvasMapDrawer.ts";
-import { AssetLoaderOpti } from "../../../../IsoGame/mapIso/asset/assetLoaderOpti.ts";
-import { getAllHandlers } from "./worker/handlers/index.ts";
-import { mapState } from "../../../../IsoGame/mapIso/mapState.ts";
-
-export type GameHandlerData = any;
+import { World } from "@iso-game/word.ts";
+import { CanvasMapDrawers } from "@iso-game/mapIso/canvasMapDrawer.ts";
+import { AssetLoaderOpti } from "@iso-game/mapIso/asset/assetLoaderOpti.ts";
+import { mapState } from "@iso-game/mapIso/mapState.ts";
+import { GameMessageHandler, indexGameHandler } from "./handlers/handlers.ts";
 
 export class GameWorker {
   public world = new World();
-  public handler: MessageHandler;
+  public handler: GameMessageHandler
 
   public assetLoader!: AssetLoaderOpti;
-  private canvasMap!: OffscreenCanvas;
+  public canvasMap!: OffscreenCanvas;
   public canvasMapDrawer!: CanvasMapDrawers;
 
   framId: number = 0;
   private _shouldRun = false;
 
   constructor() {
-    this.handler = new MessageHandler(self);
-    self.onmessage = (e) => this.handler.handleIncoming(e.data);
 
-    const handlers = getAllHandlers(this);
-    this.handler.append(Object.entries(handlers));
+    this.handler = new GameMessageHandler({
+        tag: "game",
+        worker: self,
+        gameloop: this,
+        world: this.world,
+      },
+      indexGameHandler,
+    );
+    self.onmessage = (e) => this.handler.handleIncoming(e.data);
   }
 
   // ============================================================================

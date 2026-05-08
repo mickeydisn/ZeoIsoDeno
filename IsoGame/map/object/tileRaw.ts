@@ -2,18 +2,6 @@ import { Biome } from "./biomes.ts";
 import { FactoryTileGenerator, RecordRawItem } from "../factory/factoryTileGenerator.ts";
 import { FactoryTileRawGenerator } from "../factory/factoryTileRawGenerator.ts";
 
-export const AXE_DIRECTION = [
-  [0, 1],
-  [1, 0],
-  [0, -1],
-  [-1, 0],
-];
-export const AXE_DIRECTION2 = [
-  [1, 1],
-  [-1, 1],
-  [1, -1],
-  [-1, -1],
-];
 
 export class RawTile {
   x: number;

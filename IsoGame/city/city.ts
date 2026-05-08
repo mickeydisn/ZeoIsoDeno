@@ -236,6 +236,19 @@ export class City {
     return centerFactor * minDistance;
   }
 
+  _pathTileList(startNode: CityNode, newNode: CityNode) {
+    const pathFactory = new PathFactory(this.world);
+    pathFactory.axeCount = 4;
+    const tileList = pathFactory.createPath({
+      x: startNode.x,
+      y: startNode.y,
+    }, {
+      x: newNode.x,
+      y: newNode.y,
+    });
+    return tileList;
+  }
+
   createNewRoad(
     startNode: CityNode,
     newNode: CityNode,
@@ -252,15 +265,7 @@ export class City {
       this.centerNode = newNode;
     }
 
-    const pathFactory = new PathFactory(this.world);
-    pathFactory.axeCount = 4;
-    const tileList = pathFactory.createPath({
-      x: startNode.x,
-      y: startNode.y,
-    }, {
-      x: newNode.x,
-      y: newNode.y,
-    });
+    const tileList = this._pathTileList(startNode, newNode);
     if (tileList) {
       const actionList = actionDrawPathAndPlatform(tileList, param);
       TilesActions.getInstance().doActions(actionList);
@@ -297,15 +302,7 @@ export class City {
       }
     }
 
-    const pathFactory = new PathFactory(this.world);
-    pathFactory.axeCount = 4;
-    const tileList = pathFactory.createPath({
-      x: startNode.x,
-      y: startNode.y,
-    }, {
-      x: newNode.x,
-      y: newNode.y,
-    });
+    const tileList = this._pathTileList(startNode, newNode);
     if (tileList) {
       const actionList = actionDrawPath(tileList, param);
       TilesActions.getInstance().doActions(actionList);

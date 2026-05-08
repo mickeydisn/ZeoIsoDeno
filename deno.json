@@ -6,7 +6,9 @@
   "imports": {
     "@std/assert": "jsr:@std/assert@1",
     "preact": "https://cdn.skypack.dev/preact",
-    "preact-dom": "https://cdn.skypack.dev/preact-dom"
+    "preact-dom": "https://cdn.skypack.dev/preact-dom",
+    "@iso-game/": "./IsoGame/",
+    "@iso-web/": "./IsoGameAddon/iso/web/"
   },
   "compilerOptions": {
     "lib": ["deno.ns", "DOM", "ESNext"]

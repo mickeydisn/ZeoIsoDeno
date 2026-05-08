@@ -1,25 +1,13 @@
 import { flyMenuTab } from "./menu/sections/flyMenu.ts";
 import { initHeadMenu } from "./menu/headMenu.ts";
 
-/*
-import { 
-  initToolMenu, 
-  handleToolExecuted,
-  handlePickedColor,
-  handleBuildingConfigList,
-} from "./menu/toolMenu.ts";
-
-import { infoMenu, updateInfoCell } from "./menu/InfoMenu.ts";
-*/
-import { GameHandlerData } from "./gameWorker.ts";
-// import { GlobalState, initMenu, updatGlobalJSON } from "./gobalState.ts";
 import { initCanvas, initKeyBoard } from "./main/keyboad.ts";
-import { MessageHandler } from "./worker/messageHandler.ts";
 import { MenuTab } from "./menu/headMenu.ts";
 import { terrainMenuTab } from "./menu/sections/terrainMenu.ts";
-import { assetMenuTab, handleAssetGroups, handleAssetPreview, initAssetGroups } from "./menu/sections/assetMenu.ts";
+import { assetMenuTab, } from "./menu/sections/assetMenu.ts";
 import { colorMenuTab } from "./menu/sections/colorMenu.ts";
 import { buildingMenuTab } from "./menu/sections/buildingMenu.ts";
+import { indexScreenHandler, ScreenMessageHandler } from "@iso-web/js/handlers/handlers.ts";
  
 // ============================================================================
 // CREATE WORKER
@@ -29,36 +17,42 @@ const gameWorker = new Worker(
   new URL("./gameWorker.ts", import.meta.url).href,
   { type: "module" } 
 );
-const handlers = new MessageHandler(gameWorker);
+const handler = new ScreenMessageHandler({
+    tag: "screen",
+    worker: gameWorker
+  },
+  indexScreenHandler
+);
+
 
 initKeyBoard(gameWorker);
-initCanvas(handlers);
+initCanvas(handler);
 
 // ============================================================================
 // == INIT
 // ============================================================================
 
 // After The Game worker Initialiser . we cant send Shared Array
-const callback_initWorker = async (_data: GameHandlerData): Promise<void> => {
+const callback_initWorker = (_data: any) => {
   console.log("✅ Game Worker initialized!");
 
-  handlers.sendMessageWithResponse({
+  handler.sendMessageWithResponse({
     action: "initCanvasMap",
     mapConf: {
-      DRAW_TILE_COUNT: 10,
-      SCALE_SIZE: 2,
+      DRAW_TILE_COUNT: 30,
+      SCALE_SIZE: 1.5,
       SCALE_MOD: 1,
     },
   });
   // CITY
   // 1200, 500
-  
+  /*
   handlers.send({
     action: "gridClick",
     x: 120,
     y: 50,
   });
-  return ;
+  */
 };
 
 
@@ -86,7 +80,7 @@ const config_tag : MenuTab[] = [
     },
     terrainMenuTab(gameWorker),
     colorMenuTab(gameWorker),
-    assetMenuTab(gameWorker, handlers),
+    assetMenuTab(gameWorker, handler),
     buildingMenuTab(gameWorker),
   ]
 
@@ -159,10 +153,10 @@ function stopLoop() {
 // Attach Active Page listeners
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
-    handlers.send({ action: "startRender" });
+    handler.send({ action: "startRender" });
     startLoop();
   } else {
-    handlers.send({ action: "stopRender" });
+    handler.send({ action: "stopRender" });
     stopLoop();
   }
 });
@@ -170,36 +164,12 @@ document.addEventListener("visibilitychange", () => {
 
 // ============================================================================
 // ============================================================================
-// == Interface Responce Handlers.
-// ============================================================================
-
-handlers.append([
-  ["FPS", (data) => {
-    const fpsDisplay = document.getElementById("fps")!;
-    fpsDisplay.textContent = `FPS: ${data.fps}`;
-  }],
-  ["infoCell", (data) => {
-    // updateInfoCell(data);
-  }],
-  ["assetGroups", (data) => {
-    initAssetGroups(gameWorker, handlers);
-    handleAssetGroups(data.groups);
-  }],
-  ["assetPreview", (data) => {
-    handleAssetPreview(data.blobUrl);
-  }],
-]);
-
-
-
-// ============================================================================
-// ============================================================================
 // ============================================================================
 // == Start Drawing and Worker Loop
 // ============================================================================
-await handlers.sendMessageWithResponse({ action: "initWorker" })
+await handler.sendMessageWithResponse({ action: "initWorker" })
 await callback_initWorker("")
-handlers.send({ action: "startRender" });
+handler.send({ action: "startRender" });
 
 
 

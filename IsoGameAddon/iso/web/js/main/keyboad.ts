@@ -1,4 +1,4 @@
-import { MessageHandler } from "../worker/messageHandler.ts";
+import { ScreenMessageHandler } from "@iso-web/js/handlers/handlers.ts";
 
 
 const keyCheck: Record<string, boolean> = {};
@@ -28,15 +28,17 @@ export const initKeyBoard = (gameWorker: Worker) => {
 
   // Update player position based on input
   function updatePlayerPosition() {
-    const keyboardAction = {
+    const keys = {
       up: keyBind.up.map((k) => keyCheck[k]).includes(true),
       down: keyBind.down.map((k) => keyCheck[k]).includes(true),
       left: keyBind.left.map((k) => keyCheck[k]).includes(true),
       right: keyBind.right.map((k) => keyCheck[k]).includes(true),
     };
 
-    // Send the updated player position to the worker (GameWorker)
-    gameWorker.postMessage({ action: "updateKeyboard", keyboardAction });
+    if (keys.down || keys.left || keys.right || keys.up) {
+      // Send the updated player position to the worker (GameWorker)
+      gameWorker.postMessage({ action: "updateKeyboard", keys });
+    }
   }
 
   // Call the update loop
@@ -49,7 +51,7 @@ export const initKeyBoard = (gameWorker: Worker) => {
 // CREATE SHARE ELEMENT
 // ============================================================================
 // Main thread (e.g., main.ts)
-export const initCanvas = (handlers: MessageHandler) => {
+export const initCanvas = (handlers: ScreenMessageHandler) => {
   // Canvas For display Map
   const canvasImageMap = document.getElementById(
     "map-image",
@@ -81,7 +83,5 @@ export const initCanvas = (handlers: MessageHandler) => {
       y: Math.floor(e.clientY - rect.top)
     });
   });
-
-
 
 };

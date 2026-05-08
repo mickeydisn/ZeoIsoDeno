@@ -2,10 +2,11 @@
 import { PathFactory } from "../city/pathFactory.ts";
 import { FactoryMap } from "../map/factory/factoryMap.ts";
 import { Tile } from "../map/object/tile.ts";
-import { TilesActions } from "../map/action/tileActions.ts";
+import { TilesActions } from "../map/action2/tilesActions.ts";
 import { World } from "../word.ts";
 import { CITIZEN_NAME } from "./CitizenTrais.ts";
 import { EntityBehavior, EntityGoal } from "./typeEntityBehavior.ts";
+import { cmd } from "../map/action2/builder/cmd.ts";
 
 export class CityEntity2 {
   world: World;
@@ -282,34 +283,30 @@ const behaviorMove_getRandomGoal = {
     }
     */
     const currentGoal = entity.currentGoal as EntityGoal;
-    TilesActions.getInstance().doAction({
+    TilesActions.getInstance().doAction(cmd.lvlAvgSquare({
       x: entity.tile.x,
       y: entity.tile.y,
-      func: "lvlAvgSquare", 
       size: Math.round(Math.random() * 4),
-    });
-    TilesActions.getInstance().doAction({
+    }));
+    TilesActions.getInstance().doAction(cmd.clearItemSquare({
       x: entity.tile.x,
       y: entity.tile.y,
-      func: "clearItemSquare",
       size: 3,
-    });
+    }));
 
-    TilesActions.getInstance().doAction({
+    TilesActions.getInstance().doAction(cmd.lvlUp({
       x: entity.tile.x,
       y: entity.tile.y,
-      func: "lvlUp",
       lvl: (Math.random() - .5) * 1,
-    });
+    }));
 
     if (lowerTile) {
-      TilesActions.getInstance().doAction({
+      TilesActions.getInstance().doAction(cmd.colorSquare({
         x: entity.tile.x,
         y: entity.tile.y,
-        func: "colorSquare",
         size: 1,
         color: [0, 0, 50],
-      });
+      }));
       currentGoal.sData = {
         moveGoal: {
           x: dx,
@@ -318,13 +315,12 @@ const behaviorMove_getRandomGoal = {
       };
       currentGoal.sData.moveTilesPath = [entity.fm.getTile( dx, dy)]
     } else {
-      TilesActions.getInstance().doAction({
+      TilesActions.getInstance().doAction(cmd.colorSquare({
         x: entity.tile.x,
         y: entity.tile.y,
-        func: "colorSquare",
         size: 1,
         color: [0, 50, 50],
-      });
+      }));
       currentGoal.sData = {
         moveGoal: {
           x: dx,

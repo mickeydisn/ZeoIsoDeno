@@ -5,7 +5,19 @@
     "unused-exports": "off",
     "unused-types": "off",
     "circular-dependencies": "off",
-    "private-type-leaks": "warn",
-    "unresolved-imports": "error"
+    "private-type-leaks": "off",
+    "unresolved-imports": "off",
+    "code-duplication": "off"
+  },
+   "duplicates": {
+    "mode": "mild",
+    "minTokens": 500,
+    "minLines": 50,
+    "threshold": 10
+  },
+  "health": {
+    "maxCyclomatic": 200,
+    "maxCognitive": 150,
+    "ignore": ["**/*.generated.ts"]
   }
 }

@@ -1,4 +1,4 @@
-class DialogManager {
+export class DialogManager {
   private static instance: DialogManager;
   private dialog: HTMLDialogElement | null = null;
 
@@ -59,5 +59,3 @@ class DialogManager {
   }
 }
 
-// Export a constant instance or the class itself
-export const dialogMgr = DialogManager.getInstance();

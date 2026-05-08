@@ -16,6 +16,7 @@ import { serveStatic as serveStaticAsset } from "./IsoGameAddon/assets-manager/w
 import { serveStatic as serveStaticEditor } from "./IsoGameAddon/editor/web/serveEditor.ts";
 import { serveStatic as serveStaticPallet } from "./IsoGameAddon/pallet/web/servePallet.ts";
 import { assetsManagerRouter } from "./IsoGameAddon/assets-manager/server.ts";
+import { mapRouter } from "./IsoGame/map/persistence/db/mapRouter.ts";
 
 export const serveStatic = async (context: Context) => {
   const filePath = context.request.url.pathname;
@@ -68,12 +69,15 @@ app.use(async (ctx: Context, next) => {
   ctx.response.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
   // Add CORS headers for resource loading in workers
   ctx.response.headers.set("Access-Control-Allow-Origin", "*");
-  ctx.response.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+  ctx.response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   await next();
 });
 
 app.use(assetsManagerRouter.routes());
 app.use(assetsManagerRouter.allowedMethods());
+
+app.use(mapRouter.routes());
+app.use(mapRouter.allowedMethods());
 
 
 // IMPORTANT: Mount editor API routes FIRST so they take precedence over static serving

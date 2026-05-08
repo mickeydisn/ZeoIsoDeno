@@ -1,6 +1,8 @@
 import { Chunk, CHUNK_SIZE } from "../object/chunk.ts";
 import { RawTile } from "../object/tileRaw.ts";
 import { Tile } from "../object/tile.ts";
+import type { IMapPersistence } from "../interface.ts";
+import { mapServerPersistence } from "../persistence/db/mapServerPersistence.ts";
 
 export class FactoryMap {
   private static instance: FactoryMap;
@@ -10,8 +12,21 @@ export class FactoryMap {
 
   chunkIndex: Map<number, Map<number, Chunk>> = new Map();
 
+  private persistence: IMapPersistence | null = null;
+
   constructor() {
-    this.getChunk(0, 0);
+    // this.getChunk(0, 0);
+  }
+
+  /**
+   * Set the persistence provider for loading/saving tile deltas.
+   * Called once by the worker initialization.
+   */
+  setPersistence(persistence: IMapPersistence): void {
+    this.persistence = persistence;
+    // force load of initial chunk to apply any saved deltas
+    const chuck = this.getChunk(0, 0);
+    this.loadChunkDeltas(chuck);
   }
 
   getExistingChunk(cx: number, cy: number): Chunk | null {
@@ -24,9 +39,38 @@ export class FactoryMap {
     }
     const chunkRow = this.chunkIndex.get(cx)!;
     if (!chunkRow.has(cy)) {
-      chunkRow.set(cy, new Chunk(cx, cy));
+      console.log(`[FactoryMap] Requesting chunk (${cx}, ${cy})`);
+      const chunk = new Chunk(cx, cy);
+      chunkRow.set(cy, chunk);
+      // Fire-and-forget: load saved deltas after chunk generation
+      this.loadChunkDeltas(chunk);
     }
     return chunkRow.get(cy)!;
+  }
+
+  /**
+   * Asynchronously load saved deltas from the persistence layer
+   * and apply them to the chunk after generation.
+   */
+  private async loadChunkDeltas(chunk: Chunk): Promise<void> {
+    console.log(`[FactoryMap] Loading deltas for chunk (${chunk.cx}, ${chunk.cy})`);
+    if (!this.persistence) return;
+    try {
+      const deltas = await this.persistence.loadChunkDeltas(chunk.cx, chunk.cy);
+      if (deltas && deltas.length > 0) {
+        chunk.applyDeltas(deltas);
+        console.log(`[FactoryMap] WEB Applied ${deltas.length} deltas to chunk ${chunk.cx}_${chunk.cy}`);
+      }
+      const deltas2 = await mapServerPersistence.loadChunkDeltas(chunk.cx, chunk.cy);
+      if (deltas2 && deltas2.length > 0) {
+        chunk.applyDeltas(deltas2);
+        console.log(`[FactoryMap] SERVER Applied ${deltas2.length} deltas2 to chunk ${chunk.cx}_${chunk.cy}`);
+      }
+
+
+    } catch (error) {
+      console.error(`[FactoryMap] Failed to load deltas for chunk ${chunk.cx}_${chunk.cy}:`, error);
+    }
   }
 
   chunkPoint(x: number, y: number): [number, number, number, number] {
