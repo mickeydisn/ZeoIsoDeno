@@ -1,7 +1,7 @@
 // ────────────────────────────────────────────
 // ────────────────────────────────────────────
 
-import { ExtractAction, TBaseMessage, THandlerAction, THandlerContext } from "@iso-game/handlers/types/type.ts";
+import { ExtractAction, TBaseMessage, THandlerAction, THandlerContext } from "../../../../../IsoGame/etc/handlers/types/type.ts";
 import { World } from "@iso-game/word.ts";
 import { GameWorker } from "@iso-web/js/gameWorker.ts";
 

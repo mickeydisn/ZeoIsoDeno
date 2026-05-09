@@ -1,6 +1,6 @@
-import { FactoryMap } from "../map/factory/factoryMap.ts";
-import { Tile } from "../map/object/tile.ts";
-import { World } from "../word.ts";
+import { FactoryMap } from "../../map/factory/factoryMap.ts";
+import { Tile } from "../../map/object/tile.ts";
+import { World } from "../../word.ts";
 import { WcAbstractBuildConf } from "./wcAbstractBuildConf.ts";
 import { WcBuildConf_HouseA } from "./conf/buildConf_HouseA.ts";
 import { WcBuildConf_LabBorderA } from "./conf/buildConf_LabBorderA.ts";

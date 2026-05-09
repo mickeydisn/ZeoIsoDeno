@@ -10,16 +10,18 @@ function createCanvas(width: number, height: number): Canvas {
 import { Color } from "./iso/color.ts";
 import { Isomer } from "./iso/isomer.ts";
 import { FactoryMap } from "../map/factory/factoryMap.ts";
-import { TilesMatrix, TilesMatrixAvg } from "../map/object/tilesMatrix.ts";
+import { TilesMatrixAvg } from "../map/object/tilesMatrix.ts";
 import { World } from "../word.ts";
 import { Shape } from "./iso/shape.ts";
 import { Point } from "./iso/point.ts";
 import { AssetLoaderOpti } from "./asset/assetLoaderOpti.ts";
 import { IsometricProjector, PointIso } from "./simpleIso/IsometricProjector.ts";
-// import { IsometricTileGenerator } from "./simpleIso/IsometricTileGenerator.ts";
 import { toolRegistry } from "../tools/toolRegistry.ts";
-import { CHAR_0 } from "https://jsr.io/@std/path/1.0.8/_common/constants.ts";
 import { mapState } from "./mapState.ts";
+import { TGameHandlerContext } from "@iso-web/js/handlers/contexts.ts";
+import { actionDrawAncientCrater } from "@iso-game/map/action2/drawStrucutre/actionDrawAncientCrater.ts";
+import { msgToScreen } from "@iso-web/js/handlers/handlers.ts";
+import { DrawContext } from "@iso-game/mapIso/_render/type.ts";
 
 // --- Constants for Readability and Maintenance ---
 // The factor used to scale the tile level (z-axis) difference for isometric rendering.
@@ -38,7 +40,7 @@ const ASSET_OFFSET_Y = (-ASSET_HEIGHT + 1) // (-ASSET_HEIGHT) + (ASSET_WIDTH / 2
   // "imgHeight": 224,
     // "imgWidth": 192,
 // --- Configuration Interfaces (Renamed for Clarity) ---
-interface CanvasMapDrawersConfOption {
+export interface CanvasMapDrawersConfOption {
   DRAW_TILE_COUNT?: number;
   SCALE_SIZE?: number;
   SCALE_MOD?: number;
@@ -57,6 +59,7 @@ const CanvasMapDrawersConfDefault: CanvasMapDrawersConf = {
 
 // --- Main Drawer Class ---
 export class CanvasMapDrawers {
+  _ctx: TGameHandlerContext;
   world: World;
   fm: FactoryMap;
   conf: CanvasMapDrawersConf;
@@ -66,69 +69,95 @@ export class CanvasMapDrawers {
   canvas: Canvas;
   canvasCtx: CanvasRenderingContext2D;
 
-  // Shared buffers for worker communication
-  // bufferMapLvl: SharedArrayBuffer;
-  // mapLvl: Float32Array;
-
-  // bufferMapInfo: SharedArrayBuffer;
-  // mapInfo: Float32Array; // [ 0:centreX , 1:centreY, 2:offX, 3:offY ]
   direction: string = "NE";
 
   isomer: Isomer;
   public isoProject: IsometricProjector;
-  // private isoGenerator: IsometricTileGenerator;
   private tileCache: Map<string, OffscreenCanvas | ImageBitmap> = new Map();
 
   frameSubCount: number;
   frameCount: number;
 
   constructor(
-    world: World,
+    _ctx: TGameHandlerContext,
     width: number,
     height: number,
     conf: CanvasMapDrawersConfOption,
     assetLoadder: AssetLoaderOpti,
     canvas?: Canvas,
   ) {
-    this.world = world;
+
+
+    this._ctx = _ctx
+    this.world = _ctx.world;
     this.fm = FactoryMap.getInstance();
 
     // Use DRAW_TILE_COUNT instead of DRAW_TILE_COUNT
-    this.conf = { ...CanvasMapDrawersConfDefault, ...conf, DRAW_TILE_COUNT: conf.DRAW_TILE_COUNT || CanvasMapDrawersConfDefault.DRAW_TILE_COUNT };
+    const drawConf : CanvasMapDrawersConf = {
+       ...CanvasMapDrawersConfDefault, 
+       ...conf, 
+       DRAW_TILE_COUNT: conf.DRAW_TILE_COUNT || CanvasMapDrawersConfDefault.DRAW_TILE_COUNT
+    };
 
-    this.canvas = canvas ? canvas : createCanvas(width, height);
-    this.canvasCtx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
+    const offScreenCanvas = canvas ? canvas : createCanvas(width, height);
+    const canvasCtx = offScreenCanvas.getContext("2d") as CanvasRenderingContext2D;
 
-    // const bufferSize = this.conf.DRAW_TILE_COUNT * this.conf.DRAW_TILE_COUNT * Float32Array.BYTES_PER_ELEMENT;
-    
-    // Init the Worker-Shared Matrix to store Cell Lvl in a Grid
-    // this.bufferMapLvl = new SharedArrayBuffer(bufferSize);
-    // this.mapLvl = new Float32Array(this.bufferMapLvl);
-
-    // Init the Worker-Shared Matrix : [ 0:X , 1:Y, 2:offX, 3:offY ]
-    // this.bufferMapInfo = new SharedArrayBuffer(
-    //   4 * Float32Array.BYTES_PER_ELEMENT,
-    // );
-    // this.mapInfo = new Float32Array(this.bufferMapInfo);
-
-    this.isomer = new Isomer(
-      this.canvas,
-      this.conf.DRAW_TILE_COUNT,
-      this.conf.SCALE_SIZE,
-      this.conf.SCALE_MOD,
+    const isomer = new Isomer(
+      offScreenCanvas,
+      drawConf.DRAW_TILE_COUNT,
+      drawConf.SCALE_SIZE,
+      drawConf.SCALE_MOD,
     );
-    this.isoProject = new IsometricProjector({
-      originX : this.canvas.width / 2,
-      originY : this.canvas.height / 2 + this.conf.DRAW_TILE_COUNT * 16 * this.conf.SCALE_SIZE,
-      SCALE_SIZE:this.conf.SCALE_SIZE,
-      SCALE_MOD:this.conf.SCALE_MOD,
+    const isoProject = new IsometricProjector({
+      originX : offScreenCanvas.width / 2,
+      originY : offScreenCanvas.height / 2 + drawConf.DRAW_TILE_COUNT * 16 * drawConf.SCALE_SIZE,
+      SCALE_SIZE: drawConf.SCALE_SIZE,
+      SCALE_MOD: drawConf.SCALE_MOD,
     })
-    mapState._isoProject = this.isoProject
-    /*
-    this.isoGenerator = new IsometricTileGenerator({
-      SCALE_SIZE:this.conf.SCALE_SIZE,
-    })
-    */
+
+
+    const tilesMatrix = new TilesMatrixAvg(
+      drawConf.DRAW_TILE_COUNT,
+      0,
+      0,
+      drawConf.SCALE_MOD,
+    );
+
+    this.frameSubCount = 0;
+    this.frameCount = 0;
+
+    // -------------------------
+
+    const _drawCtx: DrawContext = {
+      isomer: isomer,
+      isoProject: isoProject,
+
+      assetLoader: assetLoadder,
+      canvasCtx: canvasCtx,
+
+      conf: drawConf,
+      tilesMatrix: tilesMatrix,
+
+      frameCount: 0,  
+      direction: "_NE",
+    }
+
+    // -------------------------
+
+    mapState._isoProject = isoProject;
+    mapState._tilesMatrix = tilesMatrix;
+
+    this.conf = drawConf;
+    this.isomer = isomer;
+    this.isoProject = isoProject
+    this.assetLoader = assetLoadder;
+    this.canvasCtx = canvasCtx;
+    this.canvas = offScreenCanvas;
+
+    this.tilesMatrix = tilesMatrix;
+
+    // -------------------------
+
     this.c = {
       selected: new Color(160, 60, 50, 1),
       red: new Color(160, 60, 50, 1),
@@ -136,18 +165,6 @@ export class CanvasMapDrawers {
       flore: new Color(53, 148, 56),
       wall: new Color(64, 64, 80),
     };
-
-    this.tilesMatrix = new TilesMatrixAvg(
-      this.conf.DRAW_TILE_COUNT,
-      0,
-      0,
-      this.conf.SCALE_MOD,
-    );
-    mapState._tilesMatrix = this.tilesMatrix
-
-    this.assetLoader = assetLoadder;
-    this.frameSubCount = 0;
-    this.frameCount = 0;
 
     console.log("=== GameContext- Init");
     console.log("=== GameContext- Init", this.tilesMatrix.rangeX);
@@ -218,7 +235,6 @@ export class CanvasMapDrawers {
       if (cimage) {
         const off = itemConf.off ? itemConf.off : { x: 0, y: 0 };
         const lvl = currentlvl + (itemConf.lvl || 0) * this.conf.SCALE_SIZE;
-        
         const p2 = this.isoProject.translatePoint(new PointIso(x + off.x, y + off.y, lvl))
         
         const p = this.isomer.translatePoint(
@@ -261,20 +277,21 @@ export class CanvasMapDrawers {
         this.drawAsset(x, y, itemConf, currentlvl);
         break;
       case "Box":
-        // Placeholder for box drawing logic
         // this.drawTilesBox(isomer._translatePoint(Point(x, y, lvl)), metaTile, itemConf);
         break;
-      // case "Selected":
-      //   this.drawSelected(x, y, itemConf, currentlvl);
-      //   break;
-      // Add other cases here (e.g., 'Pyramid', 'Prism')
       default:
-        // console.log(`Sorry, we are out of ${type}.`);
         break;
     }
   }
 
-  drawTileFloor (xx: number, yy:number, currentlvl:number, color: Color, diffLvlSE: number , diffLvlSW: number) {
+  drawTileFloor (
+    xx: number, 
+    yy:number, 
+    currentlvl:number, 
+    color: Color, 
+    diffLvlSE: number , 
+    diffLvlSW: number
+  ) {
     const height =1;
     // 1. Display the Floor (Horizontal Floor tile)
     this.isomer.add(
@@ -445,12 +462,24 @@ export class CanvasMapDrawers {
     if (metaTile.cityNode) {
       items.push({ t: "Svg", key: metaTile.cityNode.asset.key });
     }
+
+    if (metaTile.itemsBox) {
+      items.push({ t: "Svg", key: "statue_column_NE#C100_H60" });
+
+      const p = this.isoProject.tileToScreen(new PointIso(xx + .5, yy + .5, currentlvl))
+
+      this._ctx.handler.send(msgToScreen.infoCardPosition({
+        cardId: `tileCard_${metaTile.x}_${metaTile.y}`, 
+        x: p.x,
+        y: p.y,
+      }))
+    }
     
-    if (this.conf.DRAW_TILE_COUNT < 60 ) {
+    if (this.conf.DRAW_TILE_COUNT <= 80 ) {
       // 4. Draw Each Item (Z-sorted locally)
       items
         .sort((a: any, b: any) => (a.lvl || 0) - (b.lvl || 0))
-        .forEach((item: any) => this.drawTileItem(xx, yy, metaTile, item, currentlvl));
+        .forEach((item: any) => this.drawTileItem(xx , yy, metaTile, item, currentlvl));
     }
     this.canvasCtx.restore()
 

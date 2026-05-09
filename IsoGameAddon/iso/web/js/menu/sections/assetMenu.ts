@@ -1,6 +1,6 @@
 // Main thread (e.g., main.ts)
 
-import { MessageHandler } from "@iso-game/handlers/messageHandler.ts";
+import { MessageHandler } from "../../../../../../IsoGame/etc/handlers/messageHandler.ts";
 import { DialogManager } from "../dialog.ts";
 import { MenuTab } from "../headMenu.ts";
 
@@ -214,6 +214,7 @@ function _renderImagesList(el: HTMLElement, call : () => void): void {
 
 
   let currentBlobUrl : string | null = null;
+  const dialogMgr = DialogManager.getInstance()
 
   // 3. Query all the buttons that were just added to the DOM
   const li_list = dialogMgr.getElement()?.querySelectorAll('li.images-item');

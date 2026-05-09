@@ -1,4 +1,4 @@
-import { GameBiomesType } from "../data/biomes.ts";
+import { GameBiomesType } from "../factory/data/biomes.ts";
 
 export class Biome {
   name: string;

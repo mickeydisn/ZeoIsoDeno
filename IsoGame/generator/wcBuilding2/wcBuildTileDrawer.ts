@@ -1,7 +1,7 @@
-import { FactoryGenerator } from "../map/factory/factoryGenerator.ts";
-import { FactoryMap } from "../map/factory/factoryMap.ts";
-import { TilesActions } from "../map/action/tileActions.ts";
-import { World } from "../word.ts";
+import { FactoryGenerator } from "../../map/factory/factoryGenerator.ts";
+import { FactoryMap } from "../../map/factory/factoryMap.ts";
+import { TilesActions } from "../../map/action/tileActions.ts";
+import { World } from "../../word.ts";
 import {
   WcConfTile,
   WcConfTileAsset,

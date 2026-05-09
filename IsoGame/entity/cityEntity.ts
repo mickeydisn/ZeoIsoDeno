@@ -1,5 +1,5 @@
 // import { PathFactory } from "../path.js";
-import { PathFactory } from "../city/pathFactory.ts";
+import { PathFactory } from "../generator/city/pathFactory.ts";
 import { FactoryMap } from "../map/factory/factoryMap.ts";
 import { Tile } from "../map/object/tile.ts";
 import { World } from "../word.ts";

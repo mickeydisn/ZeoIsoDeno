@@ -45,6 +45,8 @@
     </div>
     < !-- BagroundDialog -->
     <dialog id="mainDialog"></dialog>
+  
+    
     <!-- MiniMap -->
     <div
       id="displayMap"
@@ -79,12 +81,10 @@
           height="800"
           style="border: none"
         ></canvas>
-        <div style="position: absolute">
-          <div
-            id="mapGrid" class="hidden"
-            style="transition: 0.3s; transform: rotateX(60deg) rotateY(0deg) rotateZ(45deg); transform-style: preserve-3d; display: grid; z-index: 40"
-          >
-          </div>
+        
+        <div id="infoCardLayerAbsolute" >
+          <div id="infoCardLayer">
+            </div>
         </div>
       </div>
     </div>
@@ -119,3 +119,5 @@
     </script -->
   </body>
 </html>
+
+

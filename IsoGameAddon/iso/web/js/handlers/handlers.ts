@@ -3,8 +3,8 @@ import { renderHandlers } from "@iso-web/js/handlers/game/renderHandlers.ts";
 import { interactionHandlers } from "@iso-web/js/handlers/game/interactionHandlers.ts";
 import { toolHandlers } from "@iso-web/js/handlers/game/toolHandlers.ts";
 import { queryHandlers } from "@iso-web/js/handlers/game/queryHandlers.ts";
-import { buildHandlerIndexes, buildHandlerRegistry, buildMsgMap, IncomingMessages, IndexedHandlers } from "@iso-game/handlers/types/handlerCmd.ts";
-import { MessageHandler } from "@iso-game/handlers/messageHandler.ts";
+import { buildHandlerIndexes, buildHandlerRegistry, buildMsgMap, IncomingMessages, IndexedHandlers } from "../../../../../IsoGame/etc/handlers/types/handlerCmd.ts";
+import { MessageHandler } from "../../../../../IsoGame/etc/handlers/messageHandler.ts";
 import { TGameHandlerContext, TScreenHandlerContext } from "./contexts.ts";
 import { initScreenHandler } from "@iso-web/js/handlers/screen/mainMessage.ts";
 

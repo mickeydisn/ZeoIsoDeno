@@ -16,8 +16,8 @@ import { WcBuildConf_House5 } from "./buildConf_house5";
 import { WcBuildConf_House6a } from "./buildConf_house6a";
 import { WcBuildConf_Place3 } from "./buildConf_place3";
 */
-import { FactoryMap } from "../map/factory/factoryMap.ts";
-import { World } from "../word.ts";
+import { FactoryMap } from "../../map/factory/factoryMap.ts";
+import { World } from "../../word.ts";
 import { WcAbstractBuildConf, WcConfTile } from "./wcAbstractBuildConf.ts";
 import { WcBuildTile } from "./wcBuildTile.ts";
 // ====================================================

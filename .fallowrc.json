@@ -6,13 +6,12 @@
     "unused-types": "off",
     "circular-dependencies": "off",
     "private-type-leaks": "off",
-    "unresolved-imports": "off",
-    "code-duplication": "off"
+    "unresolved-imports": "off"
   },
    "duplicates": {
     "mode": "mild",
-    "minTokens": 500,
-    "minLines": 50,
+    "minTokens": 280,
+    "minLines": 1128,
     "threshold": 10
   },
   "health": {

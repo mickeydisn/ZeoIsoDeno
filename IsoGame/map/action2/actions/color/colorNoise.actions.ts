@@ -117,6 +117,7 @@ export const colorSmoothShape = defineAction<"colorSmoothShape", ColorSmoothShap
     const smoothRadius = conf.smoothRadius ?? 1;
     const strength     = conf.strength     ?? 0.5;
 
+    console.log('COLOR SMOOTH')
     // Snapshot colors BEFORE modifying anything to avoid order-dependency
     const snapshot = new Map<string, number[]>();
     for (const p of iterShape(conf.x, conf.y, size + smoothRadius, shape)) {

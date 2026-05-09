@@ -8,8 +8,8 @@
  */
 
 import type { BuildingConfig, TileConfig } from "../types.ts";
-import { WcAbstractBuildConf, WcConfRawGroup, WcConfTile } from "../../../IsoGame/wcBuilding2/wcAbstractBuildConf.ts";
-import { confsGroup_to_confsTile } from "../../../IsoGame/wcBuilding2/wcUtils.ts";
+import { WcAbstractBuildConf, WcConfRawGroup, WcConfTile } from "../../../IsoGame/generator/wcBuilding2/wcAbstractBuildConf.ts";
+import { confsGroup_to_confsTile } from "../../../IsoGame/generator/wcBuilding2/wcUtils.ts";
 
 // ============================================================================
 // Type Definitions

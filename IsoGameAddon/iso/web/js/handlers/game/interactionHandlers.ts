@@ -1,8 +1,8 @@
 import { mapState } from "@iso-game/mapIso/mapState.ts";
 import { TypeKeysActionUpdate } from "@iso-web/js/main/keyboad.ts";
 import { toolRegistry } from "@iso-game/tools/toolRegistry.ts";
-import { City } from "@iso-game/city/city.ts";
-import { TBaseMessage} from "@iso-game/handlers/types/type.ts";
+import { City } from "../../../../../../IsoGame/generator/city/city.ts";
+import { TBaseMessage} from "../../../../../../IsoGame/etc/handlers/types/type.ts";
 import { gameAction, TGameHandlerAction, TGameHandlerContext } from "@iso-web/js/handlers/contexts.ts";
 
 

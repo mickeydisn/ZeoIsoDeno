@@ -37,6 +37,21 @@ export const clearColorTool = defineTool<"clear_color", ToolConfigBrush>(
   },
 );
 
+export const smoothColorTool = defineTool<"smooth_color", ToolConfigBrush>(
+  "smooth_color",
+  "Smooth Color",
+  "🌀",
+  "color",
+  (conf: ToolConfigBrush, _ctx: ToolContext) => {
+    if (conf.brushSize <= 1) { 
+        tilesActions.doAction(cmd.colorSmoothShape({x: conf.x, y: conf.y, size:1}));
+    } else {
+       tilesActions.doAction(cmd.colorSmoothShape({x: conf.x, y: conf.y, size: conf.brushSize}));
+    }
+  },
+);
+
+
 
 export const randomShadeTool = defineTool<"random_shade", ToolConfigBrush>(
   "random_shade",
@@ -90,6 +105,7 @@ export const eyedropperTool = defineTool<"eyedropper", ToolConfigBrush>(
 export const colorTools = [
   paintColorTool,
   clearColorTool,
+  smoothColorTool,
   randomShadeTool,
   colorPickerTool,
   eyedropperTool,

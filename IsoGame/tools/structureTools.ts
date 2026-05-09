@@ -1,6 +1,6 @@
 import { defineTool, ToolConfigBrush, ToolContext } from "./type.ts";
 import { toolRegistry } from "./toolRegistry.ts";
-import { WcBuildActions } from "../wcBuilding2/wcBuildAction.ts";
+import { WcBuildActions } from "../generator/wcBuilding2/wcBuildAction.ts";
 
 /**
  * Place Building Tool

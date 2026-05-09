@@ -172,9 +172,17 @@ export class MapState {
         this.xf = x;
         this.yf = y
     }
-
-
-    applyOnWalk () {
+    private setXY(xf:number, yf:number) {
+        const x = Math.round(xf);
+        const y = Math.round(yf);
+        if (this.x != x && this.x != y) {
+            console.log("UPDATE XY")            
+        } 
+        this.x = x;
+        this.y = y;
+    }
+    
+    private applyOnWalk () {
     }
 
     public tickUpdateKeyboard(keyboardAction: TypeKeysActionUpdate) {
@@ -219,9 +227,7 @@ export class MapState {
         this.xf =  Math.abs(this.xf - Math.round(this.xf)) < .001 ? Math.round(this.xf) : this.xf
         this.yf =  Math.abs(this.yf - Math.round(this.yf)) < .001 ? Math.round(this.yf) : this.yf
 
-        this.x = Math.round(this.xf);
-        this.y = Math.round(this.yf);
-
+        this.setXY(this.xf, this.yf)
 
     }
     //-----------------------

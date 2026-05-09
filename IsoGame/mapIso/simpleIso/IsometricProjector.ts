@@ -5,10 +5,17 @@ import { TilesMatrix } from "../../map/object/tilesMatrix.ts";
 // Configure the main LVL Diff factor display on the grid ( Transform real Lvl Diff to Pixel Diff)
 const ISO_LVL_SCALE = 39;
 const LVL_Z_SCALE_FACTOR = 1/3;
+
+
+export interface IPointIso {
+    x: number;
+    y: number;
+    z: number;
+}
 /**
  * Represents a 3D point (x, y, z) in the isometric space.
  */
-export class PointIso {
+export class PointIso implements IPointIso{
     x: number;
     y: number;
     z: number;

@@ -1,33 +1,52 @@
 import { Tile } from "./tile.ts";
+import { RawTile } from "@iso-game/map/object/tileRaw.ts";
 
 export const CHUNK_SIZE = 32;
 
-export class Chunk {
+export type BaseTile = {
+  x: number;
+  y: number;
+  lvl: number;
+}
+
+export class BaseChunk<ITile extends BaseTile> {
   size: number = CHUNK_SIZE;
   cx: number;
   cy: number;
-  x: number;
-  y: number;
-  sizeBorder: number = 2;
-  sizeFull: number;
-  matrixGen: Tile[][];
-  matrix: Tile[][];
+  matrix: ITile[][];
   loaded: boolean = false;
+
+  get x() : number { return this.cx * this.size }
+  get y() : number { return this.cy * this.size }
 
   constructor(cx: number, cy: number) {
     this.cx = cx;
     this.cy = cy;
-    this.x = cx * this.size;
-    this.y = cy * this.size;
-    this.sizeFull = this.size + 2 * this.sizeBorder;
-
-    this.matrixGen = Array.from(
-      { length: this.sizeFull },
-      () => Array(this.sizeFull).fill(null),
-    );
     this.matrix = Array.from(
       { length: this.size },
       () => Array(this.size).fill(null),
+    );
+  }
+
+  get(x: number, y: number): ITile {
+    return this.matrix[x][y];
+  }
+
+}
+
+export class ChunkGen extends BaseChunk<Tile> {
+
+  sizeFull: number;
+  matrixGen: Tile[][];
+  sizeBorder: number = 2;
+
+  constructor(cx: number, cy: number) {
+    super(cx, cy);
+
+    this.sizeFull = this.size + 2 * this.sizeBorder;
+    this.matrixGen = Array.from(
+      { length: this.sizeFull },
+      () => Array(this.sizeFull).fill(null),
     );
 
     this._initGenMatrix();
@@ -37,12 +56,10 @@ export class Chunk {
     // this.smoothMatrix();
     this._copyMatrix();
     this.matrixGen = null!;
-  }
 
-  get(x: number, y: number): Tile {
-    return this.matrix[x][y];
   }
-
+  
+  
   _initGenMatrix() {
     for (let i = 0; i < this.sizeFull; i++) {
       for (let j = 0; j < this.sizeFull; j++) {
@@ -82,6 +99,9 @@ export class Chunk {
     }
   }
 
+}
+
+export class Chunk extends ChunkGen {
 
   /* Delta system for synchronizing tile changes */
 

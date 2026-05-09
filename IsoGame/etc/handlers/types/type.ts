@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
-import { GameWorker } from "../../../IsoGameAddon/iso/web/js/gameWorker.ts";
-import { MessageHandler } from "@iso-game/handlers/messageHandler.ts";
+import { GameWorker } from "../../../../IsoGameAddon/iso/web/js/gameWorker.ts";
+import { MessageHandler } from "../messageHandler.ts";
 
 // -------------------------------------
 

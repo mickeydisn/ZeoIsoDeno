@@ -1,10 +1,10 @@
-import { WcAbstractBuildConf } from "../wcBuilding2/wcAbstractBuildConf.ts";
-import { WcBuildConf_GraveA } from "../wcBuilding2/conf/buildConf_GraveA.ts";
-import { WcBuildConf_HouseA } from "../wcBuilding2/conf/buildConf_HouseA.ts";
-import { WcBuildConf_ManorA } from "../wcBuilding2/conf/buildConf_ManorA.ts";
-import { WcBuildConf_LabBorderA } from "../wcBuilding2/conf/buildConf_LabBorderA.ts";
-import { WcBuildConf_LabPipeA } from "../wcBuilding2/conf/buildConf_LabPipeA.ts";
-import { WcBuildConf_RLabA } from "../wcBuilding2/conf/buildConf_RLabA.ts";
+import { WcAbstractBuildConf } from "../generator/wcBuilding2/wcAbstractBuildConf.ts";
+import { WcBuildConf_GraveA } from "../generator/wcBuilding2/conf/buildConf_GraveA.ts";
+import { WcBuildConf_HouseA } from "../generator/wcBuilding2/conf/buildConf_HouseA.ts";
+import { WcBuildConf_ManorA } from "../generator/wcBuilding2/conf/buildConf_ManorA.ts";
+import { WcBuildConf_LabBorderA } from "../generator/wcBuilding2/conf/buildConf_LabBorderA.ts";
+import { WcBuildConf_LabPipeA } from "../generator/wcBuilding2/conf/buildConf_LabPipeA.ts";
+import { WcBuildConf_RLabA } from "../generator/wcBuilding2/conf/buildConf_RLabA.ts";
 
 export interface BuildingConfigEntry {
   id: string;

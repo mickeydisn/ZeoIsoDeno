@@ -1,7 +1,8 @@
 import { TileInfo } from "@iso-game/map/object/tile.ts";
-import { TBaseMessage } from "@iso-game/handlers/types/type.ts";
+import { TBaseMessage } from "../../../../../../IsoGame/etc/handlers/types/type.ts";
 import { screenAction, TScreenHandlerAction, TScreenHandlerContext } from "@iso-web/js/handlers/contexts.ts";
 import { handleAssetGroups, handleAssetPreview, initAssetGroups } from "@iso-web/js/menu/sections/assetMenu.ts";
+import { InfoCardManager } from "@iso-web/js/menu/infoCard.ts";
 
 
 // ----
@@ -96,10 +97,29 @@ const assetPreview: TScreenHandlerAction<EventAssetPreview> =
 });
 
 
+// -------------------------------------------------
+
+export interface EventInfoCardPosition extends TBaseMessage<"infoCardPosition"> {
+  cardId: string;
+  x: number; y: number;
+}
+const infoCardPosition: TScreenHandlerAction<EventInfoCardPosition> = 
+  screenAction<EventInfoCardPosition>("infoCardPosition", 
+   (data: EventInfoCardPosition, _ctx: TScreenHandlerContext) => {
+      InfoCardManager.getInstance().updatePos(data.cardId, data.x, data.y)
+      // console.warn("==> infoCardPosition", data)
+});
+
+
+// -------------------------------------------------
+// -------------------------------------------------
+// -------------------------------------------------
+
 export const initScreenHandler = [
   FPS,
   assetGroups,
   assetPreview,
+  infoCardPosition,
 ] as const;
 
 

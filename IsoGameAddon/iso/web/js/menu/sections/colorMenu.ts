@@ -33,7 +33,14 @@ export const colorMenuTab = (gameWorker: Worker) => {
         } 
       },
       { 
-        id: "random", icon: "🎲" , 
+        id: "ColorSmooth", icon: "🌀" ,
+        params: [],
+        callback_select: () => {
+          gameWorker.postMessage({action: "setActiveTool", toolId: "smooth_color"});
+        } 
+      },
+      { 
+        id: "ColorRandom", icon: "🎲" , 
         params: [
           { id: "brushStrength", type: "range", min: 0, max: 1, step: 0.01, default: 0.5, callback_change: () => {} },
         ],

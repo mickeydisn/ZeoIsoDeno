@@ -1,7 +1,7 @@
-import { World } from "../word.ts";
-import { FactoryMap } from "../map/factory/factoryMap.ts";
-import { Tile } from "../map/object/tile.ts";
-import { TilesActions, TypeTileActionConfig } from "../map/action/tileActions.ts";
+import { World } from "../../word.ts";
+import { FactoryMap } from "../../map/factory/factoryMap.ts";
+import { Tile } from "../../map/object/tile.ts";
+import { TilesActions, TypeTileActionConfig } from "../../map/action/tileActions.ts";
 import { CityPathParamSection } from "./pathConfig.ts";
 
 export function actionDrawPathAndPlatform(

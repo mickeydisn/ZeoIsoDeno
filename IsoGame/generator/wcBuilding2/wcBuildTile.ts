@@ -1,6 +1,6 @@
-import { Tile } from "../map/object/tile.ts";
-import { AXE_DIRECTION } from "../map/object/const.ts";
-import { World } from "../word.ts";
+import { Tile } from "../../map/object/tile.ts";
+import { AXE_DIRECTION } from "../../map/object/const.ts";
+import { World } from "../../word.ts";
 import { WcConfTile } from "./wcAbstractBuildConf.ts";
 import {
   equalFaceList,

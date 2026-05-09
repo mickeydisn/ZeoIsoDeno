@@ -6,7 +6,7 @@ import { CityEntity2 } from "@iso-game/entity/cityEntity2.ts";
 import { CanvasMapDrawers, CanvasMapDrawersConf } from "@iso-game/mapIso/canvasMapDrawer.ts";
 import { FactoryMap } from "@iso-game/map/factory/factoryMap.ts";
 import { mapWebPersistence } from "@iso-game/map/persistence/db/mapWebPersistence.ts";
-import { TBaseMessage} from "@iso-game/handlers/types/type.ts";
+import { TBaseMessage} from "../../../../../../IsoGame/etc/handlers/types/type.ts";
 import { gameAction, TGameHandlerAction, TGameHandlerContext } from "@iso-web/js/handlers/contexts.ts";
 
 
@@ -110,7 +110,7 @@ const initCanvasMap : TGameHandlerAction<EventInitCanvasMap> =
   }
 
   _ctx.gameloop.canvasMapDrawer = new CanvasMapDrawers(
-    _ctx.world,
+    _ctx,
     data.width ? data.width : 1600,
     data.height ? data.height : 800,
     isoConf,

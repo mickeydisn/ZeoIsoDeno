@@ -15,7 +15,7 @@
 // ============================================================================
 // Re-export game types for reference (read-only, not modified)
 // ============================================================================
-export type { WcFace, WcKeyFace } from "../../IsoGame/wcBuilding2/wcBuildFace.ts";
+export type { WcFace, WcKeyFace } from "../../IsoGame/generator/wcBuilding2/wcBuildFace.ts";
 
 // ============================================================================
 // Local type mirrors for game types (used in TileConfig)

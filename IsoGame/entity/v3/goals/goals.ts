@@ -2,7 +2,7 @@ import type { Goal, GoalStatus } from "../goal.ts";
 import type { CityEntity } from "../cityEntity.ts";
 import type { EntityMemory } from "../entityMemory.ts";
 import type { Tile } from "../../../map/object/tile.ts";
-import { PathFactory } from "../../../city/pathFactory.ts";
+import { PathFactory } from "../../../generator/city/pathFactory.ts";
 
 // ─────────────────────────────────────────────────────────────
 //  walkTo — private navigation function, used directly by goals

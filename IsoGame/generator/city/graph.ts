@@ -1,6 +1,6 @@
-import { FactoryMap } from "../map/factory/factoryMap.ts";
-import { Tile } from "../map/object/tile.ts";
-import { World } from "../word.ts";
+import { FactoryMap } from "../../map/factory/factoryMap.ts";
+import { Tile } from "../../map/object/tile.ts";
+import { World } from "../../word.ts";
 import { NodeMap } from "./nodeMap.ts";
 import { CityPathParamSectionGrow } from "./pathConfig.ts";
 import { PathFactory } from "./pathFactory.ts";

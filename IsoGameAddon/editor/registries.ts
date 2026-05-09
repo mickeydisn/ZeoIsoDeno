@@ -13,27 +13,27 @@
  * and improve maintainability.
  */
 
-import { WcAbstractBuildConf } from "../../IsoGame/wcBuilding2/wcAbstractBuildConf.ts";
-import { WcBuildConf_HouseA } from "../../IsoGame/wcBuilding2/conf/buildConf_HouseA.ts";
-import { WcBuildConf_GraveA } from "../../IsoGame/wcBuilding2/conf/buildConf_GraveA.ts";
-import { WcBuildConf_ManorA } from "../../IsoGame/wcBuilding2/conf/buildConf_ManorA.ts";
-import { WcBuildConf_LabBorderA } from "../../IsoGame/wcBuilding2/conf/buildConf_LabBorderA.ts";
-import { WcBuildConf_LabPipeA } from "../../IsoGame/wcBuilding2/conf/buildConf_LabPipeA.ts";
-import { WcBuildConf_RLabA } from "../../IsoGame/wcBuilding2/conf/buildConf_RLabA.ts";
+import { WcAbstractBuildConf } from "../../IsoGame/generator/wcBuilding2/wcAbstractBuildConf.ts";
+import { WcBuildConf_HouseA } from "../../IsoGame/generator/wcBuilding2/conf/buildConf_HouseA.ts";
+import { WcBuildConf_GraveA } from "../../IsoGame/generator/wcBuilding2/conf/buildConf_GraveA.ts";
+import { WcBuildConf_ManorA } from "../../IsoGame/generator/wcBuilding2/conf/buildConf_ManorA.ts";
+import { WcBuildConf_LabBorderA } from "../../IsoGame/generator/wcBuilding2/conf/buildConf_LabBorderA.ts";
+import { WcBuildConf_LabPipeA } from "../../IsoGame/generator/wcBuilding2/conf/buildConf_LabPipeA.ts";
+import { WcBuildConf_RLabA } from "../../IsoGame/generator/wcBuilding2/conf/buildConf_RLabA.ts";
 
-import { WcAsset_WallHouse } from "../../IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_WallHouse.ts";
-import { WcAsset_WallManor } from "../../IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_WallManor.ts";
-import { WcAsset_WallRLab } from "../../IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_WallRLab.ts";
+import { WcAsset_WallHouse } from "../../IsoGame/generator/wcBuilding2/conf/assetsCollection/wcAsset_WallHouse.ts";
+import { WcAsset_WallManor } from "../../IsoGame/generator/wcBuilding2/conf/assetsCollection/wcAsset_WallManor.ts";
+import { WcAsset_WallRLab } from "../../IsoGame/generator/wcBuilding2/conf/assetsCollection/wcAsset_WallRLab.ts";
 import {
   FenceCollapseType,
   WcAsset_FenceGrave,
   WcAsset_FencePlatform,
   WcAsset_FenceSimple,
-} from "../../IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_Fence2.ts";
-import { WcAsset_Enter } from "../../IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_Entrer.ts";
-import { WcAsset_CorridorLab } from "../../IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_CorridorLab.ts";
-import { WcAsset_CorridorPipe } from "../../IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_CorridorPipe.ts";
-import { wcAsset_X } from "../../IsoGame/wcBuilding2/conf/assetsCollection/wcAsset_X.ts";
+} from "../../IsoGame/generator/wcBuilding2/conf/assetsCollection/wcAsset_Fence2.ts";
+import { WcAsset_Enter } from "../../IsoGame/generator/wcBuilding2/conf/assetsCollection/wcAsset_Entrer.ts";
+import { WcAsset_CorridorLab } from "../../IsoGame/generator/wcBuilding2/conf/assetsCollection/wcAsset_CorridorLab.ts";
+import { WcAsset_CorridorPipe } from "../../IsoGame/generator/wcBuilding2/conf/assetsCollection/wcAsset_CorridorPipe.ts";
+import { wcAsset_X } from "../../IsoGame/generator/wcBuilding2/conf/assetsCollection/wcAsset_X.ts";
 
 // ============================================================================
 // Asset Collection Class Entry Interface

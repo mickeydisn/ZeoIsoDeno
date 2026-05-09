@@ -1,6 +1,6 @@
 import { Biome } from "../object/biomes.ts";
-import { GAME_BIOMES, GameBiomesType } from "../data/biomes.ts";
-import { GAME_FLORE_ITEMS, GameFloreItem } from "../data/items.ts";
+import { GAME_BIOMES, GameBiomesType } from "./data/biomes.ts";
+import { GAME_FLORE_ITEMS, GameFloreItem } from "./data/items.ts";
 
 export class FactoryBiomes {
   private static instance: FactoryBiomes;

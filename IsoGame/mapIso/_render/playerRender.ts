@@ -1,0 +1,51 @@
+import { DrawContext, LVL_Z_SCALE_FACTOR } from "@iso-game/mapIso/_render/type.ts";
+import { mapState } from "@iso-game/mapIso/mapState.ts";
+import { Shape } from "@iso-game/mapIso/iso/shape.ts";
+import { Point } from "@iso-game/mapIso/iso/point.ts";
+import { _drawTileItem } from "@iso-game/mapIso/_render/isoTileRender.ts";
+import { drawShapePaths } from "@iso-game/mapIso/_render/shapePathRender.ts";
+
+  /**
+   * Draws the base tile geometry, including floor and borders.
+   */
+ const _drawPlayer = (
+    _ctx: DrawContext,
+    
+    x: number,
+    y: number
+) => {
+    const size = _ctx.conf.DRAW_TILE_COUNT;
+    const xx = size - x - 1;
+    const yy = size - y - 1;
+    // Get the Matrix to display
+    const metaTile = _ctx.tilesMatrix.tiles[xx][yy];
+    // Factor applied to raw level difference to get display level
+    const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * _ctx.conf.SCALE_SIZE / _ctx.conf.SCALE_MOD;
+    // Calculate the tile's current display level (Z coordinate)
+    const currentlvl = (metaTile.lvl - _ctx.tilesMatrix.avgLvl) * LVL_DISPLAY_SCALE;
+   // Update Shared GridLvl Matrix Buffer
+
+    const items = [];
+    // draw of .
+    items.push({
+       t: "Svg", 
+       key: "astronautB_" + _ctx.direction,
+      off : {
+        x: (mapState.xf - mapState.x) / _ctx.conf.SCALE_MOD,
+        y: (mapState.yf - mapState.y) / _ctx.conf.SCALE_MOD
+      } 
+    });
+
+    if (_ctx.conf.DRAW_TILE_COUNT < 60 ) {
+        // Create tile shape at average height (not individual tile height)
+        const shape2 = Shape.SurfaceFlat(new Point(xx, yy, currentlvl - 1), 1, 1, 1);
+        _ctx.canvasCtx.strokeStyle = "#FF0000";
+        drawShapePaths(_ctx, shape2);
+      // 4. Draw Each Item (Z-sorted locally)
+      items
+        .sort((a: any, b: any) => (a.lvl || 0) - (b.lvl || 0))
+        .forEach((item: any) => _drawTileItem(_ctx, xx, yy, metaTile, item, currentlvl));
+    }
+
+
+  }

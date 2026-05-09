@@ -1,9 +1,9 @@
-import { FactoryMap } from "../map/factory/factoryMap.ts";
-import { TilesActions } from "../map/action/tileActions.ts";
+import { FactoryMap } from "../../map/factory/factoryMap.ts";
+import { TilesActions } from "../../map/action/tileActions.ts";
 import { WcBuildActions } from "../wcBuilding2/wcBuildAction.ts";
 import { WcBuildFactory } from "../wcBuilding2/wcBuildFactory.ts";
 
-import { World } from "../word.ts";
+import { World } from "../../word.ts";
 import { CityNode } from "./cityNode.ts";
 import { CityPathParamSectionGrow } from "./pathConfig.ts";
 import { CityPathParamSection } from "./pathConfig.ts";

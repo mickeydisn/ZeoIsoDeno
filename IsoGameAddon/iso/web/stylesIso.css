@@ -808,3 +808,43 @@ display: grid;
   line-height: 1.4;
   font-style: italic;
 }
+
+
+/* ------------------ */
+/* infoCardLayer
+/* ------------------ */
+#infoCardLayerAbsolute {
+    position: absolute;
+    top: 0px;
+    height: 100%;
+}
+
+#infoCardLayer {
+  position: relative;
+  width: 1600px;
+  height: 800px;
+  border: 1px solid #FFF;
+  display: flex;
+
+  card {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border: 1px solid #FF0;
+    border-radius: 2px;
+    display: grid;
+    align-content: center;
+    justify-content: center;
+ 
+    div {
+      width: calc(10vw - 1rem);
+      height: calc(10vw - 1rem);
+      padding: 1rem;
+
+      border: 2px solid #333;
+      background: #2229;
+      border-radius: 1rem;
+    }
+
+  }
+}

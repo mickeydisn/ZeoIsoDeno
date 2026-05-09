@@ -1,5 +1,5 @@
 import { CityEntity } from "../../entity/cityEntity.ts";
-import { WcBuildTile, WcBuildTileInfo } from "../../wcBuilding2/wcBuildTile.ts";
+import { WcBuildTile, WcBuildTileInfo } from "../../generator/wcBuilding2/wcBuildTile.ts";
 import { FactoryMap } from "../factory/factoryMap.ts";
 import { RecordRawItem } from "../factory/factoryTileGenerator.ts";
 import { RawTile } from "./tileRaw.ts";
@@ -31,6 +31,8 @@ export class Tile extends RawTile {
 
   entities: CityEntity[] = [];
   temporatyItems: any[] = [];
+
+  itemsBox?: string;
   cityNode?: any;
   wcBuild?: WcBuildTile;
 
@@ -41,6 +43,9 @@ export class Tile extends RawTile {
     this._currentLvl = this.genLvl2;
     this._currentColor = this.genColor;
     this.items = this.genItems;
+    if (Math.random() < .05) {
+      this.itemsBox = "Hello"
+    }
     // this.lvlGen();
   }
 
