@@ -1,29 +1,44 @@
 
 
-## CURRENT PROJECT FILES
-
-IsoGameAddon/iso/web/js/gameWorker.ts
-IsoGameAddon/iso/web/js/worker/messageHandler.ts
-IsoGameAddon/iso/web/js/main.ts
-
-IsoGame/utils/SingletonBase.ts
-IsoGame/word.ts
-IsoGame/mapIso/canvasMapDrawer.ts
-IsoGame/mapIso/mapState.ts
-IsoGame/map/factory
-IsoGame/map/object
-IsoGame/map/interface.ts
+# Add a potion inventory for the game . 
 
 
-## TODO : 
+## Menu Header 
 
-### Make a ADR of this current files. 
+You have to create a new section in the menu header to handel the potion feature : 
+- IsoGameAddon/iso/web/js/menu/headMenu.ts
 
-- Create stories by priority of refactoring need. 
+When the Potion setion is selected. the bellow section is feel with butt : craft postion and list of postions - that open a center box ( like for the asset selection ) to create a new potion . 
 
-- Check for big pattern error if exist. as TS game engine expere
+then the list of postions that exist in the inventory ( with a number of used remind ) user can select to use
 
-- when user edit the map, the map must be save, (saved by chuck, save only nessesary property ( all default genered can be reprocessed so no need to be store , only chuck with tile, and tile property that are diff from the raw must be save, chuck are loaded only when need , chuck are save in a client session database, can be sync with the server ( butt to send current chuck/all chuck to the server, or to pull from the server, server side store in a sqlite db))
+## Player State. 
+
+For now the current player state not have any inventory etc .. we only have a IsoGame/mapIso/mapState.ts . 
+
+The goal is to add in the mapState.ts a object for the player-state , that contain the inventory. 
+
+## What is a postion . 
+
+A potion is list of action - IsoGame/map/action2 -  ( similar to a tools - IsoGame/handlers/game/func/toolHandlers.ts - . this list of action2 are executed when player use the postion ( when click on the map ) 
+
+## How to create a postion . 
+
+when user click on the - craft a postion - a panel is open ( similar pattern as IsoGameAddon/iso/web/js/menu/sections/assetMenu.ts ) . 
+
+in this panel user can select a config of any action2 ( create a formulaire base on the action config definition ) user can add multiple action , remove an action , move ect .. then save the postion. . in the list of postions menu, user can see all the postion , buy one ( just add one for now ) . 
 
 
-Cretate the file ADR-SAVE-CHUNK.md
+## How it's save . 
+
+you have to create a persistence db for the posion inventory of the user .. for now use a defaut user name : "mickey-test" ( ref to - IsoGame/map/persistence , for compatibility )
+
+
+
+# TODO : 
+
+## TODO 1 : 
+
+As lead tech , Make a deep search on the code. then create a technical adr to implement the feature in the existing solution . 
+
+Create the ard in TODO/ADR-POTION-INVENTORY.md

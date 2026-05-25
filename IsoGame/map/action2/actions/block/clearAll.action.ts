@@ -30,6 +30,11 @@ export const clearAll = defineAction<"clearAll", ClearAllConfig>(
     const tile = ctx.fm.getTile(conf.x, conf.y);
     clearAllTile(tile, ctx);
   },
+  {
+    label: "Clear All",
+    description: "Resets blocked, frise, color, and items on a tile",
+    fields: [],
+  },
 );
 
 // ---------------------

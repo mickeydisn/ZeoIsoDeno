@@ -15,6 +15,25 @@ export interface CanvasMapConf {
 }
 
 
+export interface PotionActionEntry {
+  func: string;
+  config: Record<string, unknown>;
+}
+
+export interface Potion {
+  id: string;
+  name: string;
+  actions: PotionActionEntry[];
+  remainingUses: number;
+  createdAt: number;
+}
+
+export interface PlayerState {
+  username: string;
+  inventory: Potion[];
+  activePotionId: string | null;
+}
+
 type TypeDirection = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW"
 
 type Point2D = {
@@ -105,6 +124,12 @@ export class MapState {
 
 
     overlayPoint : Array<Point2D> = [];
+
+    playerState: PlayerState = {
+      username: "mickey-test",
+      inventory: [],
+      activePotionId: null,
+    };
 
     isoConf: CanvasMapConf = {
         mapSize: 40, 

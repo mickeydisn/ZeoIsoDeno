@@ -80,4 +80,13 @@ export const lvlRampShape = defineAction<"lvlRampShape", LvlRampShapeConfig>(
       ctx.listTilesUpdated.add(tile);
     }
   },
+  {
+    label: "Ramp Level",
+    description: "Interpolates tile heights across a shape",
+    fields: [
+      { key: "fromLvl", type: "number", label: "Start Level", default: 0, min: 0, max: 255 },
+      { key: "toLvl", type: "number", label: "End Level", default: 10, min: 0, max: 255 },
+      { key: "size", type: "range", label: "Area Size", default: 5, min: 1, max: 41, step: 2 },
+    ],
+  },
 );

@@ -21,6 +21,12 @@ export const setBlocked = defineAction<"setBlocked", SetBlockedConfig>(
     tile.isBlock = conf.isBlock ?? false;
     ctx.listTilesUpdated.add(tile);
   },
+  {
+    label: "Toggle Blocked",
+    fields: [
+      { key: "isBlock", type: "boolean", label: "Blocked", default: true },
+    ],
+  },
 );
 
 // ---------------------

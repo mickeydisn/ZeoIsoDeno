@@ -4,6 +4,7 @@
  */
 
 import { WEB_DB_NAME, WEB_DB_VERSION } from "../const.ts";
+import type { Potion } from "@iso-game/mapIso/mapState.ts";
 
 
 export interface MapChunkMeta {
@@ -64,6 +65,12 @@ class MapWebDatabase {
           deltaStore.createIndex("cx", "cx", { unique: false });
           deltaStore.createIndex("cy", "cy", { unique: false });
           deltaStore.createIndex("timestamp", "timestamp", { unique: false });
+        }
+
+        // PotionInventory store: player potion data
+        if (!db.objectStoreNames.contains("PotionInventory")) {
+          const potionStore = db.createObjectStore("PotionInventory", { keyPath: "id" });
+          potionStore.createIndex("username", "username", { unique: false });
         }
       };
     });
@@ -192,6 +199,55 @@ class MapWebDatabase {
   async hasDeltas(cx: number, cy: number): Promise<boolean> {
     const meta = await this.getChunkMeta(cx, cy);
     return meta !== null;
+  }
+
+  // ---- PotionInventory operations ----
+
+  async savePotion(username: string, potion: Potion): Promise<void> {
+    const db = await this.ensureReady();
+    const tx = db.transaction("PotionInventory", "readwrite");
+    const store = tx.objectStore("PotionInventory");
+
+    store.put({
+      id: potion.id,
+      username,
+      potion,
+      updatedAt: Date.now(),
+    });
+
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async getAllPotions(username: string): Promise<Potion[]> {
+    const db = await this.ensureReady();
+    const tx = db.transaction("PotionInventory", "readonly");
+    const store = tx.objectStore("PotionInventory");
+    const index = store.index("username");
+
+    return new Promise((resolve, reject) => {
+      const request = index.getAll(IDBKeyRange.only(username));
+      request.onsuccess = () => {
+        const records = request.result as Array<{ potion: Potion }>;
+        resolve(records.map((r) => r.potion));
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deletePotion(id: string): Promise<void> {
+    const db = await this.ensureReady();
+    const tx = db.transaction("PotionInventory", "readwrite");
+    const store = tx.objectStore("PotionInventory");
+
+    store.delete(id);
+
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
   }
 }
 

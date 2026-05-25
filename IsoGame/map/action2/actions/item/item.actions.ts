@@ -29,6 +29,13 @@ export const itemAddKey = defineAction<"itemAddKey", ItemKeyConfig>(
     });
     ctx.listTilesUpdated.add(tile);
   },
+  {
+    label: "Add Item",
+    fields: [
+      { key: "assetKey", type: "text", label: "Item Key", default: "" },
+      { key: "h", type: "number", label: "Height Offset", default: 0, min: -10, max: 10 },
+    ],
+  },
 );
 
 // ---------------------
@@ -49,6 +56,14 @@ export const itemForceKey = defineAction<"itemForceKey", ItemKeyConfig>(
     });
     ctx.listTilesUpdated.add(tile);
   },
+  {
+    label: "Force Item",
+    description: "Replaces all items on a tile with a single asset",
+    fields: [
+      { key: "assetKey", type: "text", label: "Item Key", default: "" },
+      { key: "h", type: "number", label: "Height Offset", default: 0, min: -10, max: 10 },
+    ],
+  },
 );
 
 // ---------------------
@@ -61,6 +76,10 @@ export const clearItem = defineAction<"clearItem", BaseTileActionConfig>(
     const tile = ctx.fm.getTile(conf.x, conf.y);
     tile.clearItem();
     ctx.listTilesUpdated.add(tile);
+  },
+  {
+    label: "Clear Items",
+    fields: [],
   },
 );
 
@@ -83,5 +102,12 @@ export const temporaryItemsForceKey = defineAction<"temporatyItemsForceKey", Ite
     tile.temporatyItems.splice(0, tile.temporatyItems.length);
     tile.temporatyItems.push(record);
     ctx.listTilesWithTempItems.push(tile);
+  },
+  {
+    label: "Temp Item (preview)",
+    fields: [
+      { key: "assetKey", type: "text", label: "Item Key", default: "" },
+      { key: "h", type: "number", label: "Height Offset", default: 0, min: -10, max: 10 },
+    ],
   },
 );

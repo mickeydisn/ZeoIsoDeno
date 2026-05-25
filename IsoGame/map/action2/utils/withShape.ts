@@ -4,8 +4,14 @@
  * withLine applies a single-tile action along a Bresenham line with thickness.
  */
 
-import { iterShape, bresenham, Shape, Point } from "./geometry.ts";
-import { ActionContext, BaseTileActionConfig, TileAction, defineAction } from "./types.ts";
+import { bresenham, iterShape, Point, Shape } from "./geometry.ts";
+import {
+  ActionContext,
+  ActionMeta,
+  BaseTileActionConfig,
+  defineAction,
+  TileAction,
+} from "./types.ts";
 
 // ─── Shared config fields ─────────────────────────────────────────────────────
 
@@ -36,14 +42,14 @@ export function withShape<
   keyOrOverride: K,
 ): TileAction<K, S> {
   return defineAction<K, S>(keyOrOverride, (conf, ctx) => {
-    const size  = conf.size  ?? 1;
+    const size = conf.size ?? 1;
     const shape = conf.shape ?? "square";
     const points = [...iterShape(conf.x, conf.y, size, shape)];
 
     for (const p of points) {
       base.execute({ ...conf, x: p.x, y: p.y }, ctx);
     }
-  });
+  }, { ...base.meta, label: `${base.meta?.label} Square` } as ActionMeta);
 }
 
 // ─── withLine ────────────────────────────────────────────────────────────────
@@ -54,7 +60,7 @@ export function withLine<
   L extends C & LineConfig = C & LineConfig,
 >(
   base: TileAction<string, C>,
-  keyOrOverride?: K ,
+  keyOrOverride?: K,
 ): TileAction<K, L> {
   const key: K = keyOrOverride as K;
   return defineAction<K, L>(key, (conf, ctx) => {
@@ -74,5 +80,5 @@ export function withLine<
     for (const p of points) {
       base.execute({ ...conf, x: p.x, y: p.y }, ctx);
     }
-  });
+  }, { ...base.meta, label: `${base.meta?.label} Line` } as ActionMeta);
 }

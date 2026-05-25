@@ -66,4 +66,13 @@ export const lvlGradientShape = defineAction<"lvlGradientShape", LvlGradientShap
       ctx.listTilesUpdated.add(tile);
     }
   },
+  {
+    label: "Gradient Level",
+    description: "Radial gradient from centre outward",
+    fields: [
+      { key: "fromLvl", type: "number", label: "Centre Level", default: 10, min: 0, max: 255 },
+      { key: "toLvl", type: "number", label: "Edge Level", default: 0, min: 0, max: 255 },
+      { key: "size", type: "range", label: "Area Size", default: 5, min: 1, max: 41, step: 2 },
+    ],
+  },
 );

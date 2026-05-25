@@ -11,6 +11,8 @@ import {
   TScreenHandlerAction,
   TScreenHandlerContext,
 } from "@iso-game/handlers/screen/contexts.ts";
+import { mapDB } from "@iso-game/map/persistence/db/mapWebDatabase.ts";
+import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
 
 // ----
 
@@ -118,6 +120,56 @@ const infoCardPositions: TScreenHandlerAction<EventInfoCardPositions> =
 
 // -------------------------------------------------
 // -------------------------------------------------
+
+export interface EventPotionUsed
+  extends TBaseMessage<"potionUsed"> {
+  potionId: string;
+  remainingUses: number;
+  success: boolean;
+  reason?: string;
+}
+const potionUsed: TScreenHandlerAction<EventPotionUsed> = screenAction<
+  EventPotionUsed
+>("potionUsed", async (data: EventPotionUsed, _ctx: TScreenHandlerContext) => {
+  // Persist updated player state to IndexedDB
+  try {
+    const username = gobalMapState.playerState.username;
+    const potion = gobalMapState.playerState.inventory.find(p => p.id === data.potionId);
+    if (potion) {
+      await mapDB.savePotion(username, potion);
+    } else if (data.success) {
+      await mapDB.deletePotion(data.potionId);
+    }
+  } catch (err) {
+    console.error("[PotionUsed] Failed to persist:", err);
+  }
+
+  // Show feedback
+  if (data.success) {
+    const msg = data.remainingUses > 0
+      ? `\u{1F9EA} Potion used! ${data.remainingUses} use${data.remainingUses !== 1 ? "s" : ""} remaining.`
+      : "\u{1F9EA} Potion used \u2014 last use consumed.";
+    if (!document.getElementById("potion-use-indicator")) {
+      const indicator = document.createElement("div");
+      indicator.textContent = msg;
+      indicator.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#4a7;color:#fff;padding:12px 24px;border-radius:8px;font-family:monospace;z-index:9999;font-weight:bold;box-shadow:0 4px 12px rgba(0,0,0,0.5);";
+      indicator.id = "potion-use-indicator";
+      document.body.appendChild(indicator);
+      setTimeout(() => indicator.remove(), 3000);
+    }
+  } else {
+    console.warn("[PotionUsed] Failed:", data.reason ?? "Unknown error");
+    const indicator = document.createElement("div");
+    indicator.textContent = `\u274C Potion failed: ${data.reason ?? "Unknown error"}`;
+    indicator.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#a44;color:#fff;padding:12px 24px;border-radius:8px;font-family:monospace;z-index:9999;font-weight:bold;box-shadow:0 4px 12px rgba(0,0,0,0.5);";
+    indicator.id = "potion-use-indicator";
+    document.body.appendChild(indicator);
+    setTimeout(() => indicator.remove(), 3000);
+  }
+});
+
+// -------------------------------------------------
+// -------------------------------------------------
 // -------------------------------------------------
 
 export const initScreenHandler = [
@@ -125,4 +177,5 @@ export const initScreenHandler = [
   assetGroups,
   assetPreview,
   infoCardPositions,
+  potionUsed,
 ] as const;

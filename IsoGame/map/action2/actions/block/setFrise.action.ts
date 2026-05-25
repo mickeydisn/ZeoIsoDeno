@@ -21,6 +21,12 @@ export const setFrise = defineAction<"setFrise", SetFriseConfig>(
     tile.isFrise = conf.isFrise ?? false;
     ctx.listTilesUpdated.add(tile);
   },
+  {
+    label: "Toggle Frise",
+    fields: [
+      { key: "isFrise", type: "boolean", label: "Frise", default: true },
+    ],
+  },
 );
 
 // ---------------------

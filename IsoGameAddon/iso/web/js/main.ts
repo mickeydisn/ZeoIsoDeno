@@ -7,6 +7,7 @@ import { terrainMenuTab } from "./menu/sections/terrainMenu.ts";
 import { assetMenuTab, } from "./menu/sections/assetMenu.ts";
 import { colorMenuTab } from "./menu/sections/colorMenu.ts";
 import { buildingMenuTab } from "./menu/sections/buildingMenu.ts";
+import { potionMenuTab } from "./menu/sections/potionMenu.ts";
 import { indexScreenHandler, ScreenMessageHandler } from "../../../../IsoGame/handlers/handlers.ts";
  
 // ============================================================================
@@ -82,6 +83,7 @@ const config_tag : MenuTab[] = [
     colorMenuTab(gameWorker),
     assetMenuTab(gameWorker, handler),
     buildingMenuTab(gameWorker),
+    potionMenuTab(gameWorker),
   ]
 
 

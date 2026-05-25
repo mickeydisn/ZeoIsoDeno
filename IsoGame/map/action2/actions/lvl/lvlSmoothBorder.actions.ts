@@ -79,4 +79,12 @@ export const lvlSmoothBorder = defineAction<"lvlSmoothBorder", LvlSmoothBorderCo
       ctx.listTilesUpdated.add(tile);
     }
   },
+  {
+    label: "Smooth Border",
+    description: "Smooths the ring around a shape selection",
+    fields: [
+      { key: "avgRadius", type: "number", label: "Average Radius", default: 2, min: 1, max: 10 },
+      { key: "size", type: "range", label: "Area Size", default: 5, min: 1, max: 41, step: 2 },
+    ],
+  },
 );

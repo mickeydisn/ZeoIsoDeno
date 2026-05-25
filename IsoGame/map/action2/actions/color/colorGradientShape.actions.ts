@@ -76,6 +76,15 @@ export const colorGradientShape = defineAction<"colorGradientShape", ColorGradie
       ctx.listTilesUpdated.add(tile);
     }
   },
+  {
+    label: "Color Gradient",
+    description: "Blends from a centre color outward to an edge color",
+    fields: [
+      { key: "fromColor", type: "color", label: "Centre Color", default: [255, 255, 255] },
+      { key: "toColor", type: "color", label: "Edge Color", default: [0, 0, 0] },
+      { key: "size", type: "range", label: "Area Size", default: 5, min: 1, max: 41, step: 2 },
+    ],
+  },
 );
 
 // ─── lvlGradientShape ─────────────────────────────────────────────────────────

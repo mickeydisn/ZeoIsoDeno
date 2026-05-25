@@ -4,7 +4,7 @@ export class DialogManager {
 
   // Private constructor prevents direct instantiation
   private constructor() {
-    this.dialog = document.getElementById('mainDialog') as HTMLDialogElement;
+    this.dialog = document.getElementById("mainDialog") as HTMLDialogElement;
 
     if (!this.dialog) {
       console.error("Dialog element with ID 'mainDialog' not found.");
@@ -29,10 +29,10 @@ export class DialogManager {
   }
 
   /**
-   * Opens the dialog. 
+   * Opens the dialog.
    * Use .show() for non-modal or .showModal() for a standard backdrop modal.
    */
-  public open(isModal: boolean = true): void {
+  public open(isModal: boolean = false): void {
     if (this.dialog && !this.dialog.open) {
       isModal ? this.dialog.showModal() : this.dialog.show();
     }
@@ -55,7 +55,6 @@ export class DialogManager {
   }
 
   public getElement() {
-    return this.dialog 
+    return this.dialog;
   }
 }
-

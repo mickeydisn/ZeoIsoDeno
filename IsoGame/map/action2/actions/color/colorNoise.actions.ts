@@ -76,6 +76,14 @@ export const colorNoise = defineAction<"colorNoise", ColorNoiseConfig>(
     ];
     ctx.listTilesUpdated.add(tile);
   },
+  {
+    label: "Color Noise",
+    description: "Applies random colour noise to a tile",
+    fields: [
+      { key: "noiseAmp", type: "number", label: "Noise Amplitude", default: 20, min: 0, max: 100 },
+      { key: "noisyAlpha", type: "boolean", label: "Affect Alpha", default: false },
+    ],
+  },
 );
 
 // ─── colorNoiseShape (shape variant with full config inheritance) ──────────────
@@ -148,5 +156,13 @@ export const colorSmoothShape = defineAction<"colorSmoothShape", ColorSmoothShap
       ];
       ctx.listTilesUpdated.add(tile);
     }
+  },
+  {
+    label: "Smooth Color",
+    description: "Blends tile colors toward the average of their neighbours",
+    fields: [
+      { key: "smoothRadius", type: "number", label: "Smooth Radius", default: 1, min: 1, max: 10 },
+      { key: "strength", type: "range", label: "Strength", default: 0.5, min: 0, max: 1, step: 0.05 },
+    ],
   },
 );

@@ -29,6 +29,13 @@ export const color = defineAction<"color", ColorConfig>(
     tile.color = normaliseColor(conf.color);
     ctx.listTilesUpdated.add(tile);
   },
+  {
+    label: "Apply Color",
+    fields: [
+      { key: "color", type: "color", label: "Color", default: [128, 128, 128] },
+      { key: "size", type: "range", label: "Brush Size", default: 1, min: 1, max: 21, step: 2 },
+    ],
+  },
 );
 
 // ---------------------
@@ -48,6 +55,10 @@ export const clearColor = defineAction<"clearColor", BaseTileActionConfig>(
     const tile = ctx.fm.getTile(conf.x, conf.y);
     tile.clearColor();
     ctx.listTilesUpdated.add(tile);
+  },
+  {
+    label: "Clear Color",
+    fields: [],
   },
 );
 

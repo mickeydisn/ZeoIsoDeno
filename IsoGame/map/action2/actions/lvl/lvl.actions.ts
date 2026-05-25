@@ -46,6 +46,10 @@ export const clearLvl = defineAction<"clearLvl", BaseTileActionConfig>(
     tile.clearLvl();
     ctx.listTilesUpdated.add(tile);
   },
+  {
+    label: "Clear Level",
+    fields: [],
+  },
 );
 
 export const clearLvlSquare = withShape(clearLvl, "clearLvlSquare");
@@ -59,6 +63,13 @@ export const lvlSet = defineAction<"lvlSet", LvlConfig>(
     const tile = ctx.fm.getTile(conf.x, conf.y);
     if (conf.lvl !== undefined) tile.lvl = conf.lvl;
     ctx.listTilesUpdated.add(tile);
+  },
+  {
+    label: "Set Level",
+    fields: [
+      { key: "lvl", type: "number", label: "Level", default: 1, min: 0, max: 255 },
+      { key: "size", type: "range", label: "Brush Size", default: 1, min: 1, max: 21, step: 2 },
+    ],
   },
 );
 
@@ -78,6 +89,13 @@ export const lvlUp = defineAction<"lvlUp", LvlConfig>(
     const tile = ctx.fm.getTile(conf.x, conf.y);
     tile.lvl += conf.lvl ?? 0;
     ctx.listTilesUpdated.add(tile);
+  },
+  {
+    label: "Raise Level",
+    fields: [
+      { key: "lvl", type: "number", label: "Increment", default: 1, min: 1, max: 50 },
+      { key: "size", type: "range", label: "Brush Size", default: 1, min: 1, max: 21, step: 2 },
+    ],
   },
 );
 
@@ -99,6 +117,13 @@ export const lvlFlatSquare = defineAction<"lvlFlatSquare", LvlConfig>(
       })
     );
   },
+  {
+    label: "Flatten Area",
+    description: "Sets every tile in a square to the centre tile's level",
+    fields: [
+      { key: "size", type: "range", label: "Area Size", default: 3, min: 1, max: 21, step: 2 },
+    ],
+  },
 );
 
 // ---------------------
@@ -113,6 +138,13 @@ export const lvlAvgSquare = defineAction<"lvlAvgSquare", LvlConfig>(
     box.tiles.forEach((row) =>
       row.forEach((cell) => applyAvgLvl(cell.x, cell.y, 3, ctx))
     );
+  },
+  {
+    label: "Smooth Area",
+    description: "Smooths every tile in a square using neighbourhood average",
+    fields: [
+      { key: "size", type: "range", label: "Area Size", default: 3, min: 1, max: 21, step: 2 },
+    ],
   },
 );
 
