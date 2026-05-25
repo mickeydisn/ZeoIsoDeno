@@ -292,11 +292,13 @@ export class PointIso implements IPointIso{
                 candidates.push(new PointIso(tx, ty, z));
             }
         }
-        // Sort front-to-back: lower depth value = rendered last = visually on top
+        // Sort front-to-back: lower depth value = visually closer to viewer
+        // depth = x + y - 2·z·ratio   (ratio = ISO_LVL_SCALE / (2*16*SCALE_SIZE))
+        // lower x+y = closer tile, higher z (elevated) = closer tile → lower depth = visually in front
         candidates.sort((a, b) => {
             const da = a.x + a.y - 2 * a.z * ratio;
             const db = b.x + b.y - 2 * b.z * ratio;
-            return db - da;
+            return da - db;
         });
 
         // Return the first (frontmost) tile whose top face contains the point
