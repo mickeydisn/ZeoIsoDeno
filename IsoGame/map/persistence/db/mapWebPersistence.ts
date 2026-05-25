@@ -10,6 +10,7 @@ export class MapWebPersistence {
   private initialized = false;
   private saveQueue: Map<string, any[]> = new Map();
   private saveTimeout: number | null = null;
+  private flushing = false;
   private readonly SAVE_DEBOUNCE_MS = 1000; // Debounce saves by 1 second
 
   static getInstance(): MapWebPersistence {
@@ -33,6 +34,10 @@ export class MapWebPersistence {
     const key = `${cx}_${cy}`;
     this.saveQueue.set(key, deltas);
 
+    // Skip scheduling a new timeout if we're currently flushing —
+    // the flush will re-arm itself at the end if new data arrived.
+    if (this.flushing) return;
+
     // Clear existing timeout
     if (this.saveTimeout !== null) {
       clearTimeout(this.saveTimeout);
@@ -46,20 +51,36 @@ export class MapWebPersistence {
 
   /**
    * Force immediate save of all queued deltas.
+   * Safe to call concurrently: only one flush loop runs at a time.
    */
   async flushSaveQueue(): Promise<void> {
-    if (this.saveQueue.size === 0) return;
+    // Prevent concurrent flushes
+    if (this.flushing) return;
+    this.flushing = true;
 
-    const entries = Array.from(this.saveQueue.entries());
-    this.saveQueue.clear();
+    try {
+      // Keep draining until the queue stays empty after a pass
+      while (this.saveQueue.size > 0) {
+        const entries = Array.from(this.saveQueue.entries());
+        this.saveQueue.clear();
 
-    for (const [key, deltas] of entries) {
-      const [cx, cy] = key.split("_").map(Number);
-      try {
-        await mapDB.saveDeltas(cx, cy, deltas);
-        console.log(`[WebPersistence] Saved ${deltas.length} deltas for chunk ${cx}_${cy}`);
-      } catch (error) {
-        console.error(`[WebPersistence] Failed to save deltas for chunk ${cx}_${cy}:`, error);
+        for (const [key, deltas] of entries) {
+          const [cx, cy] = key.split("_").map(Number);
+          try {
+            await mapDB.saveDeltas(cx, cy, deltas);
+            console.log(`[WebPersistence] Saved ${deltas.length} deltas for chunk ${cx}_${cy}`);
+          } catch (error) {
+            console.error(`[WebPersistence] Failed to save deltas for chunk ${cx}_${cy}:`, error);
+          }
+        }
+      }
+    } finally {
+      this.flushing = false;
+      // Re-arm the timeout if new entries were added while we were flushing
+      if (this.saveQueue.size > 0) {
+        this.saveTimeout = setTimeout(async () => {
+          await this.flushSaveQueue();
+        }, this.SAVE_DEBOUNCE_MS) as unknown as number;
       }
     }
   }

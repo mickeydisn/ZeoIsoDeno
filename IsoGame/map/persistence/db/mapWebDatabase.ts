@@ -134,38 +134,41 @@ class MapWebDatabase {
 
     const tx = db.transaction("MapDeltas", "readwrite");
     const store = tx.objectStore("MapDeltas");
-
-    // First, delete existing deltas for this chunk
     const index = store.index("chunkId");
-    const deleteRequest = index.openCursor(IDBKeyRange.only(chunkId));
-    
-    deleteRequest.onsuccess = (event) => {
-      const cursor = (event.target as IDBRequest).result;
-      if (cursor) {
-        cursor.delete();
-        cursor.continue();
-      }
-    };
-
-    // Then add new deltas
-    deltas.forEach((delta) => {
-      store.add({
-        chunkId,
-        cx,
-        cy,
-        x: delta.x,
-        y: delta.y,
-        data: delta,
-        timestamp,
-      });
-    });
 
     return new Promise((resolve, reject) => {
-      tx.oncomplete = () => {
-        this.saveChunkMeta(cx, cy);
-        resolve();
+      // 1. Get all primary keys for existing deltas in this chunk
+      const keyRequest = index.getAllKeys(IDBKeyRange.only(chunkId));
+
+      keyRequest.onsuccess = () => {
+        const oldKeys = keyRequest.result as IDBValidKey[];
+
+        // 2. Delete old records by primary key (ordered before adds)
+        for (const key of oldKeys) {
+          store.delete(key);
+        }
+
+        // 3. Add new deltas
+        for (const delta of deltas) {
+          store.add({
+            chunkId,
+            cx,
+            cy,
+            x: delta.x,
+            y: delta.y,
+            data: delta,
+            timestamp,
+          });
+        }
+
+        tx.oncomplete = () => {
+          this.saveChunkMeta(cx, cy);
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
       };
-      tx.onerror = () => reject(tx.error);
+
+      keyRequest.onerror = () => reject(keyRequest.error);
     });
   }
 

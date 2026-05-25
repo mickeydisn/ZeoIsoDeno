@@ -119,9 +119,19 @@ export class Tile extends RawTile {
     const isColorDirty = this._currentColor.some((v, i) => v !== this.genColor[i]);
     const isBlockDirty = this.isBlock !== false;
     const isFriseDirty = this.isFrise !== false;
-    const isItemsDirty = JSON.stringify(this.items) !== JSON.stringify(this.genItems);
+    const isItemsDirty = !this._itemsEqual(this.items, this.genItems);
 
     return isLvlDirty || isColorDirty || isBlockDirty || isFriseDirty || isItemsDirty;
+  }
+
+  /**
+   * Deterministic comparison of two RecordRawItem arrays, ignoring object key ordering.
+   */
+  private _itemsEqual(a: RecordRawItem[], b: RecordRawItem[]): boolean {
+    if (a.length !== b.length) return false;
+    const canon = (item: RecordRawItem): string =>
+      JSON.stringify(item, Object.keys(item).sort());
+    return a.every((item, i) => canon(item) === canon(b[i]));
   }
 
   toDeltaJson() {
@@ -132,7 +142,7 @@ export class Tile extends RawTile {
     }
     if (this.isBlock !== false) delta.isBlock = this.isBlock;
     if (this.isFrise !== false) delta.isFrise = this.isFrise;
-    if (JSON.stringify(this.items) !== JSON.stringify(this.genItems)) {
+    if (!this._itemsEqual(this.items, this.genItems)) {
       delta.items = this.items;
     }
 
@@ -168,6 +178,16 @@ export class Tile extends RawTile {
     if (data.items !== undefined) {
       this.items = data.items;
     }
+    // Do NOT modify gen* baselines here — they need to stay as the original
+    // generated reference for dirty detection and clearLvl()/clearColor().
+  }
+
+  fromJsonSave(data: any) {
+    this.color = data.currentColor;
+    this.lvl = data.currentLvl;
+    this.isBlock = data.isBlock;
+    this.isFrise = data.isFrise;
+    this.items = data.items ?? [];
   }
 
   toJsonSave() {
@@ -186,13 +206,6 @@ export class Tile extends RawTile {
     };
   }
 
-  fromJsonSave(data: any) {
-    this.color = data.currentColor;
-    this.lvl = data.currentLvl;
-    this.isBlock = data.isBlock;
-    this.isFrise = data.isFrise;
-    this.items = data.items ?? [];
-  }
 
   get nearTiles() {
     return [0, 1, 2, 3].map((axe) => {

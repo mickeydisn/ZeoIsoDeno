@@ -51,22 +51,29 @@ export class FactoryMap {
   /**
    * Asynchronously load saved deltas from the persistence layer
    * and apply them to the chunk after generation.
+   * 
+   * Priority order: Web (IndexedDB) is the authoritative local source
+   * because it contains the most recent unsynced changes.
+   * Server is only used as fallback when there is no local data.
    */
   private async loadChunkDeltas(chunk: Chunk): Promise<void> {
     console.log(`[FactoryMap] Loading deltas for chunk (${chunk.cx}, ${chunk.cy})`);
     if (!this.persistence) return;
     try {
-      const deltas = await this.persistence.loadChunkDeltas(chunk.cx, chunk.cy);
-      if (deltas && deltas.length > 0) {
-        chunk.applyDeltas(deltas);
-        console.log(`[FactoryMap] WEB Applied ${deltas.length} deltas to chunk ${chunk.cx}_${chunk.cy}`);
-      }
-      const deltas2 = await mapServerPersistence.loadChunkDeltas(chunk.cx, chunk.cy);
-      if (deltas2 && deltas2.length > 0) {
-        chunk.applyDeltas(deltas2);
-        console.log(`[FactoryMap] SERVER Applied ${deltas2.length} deltas2 to chunk ${chunk.cx}_${chunk.cy}`);
+      // 1. Load from web persistence (IndexedDB) — this is the most recent local state
+      const webDeltas = await this.persistence.loadChunkDeltas(chunk.cx, chunk.cy);
+      if (webDeltas && webDeltas.length > 0) {
+        chunk.applyDeltas(webDeltas);
+        console.log(`[FactoryMap] WEB Applied ${webDeltas.length} deltas to chunk ${chunk.cx}_${chunk.cy}`);
+        return; // Web is authoritative — stop here. Server may not have the latest changes yet.
       }
 
+      // 2. Fallback: load from server (SQLite) only if web had nothing
+      const serverDeltas = await mapServerPersistence.loadChunkDeltas(chunk.cx, chunk.cy);
+      if (serverDeltas && serverDeltas.length > 0) {
+        chunk.applyDeltas(serverDeltas);
+        console.log(`[FactoryMap] SERVER Applied ${serverDeltas.length} deltas to chunk ${chunk.cx}_${chunk.cy}`);
+      }
 
     } catch (error) {
       console.error(`[FactoryMap] Failed to load deltas for chunk ${chunk.cx}_${chunk.cy}:`, error);
