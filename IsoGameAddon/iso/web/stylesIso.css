@@ -821,8 +821,8 @@ display: grid;
 
 #infoCardLayer {
   position: relative;
-  width: 1600px;
-  height: 800px;
+  width: 0px;
+  height: 0px;
   border: 1px solid #FFF;
   display: flex;
 

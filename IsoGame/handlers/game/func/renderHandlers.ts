@@ -1,6 +1,6 @@
-import { mapState } from "@iso-game/mapIso/mapState.ts";
-import { TBaseMessage } from "../../../../../../IsoGame/etc/handlers/types/type.ts";
-import { gameAction, TGameHandlerAction, TGameHandlerContext } from "@iso-web/js/handlers/contexts.ts";
+import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
+import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
+import { gameAction, TGameHandlerAction , TGameHandlerContext } from "../contexts.ts";
 
 
 
@@ -27,7 +27,7 @@ export interface EventSetCenter extends TBaseMessage<"setCenter">{
 const setCenter: TGameHandlerAction<EventSetCenter> = 
   gameAction<EventSetCenter>("setCenter", 
    (data: EventSetCenter, _ctx: TGameHandlerContext) => {
-    mapState.setCenter(data.x, data.y);
+    gobalMapState.setCenter(data.x, data.y);
 });
 
 

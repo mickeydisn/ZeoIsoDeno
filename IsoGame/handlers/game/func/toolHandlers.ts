@@ -1,7 +1,7 @@
 import { toolRegistry } from "@iso-game/tools/toolRegistry.ts";
-import { mapState } from "@iso-game/mapIso/mapState.ts";
-import { TBaseMessage } from "../../../../../../IsoGame/etc/handlers/types/type.ts";
-import { gameAction, TGameHandlerAction, TGameHandlerContext } from "@iso-web/js/handlers/contexts.ts";
+import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
+import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
+import { gameAction, TGameHandlerAction , TGameHandlerContext } from "../contexts.ts";
 
 
 
@@ -125,15 +125,15 @@ const toolClick: TGameHandlerAction<EventToolClick> =
   gameAction<EventToolClick>("toolClick", 
    (data: EventToolClick, _ctx: TGameHandlerContext) => {
   const x = data.gridX !== undefined
-    ? data.gridX + mapState.x - 1
+    ? data.gridX + gobalMapState.x - 1
     : data.x !== undefined
     ? data.x
-    : mapState.x;
+    : gobalMapState.x;
   const y = data.gridY !== undefined
-    ? data.gridY + mapState.y - 1
+    ? data.gridY + gobalMapState.y - 1
     : data.y !== undefined
     ? data.y
-    : mapState.y;
+    : gobalMapState.y;
 
   const _result = toolRegistry.executeAt(x, y);
 

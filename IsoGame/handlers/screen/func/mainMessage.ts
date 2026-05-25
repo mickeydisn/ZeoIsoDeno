@@ -1,9 +1,16 @@
 import { TileInfo } from "@iso-game/map/object/tile.ts";
-import { TBaseMessage } from "../../../../../../IsoGame/etc/handlers/types/type.ts";
-import { screenAction, TScreenHandlerAction, TScreenHandlerContext } from "@iso-web/js/handlers/contexts.ts";
-import { handleAssetGroups, handleAssetPreview, initAssetGroups } from "@iso-web/js/menu/sections/assetMenu.ts";
+import { TBaseMessage } from "@iso-game/etc/handlers/types/type.ts";
+import {
+  handleAssetGroups,
+  handleAssetPreview,
+  initAssetGroups,
+} from "@iso-web/js/menu/sections/assetMenu.ts";
 import { InfoCardManager } from "@iso-web/js/menu/infoCard.ts";
-
+import {
+  screenAction,
+  TScreenHandlerAction,
+  TScreenHandlerContext,
+} from "@iso-game/handlers/screen/contexts.ts";
 
 // ----
 
@@ -11,12 +18,9 @@ export interface EventMainInit extends TBaseMessage<"callback_initWorker"> {
   action: "callback_initWorker";
 }
 
-
 export interface EventInfoCell extends TBaseMessage<"infoCell"> {
   data: TileInfo;
 }
-
-
 
 export interface EventPickedColor extends TBaseMessage<"pickedColor"> {
   r: number;
@@ -24,9 +28,8 @@ export interface EventPickedColor extends TBaseMessage<"pickedColor"> {
   b: number;
 }
 
-
-
-export interface EventBuildingConfigList extends TBaseMessage <"buildingConfigList">{
+export interface EventBuildingConfigList
+  extends TBaseMessage<"buildingConfigList"> {
   configs: Array<{
     id: string;
     name: string;
@@ -36,7 +39,7 @@ export interface EventBuildingConfigList extends TBaseMessage <"buildingConfigLi
   }>;
 }
 
-export interface EventToolExecuted extends TBaseMessage<"toolExecuted">{
+export interface EventToolExecuted extends TBaseMessage<"toolExecuted"> {
   action: "toolExecuted";
   toolId: string | null;
   success: boolean;
@@ -51,22 +54,20 @@ export interface EventToolList extends TBaseMessage<"toolList"> {
   }>;
 }
 
-
-
 // -------------------------------------------------
 
 export interface EventInfoFPS extends TBaseMessage<"FPS"> {
   fps: number;
 }
-const FPS: TScreenHandlerAction<EventInfoFPS> = 
-  screenAction<EventInfoFPS>("FPS", 
-   (data: EventInfoFPS, _ctx: TScreenHandlerContext) => {
-  const fpsDisplay = document.getElementById("fps")!;
+const FPS: TScreenHandlerAction<EventInfoFPS> = screenAction<EventInfoFPS>(
+  "FPS",
+  (data: EventInfoFPS, _ctx: TScreenHandlerContext) => {
+    const fpsDisplay = document.getElementById("fps")!;
     fpsDisplay.textContent = `FPS: ${data.fps}`;
-});
+  },
+);
 
 // -------------------------------------------------
-
 
 export interface EventAssetGroups extends TBaseMessage<"assetGroups"> {
   groups: Array<{
@@ -74,42 +75,46 @@ export interface EventAssetGroups extends TBaseMessage<"assetGroups"> {
     images: string[];
   }>;
 }
-const assetGroups: TScreenHandlerAction<EventAssetGroups> = 
-  screenAction<EventAssetGroups>("assetGroups", 
-  (data: EventAssetGroups, _ctx: TScreenHandlerContext) => {
-    initAssetGroups(_ctx.worker, _ctx.handler);
-    handleAssetGroups(data.groups);
+const assetGroups: TScreenHandlerAction<EventAssetGroups> = screenAction<
+  EventAssetGroups
+>("assetGroups", (data: EventAssetGroups, _ctx: TScreenHandlerContext) => {
+  initAssetGroups(_ctx.worker, _ctx.handler);
+  handleAssetGroups(data.groups);
 });
 
-
-
 // -------------------------------------------------
-
 
 export interface EventAssetPreview extends TBaseMessage<"assetPreview"> {
   blobUrl: string;
 }
 
-const assetPreview: TScreenHandlerAction<EventAssetPreview> = 
-  screenAction<EventAssetPreview>("assetPreview", 
-  (data: EventAssetPreview, _ctx: TScreenHandlerContext) => {
-    handleAssetPreview(data.blobUrl);
+const assetPreview: TScreenHandlerAction<EventAssetPreview> = screenAction<
+  EventAssetPreview
+>("assetPreview", (data: EventAssetPreview, _ctx: TScreenHandlerContext) => {
+  handleAssetPreview(data.blobUrl);
 });
-
 
 // -------------------------------------------------
 
-export interface EventInfoCardPosition extends TBaseMessage<"infoCardPosition"> {
-  cardId: string;
-  x: number; y: number;
-}
-const infoCardPosition: TScreenHandlerAction<EventInfoCardPosition> = 
-  screenAction<EventInfoCardPosition>("infoCardPosition", 
-   (data: EventInfoCardPosition, _ctx: TScreenHandlerContext) => {
-      InfoCardManager.getInstance().updatePos(data.cardId, data.x, data.y)
-      // console.warn("==> infoCardPosition", data)
-});
+// -------------------------------------------------
 
+export interface EventInfoCardPositions
+  extends TBaseMessage<"infoCardPositions"> {
+  cards: {
+    cardId: string;
+    x: number;
+    y: number;
+    distance: number;
+  }[];
+}
+const infoCardPositions: TScreenHandlerAction<EventInfoCardPositions> =
+  screenAction<EventInfoCardPositions>(
+    "infoCardPositions",
+    (data: EventInfoCardPositions, _ctx: TScreenHandlerContext) => {
+      InfoCardManager.getInstance().updateAllPos(data.cards);
+      // console.warn("==> infoCardPosition", data)
+    },
+  );
 
 // -------------------------------------------------
 // -------------------------------------------------
@@ -119,7 +124,5 @@ export const initScreenHandler = [
   FPS,
   assetGroups,
   assetPreview,
-  infoCardPosition,
+  infoCardPositions,
 ] as const;
-
-

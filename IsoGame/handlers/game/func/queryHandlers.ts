@@ -1,7 +1,7 @@
 import { FactoryMap } from "@iso-game/map/factory/factoryMap.ts";
-import { mapState } from "@iso-game/mapIso/mapState.ts";
-import { TBaseMessage } from "../../../../../../IsoGame/etc/handlers/types/type.ts";
-import { gameAction, TGameHandlerAction, TGameHandlerContext } from "@iso-web/js/handlers/contexts.ts";
+import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
+import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
+import { gameAction, TGameHandlerAction , TGameHandlerContext } from "../contexts.ts";
 
 // -------------------------------------
 
@@ -12,8 +12,8 @@ export interface EventQueryInfoCell extends TBaseMessage<"query_infoCell"> {
 const query_infoCell: TGameHandlerAction<EventQueryInfoCell> = 
   gameAction<EventQueryInfoCell>("query_infoCell", 
    (data: EventQueryInfoCell, _ctx: TGameHandlerContext) => {
-    const x = data.x !== undefined ? data.x : mapState.x;
-    const y = data.y !== undefined ? data.y : mapState.y;
+    const x = data.x !== undefined ? data.x : gobalMapState.x;
+    const y = data.y !== undefined ? data.y : gobalMapState.y;
     const tile = FactoryMap.getInstance().getTile(x, y);
     return tile.toJsonInfo();
 });

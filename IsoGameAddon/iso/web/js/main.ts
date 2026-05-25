@@ -7,7 +7,7 @@ import { terrainMenuTab } from "./menu/sections/terrainMenu.ts";
 import { assetMenuTab, } from "./menu/sections/assetMenu.ts";
 import { colorMenuTab } from "./menu/sections/colorMenu.ts";
 import { buildingMenuTab } from "./menu/sections/buildingMenu.ts";
-import { indexScreenHandler, ScreenMessageHandler } from "@iso-web/js/handlers/handlers.ts";
+import { indexScreenHandler, ScreenMessageHandler } from "../../../../IsoGame/handlers/handlers.ts";
  
 // ============================================================================
 // CREATE WORKER

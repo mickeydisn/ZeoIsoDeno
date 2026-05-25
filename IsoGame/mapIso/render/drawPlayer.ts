@@ -1,19 +1,19 @@
-import { DrawContext, LVL_Z_SCALE_FACTOR } from "@iso-game/mapIso/_render/type.ts";
-import { mapState } from "@iso-game/mapIso/mapState.ts";
-import { Shape } from "@iso-game/mapIso/iso/shape.ts";
-import { Point } from "@iso-game/mapIso/iso/point.ts";
-import { _drawTileItem } from "@iso-game/mapIso/_render/isoTileRender.ts";
-import { drawShapePaths } from "@iso-game/mapIso/_render/shapePathRender.ts";
+import { DrawContext, LVL_Z_SCALE_FACTOR } from "./type.ts";
+import { Shape } from "../utils/iso/shape.ts";
+import { Point } from "../utils/iso/point.ts";
+import { _drawTileItem } from "./utils/drawTileUtils.ts";
+import { drawShapePaths } from "./utils/drawShapePaths.ts";
 
   /**
    * Draws the base tile geometry, including floor and borders.
    */
- const _drawPlayer = (
+ export const drawPlayer = (
     _ctx: DrawContext,
     
     x: number,
     y: number
 ) => {
+
     const size = _ctx.conf.DRAW_TILE_COUNT;
     const xx = size - x - 1;
     const yy = size - y - 1;
@@ -29,10 +29,10 @@ import { drawShapePaths } from "@iso-game/mapIso/_render/shapePathRender.ts";
     // draw of .
     items.push({
        t: "Svg", 
-       key: "astronautB_" + _ctx.direction,
+       key: "astronautB_" + _ctx.mapState.direction,
       off : {
-        x: (mapState.xf - mapState.x) / _ctx.conf.SCALE_MOD,
-        y: (mapState.yf - mapState.y) / _ctx.conf.SCALE_MOD
+        x: (_ctx.mapState.xf - _ctx.mapState.x) / _ctx.conf.SCALE_MOD,
+        y: (_ctx.mapState.yf - _ctx.mapState.y) / _ctx.conf.SCALE_MOD
       } 
     });
 

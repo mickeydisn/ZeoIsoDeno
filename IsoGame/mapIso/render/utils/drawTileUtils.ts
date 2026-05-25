@@ -1,8 +1,8 @@
-import { Color } from "@iso-game/mapIso/iso/color.ts";
-import { Shape } from "@iso-game/mapIso/iso/shape.ts";
-import { Point } from "@iso-game/mapIso/iso/point.ts";
-import { DrawContext } from "@iso-game/mapIso/_render/type.ts";
-import { drawAsset } from "@iso-game/mapIso/_render/assetTileRender.ts";
+import { Color } from "../../utils/iso/color.ts";
+import { Shape } from "../../utils/iso/shape.ts";
+import { Point } from "../../utils/iso/point.ts";
+import { DrawContext } from "../type.ts";
+import { drawAsset } from "./drawAsset.ts";
 
 
 

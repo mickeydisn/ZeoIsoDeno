@@ -1,6 +1,6 @@
-import { Shape } from "@iso-game/mapIso/iso/shape.ts";
-import { DrawContext } from "@iso-game/mapIso/_render/type.ts";
-import { PointIso } from "@iso-game/mapIso/simpleIso/IsometricProjector.ts";
+import { Shape } from "../../utils/iso/shape.ts";
+import { DrawContext } from "../type.ts";
+import { PointIso } from "../../utils/simpleIso/IsometricProjector.ts";
 
 
 /**

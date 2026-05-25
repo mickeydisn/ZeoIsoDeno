@@ -67,7 +67,7 @@ export class MessageHandler<
     if (pingId && this.pendingResponses.has(pingId)) {
       this.pendingResponses.get(pingId)?.(message);
       this.pendingResponses.delete(pingId);
-      return;
+      return true;
     }
 
     // console.log(this.handlers, action);
@@ -77,9 +77,11 @@ export class MessageHandler<
       const result = await handler(message, this.ctx);
       if (pingId && result) {
         this.worker.postMessage({ type: "response", pingId, result: result });
+        return true
       }
     } else {
       console.warn(`[MessageHandler] No handler for type "${JSON.stringify(message)}"`);
+      return false
     }
   }
 

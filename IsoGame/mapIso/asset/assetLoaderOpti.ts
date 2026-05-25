@@ -32,7 +32,7 @@ export class AssetLoaderOpti {
   ): Promise<AssetLoaderOpti> {
     const loader = new AssetLoaderOpti();
     await loader.loadAssetFiles(assetList || assetOptiConfig); // Load the assets after instantiation
-    console.log("assetTree", loader.assetTree);
+
     return loader;
   }
 

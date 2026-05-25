@@ -1,9 +1,11 @@
 import { TypeKeysActionUpdate } from "../../IsoGameAddon/iso/web/js/main/keyboad.ts";
 import { TilesMatrix } from "../map/object/tilesMatrix.ts";
-import { IsometricProjector } from "./simpleIso/IsometricProjector.ts";
+import { DrawContext } from "@iso-game/mapIso/render/type.ts";
+import { IsometricProjector } from "./utils/simpleIso/IsometricProjector.ts";
 
-const CANVAS_WIDTH = 1600
-const CANVAS_HEIGHT = 800
+export const CANVAS_WIDTH = 1600
+export const CANVAS_HEIGHT = 800
+
 const PLAYER_SPEED = 0.25; // Base speed in tiles per tick, modulated by tileScaleMod        
 
 export interface CanvasMapConf {
@@ -101,9 +103,6 @@ export class MapState {
     }
     constructor() { }
 
-    // --
-    _tilesMatrix: TilesMatrix | undefined;
-    _isoProject: IsometricProjector | undefined;
 
     overlayPoint : Array<Point2D> = [];
 
@@ -113,33 +112,9 @@ export class MapState {
         tileScaleMod: 1, 
     };
 
-    clean() {
-        this._tilesMatrix = undefined;
-        this._isoProject = undefined;
-    }
 
     setIsoConf(isoConf: CanvasMapConf) {
         this.isoConf = isoConf;
-        this.clean();
-    }
-
-    tilesMatrix () : TilesMatrix {
-        if (!this._tilesMatrix) {
-            this._tilesMatrix = new TilesMatrix(this.isoConf.mapSize, 0, 0, this.isoConf.mapSize)
-            this._tilesMatrix.setCenter(this.x, this.y);
-        }
-        return this._tilesMatrix;
-    }
-    isoProject () {
-        if (!this._isoProject) {
-            this._isoProject = new IsometricProjector({
-                originX : CANVAS_WIDTH / 2,
-                originY : CANVAS_HEIGHT / 2 + this.isoConf.mapSize * 16 * this.isoConf.tileScaleSize,
-                SCALE_SIZE:this.isoConf.tileScaleSize,
-                SCALE_MOD:this.isoConf.tileScaleMod,
-            })
-        }
-        return this._isoProject;
     }
 
     // --
@@ -240,13 +215,20 @@ export class MapState {
     mouseWorldY: number = 0;
 
 
-    public setMouseScreen(screenX: number, screenY: number): void {
+    public setMouseScreen(
+        _drawCtx: DrawContext, 
+        screenX: number, screenY: number
+    ): void {
         // Throttle to max 60fps (16ms) to avoid object creation storm
         const now = Date.now();
         if (now - this._lastMouseUpdate < 16) return;
         this._lastMouseUpdate = now;
 
-        const tile = this.isoProject().screenToTileWithHeight(screenX, screenY, this.tilesMatrix());
+        const tile = _drawCtx.isoProject.screenToTileWithHeight(
+            screenX, 
+            screenY, 
+            _drawCtx.tilesMatrix,
+        );
         // Use internal IsometricProjector for coordinate conversion
         if (tile) {
             this.mouseWorldX = tile.x;
@@ -257,4 +239,4 @@ export class MapState {
 }
 
 
-export const mapState = MapState.getInstance();
+export const gobalMapState = MapState.getInstance();

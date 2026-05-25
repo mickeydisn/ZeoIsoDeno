@@ -28,7 +28,7 @@ export class CityEntity2 {
   currentGoal: EntityGoal | null;
   nextGoalList: EntityGoal[] = [];
 
-  constructor(world: World, _conf = {x:0, y:0}) {
+  constructor(world: World, _conf = { x: 0, y: 0 }) {
     this.world = world;
     this.world.entities.push(this);
 
@@ -180,13 +180,13 @@ export class CityEntity2 {
     return false;
   }
 
-  tickLife = 0
+  tickLife = 0;
   doTick() {
     this.tickLife += 1;
     const LIFE_LIME = 100000;
     if (this.tickLife > LIFE_LIME) {
-      this.tile.removeEntity(this)
-      this.world.removeEntity(this)
+      this.tile.removeEntity(this);
+      this.world.removeEntity(this);
     }
     if (this.waitingTickCount > 0) {
       this.waitingTickCount -= 1;
@@ -263,17 +263,20 @@ const behaviorMove_getRandomGoal = {
     entity.currentGoal?.id.localeCompare("randomMove") == 0 &&
     !entity.currentGoal?.sData?.moveGoal,
   do: (entity: CityEntity2) => {
-    const currentTile = entity.fm.getTile(entity.tile.x, entity.tile.y)
+    const currentTile = entity.fm.getTile(entity.tile.x, entity.tile.y);
 
-    const lowerTile : Tile | undefined = currentTile.nearTilesAxe()
-        // .filter((t) => {
-        //   return ! (t.color[0] == 0 &&  t.color[1] == 0 &&  t.color[2] == 50)
-        // })
-        .sort(( a, b ) => a.lvl - b.lvl)[0]
+    const lowerTile: Tile | undefined = currentTile.nearTilesAxe()
+      // .filter((t) => {
+      //   return ! (t.color[0] == 0 &&  t.color[1] == 0 &&  t.color[2] == 50)
+      // })
+      .sort((a, b) => a.lvl - b.lvl)[0];
 
-
-    const dx = lowerTile ? lowerTile.x : entity.tile.x + 3 - Math.round(Math.random() * 6);
-    const dy = lowerTile ? lowerTile.y : entity.tile.y + 3 - Math.round(Math.random() * 6);
+    const dx = lowerTile
+      ? lowerTile.x
+      : entity.tile.x + 3 - Math.round(Math.random() * 6);
+    const dy = lowerTile
+      ? lowerTile.y
+      : entity.tile.y + 3 - Math.round(Math.random() * 6);
     /*
     const goalTile = entity.fm.getTile(entity.tile.x + dx, entity.tile.y + dy)
     if (entity.tile.lvl >= goalTile.lvl) {
@@ -282,6 +285,7 @@ const behaviorMove_getRandomGoal = {
       lowerTile = undefined;
     }
     */
+    /*
     const currentGoal = entity.currentGoal as EntityGoal;
     TilesActions.getInstance().doAction(cmd.lvlAvgSquare({
       x: entity.tile.x,
@@ -328,6 +332,7 @@ const behaviorMove_getRandomGoal = {
         },
       };
     }
+    */
   },
 };
 

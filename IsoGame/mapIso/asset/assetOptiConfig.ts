@@ -35,14 +35,14 @@ export type TypeAssetGroupConfig = {
 
 export const assetOptiConfig: TypeAssetGroupConfig[] = [
   asset_AstroBase,
-  asset_AstroBase2,
+  // asset_AstroBase2,
   asset_AstroBase3,
   asset_AstroBase,
   asset_AstroBase5,
   asset_Town1,
   asset_Town2,
   asset_Wall,
-  asset_edited_fences,
+  // asset_edited_fences,
   asset_NatureTree,
   asset_NatureFlower,
   asset_NatureRock,
@@ -55,7 +55,7 @@ export const assetOptiConfig: TypeAssetGroupConfig[] = [
   asset_AstroRocket,
   asset_Grok5,
 
-  asset_MyTower,
+  // asset_MyTower,
   asset_UserAstro,
 
 

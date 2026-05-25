@@ -1,12 +1,15 @@
-import { initHandlers } from "@iso-web/js/handlers/game/initHandlers.ts";
-import { renderHandlers } from "@iso-web/js/handlers/game/renderHandlers.ts";
-import { interactionHandlers } from "@iso-web/js/handlers/game/interactionHandlers.ts";
-import { toolHandlers } from "@iso-web/js/handlers/game/toolHandlers.ts";
-import { queryHandlers } from "@iso-web/js/handlers/game/queryHandlers.ts";
-import { buildHandlerIndexes, buildHandlerRegistry, buildMsgMap, IncomingMessages, IndexedHandlers } from "../../../../../IsoGame/etc/handlers/types/handlerCmd.ts";
-import { MessageHandler } from "../../../../../IsoGame/etc/handlers/messageHandler.ts";
-import { TGameHandlerContext, TScreenHandlerContext } from "./contexts.ts";
-import { initScreenHandler } from "@iso-web/js/handlers/screen/mainMessage.ts";
+import { initHandlers } from "./game/func/initHandlers.ts";
+import { renderHandlers } from "./game/func/renderHandlers.ts";
+import { interactionHandlers } from "./game/func/interactionHandlers.ts";
+import { toolHandlers } from "./game/func/toolHandlers.ts";
+import { queryHandlers } from "./game/func/queryHandlers.ts";
+import { buildHandlerIndexes, buildHandlerRegistry, buildMsgMap, IncomingMessages, IndexedHandlers } from "../etc/handlers/types/handlerCmd.ts";
+import { MessageHandler } from "../etc/handlers/messageHandler.ts";
+import { TGameHandlerContext } from "./game/contexts.ts";
+import { initScreenHandler } from "./screen/func/mainMessage.ts";
+import { TScreenHandlerContext } from "@iso-game/handlers/screen/contexts.ts";
+import { TRenderHandlerContext } from "@iso-game/handlers/render/contexts.ts";
+import { initRenderHandlers } from "@iso-game/handlers/render/func/initHandlers.ts";
 
 // ────────────────────────────────────────────
 
@@ -24,6 +27,10 @@ export const AllGameHandlers = [
 
 export const AllScreenHandlers = [
     ...initScreenHandler,
+] as const;
+
+export const AllRenderHandlers = [
+    ...initRenderHandlers,
 ] as const;
 
 
@@ -48,7 +55,7 @@ export type TGameIncomingMessages = IncomingMessages<TGameHandlerIndex>;
 export class GameMessageHandler extends MessageHandler<
     TGameHandlerContext, 
     TGameHandlerIndex, 
-    TGameIncomingMessages | TScreenIncomingMessages
+    TGameIncomingMessages | TScreenIncomingMessages | TRenderIncomingMessages
 > {}
 
 // ────────────────────────────────────────────
@@ -66,5 +73,25 @@ export type TScreenIncomingMessages = IncomingMessages<TScreenHandlerIndex>;
 export class ScreenMessageHandler extends MessageHandler<
     TScreenHandlerContext, 
     TScreenHandlerIndex,
-    TGameIncomingMessages | TScreenIncomingMessages
+    TGameIncomingMessages | TScreenIncomingMessages | TRenderIncomingMessages
+> {}   
+
+
+
+// ────────────────────────────────────────────
+// Render HANDLERS
+// ────────────────────────────────────────────
+
+export const indexRenderHandler = buildHandlerIndexes<TRenderHandlerContext, typeof AllRenderHandlers>(AllRenderHandlers);
+
+const RENDER_HANDLER_REGISTRY = buildHandlerRegistry(AllRenderHandlers);
+export const msgToRender = buildMsgMap(RENDER_HANDLER_REGISTRY);
+
+export type TRenderHandlerIndex = IndexedHandlers<TRenderHandlerContext, typeof AllRenderHandlers>;
+export type TRenderIncomingMessages = IncomingMessages<TRenderHandlerIndex>;
+
+export class RenderMessageHandler extends MessageHandler<
+    TRenderHandlerContext, 
+    TRenderHandlerIndex,
+    TGameIncomingMessages | TScreenIncomingMessages | TRenderIncomingMessages
 > {}   

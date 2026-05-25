@@ -1,6 +1,6 @@
 // --- 1. Copied Point Class ---
 
-import { TilesMatrix } from "../../map/object/tilesMatrix.ts";
+import { TilesMatrix } from "../../../map/object/tilesMatrix.ts";
 
 // Configure the main LVL Diff factor display on the grid ( Transform real Lvl Diff to Pixel Diff)
 const ISO_LVL_SCALE = 39;

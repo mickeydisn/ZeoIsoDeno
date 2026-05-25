@@ -1,9 +1,9 @@
-import { mapState } from "@iso-game/mapIso/mapState.ts";
+import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
 import { TypeKeysActionUpdate } from "@iso-web/js/main/keyboad.ts";
 import { toolRegistry } from "@iso-game/tools/toolRegistry.ts";
-import { City } from "../../../../../../IsoGame/generator/city/city.ts";
-import { TBaseMessage} from "../../../../../../IsoGame/etc/handlers/types/type.ts";
-import { gameAction, TGameHandlerAction, TGameHandlerContext } from "@iso-web/js/handlers/contexts.ts";
+import { City } from "../../../generator/city/city.ts";
+import { TBaseMessage} from "../../../etc/handlers/types/type.ts";
+import { gameAction, TGameHandlerAction , TGameHandlerContext } from "../contexts.ts";
 
 
 
@@ -38,7 +38,7 @@ export interface EventUpdateKeyboard extends TBaseMessage<"updateKeyboard"> {
 const updateKeyboard: TGameHandlerAction<EventUpdateKeyboard> = 
   gameAction<EventUpdateKeyboard>("updateKeyboard", 
    (data: EventUpdateKeyboard, _ctx: TGameHandlerContext) => {
-    mapState.tickUpdateKeyboard(data.keys as TypeKeysActionUpdate);
+    gobalMapState.tickUpdateKeyboard(data.keys as TypeKeysActionUpdate);
 });
 
 // -------------------------------------
@@ -50,7 +50,11 @@ export interface EventMouseScreen extends TBaseMessage<"mouseMove"> {
 const mouseMove: TGameHandlerAction<EventMouseScreen> = 
   gameAction<EventMouseScreen>("mouseMove", 
    (data: EventMouseScreen, _ctx: TGameHandlerContext) => {
-  mapState.setMouseScreen(data.x as number, data.y as number);
+  gobalMapState.setMouseScreen(
+    _ctx.gameloop.canvasMapDrawer._drawCtx, 
+    data.x as number, 
+    data.y as number
+  );
 });
 
 // -------------------------------------
@@ -61,20 +65,27 @@ export interface EventMouseClick extends TBaseMessage<"mouseClick"> {
   y: number;
 }
 const mouseClick: TGameHandlerAction<EventMouseClick> = 
-  gameAction<EventMouseClick>("mouseClick", 
-   (data: EventMouseClick, _ctx: TGameHandlerContext) => {
-  mapState.setMouseScreen(data.x as number, data.y as number);
-  const x = mapState.mouseWorldX + mapState.x - mapState.tilesMatrix().size / 2;
-  const y = mapState.mouseWorldY + mapState.y - mapState.tilesMatrix().size / 2;
+gameAction<EventMouseClick>("mouseClick", (
+    data: EventMouseClick, _ctx: TGameHandlerContext
+  ) => {
+    
+    const tilesMatrix = _ctx.gameloop.canvasMapDrawer._drawCtx.tilesMatrix;
+    gobalMapState.setMouseScreen(
+      _ctx.gameloop.canvasMapDrawer._drawCtx, 
+      data.x as number, 
+      data.y as number
+    );
+    const x = gobalMapState.mouseWorldX + gobalMapState.x - tilesMatrix.size / 2;
+    const y = gobalMapState.mouseWorldY + gobalMapState.y - tilesMatrix.size / 2;
 
-  console.log("Mouse Click Worker x:", x, "y:", y);
-  const _result = toolRegistry.executeAt(x, y);
+    console.log("Mouse Click Worker x:", x, "y:", y);
+    const _result = toolRegistry.executeAt(x, y);
 
-  _ctx.handler.send({
-    action: "toolExecuted",
-    toolId: toolRegistry.getActiveId(),
-    success: true,
-  });
+    _ctx.handler.send({
+      action: "toolExecuted",
+      toolId: toolRegistry.getActiveId(),
+      success: true,
+    });
 });
 
 // -------------------------------------

@@ -1,4 +1,4 @@
-import { ScreenMessageHandler } from "@iso-web/js/handlers/handlers.ts";
+import { ScreenMessageHandler } from "../../../../../IsoGame/handlers/handlers.ts";
 
 
 const keyCheck: Record<string, boolean> = {};
@@ -62,6 +62,12 @@ export const initCanvas = (handlers: ScreenMessageHandler) => {
   handlers.sendDataSync({
     action: "setOffScreenCanvas", canvas: offscreen,
   }, [offscreen]);
+  /*
+  // Sync Canva with the worker 
+  handlers.sendDataSync({
+    action: "setOffScreenRender", canvas: offscreen,
+  }, [offscreen]);
+  */
 
   // Mouse tracking - send raw coordinates to worker
   canvasImageMap.addEventListener('mousemove', (e) => {

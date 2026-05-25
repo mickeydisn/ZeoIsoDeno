@@ -43,7 +43,7 @@ export class Tile extends RawTile {
     this._currentLvl = this.genLvl2;
     this._currentColor = this.genColor;
     this.items = this.genItems;
-    if (Math.random() < .05) {
+    if (Math.random() < .01) {
       this.itemsBox = "Hello"
     }
     // this.lvlGen();

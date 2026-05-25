@@ -1,12 +1,19 @@
 import { World } from "@iso-game/word.ts";
 import { CanvasMapDrawers } from "@iso-game/mapIso/canvasMapDrawer.ts";
 import { AssetLoaderOpti } from "@iso-game/mapIso/asset/assetLoaderOpti.ts";
-import { mapState } from "@iso-game/mapIso/mapState.ts";
-import { GameMessageHandler, indexGameHandler } from "./handlers/handlers.ts";
+import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
+import {
+  GameMessageHandler,
+  indexGameHandler,
+  RenderMessageHandler,
+} from "@iso-game/handlers/handlers.ts";
+import { createHander } from "../../../../IsoGame/handlers/render/create.ts";
+import { drawUpdate } from "@iso-game/handlers/render/update.ts";
 
 export class GameWorker {
   public world = new World();
-  public handler: GameMessageHandler
+  public gameHandler: GameMessageHandler;
+  // public renderHandler: RenderMessageHandler
 
   public assetLoader!: AssetLoaderOpti;
   public canvasMap!: OffscreenCanvas;
@@ -16,16 +23,17 @@ export class GameWorker {
   private _shouldRun = false;
 
   constructor() {
-
-    this.handler = new GameMessageHandler({
-        tag: "game",
-        worker: self,
-        gameloop: this,
-        world: this.world,
-      },
-      indexGameHandler,
-    );
-    self.onmessage = (e) => this.handler.handleIncoming(e.data);
+    this.gameHandler = new GameMessageHandler({
+      tag: "game",
+      worker: self,
+      gameloop: this,
+      world: this.world,
+    }, indexGameHandler);
+    // this.renderHandler =
+    // createHander(self, this.canvasMap)
+    self.onmessage = (e) => {
+      return this.gameHandler.handleIncoming(e.data); // || this.renderHandler.handleIncoming(e.data)
+    };
   }
 
   // ============================================================================
@@ -48,7 +56,7 @@ export class GameWorker {
     const avgFrameTime = this.frameTimes.reduce((a, b) => a + b, 0) /
       this.frameTimes.length;
     const fps = Math.round(1000 / avgFrameTime);
-    this.handler.send({ action: "FPS", fps: fps });
+    this.gameHandler.send({ action: "FPS", fps: fps });
   }
 
   startLoop() {
@@ -73,12 +81,24 @@ export class GameWorker {
       // console.log("Draw");
 
       this.world.tick();
-      this.canvasMapDrawer.direction = mapState.direction;
+      //this.canvasMapDrawer.direction = mapState.direction;
+      /*
+      drawUpdate(
+        this.renderHandler.ctx,
+        gobalMapState.x,
+        gobalMapState.y,
+        (gobalMapState.xf - gobalMapState.x) / gobalMapState.isoConf.tileScaleMod,
+        (gobalMapState.yf - gobalMapState.y) / gobalMapState.isoConf.tileScaleMod,
+      );
+      */
+
       this.canvasMapDrawer.drawUpdate(
-        mapState.x,
-        mapState.y,
-        (mapState.xf - mapState.x) / mapState.isoConf.tileScaleMod,
-        (mapState.yf - mapState.y) / mapState.isoConf.tileScaleMod,
+        gobalMapState.x,
+        gobalMapState.y,
+        (gobalMapState.xf - gobalMapState.x) /
+          gobalMapState.isoConf.tileScaleMod,
+        (gobalMapState.yf - gobalMapState.y) /
+          gobalMapState.isoConf.tileScaleMod,
       );
     }
     requestAnimationFrame(this.updateFram.bind(this));
