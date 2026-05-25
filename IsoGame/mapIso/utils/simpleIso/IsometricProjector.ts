@@ -32,72 +32,46 @@ export class PointIso implements IPointIso{
     translate(dx: number = 0, dy: number = 0, dz: number = 0): PointIso {
       return new PointIso(this.x + dx, this.y + dy, this.z + dz);
     }
-  
-    // NOTE: Other Point methods (scale, rotateX/Y/Z, depth) are omitted for simplicity 
-    // as they were not directly used in the projection logic, but can be added back if needed.
     
     depth(): number {
       return this.x + this.y - 2 * this.z;
     }
   }
   
-  // --- 2. Configuration Defaults (Inferred from Isomer.ts) ---
+  // --- 2. Configuration Defaults ---
   
-  /**
-   * Default configuration for the Isometric Projector, mirroring the original setup.
-   * Users can provide a partial object to override these.
-   */
   const IsometricConfDefaults = {
-    SCALE_SIZE: 1,         // Base scale for 1x1 tile size
-    SCALE_MOD: 1,           // Scale modifier (often unused in projection)
-    ISO_LVL_SCALE: 39,      // Z-axis scale factor (from original isomer.ts)
-    originX: 0,             // X-offset for the map origin
-    originY: 660,           // Fixed Y-offset for the map origin (from original isomer.ts)
-    offsetX: 0,             // Panning offset X
-    offsetY: 0,             // Panning offset Y
+    SCALE_SIZE: 1,
+    SCALE_MOD: 1,
+    ISO_LVL_SCALE: 39,
+    originX: 0,
+    originY: 660,
+    offsetX: 0,
+    offsetY: 0,
   };
   
-  // Define the type alias for ease of use
   export type IsometricConf = typeof IsometricConfDefaults;
   
   
   // --- 3. Isometric Projector Class ---
   
-  /**
-   * Independent class to handle the core isometric 3D-to-2D projection (translatePoint) 
-   * logic, decoupled from the main Isomer drawing class, and initialized with defaults.
-   */
   export class IsometricProjector {
     public conf: IsometricConf;
     private transformation!: number[][];
 
-    /**
-     * Initializes the projector.
-     * @param overrides Optional partial configuration to override defaults.
-     */
     constructor(overrides: Partial<IsometricConf> = {}) {
-      // Merge overrides with defaults
       this.conf = { ...IsometricConfDefaults, ...overrides };
       this.updateConf();
     }
   
     updateConf(overrides: Partial<IsometricConf> = {}) {
-        // Merge overrides with defaults
         this.conf = { ...this.conf, ...overrides };
         this.transformation = [
-            [32 * this.conf.SCALE_SIZE, 16 * this.conf.SCALE_SIZE], // ISOSCALE * Math.cos(this.angle), ISOSCALE * Math.sin(this.angle)
-            [-32 * this.conf.SCALE_SIZE, 16 * this.conf.SCALE_SIZE], // ISOSCALE * Math.cos(Math.PI - this.angle), ISOSCALE * Math.sin(Math.PI - this.angle)
+            [32 * this.conf.SCALE_SIZE, 16 * this.conf.SCALE_SIZE],
+            [-32 * this.conf.SCALE_SIZE, 16 * this.conf.SCALE_SIZE],
         ];
     }
-    /**
-     * Projects a 3D Point to 2D screen coordinates.
-     * This is the core 3D -> 2D isometric translation function.
-     * * @param point The 3D Point object to translate.
-     * @returns An object containing the projected screen coordinates { x: number, y: number }.
-     */
-    /**
-     * Translates a 3D point to a 2D isometric projection.
-     */
+
     translatePoint(_point: PointIso): PointIso {
         const point = _point.translate(-this.conf.offsetX, -this.conf.offsetY, 0);
         const xMap = new PointIso(
@@ -117,104 +91,110 @@ export class PointIso implements IPointIso{
         return new PointIso(x, y);
     }
 
-
-
-        /**
-     * Converts tile coordinates to screen coordinates.
-     * Wrapper around translatePoint for clarity in hover rendering and edge detection.
-     * @param tileX The tile X coordinate.
-     * @param tileY The tile Y coordinate.
-     * @param tileZ The tile Z (height) coordinate. Defaults to 0.
-     * @returns Screen coordinates as { x: number, y: number }.
-     */
     tileToScreen(isoPoint: PointIso): { x: number; y: number } {
         const point = this.translatePoint(isoPoint);
         return { x: point.x, y: point.y };
     }
 
-    /**
-     * Converts 2D screen coordinates back to 3D tile coordinates (inverse projection).
-     * @param screenX The screen X coordinate.
-     * @param screenY The screen Y coordinate.
-     * @param tileZ The known tile Z (height) coordinate. Defaults to 0.
-     * @returns The tile coordinates as a PointIso, or null if computation fails.
-     */
     screenToTile(screenX: number, screenY: number, tileZ: number = 0): PointIso | null {
         const { originX, originY, offsetX, offsetY, SCALE_SIZE, SCALE_MOD } = this.conf;
 
         const sx = 32 * SCALE_SIZE;
         const sy = 16 * SCALE_SIZE;
 
-        // Adjust for origin and Z offset
         const adjustedDx = screenX - originX;
         const adjustedDy = originY - screenY - (tileZ * ISO_LVL_SCALE / SCALE_MOD);
 
-        // Solve the linear system for tile coordinates
-        // dx = sx * (tileX - tileY) => tileX - tileY = dx / sx
-        // dy = sy * (tileX + tileY) => tileX + tileY = dy / sy
         const tileXRaw = (adjustedDx / sx + adjustedDy / sy) / 2;
         const tileYRaw = (adjustedDy / sy - adjustedDx / sx) / 2;
 
-        // Add back the panning offsets
         const tileX = Math.floor(tileXRaw  + offsetX);
         const tileY = Math.floor(tileYRaw  + offsetY);
 
         return new PointIso(tileX, tileY, tileZ);
     }
 
-    private _isPointInTileFace(tile: PointIso, screenX: number, screenY: number): boolean {
-        const { x: tx, y: ty, z } = tile;
+    // Point-in-triangle test using barycentric coordinates
+    private _pointInTriangle(
+        px: number, py: number,
+        ax: number, ay: number,
+        bx: number, by: number,
+        cx: number, cy: number,
+    ): boolean {
+        const v0x = cx - ax, v0y = cy - ay;
+        const v1x = bx - ax, v1y = by - ay;
+        const v2x = px - ax, v2y = py - ay;
+        const dot00 = v0x * v0x + v0y * v0y;
+        const dot01 = v0x * v1x + v0y * v1y;
+        const dot02 = v0x * v2x + v0y * v2y;
+        const dot11 = v1x * v1x + v1y * v1y;
+        const dot12 = v1x * v2x + v1y * v2y;
+        const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+        const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+        const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+        return u >= 0 && v >= 0 && u + v <= 1;
+    }
 
+    /**
+     * Tests if a screen point falls within the visible faces of a tile.
+     * @param tile - The tile with normalized z (height offset from avg)
+     * @param wallBottomZ - The normalized z at which the wall-bottom sits (e.g. neighbor's z, or 0 for ground)
+     * @returns true if the point is on any visible part of this tile
+     */
+    private _isPointInTileFace(
+        tile: PointIso,
+        screenX: number,
+        screenY: number,
+        wallSEbottomZ?: number,  // bottom z of SE wall (neighbor at ty-1's z, or undefined if same height)
+        wallSWbottomZ?: number,  // bottom z of SW wall (neighbor at tx-1's z, or undefined if same height)
+    ): boolean {
+        const { x: tx, y: ty, z } = tile;
 
         const top    = this.translatePoint(new PointIso(tx,     ty,     z));
         const right  = this.translatePoint(new PointIso(tx + 1, ty,     z));
         const bottom = this.translatePoint(new PointIso(tx + 1, ty + 1, z));
         const left   = this.translatePoint(new PointIso(tx,     ty + 1, z));
 
-        // Diamond center and half-extents (top face only)
-        const cx   = (top.x + bottom.x) / 2;
-        const topY = top.y;
-        const botY = bottom.y;
+        // Diamond center and half-extents (top face)
+        const cx    = (top.x + bottom.x) / 2;
+        const botY  = bottom.y;
         const halfW = (right.x - left.x) / 2;
-
-        // if (halfW <= 0 || botY <= topY) return false;
-
-        // Normalized coords relative to diamond center
-        const cy = (topY + botY) / 2;
-        const halfH = (botY - topY) / 2;
+        const cy    = (top.y + botY) / 2;
+        const halfH = (botY - top.y) / 2;
 
         const u = (screenX - cx) / halfW;
         const v = (screenY - cy) / halfH;
 
-
-        // Standard rhombus test for top face
+        // 1. Top face (diamond)
         if (Math.abs(u) + Math.abs(v) <= 1.0) return true;
 
-        // Also accept clicks on the visible side walls (below the top face).
-        // The walls extend downward from the left/right edges.
-        // Allow a pixel slop of one tile-height downward.
-        
-        /*
-        const wallHeight = halfH; // roughly the height of one side face in screen pixels
-        if (
-            Math.abs(u) <= 1.0 &&
-            v < 1.0 // &&
-            // v >= 1.0 + wallHeight / halfH
-        ) return true;
-        */
+        // 2. Side walls: when tile is higher than a neighbor, the wall is visible
+        // The visible front walls are two parallelograms:
+        //   SE wall: right→bottom→b_se→r_se  (neighbor at ty-1)
+        //   SW wall: left→bottom→b_sw→l_sw  (neighbor at tx-1)
+        // Each wall is split into 2 triangles for point-in-triangle test.
+
+        if (wallSEbottomZ !== undefined && wallSEbottomZ < z) {
+            const r0 = this.translatePoint(new PointIso(tx + 1, ty,     wallSEbottomZ));
+            const b0 = this.translatePoint(new PointIso(tx + 1, ty + 1, wallSEbottomZ));
+            if (
+                this._pointInTriangle(screenX, screenY, right.x, right.y, bottom.x, bottom.y, b0.x, b0.y) ||
+                this._pointInTriangle(screenX, screenY, right.x, right.y, b0.x, b0.y, r0.x, r0.y)
+            ) return true;
+        }
+
+        if (wallSWbottomZ !== undefined && wallSWbottomZ < z) {
+            const b0 = this.translatePoint(new PointIso(tx + 1, ty + 1, wallSWbottomZ));
+            const l0 = this.translatePoint(new PointIso(tx,     ty + 1, wallSWbottomZ));
+            if (
+                this._pointInTriangle(screenX, screenY, left.x, left.y, bottom.x, bottom.y, b0.x, b0.y) ||
+                this._pointInTriangle(screenX, screenY, left.x, left.y, b0.x, b0.y, l0.x, l0.y)
+            ) return true;
+        }
+
         return false;
     }
-    
 
-
-    /**
-     * Gets the list of tile coordinates along a NE-SW diagonal (x - y = constant) 
-     * passing through a given mouse position.
-     * @param screenX The screen X coordinate of the mouse.
-     * @param screenY The screen Y coordinate of the mouse.
-     * @param mapSize The size of the map grid (width and height).
-     * @returns An array of PointIso objects representing the tile coordinates along the diagonal.
-     */
     getNESWDiagonalCoords(
         screenX: number,
         screenY: number,
@@ -222,49 +202,29 @@ export class PointIso implements IPointIso{
     ): PointIso[] {
         const coords: PointIso[] = [];
 
-        // Convert screen coordinates to tile coordinates
         const tile = this.screenToTile(screenX, screenY, 0);
         if (!tile) return coords;
 
         const xx = Math.round(tile.x);
         const yy = Math.round(tile.y);
 
-        // Calculate the NE-SW diagonal constant: x - y = constant
         const diagConstant = xx - yy;
 
-        // Calculate bounds based on tile position to extend to grid edges
-        // For NE-SW diagonal: gy = gx - diagConstant
-        // Need: 0 <= gx < mapSize and 0 <= gy < mapSize
-        
-        // Max dx when gx is at max (mapSize-1)
         const maxDx = (mapSize - 1) - xx;
-        // Min dx when gx is at min (0)
         const minDx = -xx;
-        
-        // Also need to ensure gy stays in bounds
-        // gy = (xx + dx) - diagConstant = yy + dx
-        // So gy is in bounds when: 0 <= yy + dx < mapSize
-        // This means: -yy <= dx < mapSize - yy
-        
-        // Combine both constraints
         const minDxGy = -yy;
         const maxDxGy = (mapSize - 1) - yy;
-        
         const finalMinDx = Math.max(minDx, minDxGy);
         const finalMaxDx = Math.min(maxDx, maxDxGy);
 
-        // Collect all tiles along the diagonal within the bounds
         for (let dx = finalMinDx + 1; dx < finalMaxDx; dx++) {
             const gx = xx + dx;
-            const gy = yy + dx; // Since gy = yy + dx (from gy = gx - diagConstant and diagConstant = xx - yy)
-
+            const gy = yy + dx;
             coords.push(new PointIso(gx, gy));
         }
 
         return coords;
     }
-
-
 
     screenToTileWithHeight(
         screenX: number,
@@ -272,46 +232,56 @@ export class PointIso implements IPointIso{
         tilesMatrix: TilesMatrix,
     ): PointIso | null {
     
-        // SCALL FACTOR FOR Z . 
         const lvlfactor = LVL_Z_SCALE_FACTOR * this.conf.SCALE_SIZE / this.conf.SCALE_MOD;
     
         const { originX, offsetX, offsetY, SCALE_SIZE, SCALE_MOD } = this.conf;
         const sx = 32 * SCALE_SIZE;
         const ratio = ISO_LVL_SCALE / SCALE_MOD / (2 * 16 * SCALE_SIZE);
 
-        const candidates: PointIso[] = [];
+        interface TileCandidate {
+            tile: PointIso;
+            wallSEbottomZ: number;  // normalized z of neighbor at (tx, ty-1)
+            wallSWbottomZ: number;  // normalized z of neighbor at (tx-1, ty)
+        }
+
+        const candidates: TileCandidate[] = [];
         for (let ty = 0; ty < tilesMatrix.size; ty++) {
             for (let tx = 0; tx < tilesMatrix.size; tx++) {
                 const metaTile = tilesMatrix.tiles[tx][ty]
                 const z = (metaTile.lvl - tilesMatrix.avgLvl) * lvlfactor ;
 
-                // Fast pre-filter on X: the rhombus spans ±sx around its center X
+                // Fast pre-filter on X
                 const cx = originX + sx * ((tx - offsetX) - (ty - offsetY));
                 if (Math.abs(screenX - cx) > sx) continue;
 
-                candidates.push(new PointIso(tx, ty, z));
+                // Compute neighbor z for wall tests
+                // SE wall: visible when this tile is higher than ty-1 (Y neighbor)
+                const zSE = ty > 0
+                    ? (tilesMatrix.tiles[tx][ty - 1].lvl - tilesMatrix.avgLvl) * lvlfactor
+                    : z;
+                // SW wall: visible when this tile is higher than tx-1 (X neighbor)
+                const zSW = tx > 0
+                    ? (tilesMatrix.tiles[tx - 1][ty].lvl - tilesMatrix.avgLvl) * lvlfactor
+                    : z;
+
+                candidates.push({ tile: new PointIso(tx, ty, z), wallSEbottomZ: zSE, wallSWbottomZ: zSW });
             }
         }
-        // Sort front-to-back: lower depth value = visually closer to viewer
-        // depth = x + y - 2·z·ratio   (ratio = ISO_LVL_SCALE / (2*16*SCALE_SIZE))
-        // lower x+y = closer tile, higher z (elevated) = closer tile → lower depth = visually in front
+        // Sort front-to-back: lower depth = visually closer to viewer
+        // depth = x + y - 2·z·ratio
         candidates.sort((a, b) => {
-            const da = a.x + a.y - 2 * a.z * ratio;
-            const db = b.x + b.y - 2 * b.z * ratio;
+            const da = a.tile.x + a.tile.y - 2 * a.tile.z * ratio;
+            const db = b.tile.x + b.tile.y - 2 * b.tile.z * ratio;
             return da - db;
         });
 
-        // Return the first (frontmost) tile whose top face contains the point
-        let selectedTile: PointIso | null = null;
-        for (const tile of candidates) {
-            if (this._isPointInTileFace(tile, screenX, screenY)) {
-                selectedTile = tile;
-                break
+        for (const c of candidates) {
+            if (this._isPointInTileFace(c.tile, screenX, screenY, c.wallSEbottomZ, c.wallSWbottomZ)) {
+                return c.tile;
             }
         }
 
-        return selectedTile;
+        return null;
     }
-
 
   }
