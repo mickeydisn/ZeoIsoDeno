@@ -5,6 +5,7 @@ import { assetTools } from "./tiles/assetTools.ts";
 import { structureTools } from "./structureTools.ts";
 import { potionTools } from "./tiles/potionTool.ts";
 import { AnyToolAction, ToolContext } from "./type.ts";
+import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
 
 export const TOOL_ACTION_REGISTRY = [
   ...terrainTools,
@@ -22,6 +23,7 @@ export class ToolRegistry {
   private ctx: ToolContext = {
     world: World.getInstance(),
   };
+
   /** Dispatch table built once from the registry */
   private index: Map<string, AnyToolAction> = new Map();
 
@@ -82,14 +84,18 @@ export class ToolRegistry {
   // ----------------------------------------------
   // ----------------------------------------------
 
-  executeAt(x: number, y: number): Record<string, unknown> | void {
+  executeAt(
+    x: number,
+    y: number,
+    _ctx: TGameHandlerContext,
+  ): Record<string, unknown> | void {
     console.log(
       `Executing tool at (${x}, ${y}) with brush size ${this.brushSize}`,
     );
     if (this.activeTool) {
       return this.activeTool.execute(
         { x: x, y: y, brushSize: this.brushSize },
-        this.ctx,
+        _ctx,
       );
     }
   }

@@ -1,6 +1,8 @@
 import { toolRegistry } from "@iso-game/tools/toolRegistry.ts";
 import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
 import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
+import type { Potion } from "@iso-game/mapIso/mapState.ts";
+import { mapDB } from "@iso-game/map/persistence/db/mapWebDatabase.ts";
 import {
   gameAction,
   TGameHandlerAction,
@@ -141,7 +143,7 @@ export interface EventToolClick extends TBaseMessage<"toolClick"> {
 }
 const toolClick: TGameHandlerAction<EventToolClick> = gameAction<
   EventToolClick
->("toolClick", (data: EventToolClick, _ctx: TGameHandlerContext) => {
+>("toolClick", async (data: EventToolClick, _ctx: TGameHandlerContext) => {
   const x = data.gridX !== undefined
     ? data.gridX + gobalMapState.x - 1
     : data.x !== undefined
@@ -153,14 +155,135 @@ const toolClick: TGameHandlerAction<EventToolClick> = gameAction<
     ? data.y
     : gobalMapState.y;
 
-  const _result = toolRegistry.executeAt(x, y);
+  const _result = toolRegistry.executeAt(x, y, _ctx);
+
+  // If a potion was used, persist the inventory change to IndexedDB (server truth)
+  if (
+    _result && typeof _result === "object" && "potionId" in (_result as any)
+  ) {
+    console.log("------------------- Potion");
+    const result = _result as { potionId: string; remainingUses: number };
+    try {
+      // Always save the potion (even at 0 uses) — the UI hides depleted potions
+      // but they stay in the DB so the player can see history.
+      const potion = gobalMapState.playerState.inventory.find(
+        (p) => p.id === result.potionId,
+      );
+      if (potion) {
+        console.log("-------------------", potion);
+        await mapDB.savePotion(gobalMapState.playerState.username, potion);
+      }
+    } catch (err) {
+      console.error("[toolClick] Failed to persist potion to DB:", err);
+    }
+    // Notify client with authoritative inventory state after DB persist
+    _ctx.handler.send({
+      action: "potionDBSynced",
+      potions: [...gobalMapState.playerState.inventory],
+    });
+  }
 
   _ctx.handler.send({
     action: "toolExecuted",
     toolId: toolRegistry.getActiveId(),
     success: true,
+    potionResult:
+      _result && typeof _result === "object" && "potionId" in (_result as any)
+        ? (_result as {
+          success: boolean;
+          potionId: string;
+          remainingUses: number;
+          reason?: string;
+        })
+        : undefined,
   });
 });
+
+// -------------------------------------
+export interface EventSyncInventory extends TBaseMessage<"syncInventory"> {
+  inventory: Potion[];
+}
+const syncInventory: TGameHandlerAction<EventSyncInventory> = gameAction<
+  EventSyncInventory
+>("syncInventory", (data: EventSyncInventory, _ctx: TGameHandlerContext) => {
+  // Sync the inventory from main thread into the worker's game state
+  // so potionTool.ts can look up potions by ID.
+  gobalMapState.playerState.inventory = data.inventory;
+  console.log(
+    `[syncInventory] Synced ${data.inventory.length} potions to worker state`,
+  );
+});
+
+// -------------------------------------
+export interface EventSavePotion extends TBaseMessage<"savePotion"> {
+  potion: Potion;
+}
+const savePotion: TGameHandlerAction<EventSavePotion> = gameAction<
+  EventSavePotion
+>("savePotion", async (data: EventSavePotion, _ctx: TGameHandlerContext) => {
+  console.log(
+    "[savePotion] Persisting potion:",
+    data.potion.id,
+    data.potion.name,
+  );
+  try {
+    await mapDB.savePotion(gobalMapState.playerState.username, data.potion);
+    // Sync to local player state in worker
+    const idx = gobalMapState.playerState.inventory.findIndex(
+      (p) => p.id === data.potion.id,
+    );
+    if (idx !== -1) {
+      gobalMapState.playerState.inventory[idx] = data.potion;
+    } else {
+      gobalMapState.playerState.inventory.push(data.potion);
+    }
+    // Notify client that DB save is complete
+    _ctx.handler.send({
+      action: "potionDBSynced",
+      potions: [...gobalMapState.playerState.inventory],
+    });
+  } catch (err) {
+    console.error("[savePotion] Error:", err);
+    _ctx.handler.send({
+      action: "potionDBSynced",
+      error: String(err),
+      potions: [...gobalMapState.playerState.inventory],
+    });
+  }
+});
+
+// -------------------------------------
+export interface EventDeletePotion extends TBaseMessage<"deletePotion"> {
+  potionId: string;
+}
+const deletePotion: TGameHandlerAction<EventDeletePotion> = gameAction<
+  EventDeletePotion
+>(
+  "deletePotion",
+  async (data: EventDeletePotion, _ctx: TGameHandlerContext) => {
+    console.log("[deletePotion] Deleting potion:", data.potionId);
+    try {
+      await mapDB.deletePotion(data.potionId);
+      const idx = gobalMapState.playerState.inventory.findIndex(
+        (p) => p.id === data.potionId,
+      );
+      if (idx !== -1) {
+        gobalMapState.playerState.inventory.splice(idx, 1);
+      }
+      _ctx.handler.send({
+        action: "potionDBSynced",
+        potions: [...gobalMapState.playerState.inventory],
+      });
+    } catch (err) {
+      console.error("[deletePotion] Error:", err);
+      _ctx.handler.send({
+        action: "potionDBSynced",
+        error: String(err),
+        potions: [...gobalMapState.playerState.inventory],
+      });
+    }
+  },
+);
 
 // -------------------------------------
 
@@ -173,4 +296,7 @@ export const toolHandlers = [
   setBuildingConfig,
   setBuildingParams,
   toolClick,
+  syncInventory,
+  savePotion,
+  deletePotion,
 ] as const;

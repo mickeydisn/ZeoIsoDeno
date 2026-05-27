@@ -1,32 +1,27 @@
+import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
 import { FactoryMap } from "../map/factory/factoryMap.ts";
 import { World } from "../word.ts";
 
-
 export type ToolContext = {
-   world: World;
+  world: World;
 };
 
-
-
 // ---------------------------------------
-// ------------------------------------- 
-
+// -------------------------------------
 
 export type BaseToolConfig = {
-    x: number, 
-    y: number
-}
+  x: number;
+  y: number;
+};
 
 export type ToolConfigBrush = BaseToolConfig & {
-    brushSize: number,    
-}
+  brushSize: number;
+};
 
-export type ToolConfigBrushColor =  BaseToolConfig & {
-    brushSize: number,
-    color: [number, number, number],
-}
-
-
+export type ToolConfigBrushColor = BaseToolConfig & {
+  brushSize: number;
+  color: [number, number, number];
+};
 
 // ---------------------
 // A self-contained action descriptor
@@ -39,10 +34,13 @@ export type ToolAction<K extends string, C extends BaseToolConfig> = {
   name: string;
   icon: string;
   category: "terrain" | "color" | "asset" | "structure" | "inspect";
-  execute(conf: C, ctx: ToolContext): void;
+  execute(conf: C, ctx: TGameHandlerContext): void;
 };
 
-export type AnyToolAction = ToolAction<string, BaseToolConfig | ToolConfigBrush | ToolConfigBrushColor>;
+export type AnyToolAction = ToolAction<
+  string,
+  BaseToolConfig | ToolConfigBrush | ToolConfigBrushColor
+>;
 
 // ---------------------
 // Helper: create a typed action with zero boilerplate.
@@ -54,17 +52,16 @@ export function defineTool<K extends string, C extends BaseToolConfig>(
   name: string,
   icon: string,
   category: "terrain" | "color" | "asset" | "structure" | "inspect",
-  execute: (conf: C, ctx: ToolContext) => void,
+  execute: (conf: C, ctx: TGameHandlerContext) => void,
 ): ToolAction<K, C> {
-  return { 
-    key, 
+  return {
+    key,
     name,
     icon,
     category,
-    execute 
+    execute,
   };
 }
 
-
 // ---------------------------------------
-// ------------------------------------- 
+// -------------------------------------

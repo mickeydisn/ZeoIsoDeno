@@ -199,11 +199,9 @@ mapSyncManager.markPotionDirty(gobalMapState.playerState.username, potion);
 
 ---
 
-## Phase 4: Update `IMapPersistence` Interface (documented in Phase 1.2)
+## Phase 4: Update `IMapPersistence` Interface — SKIPPED
 
-**File:** `IsoGame/map/interface.ts`
-
-Already covered above. Adds potion CRUD contracts.
+**Decision:** The potion system has its own class hierarchy (`PotionServerPersistence`) separate from the map delta `IMapPersistence` interface. Adding potion methods to `IMapPersistence` would break `MapServerPersistence` which implements that interface. Since the potion sync uses a dedicated class, the interface should remain unchanged.
 
 ---
 
@@ -228,7 +226,6 @@ Already covered above. Adds potion CRUD contracts.
 |------|---------|
 | `IsoGame/map/persistence/db/mapSyncManager.ts` | Add potion dirty tracking, sync loop, loadPotionsFromServer |
 | `IsoGameAddon/iso/web/js/menu/sections/potionMenu.ts` | Import server sync, update save/delete/add-use to mark dirty, update syncPotionsToPlayerState |
-| `IsoGame/map/interface.ts` | Add potion CRUD to `IMapPersistence` |
 
 ---
 

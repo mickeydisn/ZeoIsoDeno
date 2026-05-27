@@ -4,7 +4,6 @@ import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
 import { ACTION_REGISTRY } from "@iso-game/map/action2/actions/registry.ts";
 import type { ActionField } from "@iso-game/map/action2/utils/types.ts";
 import type { Potion, PotionActionEntry } from "@iso-game/mapIso/mapState.ts";
-import { mapDB } from "@iso-game/map/persistence/db/mapWebDatabase.ts";
 
 // ============================================================================
 // GLOBALS
@@ -27,13 +26,38 @@ function listCraftableActions() {
   return ACTION_REGISTRY.filter((a) => a.meta);
 }
 
-async function syncPotionsToPlayerState(username: string): Promise<void> {
-  try {
-    const potions = await mapDB.getAllPotions(username);
-    gobalMapState.playerState.inventory = potions;
-  } catch (err) {
-    console.warn("[PotionMenu] Failed to sync potions:", err);
+/** Send a save request to the worker (which persists to IndexedDB — the server truth) */
+function sendSavePotion(potion: Potion): void {
+  gameWorker.postMessage({ action: "savePotion", potion });
+}
+
+/** Send a delete request to the worker */
+function sendDeletePotion(potionId: string): void {
+  gameWorker.postMessage({ action: "deletePotion", potionId });
+}
+
+/** Sync inventory to worker so potionTool.ts can look up potions by ID */
+function syncInventoryToWorker(): void {
+  gameWorker.postMessage({
+    action: "syncInventory",
+    inventory: gobalMapState.playerState.inventory,
+  });
+}
+
+/**
+ * Convert any hex "#rrggbb" strings in potion action configs to [r,g,b] arrays.
+ * This handles old potions stored before the color input was fixed.
+ */
+function sanitizePotionConfig(potion: Potion): Potion {
+  for (const action of potion.actions) {
+    for (const [key, value] of Object.entries(action.config)) {
+      if (typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value)) {
+        const match = value.match(/\w\w/g);
+        action.config[key] = match!.map((c) => parseInt(c, 16));
+      }
+    }
   }
+  return potion;
 }
 
 // ============================================================================
@@ -41,8 +65,20 @@ async function syncPotionsToPlayerState(username: string): Promise<void> {
 
 async function populatePotionSelect(): Promise<void> {
   if (!potionSelectEl) return;
-  await syncPotionsToPlayerState(gobalMapState.playerState.username);
-  const potions = gobalMapState.playerState.inventory;
+  // Use local inventory (authoritative — synced via potionDBSynced from worker).
+  // If empty on first call, load from IndexedDB as a one-time initialisation.
+  let potions = gobalMapState.playerState.inventory;
+  if (potions.length === 0) {
+    try {
+      const { mapDB } = await import("@iso-game/map/persistence/db/mapWebDatabase.ts");
+      potions = await mapDB.getAllPotions(gobalMapState.playerState.username);
+      potions = potions.map(sanitizePotionConfig);
+      gobalMapState.playerState.inventory = potions;
+      syncInventoryToWorker();
+    } catch {
+      potions = [];
+    }
+  }
 
   // Keep the placeholder option
   potionSelectEl.innerHTML = "";
@@ -52,6 +88,7 @@ async function populatePotionSelect(): Promise<void> {
   potionSelectEl.appendChild(placeholder);
 
   for (const potion of potions) {
+    if (potion.remainingUses <= 0) continue; // Don't show depleted potions
     const opt = document.createElement("option");
     opt.value = potion.id;
     opt.textContent = `${potion.name} (${potion.remainingUses} use${
@@ -117,6 +154,9 @@ function mountUsePotionCard(container: HTMLElement): void {
   potionSelectEl.addEventListener("change", () => {
     const potionId = potionSelectEl!.value;
     if (potionId) {
+      // Sync inventory to worker before setting active tool,
+      // so potionTool.ts can find the potion by ID.
+      syncInventoryToWorker();
       gameWorker.postMessage({
         action: "setActiveTool",
         toolId: "use_potion",
@@ -184,11 +224,20 @@ function renderField(field: ActionField): HTMLElement {
     case "color": {
       const el = document.createElement("input");
       el.type = "color";
-      el.value = String(field.default ?? "#ff0000");
+      // field.default may be [r,g,b] array or hex string; normalise to hex for the input
+      const defaultHex = Array.isArray(field.default)
+        ? "#" + (field.default as number[]).slice(0, 3).map(c => c.toString(16).padStart(2, "0")).join("")
+        : String(field.default ?? "#ff0000");
+      el.value = defaultHex;
       el.style.cssText =
         "width:100%;height:32px;border:none;border-radius:4px;background:none;cursor:pointer;";
       el.addEventListener("input", () => {
-        currentFormValues[field.key] = el.value;
+        // Convert hex "#RRGGBB" to [r, g, b] array
+        const hex = el.value;
+        const match = hex.match(/\w\w/g);
+        currentFormValues[field.key] = match
+          ? match.map((c) => parseInt(c, 16))
+          : [255, 0, 0];
       });
       input = el;
       break;
@@ -243,8 +292,16 @@ function renderField(field: ActionField): HTMLElement {
 // ============================================================================
 // DIALOG: CRAFT POTION
 
-async function openCraftDialog(): Promise<void> {
+async function openCraftDialog(editPotion?: Potion): Promise<void> {
+  const isEdit = !!editPotion;
   const craftable = listCraftableActions();
+
+  // If editing, populate pendingActions from the existing potion
+  if (editPotion) {
+    pendingActions = editPotion.actions.map((a) => ({ ...a, config: { ...a.config } }));
+  } else {
+    pendingActions = [];
+  }
 
   const dialog = DialogManager.getInstance();
   const container = document.createElement("div");
@@ -252,7 +309,7 @@ async function openCraftDialog(): Promise<void> {
     "display:flex;flex-direction:column;gap:12px;padding:16px;color:#fff;font-family:monospace;max-height:70vh;overflow-y:auto;";
 
   const header = document.createElement("h2");
-  header.textContent = "🧪 Craft Potion";
+  header.textContent = isEdit ? "✏️ Edit Potion" : "🧪 Craft Potion";
   header.style.cssText = "margin:0;font-size:1.2rem;";
   container.appendChild(header);
 
@@ -312,6 +369,7 @@ async function openCraftDialog(): Promise<void> {
   const nameInput = document.createElement("input");
   nameInput.type = "text";
   nameInput.placeholder = "My Potion";
+  nameInput.value = editPotion?.name ?? "";
   nameInput.style.cssText =
     "flex:1;padding:6px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;";
   nameRow.appendChild(nameLabel);
@@ -319,11 +377,17 @@ async function openCraftDialog(): Promise<void> {
   container.appendChild(nameRow);
 
   const saveBtn = document.createElement("button");
-  saveBtn.textContent = "💾 Save Potion";
+  saveBtn.textContent = isEdit ? "💾 Update Potion" : "💾 Save Potion";
   saveBtn.style.cssText =
     "padding:10px 20px;border:none;border-radius:4px;background:#57a;color:#fff;cursor:pointer;font-weight:bold;font-size:1rem;margin-top:8px;";
   saveBtn.disabled = true;
   container.appendChild(saveBtn);
+
+  // Render existing actions when editing
+  if (isEdit && pendingActions.length > 0) {
+    renderPendingActionList(actionListEl, craftable);
+    saveBtn.disabled = false;
+  }
 
   // ---- Event handlers ----
 
@@ -383,24 +447,44 @@ async function openCraftDialog(): Promise<void> {
     if (!name || pendingActions.length === 0) return;
 
     const potion: Potion = {
-      id: uuid(),
+      id: editPotion?.id ?? uuid(),
       name,
       actions: [...pendingActions],
-      remainingUses: 1,
-      createdAt: Date.now(),
+      remainingUses: editPotion?.remainingUses ?? 1,
+      createdAt: editPotion?.createdAt ?? Date.now(),
     };
 
-    try {
-      await mapDB.savePotion(gobalMapState.playerState.username, potion);
-    } catch (err) {
-      console.error("[PotionMenu] Failed to save potion:", err);
-      return;
-    }
+    // Send to worker for persistence (server truth)
+    sendSavePotion(potion);
 
     pendingActions = [];
     selectedActionKey = null;
     currentFormValues = {};
     dialog.close();
+
+    // Optimistically update local state (will be confirmed by potionDBSynced)
+    const idx = gobalMapState.playerState.inventory.findIndex((p) => p.id === potion.id);
+    if (idx !== -1) {
+      gobalMapState.playerState.inventory[idx] = potion;
+    } else {
+      gobalMapState.playerState.inventory.push(potion);
+    }
+    syncInventoryToWorker();
+
+    // Optimistically refresh the potion select dropdown
+    if (potionSelectEl) {
+      potionSelectEl.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "-- Select potion --";
+      potionSelectEl.appendChild(placeholder);
+      for (const p of gobalMapState.playerState.inventory) {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = `${p.name} (${p.remainingUses} use${p.remainingUses !== 1 ? "s" : ""})`;
+        potionSelectEl.appendChild(opt);
+      }
+    }
   });
 
   dialog.setContent("");
@@ -495,12 +579,19 @@ function renderPendingActionList(
 // DIALOG: POTION LIST
 
 async function openPotionListDialog(): Promise<void> {
-  let potions: Potion[];
-  try {
-    potions = await mapDB.getAllPotions(gobalMapState.playerState.username);
-  } catch (err) {
-    console.error("[PotionMenu] Failed to load potions:", err);
-    potions = [];
+  // Load from local inventory (potionDBSynced keeps it fresh from worker)
+  let potions = gobalMapState.playerState.inventory;
+  if (potions.length === 0) {
+    // Initial load from IndexedDB if local state is empty
+    try {
+      const { mapDB } = await import("@iso-game/map/persistence/db/mapWebDatabase.ts");
+      potions = await mapDB.getAllPotions(gobalMapState.playerState.username);
+      potions = potions.map(sanitizePotionConfig);
+      gobalMapState.playerState.inventory = potions;
+    } catch (err) {
+      console.error("[PotionMenu] Failed to load potions:", err);
+      potions = [];
+    }
   }
 
   const dialog = DialogManager.getInstance();
@@ -555,31 +646,35 @@ async function openPotionListDialog(): Promise<void> {
       buyBtn.textContent = "+1 Use";
       buyBtn.style.cssText =
         "padding:4px 12px;border:none;border-radius:4px;background:#a84;color:#fff;cursor:pointer;";
-      buyBtn.addEventListener("click", async () => {
+      buyBtn.addEventListener("click", () => {
         potion.remainingUses += 1;
-        try {
-          await mapDB.savePotion(gobalMapState.playerState.username, potion);
-          nameEl.textContent = `${potion.name} (${potion.remainingUses} use${
-            potion.remainingUses !== 1 ? "s" : ""
-          } left)`;
-        } catch (err) {
-          console.error("[PotionMenu] Failed to buy potion:", err);
-        }
+        sendSavePotion(potion);
+        nameEl.textContent = `${potion.name} (${potion.remainingUses} use${
+          potion.remainingUses !== 1 ? "s" : ""
+        } left)`;
       });
       btnRow.appendChild(buyBtn);
+
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "✏️ Edit";
+      editBtn.title = "Edit potion";
+      editBtn.style.cssText =
+        "padding:4px 12px;border:none;border-radius:4px;background:#57a;color:#fff;cursor:pointer;";
+      editBtn.addEventListener("click", async () => {
+        dialog.close();
+        await openCraftDialog(potion);
+        await populatePotionSelect();
+      });
+      btnRow.appendChild(editBtn);
 
       const delBtn = document.createElement("button");
       delBtn.textContent = "🗑️ Delete";
       delBtn.title = "Delete potion";
       delBtn.style.cssText =
         "padding:4px 12px;border:none;border-radius:4px;background:#a44;color:#fff;cursor:pointer;";
-      delBtn.addEventListener("click", async () => {
-        try {
-          await mapDB.deletePotion(potion.id);
-          card.remove();
-        } catch (err) {
-          console.error("[PotionMenu] Failed to delete potion:", err);
-        }
+      delBtn.addEventListener("click", () => {
+        sendDeletePotion(potion.id);
+        card.remove();
       });
       btnRow.appendChild(delBtn);
 

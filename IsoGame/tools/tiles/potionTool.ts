@@ -2,18 +2,21 @@ import { defineTool, ToolConfigBrush, ToolContext } from "../type.ts";
 import { toolRegistry } from "../toolRegistry.ts";
 import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
 import { TilesActions } from "@iso-game/map/action2/tilesActions.ts";
+import { mapDB } from "@iso-game/map/persistence/db/mapWebDatabase.ts";
+import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
 
 /**
  * Use Potion Tool
  * When activated, executes the potion's action chain at the clicked tile position.
  * The active potion is looked up via toolRegistry.getActivePotionId().
+ * NOTE: The inventory is synced from the main thread via "syncInventory" message.
  */
 export const usePotionTool = defineTool<"use_potion", ToolConfigBrush>(
   "use_potion",
   "Use Potion",
   "🧪",
   "structure",
-  (conf: ToolConfigBrush, _ctx: ToolContext) => {
+  async (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
     const potionId = toolRegistry.getActivePotionId();
     if (!potionId) {
       return { success: false, reason: "No active potion set" };
@@ -31,9 +34,6 @@ export const usePotionTool = defineTool<"use_potion", ToolConfigBrush>(
     }
 
     const potion = inventory[idx];
-    console.log(
-      `Using potion ${potion.id} at (${conf.x}, ${conf.y}). Remaining uses: ${potion.remainingUses}`,
-    );
     if (potion.remainingUses <= 0) {
       inventory.splice(idx, 1);
       toolRegistry.setActivePotionId(null);
@@ -42,7 +42,7 @@ export const usePotionTool = defineTool<"use_potion", ToolConfigBrush>(
 
     // Decrement uses
     potion.remainingUses -= 1;
-
+    console.log("---------------------------", potion, _ctx);
     // Build action configs injecting x,y
     const confs = potion.actions.map((entry) => ({
       func: entry.func,
@@ -54,12 +54,16 @@ export const usePotionTool = defineTool<"use_potion", ToolConfigBrush>(
     // Execute all actions
     TilesActions.getInstance().doActions(confs);
 
-    // Remove potion if 0 uses left
-    if (potion.remainingUses <= 0) {
-      inventory.splice(idx, 1);
-    }
+    await mapDB.savePotion(gobalMapState.playerState.username, potion);
+    _ctx.handler.send({
+      action: "potionDBSynced",
+      potions: [...gobalMapState.playerState.inventory],
+    });
 
-    // Notify main thread to persist — returns data for the caller to send
+    // Keep potion in inventory even at 0 uses (don't delete).
+    // The UI filters out 0-use potions from the select dropdown.
+    // DB persistence is handled by the toolClick handler.
+
     return {
       success: true,
       potionId: potion.id,

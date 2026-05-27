@@ -11,8 +11,8 @@ import {
   TScreenHandlerAction,
   TScreenHandlerContext,
 } from "@iso-game/handlers/screen/contexts.ts";
-import { mapDB } from "@iso-game/map/persistence/db/mapWebDatabase.ts";
 import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
+import type { Potion } from "@iso-game/mapIso/mapState.ts";
 
 // ----
 
@@ -141,25 +141,30 @@ export interface EventToolExecutedMsg extends TBaseMessage<"toolExecuted"> {
 }
 const toolExecuted: TScreenHandlerAction<EventToolExecutedMsg> = screenAction<
   EventToolExecutedMsg
->("toolExecuted", async (data: EventToolExecutedMsg, _ctx: TScreenHandlerContext) => {
-  // If a potion was used, persist the inventory change
-  if (data.potionResult && data.toolId === "use_potion") {
-    const { potionId, success } = data.potionResult;
-    if (success) {
-      try {
-        const username = gobalMapState.playerState.username;
-        const potion = gobalMapState.playerState.inventory.find(p => p.id === potionId);
-        if (potion) {
-          await mapDB.savePotion(username, potion);
-        } else {
-          // 0 uses -> removed from inventory, delete from DB
-          await mapDB.deletePotion(potionId);
-        }
-      } catch (err) {
-        console.error("[Main] Failed to persist potion use:", err);
-      }
-    }
+>("toolExecuted", async (data: EventToolExecutedMsg) => {
+  // DB persistence is now handled by the worker in toolClick handler.
+  // The worker sends back potionDBSynced with authoritative inventory after save.
+  // This handler only logs non-potion tool executions.
+  if (!data.potionResult) {
+    console.log("[toolExecuted] Tool executed:", data.toolId, "success:", data.success);
   }
+});
+
+// -------------------------------------------------
+
+export interface EventPotionDBSynced extends TBaseMessage<"potionDBSynced"> {
+  action: "potionDBSynced";
+  potions: Potion[];
+  error?: string;
+}
+const potionDBSynced: TScreenHandlerAction<EventPotionDBSynced> = screenAction<
+  EventPotionDBSynced
+>("potionDBSynced", async (data: EventPotionDBSynced) => {
+  // Update local inventory to match DB (server truth)
+  gobalMapState.playerState.inventory = data.potions;
+  // Refresh the potion select dropdown UI
+  const { refreshPotionSelect } = await import("@iso-web/js/menu/sections/potionMenu.ts");
+  await refreshPotionSelect();
 });
 
 // -------------------------------------------------
@@ -170,4 +175,5 @@ export const initScreenHandler = [
   assetPreview,
   infoCardPositions,
   toolExecuted,
+  potionDBSynced,
 ] as const;

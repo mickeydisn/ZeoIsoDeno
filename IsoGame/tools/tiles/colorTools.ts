@@ -3,36 +3,44 @@ import { toolRegistry } from "../toolRegistry.ts";
 
 import { cmd } from "../../map/action2/builder/cmd.ts";
 import { TilesActions } from "../../map/action2/tilesActions.ts";
-import { defineTool, ToolConfigBrush, ToolContext } from "../type.ts";
+import { defineTool, ToolConfigBrush } from "../type.ts";
+import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
 const tilesActions = TilesActions.getInstance();
-
 
 export const paintColorTool = defineTool<"paint_color", ToolConfigBrush>(
   "paint_color",
   "Paint Color",
   "🖌️",
   "color",
-  (conf: ToolConfigBrush, _ctx: ToolContext) => {
+  (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
     const color = toolRegistry.getActiveColor();
-    if (conf.brushSize <= 1) { 
-        tilesActions.doAction(cmd.color({  x: conf.x, y: conf.y, color: color }));
+    if (conf.brushSize <= 1) {
+      tilesActions.doAction(cmd.color({ x: conf.x, y: conf.y, color: color }));
     } else {
-       tilesActions.doAction(cmd.colorSquare({ x: conf.x, y: conf.y, size: conf.brushSize, color: color }));
+      tilesActions.doAction(
+        cmd.colorSquare({
+          x: conf.x,
+          y: conf.y,
+          size: conf.brushSize,
+          color: color,
+        }),
+      );
     }
   },
 );
-
 
 export const clearColorTool = defineTool<"clear_color", ToolConfigBrush>(
   "clear_color",
   "Clear Color",
   "🪣",
   "color",
-  (conf: ToolConfigBrush, _ctx: ToolContext) => {
-    if (conf.brushSize <= 1) { 
-        tilesActions.doAction(cmd.clearColor({x: conf.x, y: conf.y}));
+  (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
+    if (conf.brushSize <= 1) {
+      tilesActions.doAction(cmd.clearColor({ x: conf.x, y: conf.y }));
     } else {
-       tilesActions.doAction(cmd.clearColorSquare({x: conf.x, y: conf.y, size: conf.brushSize}));
+      tilesActions.doAction(
+        cmd.clearColorSquare({ x: conf.x, y: conf.y, size: conf.brushSize }),
+      );
     }
   },
 );
@@ -42,47 +50,61 @@ export const smoothColorTool = defineTool<"smooth_color", ToolConfigBrush>(
   "Smooth Color",
   "🌀",
   "color",
-  (conf: ToolConfigBrush, _ctx: ToolContext) => {
-    if (conf.brushSize <= 1) { 
-        tilesActions.doAction(cmd.colorSmoothShape({x: conf.x, y: conf.y, size:1}));
+  (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
+    if (conf.brushSize <= 1) {
+      tilesActions.doAction(
+        cmd.colorSmoothShape({ x: conf.x, y: conf.y, size: 1 }),
+      );
     } else {
-       tilesActions.doAction(cmd.colorSmoothShape({x: conf.x, y: conf.y, size: conf.brushSize}));
+      tilesActions.doAction(
+        cmd.colorSmoothShape({ x: conf.x, y: conf.y, size: conf.brushSize }),
+      );
     }
   },
 );
-
-
 
 export const randomShadeTool = defineTool<"random_shade", ToolConfigBrush>(
   "random_shade",
   "Random Shade",
   "🎲",
   "color",
-  (conf: ToolConfigBrush, _ctx: ToolContext) => {
+  (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
     const baseColor = toolRegistry.getActiveColor();
     // Apply random variation to the active color
-    const variedColor = baseColor.map(c => 
+    const variedColor = baseColor.map((c) =>
       Math.max(0, Math.min(255, Math.round(c + (Math.random() - 0.5) * 60)))
     ) as [number, number, number];
-    
-    if (conf.brushSize <= 1) { 
-        tilesActions.doAction(cmd.color({ x: conf.x, y: conf.y, color: variedColor }));
+
+    if (conf.brushSize <= 1) {
+      tilesActions.doAction(
+        cmd.color({ x: conf.x, y: conf.y, color: variedColor }),
+      );
     } else {
-       tilesActions.doAction(cmd.colorSquare({x: conf.x, y: conf.y, size: conf.brushSize, color: variedColor }));
+      tilesActions.doAction(
+        cmd.colorSquare({
+          x: conf.x,
+          y: conf.y,
+          size: conf.brushSize,
+          color: variedColor,
+        }),
+      );
     }
   },
 );
-
 
 export const colorPickerTool = defineTool<"color_picker", ToolConfigBrush>(
   "color_picker",
   "Color Picker",
   "🎨",
   "color",
-  (_conf: ToolConfigBrush, _ctx: ToolContext) => {
+  (_conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
     // Color picker doesn't execute on click - it uses the active color from registry
     // The actual painting is done by paintColorTool
-    console.log(`Color Picker active with color: ${toolRegistry.getActiveColor().join(", ")}`);
+    console.log(
+      `Color Picker active with color: ${
+        toolRegistry.getActiveColor().join(", ")
+      }`,
+    );
   },
 );
 
@@ -91,7 +113,7 @@ export const eyedropperTool = defineTool<"eyedropper", ToolConfigBrush>(
   "Eyedropper",
   "💉",
   "color",
-  (conf: ToolConfigBrush, _ctx: ToolContext) => {
+  (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
     const color = FactoryMap.getInstance().getTileColor(conf.x, conf.y);
     if (color) {
       const [r, g, b] = color;
@@ -100,7 +122,6 @@ export const eyedropperTool = defineTool<"eyedropper", ToolConfigBrush>(
     }
   },
 );
-
 
 export const colorTools = [
   paintColorTool,

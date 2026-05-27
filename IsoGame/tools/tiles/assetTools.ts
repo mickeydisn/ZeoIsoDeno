@@ -1,9 +1,10 @@
-import { defineTool, ToolConfigBrush, ToolContext } from "../type.ts";
+import { defineTool, ToolConfigBrush } from "../type.ts";
+import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
+
 import { toolRegistry } from "../toolRegistry.ts";
 
 import { cmd } from "../../map/action2/builder/cmd.ts";
 import { TilesActions } from "../../map/action2/tilesActions.ts";
-
 
 const tilesActions = TilesActions.getInstance();
 
@@ -12,7 +13,7 @@ export const assetPickerTool = defineTool<"asset_picker", ToolConfigBrush>(
   "Asset Picker",
   "📂",
   "asset",
-  (_conf: ToolConfigBrush, _ctx: ToolContext) => {
+  (_conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
     // Asset picker doesn't execute on click - it shows the asset browser
     // The actual placement is done by placeAssetTool
     const activeAsset = toolRegistry.getActiveAssetId();
@@ -26,9 +27,11 @@ export const placeAssetTool = defineTool<"place_asset", ToolConfigBrush>(
   "Place Asset",
   "🖼️",
   "asset",
-  (conf: ToolConfigBrush, _ctx: ToolContext) => {
+  (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
     const assetId = toolRegistry.getActiveAssetId();
-    console.log(`Place Asset tool called with asset${assetId}, x: ${conf.x}, y: ${conf.y}`);
+    console.log(
+      `Place Asset tool called with asset${assetId}, x: ${conf.x}, y: ${conf.y}`,
+    );
     if (assetId) {
       console.log(`Placing asset ${assetId} at (${conf.x}, ${conf.y})`);
       tilesActions.doAction(cmd.itemForceKey({
@@ -47,7 +50,7 @@ export const clearItemsTool = defineTool<"clear_items", ToolConfigBrush>(
   "Clear Items",
   "🧹",
   "asset",
-  (conf: ToolConfigBrush, _ctx: ToolContext) => {
+  (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
     tilesActions.doAction(cmd.clearItemSquare({
       x: conf.x,
       y: conf.y,

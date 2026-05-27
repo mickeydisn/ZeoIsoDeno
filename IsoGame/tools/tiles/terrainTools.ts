@@ -1,5 +1,6 @@
 import { FactoryMap } from "../../map/factory/factoryMap.ts";
-import { defineTool, ToolConfigBrush, ToolContext } from "../type.ts";
+import { defineTool, ToolConfigBrush } from "../type.ts";
+import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
 
 import { cmd } from "../../map/action2/builder/cmd.ts";
 import { TilesActions } from "../../map/action2/tilesActions.ts";
@@ -10,34 +11,42 @@ export const raiseTerrainTool = defineTool<"raise_terrain", ToolConfigBrush>(
   "Raise Terrain",
   "⬆️",
   "terrain",
-  (conf: ToolConfigBrush, _ctx: ToolContext) => {
+  (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
     if (conf.brushSize <= 1) {
       tilesActions.doAction(cmd.lvlUp({
-        x: conf.x, y: conf.y, lvl: 1 
-       }));
+        x: conf.x,
+        y: conf.y,
+        lvl: 1,
+      }));
     } else {
       tilesActions.doAction(cmd.lvlUpSquare({
-        x: conf.x, y: conf.y, lvl: 1, 
-        size: conf.brushSize 
+        x: conf.x,
+        y: conf.y,
+        lvl: 1,
+        size: conf.brushSize,
       }));
     }
-  }
+  },
 );
 
-export const lowerTerrainTool =  defineTool<"lower_terrain", ToolConfigBrush>(
+export const lowerTerrainTool = defineTool<"lower_terrain", ToolConfigBrush>(
   "lower_terrain",
   "Lower Terrain",
   "⬇️",
   "terrain",
-  (conf: ToolConfigBrush, _ctx: ToolContext) => {
-    if (conf.brushSize <= 1) { 
-      tilesActions.doAction(cmd.lvlUp({ 
-        x: conf.x, y: conf.y, lvl: -1 
+  (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
+    if (conf.brushSize <= 1) {
+      tilesActions.doAction(cmd.lvlUp({
+        x: conf.x,
+        y: conf.y,
+        lvl: -1,
       }));
     } else {
-      tilesActions.doAction(cmd.lvlUpSquare({ 
-        x: conf.x, y: conf.y, lvl: -1, 
-        size: conf.brushSize 
+      tilesActions.doAction(cmd.lvlUpSquare({
+        x: conf.x,
+        y: conf.y,
+        lvl: -1,
+        size: conf.brushSize,
       }));
     }
   },
@@ -48,11 +57,13 @@ export const flattenTool = defineTool<"flatten", ToolConfigBrush>(
   "Flatten",
   "⏹️",
   "terrain",
-   (conf: ToolConfigBrush, _ctx: ToolContext) => {
-    tilesActions.doAction(cmd.lvlFlatSquare({ 
-        x: conf.x, y: conf.y, size: conf.brushSize 
-      }));
-  }
+  (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
+    tilesActions.doAction(cmd.lvlFlatSquare({
+      x: conf.x,
+      y: conf.y,
+      size: conf.brushSize,
+    }));
+  },
 );
 
 export const smoothTool = defineTool<"smooth", ToolConfigBrush>(
@@ -60,11 +71,14 @@ export const smoothTool = defineTool<"smooth", ToolConfigBrush>(
   "Smooth",
   "〰️",
   "terrain",
-  (conf: ToolConfigBrush, _ctx: ToolContext) => {
-    tilesActions.doAction(cmd.lvlAvgSquare({ 
-        x: conf.x, y: conf.y, size: conf.brushSize 
-      }));
-  });
+  (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
+    tilesActions.doAction(cmd.lvlAvgSquare({
+      x: conf.x,
+      y: conf.y,
+      size: conf.brushSize,
+    }));
+  },
+);
 
 // Plateau tool uses two-click interaction
 let plateauTargetLevel: number | null = null;
@@ -75,8 +89,7 @@ export const plateauTool = defineTool<"plateau", ToolConfigBrush>(
   "Plateau",
   "🏔️",
   "terrain",
-
-  (conf: ToolConfigBrush, _ctx: ToolContext) => {
+  (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
     const fm = FactoryMap.getInstance();
     if (plateauTargetLevel === null) {
       // First click: store target level
@@ -86,15 +99,17 @@ export const plateauTool = defineTool<"plateau", ToolConfigBrush>(
       console.log(`Plateau: Target level set to ${plateauTargetLevel}`);
     } else {
       // Second click: flatten to target level
-      tilesActions.doAction(cmd.lvlFlatSquare({ 
-        x: conf.x, y: conf.y, size: conf.brushSize 
+      tilesActions.doAction(cmd.lvlFlatSquare({
+        x: conf.x,
+        y: conf.y,
+        size: conf.brushSize,
       }));
       // Then set all tiles in area to target level
       tilesActions.doAction(cmd.lvlUpSquare({
-        x: conf.x, 
-        y: conf.y, 
-        lvl: plateauTargetLevel - fm.getTile(conf.x, conf.y).lvl, 
-         size: conf.brushSize 
+        x: conf.x,
+        y: conf.y,
+        lvl: plateauTargetLevel - fm.getTile(conf.x, conf.y).lvl,
+        size: conf.brushSize,
       }));
 
       console.log(`Plateau: Flattened to level ${plateauTargetLevel}`);
@@ -102,7 +117,7 @@ export const plateauTool = defineTool<"plateau", ToolConfigBrush>(
       plateauTargetLevel = null;
       _plateauStartPos = null;
     }
-  }
+  },
 );
 
 export function resetPlateauState() {
