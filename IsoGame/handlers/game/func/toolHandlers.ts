@@ -1,12 +1,17 @@
 import { toolRegistry } from "@iso-game/tools/toolRegistry.ts";
 import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
 import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
-import { gameAction, TGameHandlerAction , TGameHandlerContext } from "../contexts.ts";
-
-
+import {
+  gameAction,
+  TGameHandlerAction,
+  TGameHandlerContext,
+} from "../contexts.ts";
 
 // ------------------- PRIVATE ------------------
-async function _getBlobUrlFromAsset(_ctx: TGameHandlerContext, assetId: string): Promise<string | null> {
+async function _getBlobUrlFromAsset(
+  _ctx: TGameHandlerContext,
+  assetId: string,
+): Promise<string | null> {
   toolRegistry.setActiveAssetId(assetId);
   const assetLoader = _ctx.gameloop.assetLoader;
   if (assetLoader && assetId) {
@@ -25,48 +30,58 @@ async function _getBlobUrlFromAsset(_ctx: TGameHandlerContext, assetId: string):
   return null;
 }
 
-
 // -------------------------------------
-export interface EventSetBuildingConfig extends TBaseMessage<"setBuildingConfig"> {
+export interface EventSetBuildingConfig
+  extends TBaseMessage<"setBuildingConfig"> {
   configId: string;
 }
-const setBuildingConfig: TGameHandlerAction<EventSetBuildingConfig> = 
-  gameAction<EventSetBuildingConfig>("setBuildingConfig", 
-   (data: EventSetBuildingConfig, _ctx: TGameHandlerContext) => {
-  console.log("setBuildingConfig received:", data.configId);
-  toolRegistry.setBuildingConfig(data.configId);
-});
+const setBuildingConfig: TGameHandlerAction<EventSetBuildingConfig> =
+  gameAction<EventSetBuildingConfig>(
+    "setBuildingConfig",
+    (data: EventSetBuildingConfig, _ctx: TGameHandlerContext) => {
+      console.log("setBuildingConfig received:", data.configId);
+      toolRegistry.setBuildingConfig(data.configId);
+    },
+  );
 
 // -------------------------------------
-export interface EventSetBuildingParams extends TBaseMessage<"setBuildingParams"> {
+export interface EventSetBuildingParams
+  extends TBaseMessage<"setBuildingParams"> {
   growLoop: number;
   endLoop: number;
 }
-const setBuildingParams: TGameHandlerAction<EventSetBuildingParams> = 
-  gameAction<EventSetBuildingParams>("setBuildingParams", 
-   (data: EventSetBuildingParams, _ctx: TGameHandlerContext) => {
-
-  console.log("setBuildingParams received:", data.growLoop, data.endLoop);
-  toolRegistry.setBuildingParams(data.growLoop);
-});
+const setBuildingParams: TGameHandlerAction<EventSetBuildingParams> =
+  gameAction<EventSetBuildingParams>(
+    "setBuildingParams",
+    (data: EventSetBuildingParams, _ctx: TGameHandlerContext) => {
+      console.log("setBuildingParams received:", data.growLoop, data.endLoop);
+      toolRegistry.setBuildingParams(data.growLoop);
+    },
+  );
 
 // -------------------------------------
 export interface EventSetActiveTool extends TBaseMessage<"setActiveTool"> {
   toolId: string;
+  potionId?: string | null; // optional potion ID for potion tools
 }
-const setActiveTool: TGameHandlerAction<EventSetActiveTool> = 
-  gameAction<EventSetActiveTool>("setActiveTool", 
-   (data: EventSetActiveTool, _ctx: TGameHandlerContext) => {
+const setActiveTool: TGameHandlerAction<EventSetActiveTool> = gameAction<
+  EventSetActiveTool
+>("setActiveTool", (data: EventSetActiveTool, _ctx: TGameHandlerContext) => {
+  console.log("setActiveTool received:", data.toolId, data.potionId);
   toolRegistry.setActive(data.toolId);
+  // If a potionId is provided, set it on the registry so the use_potion tool can read it
+  if (data.potionId !== undefined) {
+    toolRegistry.setActivePotionId(data.potionId);
+  }
 });
 
 // -------------------------------------
 export interface EventSetBrushSize extends TBaseMessage<"setBrushSize"> {
   size: number;
 }
-const setBrushSize: TGameHandlerAction<EventSetBrushSize> = 
-  gameAction<EventSetBrushSize>("setBrushSize", 
-   (data: EventSetBrushSize, _ctx: TGameHandlerContext) => {
+const setBrushSize: TGameHandlerAction<EventSetBrushSize> = gameAction<
+  EventSetBrushSize
+>("setBrushSize", (data: EventSetBrushSize, _ctx: TGameHandlerContext) => {
   toolRegistry.setBrushSize(data.size);
 });
 
@@ -76,43 +91,46 @@ export interface EventSetColor extends TBaseMessage<"setColor"> {
   g: number;
   b: number;
 }
-const setColor: TGameHandlerAction<EventSetColor> = 
-  gameAction<EventSetColor>("setColor", 
-   (data: EventSetColor, _ctx: TGameHandlerContext) => {
-
-  toolRegistry.setActiveColor(data.r, data.g, data.b);
-});
+const setColor: TGameHandlerAction<EventSetColor> = gameAction<EventSetColor>(
+  "setColor",
+  (data: EventSetColor, _ctx: TGameHandlerContext) => {
+    toolRegistry.setActiveColor(data.r, data.g, data.b);
+  },
+);
 
 // -------------------------------------
 export interface EventSetActiveAsset extends TBaseMessage<"setActiveAsset"> {
   assetId: string;
 }
-const setActiveAsset: TGameHandlerAction<EventSetActiveAsset> = 
-  gameAction<EventSetActiveAsset>("setActiveAsset", 
- async  (data: EventSetActiveAsset, _ctx: TGameHandlerContext) => {
-
-  console.log("setActiveAsset received:", data.assetId);
-  const blobUrl = await _getBlobUrlFromAsset(_ctx, data.assetId);
-  if (blobUrl) {
-    _ctx.handler.send({
-      action: "assetPreview",
-      blobUrl: blobUrl,
-    });
-  }
-});
+const setActiveAsset: TGameHandlerAction<EventSetActiveAsset> = gameAction<
+  EventSetActiveAsset
+>(
+  "setActiveAsset",
+  async (data: EventSetActiveAsset, _ctx: TGameHandlerContext) => {
+    console.log("setActiveAsset received:", data.assetId);
+    const blobUrl = await _getBlobUrlFromAsset(_ctx, data.assetId);
+    if (blobUrl) {
+      _ctx.handler.send({
+        action: "assetPreview",
+        blobUrl: blobUrl,
+      });
+    }
+  },
+);
 
 // -------------------------------------
 export interface EventGetAsset extends TBaseMessage<"getAsset"> {
   assetId: string;
 }
-const getAsset: TGameHandlerAction<EventGetAsset> = 
-  gameAction<EventGetAsset>("getAsset", 
-   async (data: EventGetAsset, _ctx: TGameHandlerContext) => {
-  const blobUrl = await _getBlobUrlFromAsset(_ctx, data.assetId);
-  if (blobUrl) {
+const getAsset: TGameHandlerAction<EventGetAsset> = gameAction<EventGetAsset>(
+  "getAsset",
+  async (data: EventGetAsset, _ctx: TGameHandlerContext) => {
+    const blobUrl = await _getBlobUrlFromAsset(_ctx, data.assetId);
+    if (blobUrl) {
       return { blobUrl: blobUrl };
-  }
-});
+    }
+  },
+);
 
 // -------------------------------------
 export interface EventToolClick extends TBaseMessage<"toolClick"> {
@@ -121,9 +139,9 @@ export interface EventToolClick extends TBaseMessage<"toolClick"> {
   x?: number;
   y?: number;
 }
-const toolClick: TGameHandlerAction<EventToolClick> = 
-  gameAction<EventToolClick>("toolClick", 
-   (data: EventToolClick, _ctx: TGameHandlerContext) => {
+const toolClick: TGameHandlerAction<EventToolClick> = gameAction<
+  EventToolClick
+>("toolClick", (data: EventToolClick, _ctx: TGameHandlerContext) => {
   const x = data.gridX !== undefined
     ? data.gridX + gobalMapState.x - 1
     : data.x !== undefined
@@ -145,7 +163,6 @@ const toolClick: TGameHandlerAction<EventToolClick> =
 });
 
 // -------------------------------------
-
 
 export const toolHandlers = [
   setActiveTool,

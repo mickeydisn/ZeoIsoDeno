@@ -24,6 +24,15 @@ export class mapServerDatabase {
     `);
     
     this.db.execute(`CREATE INDEX IF NOT EXISTS idx_chunk ON map_deltas (cx, cy)`);
+
+    this.db.execute(`
+      CREATE TABLE IF NOT EXISTS potion_inventory (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        potion_data TEXT NOT NULL,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
   }
 
   public saveDeltas(cx: number, cy: number, deltas: any[]) {
@@ -48,6 +57,29 @@ export class mapServerDatabase {
       y: y as number,
       data: JSON.parse(data as string)
     }));
+  }
+
+  public savePotion(username: string, potion: { id: string; name: string; actions: unknown[]; remainingUses: number; createdAt: number }) {
+    this.db.query(
+      `INSERT OR REPLACE INTO potion_inventory (id, username, potion_data, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
+      [potion.id, username, JSON.stringify(potion)]
+    );
+  }
+
+  public getAllPotions(username: string) {
+    const rows = this.db.query(
+      `SELECT id, potion_data FROM potion_inventory WHERE username = ? ORDER BY updated_at DESC`,
+      [username]
+    );
+
+    return rows.map(([id, data]) => ({
+      id: id as string,
+      ...JSON.parse(data as string),
+    }));
+  }
+
+  public deletePotion(id: string) {
+    this.db.query(`DELETE FROM potion_inventory WHERE id = ?`, [id]);
   }
 
   public close() {

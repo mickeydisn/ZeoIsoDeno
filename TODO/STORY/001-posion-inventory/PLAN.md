@@ -100,11 +100,11 @@ The feature must follow these established code patterns:
 
 ---
 
-#### Step 1.3 — (Optional) Server-Side Potion Persistence
+#### Step 1.3 — Server-Side Potion Persistence
 
 **File:** `IsoGame/map/persistence/db/mapServerDatabase.ts`
 
-- [ ] Add SQL table creation in `initSchema()`:
+- [x] Add SQL table creation in `initSchema()`:
   ```sql
   CREATE TABLE IF NOT EXISTS potion_inventory (
     id TEXT PRIMARY KEY,
@@ -113,15 +113,15 @@ The feature must follow these established code patterns:
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
   ```
-- [ ] Add `savePotion(username, potion)` and `getAllPotions(username)` methods.
+- [x] Add `savePotion(username, potion)` and `getAllPotions(username)` methods.
 
 **File:** `IsoGame/map/persistence/db/mapRouter.ts`
 
-- [ ] Add `GET /api/potions?username=...` route (returns list of potions).
-- [ ] Add `POST /api/potions` route (saves/updates a potion).
-- [ ] Add `DELETE /api/potions/:id` route (deletes a potion).
+- [x] Add `GET /api/potions?username=...` route (returns list of potions).
+- [x] Add `POST /api/potions` route (saves/updates a potion).
+- [x] Add `DELETE /api/potions/:id` route (deletes a potion).
 
-> **Note:** Step 1.3 can be deferred until Phase 3 — the feature works with IndexedDB only.
+> **Code added:** `IsoGame/map/persistence/db/mapServerDatabase.ts` — `potion_inventory` table with `savePotion()`, `getAllPotions()`, `deletePotion()`. `IsoGame/map/persistence/db/mapRouter.ts` — `GET /api/potions`, `POST /api/potions`, `DELETE /api/potions/:id` routes.
 
 ---
 
@@ -169,163 +169,91 @@ The feature must follow these established code patterns:
 
 ---
 
-### Phase 3 — Potion Handler (Worker-side)
+### Phase 3 — Potion Activation via Tool System (REWRITTEN)
 
-**Goal:** The worker receives "usePotion" messages and executes the potion's action chain on the map.
-
----
-
-#### Step 3.1 — Create potionHandlers.ts
-
-**New File:** `IsoGame/handlers/game/func/potionHandlers.ts`
-
-- [x] Import `TilesActions` from `@iso-game/map/action2/tilesActions.ts`.
-- [x] Import `gobalMapState` from `@iso-game/mapIso/mapState.ts`.
-- [x] Define `EventUsePotion` message:
-  ```ts
-  export interface EventUsePotion extends TBaseMessage<"usePotion"> {
-    potionId: string;
-    gridX: number;
-    gridY: number;
-  }
-  ```
-- [x] Define `usePotion` handler:
-  - Look up the potion from `gobalMapState.playerState.inventory` by `potionId`.
-  - If not found or `remainingUses <= 0`, return `{ success: false, reason: "..." }`.
-  - **Decrement `remainingUses`** by 1.
-  - Build `BaseTileActionConfig[]` from potion `actions`:
-    ```ts
-    const confs = potion.actions.map(entry => ({
-      func: entry.func,
-      x: data.gridX,
-      y: data.gridY,
-      ...entry.config,   // spread extra params
-    }));
-    ```
-  - Call `TilesActions.getInstance().doActions(confs)`.
-  - If `remainingUses === 0`, remove the potion from inventory.
-  - **Persist updated inventory** to IndexedDB via `"potionUsed"` message back to main thread (Option B).
-  - Return `{ success: true, remainingUses }`.
-- [x] Export `potionHandlers` array (same pattern as `toolHandlers` at line 150).
-
-> **Important — Worker → IndexedDB:** The worker cannot directly access IndexedDB. We have two options:
-> - **Option A:** `usePotion` handler sends a message back to the main thread (`postMessage({ action: "savePotionInventory", inventory })`) and the main thread persists it.
-> - **Option B:** After `usePotion`, the worker sends `{ action: "potionUsed", potionId, remainingUses }` to the main thread, and the main thread reads the updated state and saves.
->
-> **Decision: Use Option B** — the worker sends `"potionUsed"` response, main thread reads `gobalMapState.playerState` and persists to IndexedDB.
+**Goal:** Potions are activated like any other tool — clicking a potion button sends `setActiveTool` with `potionId`. The `use_potion` tool reads the potion from toolRegistry and executes its actions via `TilesActions.doActions()`.
 
 ---
 
-#### Step 3.2 — Register the Handler
+#### Step 3.1 — `setActiveTool` Handler Extended with `potionId`
 
-**File:** `IsoGame/handlers/handlers.ts`
+**File:** `IsoGame/handlers/game/func/toolHandlers.ts`
 
-- [x] Import `potionHandlers` from `./game/func/potionHandlers.ts`.
-- [x] Append `...potionHandlers` to the `AllGameHandlers` array (line 17-23):
-  ```ts
-  export const AllGameHandlers = [
-    ...initHandlers,
-    ...renderHandlers,
-    ...interactionHandlers,
-    ...toolHandlers,
-    ...queryHandlers,
-    ...potionHandlers,   // <-- NEW
-  ] as const;
-  ```
+- [x] `EventSetActiveTool` interface extended with optional `potionId?: string | null`.
+- [x] `setActiveTool` handler stores `potionId` on `toolRegistry.setActivePotionId()`.
+- [x] Removed old `EventSetActivePotion` / `setActivePotion` handler (replaced by `setActiveTool` with `potionId`).
+
+```ts
+export interface EventSetActiveTool extends TBaseMessage<"setActiveTool"> {
+  toolId: string;
+  potionId?: string | null; // optional potion ID for potion tools
+}
+```
 
 ---
 
-### Phase 4 — Potion Menu Tab & UI
+#### Step 3.2 — Removed `potionHandlers.ts` (separate handler no longer needed)
 
-**Goal:** The player can see the potion tab in the head menu, craft new potions via a dialog, and see/use existing potions from their inventory.
+**Deleted:** `IsoGame/handlers/game/func/potionHandlers.ts`
 
----
-
-#### Step 4.1 — Create potionMenu.ts ✅
-
-**New File:** `IsoGameAddon/iso/web/js/menu/sections/potionMenu.ts`
-
-- [x] Import `MenuTab` from `../headMenu.ts`.
-- [x] Import `DialogManager` from `../dialog.ts`.
-- [x] Import `ACTION_REGISTRY` from `@iso-game/map/action2/actions/registry.ts` (uses embedded `meta` on each action).
-- [x] Import `gobalMapState` from `@iso-game/mapIso/mapState.ts`.
-- [x] Export `potionMenuTab` factory with sub-tools `craft_potion` and `potion_list`.
-
-> **Code added:** `IsoGameAddon/iso/web/js/menu/sections/potionMenu.ts` — menu tab factory, craft dialog with dynamic form rendering, potion list dialog, persistence helpers.
+- [x] Removed from filesystem — potion execution is now done by `usePotionTool` (in `toolRegistry`).
+- [x] Removed import and reference from `IsoGame/handlers/handlers.ts`.
 
 ---
 
-#### Step 4.2 — Implement Craft Dialog (openCraftDialog) ✅
+### Phase 4 — Potion Menu Tab & UI (REWRITTEN)
 
-- [x] Open a dialog via `DialogManager.getInstance().open()`.
-- [x] Multi-section layout: action type selector, config form, action list, add button, name input, save button.
-- [x] `renderField()` supports `number`, `range`, `color`, `boolean`, `select`, `text`.
-- [x] Action state management with `pendingActions`, `selectedActionKey`, `currentFormValues`.
-- [x] Save: validates, creates UUID, calls `mapDB.savePotion()`, syncs player state, closes dialog.
+**Goal:** The potion tab shows inline buttons in the header panel (one per potion). Each button works like any other tool button — sends `{action: "setActiveTool", toolId: "use_potion", potionId}`. No special potion mode, no separate visual mode.
 
 ---
 
-#### Step 4.3 — Implement Potion List Dialog ✅
+#### Step 4.1 — Potion Sub-Tools with Cards (div param)
 
-- [x] Opens dialog via `DialogManager.getInstance().open()`.
-- [x] Fetches potions from `mapDB.getAllPotions("mickey-test")`.
-- [x] Renders name, action count, remaining uses, Use/Buy/Delete buttons.
-- [x] Empty state message.
-- [x] Use button sets `activePotionId`, shows toast indicator, closes dialog.
-- [x] Buy button increments uses, persists.
-- [x] Delete button removes from DB, refreshes display.
+**File:** `IsoGameAddon/iso/web/js/menu/sections/potionMenu.ts`
 
----
+- [x] 3 static sub-tools: "Craft Potion" (🔬), "Potion Inventory" (📜), "Use Potion" (🧪).
+- [x] Each sub-tool has a `type: "div"` param that mounts a card in the params area.
+- [x] "Craft Potion" card shows a button → opens craft dialog.
+- [x] "Potion Inventory" card shows a button → opens inventory list dialog.
+- [x] "Use Potion" card shows a `<select>` listing all potions; on change sends `setActiveTool` with `potionId`.
+- [x] After craft/list dialog closes, potion select is refreshed automatically.
+- [x] Static nav works correctly (no dynamic sub-tool entries).
+- [x] Removed `initPotionSubStrip()` from `main.ts`.
 
-#### Step 4.4 — Potion Persistence Helper ✅
+#### Step 4.2 — Craft Dialog ✅
 
-- [x] Inlined in `potionMenu.ts`: `loadPotions()`, `savePotion()`, `deletePotion()`, `syncPotionsToPlayerState()`.
-- [ ] Call `syncPotionsToPlayerState("mickey-test")` on app startup — deferred (can be added when needed).
+- [x] Same as before: action selector → config form → add to sequence → save.
 
----
+#### Step 4.3 — Potion List Dialog ✅
 
-#### Step 4.5 — Potion Use from Map Click ✅
-
-- [x] "Use" button in potion list dialog sets `gobalMapState.playerState.activePotionId` + shows toast.
-- [x] `mouseClick` handler in `interactionHandlers.ts` intercepts when `activePotionId` is set:
-  - Looks up potion from `playerState.inventory`.
-  - Decrements `remainingUses`.
-  - Builds `BaseTileActionConfig[]` injecting `x`, `y` from click.
-  - Calls `TilesActions.getInstance().doActions(confs)`.
-  - Removes potion if uses === 0.
-  - Resets `activePotionId`.
-  - Sends `"potionUsed"` response back to main thread.
-- [x] Main thread receives `"potionUsed"` → persists to IndexedDB → shows feedback.
+- [x] Shows list with Use/Buy/Delete buttons.
+- [x] "Use" button sends `{action: "setActiveTool", toolId: "use_potion", potionId}` — same as header buttons.
 
 ---
 
-#### Step 4.6 — Wire Potion Menu into main.ts ✅
+#### Step 4.4 — Removed Potion Screen Handlers
 
-- [x] Import `potionMenuTab` from `./menu/sections/potionMenu.ts`.
-- [x] Add `potionMenuTab(gameWorker)` to `config_tag` array.
-- [ ] `syncPotionsToPlayerState` call on startup — deferred (not critical for initial UI).
+**File:** `IsoGame/handlers/screen/func/mainMessage.ts`
+
+- [x] Removed `potionUsed`, `potionArmed`, `potionDisarmed` handlers.
+- [x] Removed `potion-mode` CSS, toast indicators, ESC key listener.
+- [x] `mouseClick` now always sends `"toolExecuted"` — no special potion detection.
+
+---
+
+#### Step 4.5 — Cleaned up main.ts
+
+**File:** `IsoGameAddon/iso/web/js/main.ts`
+
+- [x] Removed ESC key listener for potion mode.
+- [x] Removed startup `syncPotionsToPlayerState` call (potion list refreshes when tab opens).
+- [x] Removed `syncPotionsToPlayerState` import.
 
 ---
 
 ### Phase 5 — Integration & Polish
 
-**Goal:** The feature works end-to-end end ends.
-
----
-
-#### Step 5.1 — Handle "potionUsed" Response on Main Thread ✅
-
-- [x] Registered `potionUsed` screen handler in `IsoGame/handlers/screen/func/mainMessage.ts`:
-  - Persists updated potion to IndexedDB (or deletes if consumed).
-  - Shows feedback toast (green for success, red for failure).
-
----
-
-#### Step 5.2 — Add Visual Feedback for Potion Mode
-
-- [ ] When `activePotionId` is set, change the mouse cursor to a "potion" icon or add a toast: "Select a tile to apply potion".
-- [ ] Add a CSS class `.potion-mode` that highlights the potion tab or shows a colored border.
-- [ ] Clear `activePotionId` on any error or ESC key.
+**Goal:** The feature works end-to-end.
 
 ---
 
@@ -356,9 +284,7 @@ The feature must follow these established code patterns:
 ## File Checklist (All Changes)
 
 ### New Files
-- [x] `IsoGame/handlers/game/func/potionHandlers.ts` — worker-side usePotion handler
-- [x] `IsoGameAddon/iso/web/js/menu/sections/potionMenu.ts` — menu tab, craft dialog, potion list dialog, persistence helpers
-- [x] `IsoGameAddon/iso/web/js/menu/sections/potionPersistence.ts` (optional inline) — inlined in `potionMenu.ts`
+- [x] `IsoGameAddon/iso/web/js/menu/sections/potionMenu.ts` — menu tab, craft dialog, potion list dialog, persistence helpers, potion button strip
 
 ### Modified Files
 - [x] `IsoGame/mapIso/mapState.ts` — add `Potion`, `PotionActionEntry`, `PlayerState` interfaces + `playerState` property
@@ -377,16 +303,22 @@ The feature must follow these established code patterns:
 - [x] `IsoGame/map/action2/actions/color/colorNoise.actions.ts` — add meta
 - [x] `IsoGame/map/action2/actions/color/colorGradientShape.actions.ts` — add meta
 - [x] `IsoGame/map/action2/actions/item/item.actions.ts` — add meta
-- [x] `IsoGame/handlers/handlers.ts` — import + append `potionHandlers`
-- [x] `IsoGame/handlers/game/func/interactionHandlers.ts` — intercept `mouseClick` when `activePotionId` is set, execute potion actions
-- [x] `IsoGame/handlers/screen/func/mainMessage.ts` — add `potionUsed` screen handler for persistence + feedback
-- [x] `IsoGameAddon/iso/web/js/main.ts` — import + register `potionMenuTab`
-- [ ] `IsoGame/map/persistence/db/mapServerDatabase.ts` — add `potion_inventory` table + methods (optional)
-- [ ] `IsoGame/map/persistence/db/mapRouter.ts` — add `/api/potions` routes (optional)
+- [x] `IsoGame/handlers/handlers.ts` — removed `potionHandlers` import and reference from `AllGameHandlers`
+- [x] `IsoGame/handlers/game/func/toolHandlers.ts` — removed `EventSetActivePotion` handler, extended `EventSetActiveTool` with `potionId`
+- [x] `IsoGame/handlers/game/func/interactionHandlers.ts` — simplified to always send `toolExecuted`, forward `potionResult`
+- [x] `IsoGame/handlers/screen/func/mainMessage.ts` — removed `potionUsed`/`potionArmed`/`potionDisarmed` handlers, added `toolExecuted` handler with potion persistence
+- [x] `IsoGameAddon/iso/web/js/main.ts` — import + register `potionMenuTab`, removed ESC listener and startup sync
+- [x] `IsoGame/tools/tiles/potionTool.ts` — `usePotionTool` preserved (uses `activePotionId` from toolRegistry)
+- [x] `IsoGame/tools/toolRegistry.ts` — preserved unchanged
+- [x] `IsoGame/map/persistence/db/mapServerDatabase.ts` — add `potion_inventory` table + methods
+- [x] `IsoGame/map/persistence/db/mapRouter.ts` — add `/api/potions` routes
+
+### Removed Files
+- [x] `IsoGame/handlers/game/func/potionHandlers.ts` — replaced by tool-based execution
 
 ---
 
-## Sequence: End-to-End "Craft & Use" Flow
+## Sequence: End-to-End "Craft & Use" Flow (Current)
 
 ```
 1. Player opens game → main.ts loads → tab "🧪 Potion" visible in head menu

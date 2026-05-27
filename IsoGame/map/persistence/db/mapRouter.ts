@@ -19,6 +19,7 @@ mapRouter.get("/api/map/deltas", (ctx) => {
     ctx.response.body = { success: true, deltas };
   } catch (error) {
     ctx.response.status = 500;
+
     ctx.response.body = { success: false, error: error.message };
   }
 });
@@ -28,9 +29,9 @@ mapRouter.post("/api/map/deltas", async (ctx) => {
     // Robust body parsing and logging for debugging mismatched client payloads.
     let body: any = {};
     let rawText = "";
-    
-    console.log("------------------------------------------------------")
-    
+
+    console.log("------------------------------------------------------");
+
     body = await ctx.request.body.json();
 
     // Extract common payload shapes flexibly
@@ -39,9 +40,14 @@ mapRouter.post("/api/map/deltas", async (ctx) => {
     let deltas: any = body?.deltas;
 
     // Support payload wrapped in 'payload' or 'data' fields (forms, some clients)
-    if ((!Array.isArray(deltas) || cx === undefined || cy === undefined) && body?.payload) {
+    if (
+      (!Array.isArray(deltas) || cx === undefined || cy === undefined) &&
+      body?.payload
+    ) {
       try {
-        const parsed = typeof body.payload === "string" ? JSON.parse(body.payload) : body.payload;
+        const parsed = typeof body.payload === "string"
+          ? JSON.parse(body.payload)
+          : body.payload;
         cx = cx ?? parsed.cx;
         cy = cy ?? parsed.cy;
         deltas = deltas ?? parsed.deltas ?? parsed.data;
@@ -50,7 +56,10 @@ mapRouter.post("/api/map/deltas", async (ctx) => {
       }
     }
 
-    if ((!Array.isArray(deltas) || cx === undefined || cy === undefined) && body?.data) {
+    if (
+      (!Array.isArray(deltas) || cx === undefined || cy === undefined) &&
+      body?.data
+    ) {
       const parsed = body.data;
       cx = cx ?? parsed.cx;
       cy = cy ?? parsed.cy;
@@ -58,7 +67,10 @@ mapRouter.post("/api/map/deltas", async (ctx) => {
     }
 
     // Attempt to parse URL-encoded "payload=" style in rawText
-    if ((!Array.isArray(deltas) || cx === undefined || cy === undefined) && rawText) {
+    if (
+      (!Array.isArray(deltas) || cx === undefined || cy === undefined) &&
+      rawText
+    ) {
       try {
         const m = rawText.match(/payload=({.*})/);
         if (m) {
@@ -81,18 +93,76 @@ mapRouter.post("/api/map/deltas", async (ctx) => {
       ctx.response.body = { success: false, error: "Missing cx, cy or deltas" };
       return;
     }
-    
-    console.log(`Saving deltas for chunk (${cx}, ${cy}), count: ${deltas.length}`);
+
+    console.log(
+      `Saving deltas for chunk (${cx}, ${cy}), count: ${deltas.length}`,
+    );
     deltas.forEach((delta, i) => {
-      const data = delta.data ?? delta
+      const data = delta.data ?? delta;
       // console.log(`  Delta ${i}:`, JSON.stringify(data));
-      if (typeof data === "object" && data !== null && "color" in data ) {
-        console.log(`  Delta ${i}: x=${data.x}, y=${data.y}, color=${data.color}`);
+      if (typeof data === "object" && data !== null && "color" in data) {
+        console.log(
+          `  Delta ${i}: x=${data.x}, y=${data.y}, color=${data.color}`,
+        );
       }
     });
 
-
     mapDataBase.saveDeltas(cx, cy, deltas);
+    ctx.response.body = { success: true };
+  } catch (error) {
+    ctx.response.status = 500;
+    ctx.response.body = { success: false, error: error.message };
+  }
+});
+
+// === Potion Inventory Routes ===
+
+mapRouter.get("/api/potions", (ctx) => {
+  const username = ctx.request.url.searchParams.get("username") ||
+    "mickey-test";
+
+  try {
+    const potions = mapDataBase.getAllPotions(username);
+    ctx.response.body = { success: true, potions };
+  } catch (error) {
+    ctx.response.status = 500;
+    ctx.response.body = { success: false, error: error.message };
+  }
+});
+
+mapRouter.post("/api/potions", async (ctx) => {
+  try {
+    const body = await ctx.request.body.json();
+    const { username, potion } = body;
+
+    if (!potion || !potion.id) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        success: false,
+        error: "Missing potion object with id",
+      };
+      return;
+    }
+
+    mapDataBase.savePotion(username || "mickey-test", potion);
+    ctx.response.body = { success: true };
+  } catch (error) {
+    ctx.response.status = 500;
+    ctx.response.body = { success: false, error: error.message };
+  }
+});
+
+mapRouter.delete("/api/potions/:id", (ctx) => {
+  const id = ctx.params.id;
+
+  if (!id) {
+    ctx.response.status = 400;
+    ctx.response.body = { success: false, error: "Missing potion id" };
+    return;
+  }
+
+  try {
+    mapDataBase.deletePotion(id);
     ctx.response.body = { success: true };
   } catch (error) {
     ctx.response.status = 500;

@@ -3,6 +3,7 @@ import { terrainTools } from "./tiles/terrainTools.ts";
 import { colorTools } from "./tiles/colorTools.ts";
 import { assetTools } from "./tiles/assetTools.ts";
 import { structureTools } from "./structureTools.ts";
+import { potionTools } from "./tiles/potionTool.ts";
 import { AnyToolAction, ToolContext } from "./type.ts";
 
 export const TOOL_ACTION_REGISTRY = [
@@ -10,25 +11,27 @@ export const TOOL_ACTION_REGISTRY = [
   ...colorTools,
   ...assetTools,
   ...structureTools,
+  ...potionTools,
 ] as const;
-
 
 export type RegistryToolAction = typeof TOOL_ACTION_REGISTRY[number];
 
 export class ToolRegistry {
   private static instance: ToolRegistry;
-  
+
   private ctx: ToolContext = {
     world: World.getInstance(),
   };
   /** Dispatch table built once from the registry */
   private index: Map<string, AnyToolAction> = new Map();
 
-
   private activeTool: AnyToolAction | null = null;
   private brushSize: number = 1;
   private activeColor: [number, number, number] = [128, 128, 128]; // Default gray
   private activeAssetId: string | null = null;
+
+  // Potion state
+  private activePotionId: string | null = null;
 
   // Building configuration state
   // private activeBuildingConfigId: string = "WcBuildConf_GraveA";
@@ -43,15 +46,16 @@ export class ToolRegistry {
   }
 
   initRegistry() {
-    TOOL_ACTION_REGISTRY.forEach(tool => {
-      this.index.set(tool.key, tool  as AnyToolAction);
+    TOOL_ACTION_REGISTRY.forEach((tool) => {
+      this.index.set(tool.key, tool as AnyToolAction);
     });
   }
 
-
   setActive(toolId: string): void {
     const tool = this.index.get(toolId);
-    if (tool) {
+    if (!tool) {
+      this.activeTool = null;
+    } else {
       this.activeTool = tool;
       this.brushSize = 1;
     }
@@ -61,9 +65,7 @@ export class ToolRegistry {
     return this.activeTool;
   }
 
-
   // ----------------------------------------------
-
 
   getActiveId(): string | null {
     return this.activeTool?.key ?? null;
@@ -81,12 +83,17 @@ export class ToolRegistry {
   // ----------------------------------------------
 
   executeAt(x: number, y: number): Record<string, unknown> | void {
-    console.log(`Executing tool at (${x}, ${y}) with brush size ${this.brushSize}`);
+    console.log(
+      `Executing tool at (${x}, ${y}) with brush size ${this.brushSize}`,
+    );
     if (this.activeTool) {
-      return this.activeTool.execute({x: x, y: y, brushSize: this.brushSize}, this.ctx);
+      return this.activeTool.execute(
+        { x: x, y: y, brushSize: this.brushSize },
+        this.ctx,
+      );
     }
   }
-// ----------------------------------------------
+  // ----------------------------------------------
 
   setActiveColor(r: number, g: number, b: number): void {
     this.activeColor = [r, g, b];
@@ -104,8 +111,18 @@ export class ToolRegistry {
     return this.activeAssetId;
   }
 
-// ----------------------------------------------
+  // ----------------------------------------------
 
+  // Potion state methods
+  setActivePotionId(potionId: string | null): void {
+    this.activePotionId = potionId;
+  }
+
+  getActivePotionId(): string | null {
+    return this.activePotionId;
+  }
+
+  // ----------------------------------------------
 
   // Building configuration methods
   setBuildingConfig(id: string): void {

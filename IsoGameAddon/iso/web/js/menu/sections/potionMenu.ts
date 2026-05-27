@@ -2,19 +2,19 @@ import { MenuTab } from "../headMenu.ts";
 import { DialogManager } from "../dialog.ts";
 import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
 import { ACTION_REGISTRY } from "@iso-game/map/action2/actions/registry.ts";
-import type {
-  ActionField,
-  ActionMeta,
-} from "@iso-game/map/action2/utils/types.ts";
+import type { ActionField } from "@iso-game/map/action2/utils/types.ts";
 import type { Potion, PotionActionEntry } from "@iso-game/mapIso/mapState.ts";
 import { mapDB } from "@iso-game/map/persistence/db/mapWebDatabase.ts";
 
 // ============================================================================
-// GLOBAL
+// GLOBALS
 let gameWorker: Worker;
 let pendingActions: PotionActionEntry[] = [];
 let selectedActionKey: string | null = null;
 let currentFormValues: Record<string, unknown> = {};
+
+// Reference for the "Use Potion" select so we can refresh options
+let potionSelectEl: HTMLSelectElement | null = null;
 
 // ============================================================================
 // HELPERS
@@ -23,12 +23,10 @@ function uuid(): string {
   return crypto.randomUUID();
 }
 
-/** Filter actions that have meta (craftable) */
 function listCraftableActions() {
   return ACTION_REGISTRY.filter((a) => a.meta);
 }
 
-/** Load potions from DB into playerState */
 async function syncPotionsToPlayerState(username: string): Promise<void> {
   try {
     const potions = await mapDB.getAllPotions(username);
@@ -36,6 +34,96 @@ async function syncPotionsToPlayerState(username: string): Promise<void> {
   } catch (err) {
     console.warn("[PotionMenu] Failed to sync potions:", err);
   }
+}
+
+// ============================================================================
+// REFRESH POTION SELECT (for the "Use Potion" sub-tool)
+
+async function populatePotionSelect(): Promise<void> {
+  if (!potionSelectEl) return;
+  await syncPotionsToPlayerState(gobalMapState.playerState.username);
+  const potions = gobalMapState.playerState.inventory;
+
+  // Keep the placeholder option
+  potionSelectEl.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "-- Select potion --";
+  potionSelectEl.appendChild(placeholder);
+
+  for (const potion of potions) {
+    const opt = document.createElement("option");
+    opt.value = potion.id;
+    opt.textContent = `${potion.name} (${potion.remainingUses} use${
+      potion.remainingUses !== 1 ? "s" : ""
+    })`;
+    potionSelectEl.appendChild(opt);
+  }
+}
+
+export async function refreshPotionSelect(): Promise<void> {
+  await populatePotionSelect();
+}
+
+// ============================================================================
+// CARD MOUNT FUNCTIONS
+
+function mountCraftCard(container: HTMLElement): void {
+  container.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;padding:8px;color:#fff;font-family:monospace;">
+      <strong style="font-size:1rem;">Craft Potion</strong>
+      <p style="font-size:0.85rem;opacity:0.7;margin:0;">Create a new potion by combining actions.</p>
+      <button id="btn-open-craft" style="padding:8px 16px;border:none;border-radius:4px;background:#4a7;color:#fff;cursor:pointer;font-weight:bold;align-self:flex-start;">Open Craft Dialog</button>
+    </div>
+  `;
+  container.querySelector("#btn-open-craft")?.addEventListener(
+    "click",
+    async () => {
+      await openCraftDialog();
+      await populatePotionSelect();
+    },
+  );
+}
+
+function mountInventoryCard(container: HTMLElement): void {
+  container.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;padding:8px;color:#fff;font-family:monospace;">
+      <strong style="font-size:1rem;">Potion Inventory</strong>
+      <p style="font-size:0.85rem;opacity:0.7;margin:0;">View and manage your crafted potions.</p>
+      <button id="btn-open-list" style="padding:8px 16px;border:none;border-radius:4px;background:#57a;color:#fff;cursor:pointer;font-weight:bold;align-self:flex-start;">Open Inventory</button>
+    </div>
+  `;
+  container.querySelector("#btn-open-list")?.addEventListener(
+    "click",
+    async () => {
+      await openPotionListDialog();
+      await populatePotionSelect();
+    },
+  );
+}
+
+function mountUsePotionCard(container: HTMLElement): void {
+  container.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;padding:8px;color:#fff;font-family:monospace;">
+      <strong style="font-size:1rem;">Use Potion</strong>
+      <label style="font-size:0.85rem;opacity:0.7;">Select a potion to activate:</label>
+      <select id="potion-select" style="padding:6px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;font-family:monospace;cursor:pointer;"></select>
+    </div>
+  `;
+  potionSelectEl = container.querySelector(
+    "#potion-select",
+  ) as HTMLSelectElement;
+  populatePotionSelect();
+  potionSelectEl.addEventListener("change", () => {
+    const potionId = potionSelectEl!.value;
+    if (potionId) {
+      gameWorker.postMessage({
+        action: "setActiveTool",
+        toolId: "use_potion",
+        potionId,
+      });
+    }
+  });
 }
 
 // ============================================================================
@@ -155,8 +243,7 @@ function renderField(field: ActionField): HTMLElement {
 // ============================================================================
 // DIALOG: CRAFT POTION
 
-export async function openCraftDialog(_gameWorker: Worker): Promise<void> {
-  gameWorker = _gameWorker;
+async function openCraftDialog(): Promise<void> {
   const craftable = listCraftableActions();
 
   const dialog = DialogManager.getInstance();
@@ -164,13 +251,11 @@ export async function openCraftDialog(_gameWorker: Worker): Promise<void> {
   container.style.cssText =
     "display:flex;flex-direction:column;gap:12px;padding:16px;color:#fff;font-family:monospace;max-height:70vh;overflow-y:auto;";
 
-  // Header
   const header = document.createElement("h2");
   header.textContent = "🧪 Craft Potion";
   header.style.cssText = "margin:0;font-size:1.2rem;";
   container.appendChild(header);
 
-  // Action type selector
   const selectorRow = document.createElement("div");
   selectorRow.style.cssText = "display:flex;gap:8px;align-items:center;";
   const selectorLabel = document.createElement("label");
@@ -192,12 +277,10 @@ export async function openCraftDialog(_gameWorker: Worker): Promise<void> {
   selectorRow.appendChild(select);
   container.appendChild(selectorRow);
 
-  // Config form area
   const formArea = document.createElement("div");
   formArea.id = "potion-config-form";
   container.appendChild(formArea);
 
-  // Pending actions list
   const listHeader = document.createElement("div");
   listHeader.style.cssText =
     "display:flex;justify-content:space-between;align-items:center;margin-top:8px;";
@@ -214,7 +297,6 @@ export async function openCraftDialog(_gameWorker: Worker): Promise<void> {
     `<div style="opacity:0.5;font-size:0.85rem;">No actions added yet.</div>`;
   container.appendChild(actionListEl);
 
-  // Add action button
   const addBtn = document.createElement("button");
   addBtn.textContent = "+ Add Action";
   addBtn.style.cssText =
@@ -222,7 +304,6 @@ export async function openCraftDialog(_gameWorker: Worker): Promise<void> {
   addBtn.disabled = true;
   container.appendChild(addBtn);
 
-  // Potion name
   const nameRow = document.createElement("div");
   nameRow.style.cssText =
     "display:flex;gap:8px;align-items:center;margin-top:8px;";
@@ -237,7 +318,6 @@ export async function openCraftDialog(_gameWorker: Worker): Promise<void> {
   nameRow.appendChild(nameInput);
   container.appendChild(nameRow);
 
-  // Save button
   const saveBtn = document.createElement("button");
   saveBtn.textContent = "💾 Save Potion";
   saveBtn.style.cssText =
@@ -247,7 +327,6 @@ export async function openCraftDialog(_gameWorker: Worker): Promise<void> {
 
   // ---- Event handlers ----
 
-  // When action type changes, render config form
   select.addEventListener("change", () => {
     const key = select.value;
     if (!key) {
@@ -259,13 +338,11 @@ export async function openCraftDialog(_gameWorker: Worker): Promise<void> {
     const action = craftable.find((a) => a.key === key);
     if (!action?.meta) return;
 
-    // Reset form values
     currentFormValues = {};
     for (const f of action.meta.fields) {
       currentFormValues[f.key] = f.default;
     }
 
-    // Render fields
     formArea.innerHTML = "";
     const formHeader = document.createElement("strong");
     formHeader.textContent = "Config:";
@@ -276,11 +353,9 @@ export async function openCraftDialog(_gameWorker: Worker): Promise<void> {
     addBtn.disabled = false;
   });
 
-  // Add action to pending list
   addBtn.addEventListener("click", () => {
     if (!selectedActionKey) return;
 
-    // Collect current form values into a clean config (no x/y)
     const config: Record<string, unknown> = {};
     const action = craftable.find((a) => a.key === selectedActionKey);
     if (action?.meta) {
@@ -295,7 +370,6 @@ export async function openCraftDialog(_gameWorker: Worker): Promise<void> {
       config,
     });
 
-    // Refresh action list display
     renderPendingActionList(actionListEl, craftable);
     saveBtn.disabled = false;
     addBtn.disabled = true;
@@ -304,7 +378,6 @@ export async function openCraftDialog(_gameWorker: Worker): Promise<void> {
     selectedActionKey = null;
   });
 
-  // Save potion
   saveBtn.addEventListener("click", async () => {
     const name = nameInput.value.trim();
     if (!name || pendingActions.length === 0) return;
@@ -319,13 +392,11 @@ export async function openCraftDialog(_gameWorker: Worker): Promise<void> {
 
     try {
       await mapDB.savePotion(gobalMapState.playerState.username, potion);
-      await syncPotionsToPlayerState(gobalMapState.playerState.username);
     } catch (err) {
       console.error("[PotionMenu] Failed to save potion:", err);
       return;
     }
 
-    // Reset state
     pendingActions = [];
     selectedActionKey = null;
     currentFormValues = {};
@@ -363,7 +434,6 @@ function renderPendingActionList(
     row.style.cssText =
       "display:flex;align-items:center;gap:8px;padding:4px 8px;background:#333;border-radius:4px;";
 
-    // Up button
     const upBtn = document.createElement("button");
     upBtn.textContent = "↑";
     upBtn.title = "Move up";
@@ -380,7 +450,6 @@ function renderPendingActionList(
     });
     row.appendChild(upBtn);
 
-    // Down button
     const downBtn = document.createElement("button");
     downBtn.textContent = "↓";
     downBtn.title = "Move down";
@@ -397,19 +466,16 @@ function renderPendingActionList(
     });
     row.appendChild(downBtn);
 
-    // Label
     const labelEl = document.createElement("span");
     labelEl.textContent = `${label}`;
     labelEl.style.cssText = "flex:1;";
     row.appendChild(labelEl);
 
-    // Config
     const configEl = document.createElement("span");
     configEl.textContent = configStr ? `(${configStr})` : "";
     configEl.style.cssText = "opacity:0.6;font-size:0.8rem;flex:1;";
     row.appendChild(configEl);
 
-    // Remove button
     const rmBtn = document.createElement("button");
     rmBtn.textContent = "🗑️";
     rmBtn.title = "Remove";
@@ -428,10 +494,7 @@ function renderPendingActionList(
 // ============================================================================
 // DIALOG: POTION LIST
 
-export async function openPotionListDialog(_gameWorker: Worker): Promise<void> {
-  gameWorker = _gameWorker;
-
-  // Load potions from DB
+async function openPotionListDialog(): Promise<void> {
   let potions: Potion[];
   try {
     potions = await mapDB.getAllPotions(gobalMapState.playerState.username);
@@ -443,9 +506,8 @@ export async function openPotionListDialog(_gameWorker: Worker): Promise<void> {
   const dialog = DialogManager.getInstance();
   const container = document.createElement("div");
   container.style.cssText =
-    "display:flex;flex-direction:column;gap:12px;padding:16px;color:#fff;font-family:monospace;max-height:70vh;overflow-y:auto;min-width:400px;";
+    "display:flex;flex-direction:column;gap:12px;padding:16px;color:#fff;font-family:monospace;max-height:70vh;overflow-y:auto;min-width:500px;";
 
-  // Header
   const header = document.createElement("h2");
   header.textContent = "📜 Potion Inventory";
   header.style.cssText = "margin:0;font-size:1.2rem;";
@@ -464,47 +526,31 @@ export async function openPotionListDialog(_gameWorker: Worker): Promise<void> {
       card.style.cssText =
         "display:flex;flex-direction:column;gap:4px;padding:12px;background:#333;border-radius:6px;border:1px solid #555;";
 
-      // Name
       const nameEl = document.createElement("div");
       nameEl.style.cssText = "font-weight:bold;font-size:1.1rem;";
-      nameEl.textContent = potion.name;
+      nameEl.textContent = `${potion.name} (${potion.remainingUses} use${
+        potion.remainingUses !== 1 ? "s" : ""
+      } left)`;
       card.appendChild(nameEl);
 
-      // Details
-      const details = document.createElement("div");
-      details.style.cssText =
-        "display:flex;gap:16px;font-size:0.85rem;opacity:0.7;";
-      details.textContent =
-        `${potion.actions.length} actions · ${potion.remainingUses} use${
-          potion.remainingUses !== 1 ? "s" : ""
-        } left`;
-      card.appendChild(details);
+      // Action list with labels and config
+      for (const action of potion.actions) {
+        const actionObj = ACTION_REGISTRY.find((a) => a.key === action.func);
+        const label = actionObj?.meta?.label ?? action.func;
+        const configStr = Object.entries(action.config)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(", ");
 
-      // Buttons
+        const row = document.createElement("div");
+        row.style.cssText =
+          "display:flex;gap:8px;padding:2px 8px;font-size:0.85rem;opacity:0.8;";
+        row.textContent = `  ${label}${configStr ? ` (${configStr})` : ""}`;
+        card.appendChild(row);
+      }
+
       const btnRow = document.createElement("div");
-      btnRow.style.cssText = "display:flex;gap:8px;margin-top:4px;";
+      btnRow.style.cssText = "display:flex;gap:8px;margin-top:6px;";
 
-      // Use button
-      const useBtn = document.createElement("button");
-      useBtn.textContent = "▶ Use";
-      useBtn.style.cssText =
-        "padding:4px 12px;border:none;border-radius:4px;background:#4a7;color:#fff;cursor:pointer;";
-      useBtn.addEventListener("click", () => {
-        gobalMapState.playerState.activePotionId = potion.id;
-        dialog.close();
-        // Show a toast-like indicator
-        const indicator = document.createElement("div");
-        indicator.textContent =
-          `🧪 Potion "${potion.name}" armed — click on map to use`;
-        indicator.style.cssText =
-          "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#4a7;color:#fff;padding:12px 24px;border-radius:8px;font-family:monospace;z-index:9999;font-weight:bold;box-shadow:0 4px 12px rgba(0,0,0,0.5);";
-        indicator.id = "potion-use-indicator";
-        document.body.appendChild(indicator);
-        setTimeout(() => indicator.remove(), 5000);
-      });
-      btnRow.appendChild(useBtn);
-
-      // Buy button
       const buyBtn = document.createElement("button");
       buyBtn.textContent = "+1 Use";
       buyBtn.style.cssText =
@@ -513,27 +559,23 @@ export async function openPotionListDialog(_gameWorker: Worker): Promise<void> {
         potion.remainingUses += 1;
         try {
           await mapDB.savePotion(gobalMapState.playerState.username, potion);
-          await syncPotionsToPlayerState(gobalMapState.playerState.username);
-          details.textContent =
-            `${potion.actions.length} actions · ${potion.remainingUses} use${
-              potion.remainingUses !== 1 ? "s" : ""
-            } left`;
+          nameEl.textContent = `${potion.name} (${potion.remainingUses} use${
+            potion.remainingUses !== 1 ? "s" : ""
+          } left)`;
         } catch (err) {
           console.error("[PotionMenu] Failed to buy potion:", err);
         }
       });
       btnRow.appendChild(buyBtn);
 
-      // Delete button
       const delBtn = document.createElement("button");
-      delBtn.textContent = "🗑️";
+      delBtn.textContent = "🗑️ Delete";
       delBtn.title = "Delete potion";
       delBtn.style.cssText =
         "padding:4px 12px;border:none;border-radius:4px;background:#a44;color:#fff;cursor:pointer;";
       delBtn.addEventListener("click", async () => {
         try {
           await mapDB.deletePotion(potion.id);
-          await syncPotionsToPlayerState(gobalMapState.playerState.username);
           card.remove();
         } catch (err) {
           console.error("[PotionMenu] Failed to delete potion:", err);
@@ -546,7 +588,6 @@ export async function openPotionListDialog(_gameWorker: Worker): Promise<void> {
     }
   }
 
-  // Close button
   const closeBtn = document.createElement("button");
   closeBtn.textContent = "Close";
   closeBtn.style.cssText =
@@ -560,40 +601,42 @@ export async function openPotionListDialog(_gameWorker: Worker): Promise<void> {
 }
 
 // ============================================================================
-// MENU TAB FACTORY (Step 4.1)
+// MENU TAB FACTORY
 
-export const potionMenuTab = (gameWorker: Worker) =>
-  ({
+export const potionMenuTab = (_gameWorker: Worker) => {
+  gameWorker = _gameWorker;
+
+  const sub = [
+    {
+      id: "craft_potion",
+      icon: "🔬",
+      params: [
+        { id: "craft_card", type: "div" as const, mount: mountCraftCard },
+      ],
+    },
+    {
+      id: "potion_list",
+      icon: "📜",
+      params: [
+        {
+          id: "inventory_card",
+          type: "div" as const,
+          mount: mountInventoryCard,
+        },
+      ],
+    },
+    {
+      id: "use_potion",
+      icon: "🧪",
+      params: [
+        { id: "use_card", type: "div" as const, mount: mountUsePotionCard },
+      ],
+    },
+  ];
+
+  return {
     id: "potion",
     icon: "🧪",
-    sub: [
-      {
-        id: "craft_potion",
-        icon: "🔬",
-        callback_select: () => openCraftDialog(gameWorker),
-      },
-      {
-        id: "potion_list",
-        icon: "📜",
-        callback_select: () => openPotionListDialog(gameWorker),
-      },
-    ],
-  }) as MenuTab;
-
-// ============================================================================
-// PERSISTENCE HELPERS
-
-export async function loadPotions(username: string): Promise<Potion[]> {
-  return mapDB.getAllPotions(username);
-}
-
-export async function savePotion(
-  username: string,
-  potion: Potion,
-): Promise<void> {
-  return mapDB.savePotion(username, potion);
-}
-
-export async function deletePotion(id: string): Promise<void> {
-  return mapDB.deletePotion(id);
-}
+    sub,
+  } as MenuTab;
+};

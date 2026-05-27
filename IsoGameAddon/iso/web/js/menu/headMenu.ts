@@ -6,48 +6,48 @@ import { assetCssClass } from "./sections/assetMenu.ts";
 export type DisplayState = "visible" | "disabled" | "hidden";
 
 export interface ParamConfig {
-  id:               string;
-  type:             "range" | "color" | "div";
-  default?:         number | string;
-  min?:             number;
-  max?:             number;
-  step?:            number;
+  id: string;
+  type: "range" | "color" | "div";
+  default?: number | string;
+  min?: number;
+  max?: number;
+  step?: number;
   callback_change?: (value: number | string) => void;
   // for type "div": dev mounts content into the returned element
-  mount?:           (container: HTMLElement) => void;
+  mount?: (container: HTMLElement) => void;
 }
 
 export interface SubTool {
-  id:               string;
-  icon:             string;
-  display?:         DisplayState;
+  id: string;
+  icon: string;
+  display?: DisplayState;
   callback_select?: () => void;
-  params?:          ParamConfig[];
+  params?: ParamConfig[];
 }
 
 export interface MenuTab {
-  id:       string;
-  icon:     string;
+  id: string;
+  icon: string;
   display?: DisplayState;
-  sub?:     SubTool[];
-  params?:  ParamConfig[];
+  sub?: SubTool[];
+  params?: ParamConfig[];
 }
 
 export interface HeadMenuConfig {
-  tabs:          MenuTab[];
+  tabs: MenuTab[];
   defaultIndex?: number;
-  mountTo?:      HTMLElement;
+  mountTo?: HTMLElement;
 }
 
 // Partial update shape — only ids + display needed
 export interface DisplayUpdateSub {
-  id:       string;
+  id: string;
   display?: DisplayState;
 }
 export interface DisplayUpdateTab {
-  id:       string;
+  id: string;
   display?: DisplayState;
-  sub?:     DisplayUpdateSub[];
+  sub?: DisplayUpdateSub[];
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -57,7 +57,7 @@ const STYLE_ID = "HeadMenuStyle";
 
 const buildCss = (tabs: MenuTab[]): string => {
   const sectionRules = tabs
-    .map(tab => `
+    .map((tab) => `
       #radio-${tab.id}:checked ~ #HeadMenuPanel #section-${tab.id} {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -68,7 +68,7 @@ const buildCss = (tabs: MenuTab[]): string => {
       }`)
     .join("\n");
 
-  return /* css */`
+  return /* css */ `
     #HeadMenuIcons,  #HeadMenuPanel  {
       --back-hieght: 3.3rem;
       --opacity-hover: 0.9;
@@ -342,21 +342,24 @@ const buildCss = (tabs: MenuTab[]): string => {
 
     ${assetCssClass}
     
-  `  /* css */;
+  ` /* css */;
 };
 
 /* ═══════════════════════════════════════════════════════════════
    DOM helper
 ═══════════════════════════════════════════════════════════════ */
 const el = <K extends keyof HTMLElementTagNameMap>(
-  tag:   K,
+  tag: K,
   attrs: Record<string, string> = {},
   ...children: (HTMLElement | string)[]
 ): HTMLElementTagNameMap[K] => {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
-  for (const child of children)
-    node.appendChild(typeof child === "string" ? document.createTextNode(child) : child);
+  for (const child of children) {
+    node.appendChild(
+      typeof child === "string" ? document.createTextNode(child) : child,
+    );
+  }
   return node;
 };
 
@@ -365,24 +368,28 @@ const el = <K extends keyof HTMLElementTagNameMap>(
 ═══════════════════════════════════════════════════════════════ */
 const buildParam = (param: ParamConfig, scope: string): HTMLElement => {
   const wrapper = el("div", {
-    class:              "hm-param",
-    "data-param-id":    param.id,
+    class: "hm-param",
+    "data-param-id": param.id,
     "data-param-scope": scope,
   });
 
   if (param.type === "range") {
-    const header   = el("div", { class: "hm-param-header" });
-    const title    = el("span", { class: "hm-param-title" }, param.id);
-    const readout  = el("span", { class: "hm-param-value" }, String(param.default ?? 0));
+    const header = el("div", { class: "hm-param-header" });
+    const title = el("span", { class: "hm-param-title" }, param.id);
+    const readout = el(
+      "span",
+      { class: "hm-param-value" },
+      String(param.default ?? 0),
+    );
     header.appendChild(title);
     header.appendChild(readout);
     wrapper.appendChild(header);
 
     const input = el("input", {
-      type:  "range",
-      min:   String(param.min  ?? 0),
-      max:   String(param.max  ?? 1),
-      step:  String(param.step ?? 1),
+      type: "range",
+      min: String(param.min ?? 0),
+      max: String(param.max ?? 1),
+      step: String(param.step ?? 1),
       value: String(param.default ?? 0),
     }) as HTMLInputElement;
 
@@ -392,18 +399,14 @@ const buildParam = (param: ParamConfig, scope: string): HTMLElement => {
     });
 
     wrapper.appendChild(input);
-
   } else if (param.type === "color") {
     const input = el("input", {
-      type:  "color",
+      type: "color",
       value: String(param.default ?? "#000000"),
     }) as HTMLInputElement;
 
-    input.addEventListener("input", () =>
-      param.callback_change?.(input.value)
-    );
+    input.addEventListener("input", () => param.callback_change?.(input.value));
     wrapper.appendChild(input);
-
   } else if (param.type === "div") {
     const container = el("div", { class: "hm-param-div" });
     wrapper.appendChild(container);
@@ -421,21 +424,21 @@ const buildParam = (param: ParamConfig, scope: string): HTMLElement => {
    Fire visible params with current values
 ═══════════════════════════════════════════════════════════════ */
 const fireVisibleParams = (
-  section:     HTMLElement,
-  tab:         MenuTab,
-  activeSubId: string | null
+  section: HTMLElement,
+  tab: MenuTab,
+  activeSubId: string | null,
 ) => {
   const allParams: ParamConfig[] = [
     ...(tab.params ?? []),
     ...(activeSubId
-      ? (tab.sub?.find(s => s.id === activeSubId)?.params ?? [])
+      ? (tab.sub?.find((s) => s.id === activeSubId)?.params ?? [])
       : []),
   ];
 
   for (const param of allParams) {
     if (!param.callback_change) continue;
     const inputEl = section.querySelector<HTMLInputElement>(
-      `[data-param-id="${param.id}"] input`
+      `[data-param-id="${param.id}"] input`,
     );
     if (!inputEl) continue;
     const value = param.type === "range"
@@ -449,21 +452,23 @@ const fireVisibleParams = (
    Apply display state to a label element
 ═══════════════════════════════════════════════════════════════ */
 const applyDisplay = (el: HTMLElement, state: DisplayState) => {
-  console.log(`Setting display of ${el.dataset.tabId ?? el.dataset.subId} to ${state}`);
+  console.log(
+    `Setting display of ${el.dataset.tabId ?? el.dataset.subId} to ${state}`,
+  );
   el.classList.remove("hm-disabled", "hm-hidden");
   if (state === "disabled") el.classList.add("hm-disabled");
-  if (state === "hidden")   el.classList.add("hm-hidden");
+  if (state === "hidden") el.classList.add("hm-hidden");
 };
 
 /* ═══════════════════════════════════════════════════════════════
    Init
 ═══════════════════════════════════════════════════════════════ */
-export const initHeadMenu = (config: HeadMenuConfig) => {
+export const initHeadMenu = (gameWorker: Worker, config: HeadMenuConfig) => {
   const { tabs, defaultIndex = 0, mountTo = document.body } = config;
 
   // ── Cleanup ────────────────────────────────────────────────
   document.getElementById(STYLE_ID)?.remove();
-  tabs.forEach(t => document.getElementById(`radio-${t.id}`)?.remove());
+  tabs.forEach((t) => document.getElementById(`radio-${t.id}`)?.remove());
   document.getElementById("HeadMenuIcons")?.remove();
   document.getElementById("HeadMenuPanel")?.remove();
 
@@ -474,9 +479,9 @@ export const initHeadMenu = (config: HeadMenuConfig) => {
   tabs.forEach((tab, i) => {
     const radio = el("input", {
       class: "hm-radio-hidden",
-      type:  "radio",
-      name:  "menu-select",
-      id:    `radio-${tab.id}`,
+      type: "radio",
+      name: "menu-select",
+      id: `radio-${tab.id}`,
       value: tab.id,
       ...(i === defaultIndex ? { checked: "" } : {}),
     });
@@ -484,17 +489,25 @@ export const initHeadMenu = (config: HeadMenuConfig) => {
   });
 
   // ── Head icon strip ────────────────────────────────────────
-  const iconsEl  = el("div", { id: "HeadMenuIcons" });
-  const leftNav  = el("label", { id: "HeadMenuSelectLeft",  class: "hm-label nav left" });
-  const rightNav = el("label", { id: "HeadMenuSelectRight", class: "hm-label nav right" });
-  leftNav.innerHTML  = `<i class="fa fa-arrow-circle-left"  aria-hidden="true"></i>`;
-  rightNav.innerHTML = `<i class="fa fa-arrow-circle-right" aria-hidden="true"></i>`;
+  const iconsEl = el("div", { id: "HeadMenuIcons" });
+  const leftNav = el("label", {
+    id: "HeadMenuSelectLeft",
+    class: "hm-label nav left",
+  });
+  const rightNav = el("label", {
+    id: "HeadMenuSelectRight",
+    class: "hm-label nav right",
+  });
+  leftNav.innerHTML =
+    `<i class="fa fa-arrow-circle-left"  aria-hidden="true"></i>`;
+  rightNav.innerHTML =
+    `<i class="fa fa-arrow-circle-right" aria-hidden="true"></i>`;
 
   iconsEl.appendChild(leftNav);
-  tabs.forEach(tab => {
+  tabs.forEach((tab) => {
     const lbl = el("label", {
-      for:           `radio-${tab.id}`,
-      class:         "hm-label menu-icone",
+      for: `radio-${tab.id}`,
+      class: "hm-label menu-icone",
       "data-tab-id": tab.id,
     }, tab.icon);
     applyDisplay(lbl, tab.display ?? "visible");
@@ -509,34 +522,39 @@ export const initHeadMenu = (config: HeadMenuConfig) => {
   // Persist active sub index per tab
   const activeSubIndex: Record<string, number> = {};
 
-  tabs.forEach(tab => {
-    const section  = el("div", { id: `section-${tab.id}`, class: "panel-section" });
-    const hasSub   = (tab.sub?.length ?? 0) > 0;
-    const hasParam = (tab.params?.length ?? 0) > 0
-      || tab.sub?.some(s => (s.params?.length ?? 0) > 0);
+  tabs.forEach((tab) => {
+    const section = el("div", {
+      id: `section-${tab.id}`,
+      class: "panel-section",
+    });
+    const hasSub = (tab.sub?.length ?? 0) > 0;
+    const hasParam = (tab.params?.length ?? 0) > 0 ||
+      tab.sub?.some((s) => (s.params?.length ?? 0) > 0);
 
     activeSubIndex[tab.id] = 0;
 
     // Sub-tool strip
     if (hasSub) {
-      const strip    = el("div", { class: "hm-sub-strip" });
-      const subLeft  = el("label", {
-        class:          "hm-label nav",
+      const strip = el("div", { class: "hm-sub-strip" });
+      const subLeft = el("label", {
+        class: "hm-label nav",
         "data-sub-nav": "left",
-        "data-tab-id":  tab.id,
+        "data-tab-id": tab.id,
       });
       const subRight = el("label", {
-        class:          "hm-label nav",
+        class: "hm-label nav",
         "data-sub-nav": "right",
-        "data-tab-id":  tab.id,
+        "data-tab-id": tab.id,
       });
-      subLeft.innerHTML  = `<i class="fa fa-arrow-circle-left"  aria-hidden="true"></i>`;
-      subRight.innerHTML = `<i class="fa fa-arrow-circle-right" aria-hidden="true"></i>`;
+      subLeft.innerHTML =
+        `<i class="fa fa-arrow-circle-left"  aria-hidden="true"></i>`;
+      subRight.innerHTML =
+        `<i class="fa fa-arrow-circle-right" aria-hidden="true"></i>`;
 
       strip.appendChild(subLeft);
-      tab.sub!.forEach(sub => {
+      tab.sub!.forEach((sub) => {
         const lbl = el("span", {
-          class:         "hm-label menu-icone",
+          class: "hm-label menu-icone",
           "data-sub-id": sub.id,
           "data-tab-id": tab.id,
         }, sub.icon);
@@ -580,9 +598,15 @@ export const initHeadMenu = (config: HeadMenuConfig) => {
   // Returns navigable (visible + not disabled) indices for head tabs
   const navigableTabIndices = (): number[] =>
     tabs.reduce<number[]>((acc, tab, i) => {
-      const lbl = iconsEl.querySelector<HTMLElement>(`[data-tab-id="${tab.id}"]`);
-      if (lbl && !lbl.classList.contains("hm-hidden") && !lbl.classList.contains("hm-disabled"))
+      const lbl = iconsEl.querySelector<HTMLElement>(
+        `[data-tab-id="${tab.id}"]`,
+      );
+      if (
+        lbl && !lbl.classList.contains("hm-hidden") &&
+        !lbl.classList.contains("hm-disabled")
+      ) {
         acc.push(i);
+      }
       return acc;
     }, []);
 
@@ -590,37 +614,47 @@ export const initHeadMenu = (config: HeadMenuConfig) => {
   const navigableSubIndices = (tab: MenuTab): number[] => {
     const section = document.getElementById(`section-${tab.id}`)!;
     return (tab.sub ?? []).reduce<number[]>((acc, sub, i) => {
-      const lbl = section.querySelector<HTMLElement>(`[data-sub-id="${sub.id}"]`);
-      if (lbl && !lbl.classList.contains("hm-hidden") && !lbl.classList.contains("hm-disabled"))
+      const lbl = section.querySelector<HTMLElement>(
+        `[data-sub-id="${sub.id}"]`,
+      );
+      if (
+        lbl && !lbl.classList.contains("hm-hidden") &&
+        !lbl.classList.contains("hm-disabled")
+      ) {
         acc.push(i);
+      }
       return acc;
     }, []);
   };
 
   const getTabRadios = () =>
-    tabs.map(t => document.getElementById(`radio-${t.id}`) as HTMLInputElement);
+    tabs.map((t) =>
+      document.getElementById(`radio-${t.id}`) as HTMLInputElement
+    );
 
-  const getActiveTabIndex = () => getTabRadios().findIndex(r => r.checked);
+  const getActiveTabIndex = () => getTabRadios().findIndex((r) => r.checked);
 
   /* ── Sync sub strip state ───────────────────────────────────── */
   const syncSubStrip = (tab: MenuTab, activeIdx: number) => {
-    const section   = document.getElementById(`section-${tab.id}`)!;
+    const section = document.getElementById(`section-${tab.id}`)!;
     const navigable = navigableSubIndices(tab);
 
     section.querySelectorAll<HTMLElement>("[data-sub-id]").forEach((lbl, i) => {
       lbl.classList.toggle("is-checked", i === activeIdx);
     });
 
-    const subLeft  = section.querySelector<HTMLElement>('[data-sub-nav="left"]');
-    const subRight = section.querySelector<HTMLElement>('[data-sub-nav="right"]');
+    const subLeft = section.querySelector<HTMLElement>('[data-sub-nav="left"]');
+    const subRight = section.querySelector<HTMLElement>(
+      '[data-sub-nav="right"]',
+    );
     const firstNav = navigable[0];
-    const lastNav  = navigable[navigable.length - 1];
-    subLeft?.classList.toggle("disabled",  activeIdx <= (firstNav ?? 0));
-    subRight?.classList.toggle("disabled", activeIdx >= (lastNav  ?? 0));
+    const lastNav = navigable[navigable.length - 1];
+    subLeft?.classList.toggle("disabled", activeIdx <= (firstNav ?? 0));
+    subRight?.classList.toggle("disabled", activeIdx >= (lastNav ?? 0));
 
     // Show/hide sub-scoped params
     const activeSub = tab.sub![activeIdx];
-    section.querySelectorAll<HTMLElement>("[data-param-scope]").forEach(w => {
+    section.querySelectorAll<HTMLElement>("[data-param-scope]").forEach((w) => {
       const scope = w.dataset.paramScope!;
       if (scope === "tab") return;
       w.classList.toggle("hidden", scope !== activeSub.id);
@@ -629,48 +663,60 @@ export const initHeadMenu = (config: HeadMenuConfig) => {
 
   /* ── Sync head labels ───────────────────────────────────────── */
   const syncHeadChecked = () => {
-    const radios    = getTabRadios();
-    const idx       = radios.findIndex(r => r.checked);
+    const radios = getTabRadios();
+    const idx = radios.findIndex((r) => r.checked);
     const navigable = navigableTabIndices();
-    const firstNav  = navigable[0] ?? 0;
-    const lastNav   = navigable[navigable.length - 1] ?? tabs.length - 1;
+    const firstNav = navigable[0] ?? 0;
+    const lastNav = navigable[navigable.length - 1] ?? tabs.length - 1;
 
     iconsEl.querySelectorAll<HTMLElement>("[data-tab-id]").forEach((lbl, i) =>
       lbl.classList.toggle("is-checked", i === idx)
     );
 
-    leftNav.classList.toggle("disabled",  idx <= firstNav);
+    leftNav.classList.toggle("disabled", idx <= firstNav);
     rightNav.classList.toggle("disabled", idx >= lastNav);
   };
 
   /* ── Fire callbacks ─────────────────────────────────────────── */
   const fireTabActive = (tab: MenuTab, activeSubIdx: number) => {
-    const section   = document.getElementById(`section-${tab.id}`)!;
+    const section = document.getElementById(`section-${tab.id}`)!;
     const activeSub = tab.sub?.[activeSubIdx] ?? null;
+
+    gameWorker.postMessage({
+      action: "setActiveTool",
+      toolId: "",
+    });
+
     activeSub?.callback_select?.();
     fireVisibleParams(section, tab, activeSub?.id ?? null);
   };
 
   /* ── Sub-strip click delegation ─────────────────────────────── */
-  panelEl.addEventListener("click", e => {
-    const target  = (e.target as HTMLElement).closest<HTMLElement>("[data-sub-id],[data-sub-nav]");
+  panelEl.addEventListener("click", (e) => {
+    const target = (e.target as HTMLElement).closest<HTMLElement>(
+      "[data-sub-id],[data-sub-nav]",
+    );
     if (!target) return;
 
-    const tabId     = target.dataset.tabId!;
-    const tab       = tabs.find(t => t.id === tabId)!;
+    const tabId = target.dataset.tabId!;
+    const tab = tabs.find((t) => t.id === tabId)!;
     const navigable = navigableSubIndices(tab);
     if (!navigable.length) return;
 
     if (target.dataset.subNav) {
-      const delta   = target.dataset.subNav === "left" ? -1 : 1;
-      const curPos  = navigable.indexOf(activeSubIndex[tabId]);
+      const delta = target.dataset.subNav === "left" ? -1 : 1;
+      const curPos = navigable.indexOf(activeSubIndex[tabId]);
       const nextPos = curPos + delta;
       if (nextPos < 0 || nextPos >= navigable.length) return;
       activeSubIndex[tabId] = navigable[nextPos];
     } else {
       const clickedId = target.dataset.subId!;
-      const idx       = tab.sub!.findIndex(s => s.id === clickedId);
-      if (tab.sub![idx].display === "disabled" || tab.sub![idx].display === "hidden") return;
+      const idx = tab.sub!.findIndex((s) => s.id === clickedId);
+      if (idx === -1) return;
+      if (
+        tab.sub![idx].display === "disabled" ||
+        tab.sub![idx].display === "hidden"
+      ) return;
       activeSubIndex[tabId] = idx;
     }
 
@@ -679,27 +725,30 @@ export const initHeadMenu = (config: HeadMenuConfig) => {
   });
 
   /* ── Tab radio change ───────────────────────────────────────── */
-  tabs.forEach(tab => {
-    document.getElementById(`radio-${tab.id}`)?.addEventListener("change", () => {
-      syncHeadChecked();
-      if (tab.sub?.length) syncSubStrip(tab, activeSubIndex[tab.id] ?? 0);
-      fireTabActive(tab, activeSubIndex[tab.id] ?? 0);
-    });
+  tabs.forEach((tab) => {
+    document.getElementById(`radio-${tab.id}`)?.addEventListener(
+      "change",
+      () => {
+        syncHeadChecked();
+        if (tab.sub?.length) syncSubStrip(tab, activeSubIndex[tab.id] ?? 0);
+        fireTabActive(tab, activeSubIndex[tab.id] ?? 0);
+      },
+    );
   });
 
   /* ── Head arrow navigation (skip hidden/disabled) ───────────── */
   const moveTab = (delta: number) => {
     const navigable = navigableTabIndices();
-    const curIdx    = getActiveTabIndex();
-    const curPos    = navigable.indexOf(curIdx);
-    const nextPos   = curPos + delta;
+    const curIdx = getActiveTabIndex();
+    const curPos = navigable.indexOf(curIdx);
+    const nextPos = curPos + delta;
     if (nextPos < 0 || nextPos >= navigable.length) return;
     const all = getTabRadios();
     all[navigable[nextPos]].checked = true;
     all[navigable[nextPos]].dispatchEvent(new Event("change"));
   };
 
-  leftNav.addEventListener("click",  () => moveTab(-1));
+  leftNav.addEventListener("click", () => moveTab(-1));
   rightNav.addEventListener("click", () => moveTab(+1));
 
   /* ── Bootstrap ─────────────────────────────────────────────── */
@@ -716,20 +765,24 @@ export const initHeadMenu = (config: HeadMenuConfig) => {
      the original config display value (or "visible" if absent).
   ═══════════════════════════════════════════════════════════ */
   const updateDisplay = (updates: DisplayUpdateTab[]) => {
-    tabs.forEach(tab => {
-      const upd      = updates.find(u => u.id === tab.id);
+    tabs.forEach((tab) => {
+      const upd = updates.find((u) => u.id === tab.id);
       const tabState = upd?.display ?? tab.display ?? "visible";
 
       // Head label
-      const tabLbl = iconsEl.querySelector<HTMLElement>(`[data-tab-id="${tab.id}"]`);
+      const tabLbl = iconsEl.querySelector<HTMLElement>(
+        `[data-tab-id="${tab.id}"]`,
+      );
       if (tabLbl) applyDisplay(tabLbl, tabState);
 
       // Sub labels
       const section = document.getElementById(`section-${tab.id}`);
-      tab.sub?.forEach(sub => {
-        const subUpd   = upd?.sub?.find(s => s.id === sub.id);
+      tab.sub?.forEach((sub) => {
+        const subUpd = upd?.sub?.find((s) => s.id === sub.id);
         const subState = subUpd?.display ?? sub.display ?? "visible";
-        const subLbl   = section?.querySelector<HTMLElement>(`[data-sub-id="${sub.id}"]`);
+        const subLbl = section?.querySelector<HTMLElement>(
+          `[data-sub-id="${sub.id}"]`,
+        );
         if (subLbl) applyDisplay(subLbl, subState);
       });
     });
@@ -737,8 +790,9 @@ export const initHeadMenu = (config: HeadMenuConfig) => {
     // Re-sync nav arrows after display changes
     syncHeadChecked();
     const activeTab = tabs[getActiveTabIndex()];
-    if (activeTab?.sub?.length)
+    if (activeTab?.sub?.length) {
       syncSubStrip(activeTab, activeSubIndex[activeTab.id] ?? 0);
+    }
   };
 
   return { updateDisplay };

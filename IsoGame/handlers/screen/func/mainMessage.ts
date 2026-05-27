@@ -45,6 +45,12 @@ export interface EventToolExecuted extends TBaseMessage<"toolExecuted"> {
   action: "toolExecuted";
   toolId: string | null;
   success: boolean;
+  potionResult?: {
+    success: boolean;
+    potionId: string;
+    remainingUses: number;
+    reason?: string;
+  };
 }
 
 export interface EventToolList extends TBaseMessage<"toolList"> {
@@ -121,55 +127,41 @@ const infoCardPositions: TScreenHandlerAction<EventInfoCardPositions> =
 // -------------------------------------------------
 // -------------------------------------------------
 
-export interface EventPotionUsed
-  extends TBaseMessage<"potionUsed"> {
-  potionId: string;
-  remainingUses: number;
-  success: boolean;
-  reason?: string;
-}
-const potionUsed: TScreenHandlerAction<EventPotionUsed> = screenAction<
-  EventPotionUsed
->("potionUsed", async (data: EventPotionUsed, _ctx: TScreenHandlerContext) => {
-  // Persist updated player state to IndexedDB
-  try {
-    const username = gobalMapState.playerState.username;
-    const potion = gobalMapState.playerState.inventory.find(p => p.id === data.potionId);
-    if (potion) {
-      await mapDB.savePotion(username, potion);
-    } else if (data.success) {
-      await mapDB.deletePotion(data.potionId);
-    }
-  } catch (err) {
-    console.error("[PotionUsed] Failed to persist:", err);
-  }
+// -------------------------------------------------
 
-  // Show feedback
-  if (data.success) {
-    const msg = data.remainingUses > 0
-      ? `\u{1F9EA} Potion used! ${data.remainingUses} use${data.remainingUses !== 1 ? "s" : ""} remaining.`
-      : "\u{1F9EA} Potion used \u2014 last use consumed.";
-    if (!document.getElementById("potion-use-indicator")) {
-      const indicator = document.createElement("div");
-      indicator.textContent = msg;
-      indicator.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#4a7;color:#fff;padding:12px 24px;border-radius:8px;font-family:monospace;z-index:9999;font-weight:bold;box-shadow:0 4px 12px rgba(0,0,0,0.5);";
-      indicator.id = "potion-use-indicator";
-      document.body.appendChild(indicator);
-      setTimeout(() => indicator.remove(), 3000);
+export interface EventToolExecutedMsg extends TBaseMessage<"toolExecuted"> {
+  toolId: string | null;
+  success: boolean;
+  potionResult?: {
+    success: boolean;
+    potionId: string;
+    remainingUses: number;
+    reason?: string;
+  };
+}
+const toolExecuted: TScreenHandlerAction<EventToolExecutedMsg> = screenAction<
+  EventToolExecutedMsg
+>("toolExecuted", async (data: EventToolExecutedMsg, _ctx: TScreenHandlerContext) => {
+  // If a potion was used, persist the inventory change
+  if (data.potionResult && data.toolId === "use_potion") {
+    const { potionId, success } = data.potionResult;
+    if (success) {
+      try {
+        const username = gobalMapState.playerState.username;
+        const potion = gobalMapState.playerState.inventory.find(p => p.id === potionId);
+        if (potion) {
+          await mapDB.savePotion(username, potion);
+        } else {
+          // 0 uses -> removed from inventory, delete from DB
+          await mapDB.deletePotion(potionId);
+        }
+      } catch (err) {
+        console.error("[Main] Failed to persist potion use:", err);
+      }
     }
-  } else {
-    console.warn("[PotionUsed] Failed:", data.reason ?? "Unknown error");
-    const indicator = document.createElement("div");
-    indicator.textContent = `\u274C Potion failed: ${data.reason ?? "Unknown error"}`;
-    indicator.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#a44;color:#fff;padding:12px 24px;border-radius:8px;font-family:monospace;z-index:9999;font-weight:bold;box-shadow:0 4px 12px rgba(0,0,0,0.5);";
-    indicator.id = "potion-use-indicator";
-    document.body.appendChild(indicator);
-    setTimeout(() => indicator.remove(), 3000);
   }
 });
 
-// -------------------------------------------------
-// -------------------------------------------------
 // -------------------------------------------------
 
 export const initScreenHandler = [
@@ -177,5 +169,5 @@ export const initScreenHandler = [
   assetGroups,
   assetPreview,
   infoCardPositions,
-  potionUsed,
+  toolExecuted,
 ] as const;

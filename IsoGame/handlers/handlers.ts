@@ -3,7 +3,6 @@ import { renderHandlers } from "./game/func/renderHandlers.ts";
 import { interactionHandlers } from "./game/func/interactionHandlers.ts";
 import { toolHandlers } from "./game/func/toolHandlers.ts";
 import { queryHandlers } from "./game/func/queryHandlers.ts";
-import { potionHandlers } from "./game/func/potionHandlers.ts";
 import { buildHandlerIndexes, buildHandlerRegistry, buildMsgMap, IncomingMessages, IndexedHandlers } from "../etc/handlers/types/handlerCmd.ts";
 import { MessageHandler } from "../etc/handlers/messageHandler.ts";
 import { TGameHandlerContext } from "./game/contexts.ts";
@@ -21,7 +20,6 @@ export const AllGameHandlers = [
     ...interactionHandlers,
     ...toolHandlers,
     ...queryHandlers,
-    ...potionHandlers,
 ] as const;
 
 // ────────────────────────────────────────────

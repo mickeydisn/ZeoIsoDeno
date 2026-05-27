@@ -81,62 +81,18 @@ gameAction<EventMouseClick>("mouseClick", (
 
     console.log("Mouse Click Worker x:", x, "y:", y);
 
-    // Check if a potion is active — intercept the click
-    const activePotionId = gobalMapState.playerState.activePotionId;
-    if (activePotionId) {
-      const potion = gobalMapState.playerState.inventory.find(p => p.id === activePotionId);
-      if (!potion || potion.remainingUses <= 0) {
-        gobalMapState.playerState.activePotionId = null;
-        _ctx.handler.send({
-          action: "potionUsed",
-          potionId: activePotionId,
-          remainingUses: 0,
-          success: false,
-          reason: "Potion not found or no uses remaining",
-        });
-        return;
-      }
+    const result = toolRegistry.executeAt(x, y);
 
-      // Decrement uses
-      potion.remainingUses -= 1;
-
-      // Build action configs injecting x,y
-      const confs = potion.actions.map(entry => ({
-        func: entry.func,
-        x,
-        y,
-        ...entry.config,
-      }));
-
-      // Execute all actions
-      TilesActions.getInstance().doActions(confs);
-
-      // Remove potion if 0 uses left
-      if (potion.remainingUses <= 0) {
-        const idx = gobalMapState.playerState.inventory.indexOf(potion);
-        if (idx !== -1) gobalMapState.playerState.inventory.splice(idx, 1);
-      }
-
-      // Reset active potion
-      gobalMapState.playerState.activePotionId = null;
-
-      // Notify main thread to persist
-      _ctx.handler.send({
-        action: "potionUsed",
-        potionId: potion.id,
-        remainingUses: potion.remainingUses,
-        success: true,
-      });
-      return;
-    }
-
-    const _result = toolRegistry.executeAt(x, y);
-
-    _ctx.handler.send({
+    // Forward result data for persistence (potion data, etc.)
+    const response: Record<string, unknown> = {
       action: "toolExecuted",
       toolId: toolRegistry.getActiveId(),
       success: true,
-    });
+    };
+    if (result && typeof result === "object" && "potionId" in result) {
+      response.potionResult = result;
+    }
+    _ctx.handler.send(response);
 });
 
 // -------------------------------------

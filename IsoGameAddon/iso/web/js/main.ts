@@ -4,27 +4,27 @@ import { initHeadMenu } from "./menu/headMenu.ts";
 import { initCanvas, initKeyBoard } from "./main/keyboad.ts";
 import { MenuTab } from "./menu/headMenu.ts";
 import { terrainMenuTab } from "./menu/sections/terrainMenu.ts";
-import { assetMenuTab, } from "./menu/sections/assetMenu.ts";
+import { assetMenuTab } from "./menu/sections/assetMenu.ts";
 import { colorMenuTab } from "./menu/sections/colorMenu.ts";
 import { buildingMenuTab } from "./menu/sections/buildingMenu.ts";
 import { potionMenuTab } from "./menu/sections/potionMenu.ts";
-import { indexScreenHandler, ScreenMessageHandler } from "../../../../IsoGame/handlers/handlers.ts";
- 
+import {
+  indexScreenHandler,
+  ScreenMessageHandler,
+} from "../../../../IsoGame/handlers/handlers.ts";
+
 // ============================================================================
 // CREATE WORKER
 // ============================================================================
 
 const gameWorker = new Worker(
   new URL("./gameWorker.ts", import.meta.url).href,
-  { type: "module" } 
+  { type: "module" },
 );
 const handler = new ScreenMessageHandler({
-    tag: "screen",
-    worker: gameWorker
-  },
-  indexScreenHandler
-);
-
+  tag: "screen",
+  worker: gameWorker,
+}, indexScreenHandler);
 
 initKeyBoard(gameWorker);
 initCanvas(handler);
@@ -56,62 +56,60 @@ const callback_initWorker = (_data: any) => {
   */
 };
 
-
-
 // ============================================================================
 // ============================================================================
 // == Menu
 // ============================================================================
 
-
-const config_tag : MenuTab[] = [
-    flyMenuTab(gameWorker),
-    { id: "inspect",  icon: "👀", 
-      params: [
-        { id: "inspectInfo", type: "div", mount: (container) => {
-            container.innerHTML = `
+const config_tag: MenuTab[] = [
+  flyMenuTab(gameWorker),
+  {
+    id: "inspect",
+    icon: "👀",
+    params: [
+      {
+        id: "inspectInfo",
+        type: "div",
+        mount: (container) => {
+          container.innerHTML = `
               <div id="infoCell">  
                 <div class="inspect-empty">Hover over the map to see cell info...</div>
               </div>
-            `; 
-          }
+            `;
         },
-      ],
+      },
+    ],
+  },
+  terrainMenuTab(gameWorker),
+  colorMenuTab(gameWorker),
+  assetMenuTab(gameWorker, handler),
+  buildingMenuTab(gameWorker),
+  potionMenuTab(gameWorker),
+];
 
-    },
-    terrainMenuTab(gameWorker),
-    colorMenuTab(gameWorker),
-    assetMenuTab(gameWorker, handler),
-    buildingMenuTab(gameWorker),
-    potionMenuTab(gameWorker),
-  ]
-
-
-const menu = initHeadMenu({ tabs: config_tag, defaultIndex: 1 });
+const menu = initHeadMenu(gameWorker, { tabs: config_tag, defaultIndex: 1 });
 
 // Hide terrain, disable inspect, hide terrain's "smooth" sub
 menu.updateDisplay([
-  { 
-    id: "terrain", display: "visible",
+  {
+    id: "terrain",
+    display: "visible",
     sub: [
       { id: "raise_terrain", display: "visible" },
       { id: "lower_terrain", display: "visible" },
       { id: "flatten", display: "visible" },
       { id: "smooth", display: "visible" },
       { id: "plateau", display: "hidden" },
-    ]
+    ],
   },
-  { 
+  {
     id: "color",
     sub: [
-      { id: "random", display: "disabled" }
-    ]
+      { id: "random", display: "disabled" },
+    ],
   },
   { id: "fly", display: "visible" },
 ]);
-
-
-
 
 // ============================================================================
 // ============================================================================
@@ -163,16 +161,13 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-
 // ============================================================================
 // ============================================================================
 // ============================================================================
 // == Start Drawing and Worker Loop
 // ============================================================================
-await handler.sendMessageWithResponse({ action: "initWorker" })
-await callback_initWorker("")
+await handler.sendMessageWithResponse({ action: "initWorker" });
+await callback_initWorker("");
 handler.send({ action: "startRender" });
-
-
 
 startLoop();
