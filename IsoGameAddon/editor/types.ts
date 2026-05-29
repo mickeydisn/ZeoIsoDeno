@@ -15,7 +15,10 @@
 // ============================================================================
 // Re-export game types for reference (read-only, not modified)
 // ============================================================================
-export type { WcFace, WcKeyFace } from "../../IsoGame/generator/wcBuilding2/wcBuildFace.ts";
+export type {
+  WcFace,
+  WcKeyFace,
+} from "../../IsoGame/map/generator/wcBuilding2/wcBuildFace.ts";
 
 // ============================================================================
 // Local type mirrors for game types (used in TileConfig)
@@ -81,7 +84,7 @@ export type SupportedVersion = typeof SUPPORTED_VERSIONS[number];
 /**
  * Tile configuration within a group - omits face property as it's inherited from group.
  */
-export type TileGroupItem = Omit<TileConfig, 'face'>;
+export type TileGroupItem = Omit<TileConfig, "face">;
 
 /**
  * Tile group configuration for editor schema.

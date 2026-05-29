@@ -1,10 +1,10 @@
 import { AssetLoaderOpti } from "@iso-game/mapIso/asset/assetLoaderOpti.ts";
-import { toolRegistry } from "@iso-game/tools/toolRegistry.ts";
+import { toolRegistry } from "../tools/toolRegistry.ts";
 import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   gobalMapState,
-} from "@iso-game/mapIso/mapState.ts";
+} from "@iso-game/handlers/game/mapState.ts";
 import { CityEntity } from "@iso-game/entity/cityEntity.ts";
 import { CityEntity2 } from "@iso-game/entity/cityEntity2.ts";
 import { CanvasMapDrawers } from "@iso-game/mapIso/canvasMapDrawer.ts";

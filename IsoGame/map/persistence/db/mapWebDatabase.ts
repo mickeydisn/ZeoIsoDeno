@@ -4,8 +4,7 @@
  */
 
 import { WEB_DB_NAME, WEB_DB_VERSION } from "../const.ts";
-import type { Potion } from "@iso-game/mapIso/mapState.ts";
-
+import type { Potion } from "@iso-game/handlers/game/mapState.ts";
 
 export interface MapChunkMeta {
   id: string; // "cx_cy"
@@ -49,10 +48,12 @@ class MapWebDatabase {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        
+
         // MapChunks store: metadata about saved chunks
         if (!db.objectStoreNames.contains("MapChunks")) {
-          const chunkStore = db.createObjectStore("MapChunks", { keyPath: "id" });
+          const chunkStore = db.createObjectStore("MapChunks", {
+            keyPath: "id",
+          });
           chunkStore.createIndex("cx", "cx", { unique: false });
           chunkStore.createIndex("cy", "cy", { unique: false });
           chunkStore.createIndex("timestamp", "timestamp", { unique: false });
@@ -60,7 +61,10 @@ class MapWebDatabase {
 
         // MapDeltas store: individual tile deltas
         if (!db.objectStoreNames.contains("MapDeltas")) {
-          const deltaStore = db.createObjectStore("MapDeltas", { keyPath: "id", autoIncrement: true });
+          const deltaStore = db.createObjectStore("MapDeltas", {
+            keyPath: "id",
+            autoIncrement: true,
+          });
           deltaStore.createIndex("chunkId", "chunkId", { unique: false });
           deltaStore.createIndex("cx", "cx", { unique: false });
           deltaStore.createIndex("cy", "cy", { unique: false });
@@ -69,7 +73,9 @@ class MapWebDatabase {
 
         // PotionInventory store: player potion data
         if (!db.objectStoreNames.contains("PotionInventory")) {
-          const potionStore = db.createObjectStore("PotionInventory", { keyPath: "id" });
+          const potionStore = db.createObjectStore("PotionInventory", {
+            keyPath: "id",
+          });
           potionStore.createIndex("username", "username", { unique: false });
         }
       };

@@ -8,8 +8,12 @@
  */
 
 import type { BuildingConfig, TileConfig } from "../types.ts";
-import { WcAbstractBuildConf, WcConfRawGroup, WcConfTile } from "../../../IsoGame/generator/wcBuilding2/wcAbstractBuildConf.ts";
-import { confsGroup_to_confsTile } from "../../../IsoGame/generator/wcBuilding2/wcUtils.ts";
+import {
+  WcAbstractBuildConf,
+  WcConfRawGroup,
+  WcConfTile,
+} from "../../../IsoGame/map/generator/wcBuilding2/wcAbstractBuildConf.ts";
+import { confsGroup_to_confsTile } from "../../../IsoGame/map/generator/wcBuilding2/wcUtils.ts";
 
 // ============================================================================
 // Type Definitions
@@ -93,9 +97,13 @@ export function buildTempConfig(json: BuildingConfig): WcAbstractBuildConf {
 
   // Map tiles — expand groups if present
   if (json.groups && json.groups.length > 0) {
-    const expandedGroupTiles = confsGroup_to_confsTile(json.groups as unknown as WcConfRawGroup[]);
+    const expandedGroupTiles = confsGroup_to_confsTile(
+      json.groups as unknown as WcConfRawGroup[],
+    );
     conf.listTileOptions = [
-      ...(json.tiles || []).map((tile) => tileFromJSON(tile) as unknown as WcConfTile),
+      ...(json.tiles || []).map((tile) =>
+        tileFromJSON(tile) as unknown as WcConfTile
+      ),
       ...expandedGroupTiles,
     ];
   } else {
@@ -118,7 +126,12 @@ export function buildTempConfig(json: BuildingConfig): WcAbstractBuildConf {
  */
 export function tileFromJSON(jsonTile: TileConfig): TileFromJsonResult {
   const tile: TileFromJsonResult = {
-    face: jsonTile.face as [string | null, string | null, string | null, string | null],
+    face: jsonTile.face as [
+      string | null,
+      string | null,
+      string | null,
+      string | null,
+    ],
     weight: jsonTile.weight,
   };
 

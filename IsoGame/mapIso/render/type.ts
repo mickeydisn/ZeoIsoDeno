@@ -3,7 +3,7 @@ import { AssetLoaderOpti } from "@iso-game/mapIso/asset/assetLoaderOpti.ts";
 import { IsometricProjector } from "@iso-game/mapIso/utils/simpleIso/IsometricProjector.ts";
 import { TilesMatrixAvg } from "@iso-game/map/object/tilesMatrix.ts";
 import { MessageHandler } from "@iso-game/etc/handlers/messageHandler.ts";
-import { MapState } from "@iso-game/mapIso/mapState.ts";
+import { MapState } from "@iso-game/handlers/game/mapState.ts";
 
 // Canvas Context ( Shared beetween worker and screen render)
 type CanvasRenderingContext2D = OffscreenCanvasRenderingContext2D;

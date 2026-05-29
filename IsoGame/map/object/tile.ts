@@ -1,5 +1,8 @@
 import { CityEntity } from "../../entity/cityEntity.ts";
-import { WcBuildTile, WcBuildTileInfo } from "../../generator/wcBuilding2/wcBuildTile.ts";
+import {
+  WcBuildTile,
+  WcBuildTileInfo,
+} from "../generator/wcBuilding2/wcBuildTile.ts";
 import { FactoryMap } from "../factory/factoryMap.ts";
 import { RecordRawItem } from "../factory/factoryTileGenerator.ts";
 import { RawTile } from "./tileRaw.ts";
@@ -44,7 +47,7 @@ export class Tile extends RawTile {
     this._currentColor = this.genColor;
     this.items = this.genItems;
     if (Math.random() < .01) {
-      this.itemsBox = "Hello"
+      this.itemsBox = "Hello";
     }
     // this.lvlGen();
   }
@@ -116,12 +119,15 @@ export class Tile extends RawTile {
 
   checkDirty(): boolean {
     const isLvlDirty = this._currentLvl !== this.genLvl2;
-    const isColorDirty = this._currentColor.some((v, i) => v !== this.genColor[i]);
+    const isColorDirty = this._currentColor.some((v, i) =>
+      v !== this.genColor[i]
+    );
     const isBlockDirty = this.isBlock !== false;
     const isFriseDirty = this.isFrise !== false;
     const isItemsDirty = !this._itemsEqual(this.items, this.genItems);
 
-    return isLvlDirty || isColorDirty || isBlockDirty || isFriseDirty || isItemsDirty;
+    return isLvlDirty || isColorDirty || isBlockDirty || isFriseDirty ||
+      isItemsDirty;
   }
 
   /**
@@ -165,7 +171,9 @@ export class Tile extends RawTile {
       this._currentLvl = data.lvl;
     }
     if (data.color !== undefined) {
-      const colorArr = Array.isArray(data.color) ? data.color.slice() : Array.from(data.color);
+      const colorArr = Array.isArray(data.color)
+        ? data.color.slice()
+        : Array.from(data.color);
       const normColor = colorArr.length === 3 ? [...colorArr, 255] : colorArr;
       this._currentColor = new Uint8Array(normColor);
     }
@@ -206,7 +214,6 @@ export class Tile extends RawTile {
     };
   }
 
-
   get nearTiles() {
     return [0, 1, 2, 3].map((axe) => {
       const [dx, dy] = AXE_DIRECTION[axe];
@@ -223,7 +230,10 @@ export class Tile extends RawTile {
   nearTilesAxe(size = 1) {
     return [0, 1, 2, 3].map((axe) => {
       const [dx, dy] = AXE_DIRECTION[axe];
-      return FactoryMap.getInstance().getTile(this.x + dx * size, this.y + dy * size);
+      return FactoryMap.getInstance().getTile(
+        this.x + dx * size,
+        this.y + dy * size,
+      );
     });
   }
   get nearSquareTiles() {

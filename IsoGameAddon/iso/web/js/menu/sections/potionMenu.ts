@@ -1,9 +1,12 @@
 import { MenuTab } from "../headMenu.ts";
 import { DialogManager } from "../dialog.ts";
-import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
-import { ACTION_REGISTRY } from "@iso-game/map/action2/actions/registry.ts";
-import type { ActionField } from "@iso-game/map/action2/utils/types.ts";
-import type { Potion, PotionActionEntry } from "@iso-game/mapIso/mapState.ts";
+import { gobalMapState } from "@iso-game/handlers/game/mapState.ts";
+import { ACTION_REGISTRY } from "@iso-game/map/action/actions/registry.ts";
+import type { ActionField } from "@iso-game/map/action/utils/types.ts";
+import type {
+  Potion,
+  PotionActionEntry,
+} from "@iso-game/handlers/game/mapState.ts";
 
 // ============================================================================
 // GLOBALS
@@ -70,7 +73,9 @@ async function populatePotionSelect(): Promise<void> {
   let potions = gobalMapState.playerState.inventory;
   if (potions.length === 0) {
     try {
-      const { mapDB } = await import("@iso-game/map/persistence/db/mapWebDatabase.ts");
+      const { mapDB } = await import(
+        "@iso-game/map/persistence/db/mapWebDatabase.ts"
+      );
       potions = await mapDB.getAllPotions(gobalMapState.playerState.username);
       potions = potions.map(sanitizePotionConfig);
       gobalMapState.playerState.inventory = potions;
@@ -226,7 +231,10 @@ function renderField(field: ActionField): HTMLElement {
       el.type = "color";
       // field.default may be [r,g,b] array or hex string; normalise to hex for the input
       const defaultHex = Array.isArray(field.default)
-        ? "#" + (field.default as number[]).slice(0, 3).map(c => c.toString(16).padStart(2, "0")).join("")
+        ? "#" +
+          (field.default as number[]).slice(0, 3).map((c) =>
+            c.toString(16).padStart(2, "0")
+          ).join("")
         : String(field.default ?? "#ff0000");
       el.value = defaultHex;
       el.style.cssText =
@@ -298,7 +306,10 @@ async function openCraftDialog(editPotion?: Potion): Promise<void> {
 
   // If editing, populate pendingActions from the existing potion
   if (editPotion) {
-    pendingActions = editPotion.actions.map((a) => ({ ...a, config: { ...a.config } }));
+    pendingActions = editPotion.actions.map((a) => ({
+      ...a,
+      config: { ...a.config },
+    }));
   } else {
     pendingActions = [];
   }
@@ -463,7 +474,9 @@ async function openCraftDialog(editPotion?: Potion): Promise<void> {
     dialog.close();
 
     // Optimistically update local state (will be confirmed by potionDBSynced)
-    const idx = gobalMapState.playerState.inventory.findIndex((p) => p.id === potion.id);
+    const idx = gobalMapState.playerState.inventory.findIndex((p) =>
+      p.id === potion.id
+    );
     if (idx !== -1) {
       gobalMapState.playerState.inventory[idx] = potion;
     } else {
@@ -481,7 +494,9 @@ async function openCraftDialog(editPotion?: Potion): Promise<void> {
       for (const p of gobalMapState.playerState.inventory) {
         const opt = document.createElement("option");
         opt.value = p.id;
-        opt.textContent = `${p.name} (${p.remainingUses} use${p.remainingUses !== 1 ? "s" : ""})`;
+        opt.textContent = `${p.name} (${p.remainingUses} use${
+          p.remainingUses !== 1 ? "s" : ""
+        })`;
         potionSelectEl.appendChild(opt);
       }
     }
@@ -584,7 +599,9 @@ async function openPotionListDialog(): Promise<void> {
   if (potions.length === 0) {
     // Initial load from IndexedDB if local state is empty
     try {
-      const { mapDB } = await import("@iso-game/map/persistence/db/mapWebDatabase.ts");
+      const { mapDB } = await import(
+        "@iso-game/map/persistence/db/mapWebDatabase.ts"
+      );
       potions = await mapDB.getAllPotions(gobalMapState.playerState.username);
       potions = potions.map(sanitizePotionConfig);
       gobalMapState.playerState.inventory = potions;

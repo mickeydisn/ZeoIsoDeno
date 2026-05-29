@@ -12,8 +12,8 @@
 import { Router } from "https://deno.land/x/oak/mod.ts";
 import type { BuildingConfig } from "../types.ts";
 import { World } from "../../../IsoGame/word.ts";
-import { WcBuildFactoryGenarator } from "../../../IsoGame/generator/wcBuilding2/wcBuildFactory.ts";
-import { WcBuildTile } from "../../../IsoGame/generator/wcBuilding2/wcBuildTile.ts";
+import { WcBuildFactoryGenarator } from "../../../IsoGame/map/generator/wcBuilding2/wcBuildFactory.ts";
+import { WcBuildTile } from "../../../IsoGame/map/generator/wcBuilding2/wcBuildTile.ts";
 import { buildTempConfig } from "../services/previewBuilder.ts";
 import { generateAssetPreview } from "../services/assetPreview.ts";
 
@@ -99,7 +99,9 @@ router.post("/editor/preview/generate", async (ctx) => {
     ctx.response.status = 400;
     ctx.response.body = {
       success: false,
-      error: `Failed to generate preview: ${error instanceof Error ? error.message : String(error)}`,
+      error: `Failed to generate preview: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
     };
     console.error("Preview generation error:", error);
   }

@@ -2,7 +2,7 @@ import type { Goal, GoalStatus } from "../goal.ts";
 import type { CityEntity } from "../cityEntity.ts";
 import type { EntityMemory } from "../entityMemory.ts";
 import type { Tile } from "../../../map/object/tile.ts";
-import { PathFactory } from "../../../generator/city/pathFactory.ts";
+import { PathFactory } from "../../../map/generator/city/pathFactory.ts";
 
 // ─────────────────────────────────────────────────────────────
 //  walkTo — private navigation function, used directly by goals
@@ -40,8 +40,8 @@ function walkTo(
 
 class RandomMoveGoal implements Goal {
   readonly id = "randomMove";
-  private path:   { current: Tile[] | null } = { current: null };
-  private target: { x: number; y: number }  | null = null;
+  private path: { current: Tile[] | null } = { current: null };
+  private target: { x: number; y: number } | null = null;
 
   run(entity: CityEntity): GoalStatus {
     if (!this.target) {
@@ -85,9 +85,9 @@ export const goHome = (): Goal => new GoHomeGoal();
 // ─────────────────────────────────────────────────────────────
 
 class VisitLocationsGoal implements Goal {
-  readonly id    = "visitLocations";
-  private path:  { current: Tile[] | null } = { current: null };
-  private index  = 0;
+  readonly id = "visitLocations";
+  private path: { current: Tile[] | null } = { current: null };
+  private index = 0;
 
   run(entity: CityEntity, mem: EntityMemory): GoalStatus {
     const list = mem.locations;

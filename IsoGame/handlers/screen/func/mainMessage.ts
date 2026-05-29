@@ -11,8 +11,8 @@ import {
   TScreenHandlerAction,
   TScreenHandlerContext,
 } from "@iso-game/handlers/screen/contexts.ts";
-import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
-import type { Potion } from "@iso-game/mapIso/mapState.ts";
+import { gobalMapState } from "@iso-game/handlers/game/mapState.ts";
+import type { Potion } from "@iso-game/handlers/game/mapState.ts";
 
 // ----
 
@@ -146,7 +146,12 @@ const toolExecuted: TScreenHandlerAction<EventToolExecutedMsg> = screenAction<
   // The worker sends back potionDBSynced with authoritative inventory after save.
   // This handler only logs non-potion tool executions.
   if (!data.potionResult) {
-    console.log("[toolExecuted] Tool executed:", data.toolId, "success:", data.success);
+    console.log(
+      "[toolExecuted] Tool executed:",
+      data.toolId,
+      "success:",
+      data.success,
+    );
   }
 });
 
@@ -163,7 +168,9 @@ const potionDBSynced: TScreenHandlerAction<EventPotionDBSynced> = screenAction<
   // Update local inventory to match DB (server truth)
   gobalMapState.playerState.inventory = data.potions;
   // Refresh the potion select dropdown UI
-  const { refreshPotionSelect } = await import("@iso-web/js/menu/sections/potionMenu.ts");
+  const { refreshPotionSelect } = await import(
+    "@iso-web/js/menu/sections/potionMenu.ts"
+  );
   await refreshPotionSelect();
 });
 

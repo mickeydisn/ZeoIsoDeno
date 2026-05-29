@@ -7,12 +7,15 @@ import { mapWebPersistence } from "./mapWebPersistence.ts";
 import { mapServerPersistence } from "./mapServerPersistence.ts";
 import { potionServerPersistence } from "./potionServerPersistence.ts";
 import { Chunk } from "../../object/chunk.ts";
-import type { Potion } from "@iso-game/mapIso/mapState.ts";
+import type { Potion } from "@iso-game/handlers/game/mapState.ts";
 
 export class MapSyncManager {
   private static instance: MapSyncManager;
   private dirtyChunks: Set<Chunk> = new Set();
-  private dirtyPotions: Map<string, { username: string; potion?: Potion; action: "save" | "delete" }> = new Map();
+  private dirtyPotions: Map<
+    string,
+    { username: string; potion?: Potion; action: "save" | "delete" }
+  > = new Map();
   private syncInterval: number | null = null;
   private readonly SYNC_PERIOD_MS = 5000; // Sync to remote every 5 seconds
 
@@ -32,7 +35,10 @@ export class MapSyncManager {
     mapServerPersistence.loadChunkDeltas(chunk.cx, chunk.cy).then((deltas) => {
       chunk.applyDeltas(deltas);
     }).catch((error) => {
-      console.error(`[MapSyncManager] Failed to load deltas for chunk ${chunk.cx}_${chunk.cy} from server:`, error);
+      console.error(
+        `[MapSyncManager] Failed to load deltas for chunk ${chunk.cx}_${chunk.cy} from server:`,
+        error,
+      );
     });
   }
 
@@ -41,7 +47,7 @@ export class MapSyncManager {
    */
   markChunkDirty(chunk: Chunk): void {
     this.dirtyChunks.add(chunk);
-    
+
     // Save to local storage immediately (debounced in WebPersistence)
     const deltas = chunk.getDeltas();
     if (deltas.length > 0) {
@@ -54,7 +60,7 @@ export class MapSyncManager {
    */
   private startSyncLoop(): void {
     if (this.syncInterval !== null) return;
-    
+
     this.syncInterval = setInterval(async () => {
       await this.syncToRemote();
     }, this.SYNC_PERIOD_MS) as unknown as number;
@@ -87,7 +93,10 @@ export class MapSyncManager {
       const potions = await potionServerPersistence.getAllPotions(username);
       return potions;
     } catch (error) {
-      console.error(`[MapSyncManager] Failed to load potions from server:`, error);
+      console.error(
+        `[MapSyncManager] Failed to load potions from server:`,
+        error,
+      );
       throw error;
     }
   }
@@ -106,16 +115,27 @@ export class MapSyncManager {
       const chunksToSync = Array.from(this.dirtyChunks);
       this.dirtyChunks.clear();
 
-      console.log(`[MapSyncManager] Syncing ${chunksToSync.length} chunks to remote...`);
+      console.log(
+        `[MapSyncManager] Syncing ${chunksToSync.length} chunks to remote...`,
+      );
 
       for (const chunk of chunksToSync) {
         const deltas = chunk.getDeltas();
         if (deltas.length > 0) {
           try {
-            await mapServerPersistence.saveChunkDeltas(chunk.cx, chunk.cy, deltas);
-            console.log(`[MapSyncManager] Remote sync successful for chunk ${chunk.cx}_${chunk.cy}`);
+            await mapServerPersistence.saveChunkDeltas(
+              chunk.cx,
+              chunk.cy,
+              deltas,
+            );
+            console.log(
+              `[MapSyncManager] Remote sync successful for chunk ${chunk.cx}_${chunk.cy}`,
+            );
           } catch (error) {
-            console.error(`[MapSyncManager] Remote sync failed for chunk ${chunk.cx}_${chunk.cy}:`, error);
+            console.error(
+              `[MapSyncManager] Remote sync failed for chunk ${chunk.cx}_${chunk.cy}:`,
+              error,
+            );
             // If remote sync fails, add it back to dirty chunks for next attempt
             this.dirtyChunks.add(chunk);
           }
@@ -133,10 +153,16 @@ export class MapSyncManager {
           if (entry.action === "delete") {
             await potionServerPersistence.deletePotion(id);
           } else if (entry.potion) {
-            await potionServerPersistence.savePotion(entry.username, entry.potion);
+            await potionServerPersistence.savePotion(
+              entry.username,
+              entry.potion,
+            );
           }
         } catch (error) {
-          console.error(`[MapSyncManager] Remote sync failed for potion ${id}:`, error);
+          console.error(
+            `[MapSyncManager] Remote sync failed for potion ${id}:`,
+            error,
+          );
           // Add back on failure for next attempt
           this.dirtyPotions.set(id, entry);
         }

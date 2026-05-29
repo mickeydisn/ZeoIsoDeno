@@ -4,7 +4,7 @@
  * Flow: Client -> HTTP POST/GET/DELETE -> Server SQLite
  */
 
-import type { Potion } from "@iso-game/mapIso/mapState.ts";
+import { Potion } from "@iso-game/handlers/game/mapState.ts";
 
 export class PotionServerPersistence {
   private baseUrl: string;
@@ -72,9 +72,12 @@ export class PotionServerPersistence {
    * Delete a potion from the server by its id.
    */
   async deletePotion(id: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/api/potions/${encodeURIComponent(id)}`, {
-      method: "DELETE",
-    });
+    const response = await fetch(
+      `${this.baseUrl}/api/potions/${encodeURIComponent(id)}`,
+      {
+        method: "DELETE",
+      },
+    );
 
     if (!response.ok) {
       let errMsg = "Failed to delete potion from server";

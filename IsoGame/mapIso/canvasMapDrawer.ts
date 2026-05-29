@@ -12,8 +12,6 @@ import { TilesMatrixAvg } from "../map/object/tilesMatrix.ts";
 import { World } from "../word.ts";
 import { AssetLoaderOpti } from "./asset/assetLoaderOpti.ts";
 import { IsometricProjector } from "./utils/simpleIso/IsometricProjector.ts";
-import { CANVAS_HEIGHT, CANVAS_WIDTH, gobalMapState } from "./mapState.ts";
-import { gameAction, TGameHandlerContext } from "../handlers/game/contexts.ts";
 import {
   CanvasMapDrawersConf,
   CanvasMapDrawersConfDefault,
@@ -23,8 +21,13 @@ import { drawTile } from "./render/drawTile.ts";
 import { drawPlayer } from "./render/drawPlayer.ts";
 import { _drawTileItem } from "./render/utils/drawTileUtils.ts";
 import { drawHoverOverlay } from "@iso-game/mapIso/render/drawHoverOverlay.ts";
-import { screenAction } from "@iso-game/handlers/screen/contexts.ts";
 import { msgToScreen } from "@iso-game/handlers/handlers.ts";
+import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
+import {
+  CANVAS_HEIGHT,
+  CANVAS_WIDTH,
+  gobalMapState,
+} from "@iso-game/handlers/game/mapState.ts";
 
 // --- Main Drawer Class ---
 export class CanvasMapDrawers {

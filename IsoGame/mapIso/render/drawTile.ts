@@ -8,7 +8,7 @@ import {
   _drawTileItem,
 } from "./utils/drawTileUtils.ts";
 import { msgToScreen } from "../../handlers/handlers.ts";
-import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
+import { gobalMapState } from "@iso-game/handlers/game/mapState.ts";
 
 /**
  * Draws the base tile geometry, including floor and borders.

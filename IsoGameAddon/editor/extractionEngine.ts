@@ -12,8 +12,11 @@
  * Face links are deduplicated. Runtime value mainLvl is explicitly excluded.
  */
 
-import { WcAbstractBuildConf, WcConfTile } from "../../IsoGame/generator/wcBuilding2/wcAbstractBuildConf.ts";
-import type { WcConfRawTile } from "../../IsoGame/generator/wcBuilding2/wcAbstractBuildConf.ts";
+import {
+  WcAbstractBuildConf,
+  WcConfTile,
+} from "../../IsoGame/map/generator/wcBuilding2/wcAbstractBuildConf.ts";
+import type { WcConfRawTile } from "../../IsoGame/map/generator/wcBuilding2/wcAbstractBuildConf.ts";
 
 import type {
   AssetCollectionConfig,
@@ -81,26 +84,28 @@ export class ConfigExtractor {
     const startTiles = conf.startTileOptions.map((t) => this.tileToJson(t));
     const tiles = conf.listTileOptions.map((t) => this.tileToJson(t));
 
-     return {
-       version: "1.1",
-       type: "building",
-       id: className.replace("WcBuildConf_", ""),
-       metadata: {
-         classRef: className,
-         sourceFile: BUILDING_SOURCE_FILES[className] || className.toLowerCase(),
-         registryId: REGISTRY_ID_MAP[className] || "",
-       },
-       params: {
-         growLoopCount: conf.growLoopCount,
-         endLoopMax: conf.endLoopMax,
-       },
-       assetCollections,
-       faceLinkWeight: { ...conf.faceLinkWeight },
-       faceLinks,
-       startTiles,
-       tiles,
-       groups: (conf as BuildingConfigInstance).groups as TileGroupConfig[] | undefined,
-     };
+    return {
+      version: "1.1",
+      type: "building",
+      id: className.replace("WcBuildConf_", ""),
+      metadata: {
+        classRef: className,
+        sourceFile: BUILDING_SOURCE_FILES[className] || className.toLowerCase(),
+        registryId: REGISTRY_ID_MAP[className] || "",
+      },
+      params: {
+        growLoopCount: conf.growLoopCount,
+        endLoopMax: conf.endLoopMax,
+      },
+      assetCollections,
+      faceLinkWeight: { ...conf.faceLinkWeight },
+      faceLinks,
+      startTiles,
+      tiles,
+      groups: (conf as BuildingConfigInstance).groups as
+        | TileGroupConfig[]
+        | undefined,
+    };
   }
 
   // ============================================================================
@@ -148,7 +153,10 @@ export class ConfigExtractor {
       for (const getter of entry.tileGetters) {
         if (getter in instance) {
           const tile = instance[getter];
-          if (tile && typeof tile === 'object' && 'face' in tile && 'weight' in tile) {
+          if (
+            tile && typeof tile === "object" && "face" in tile &&
+            "weight" in tile
+          ) {
             tiles.push({
               ...this.tileToJson(tile as WcConfTile),
               id: getter,
@@ -162,20 +170,20 @@ export class ConfigExtractor {
     const extractedParams = this.extractAssetParams(instance);
     const paramsSchema = this.buildParamsSchema(extractedParams, className);
 
-     return {
-       version: "1.1",
-       type: "assetCollection",
-       id: className.replace("WcAsset_", ""),
-       metadata: {
-         classRef: className,
-         sourceFile: entry.sourceFile,
-       },
-       tag: instance.tag || "",
-       params: extractedParams,
-       paramsSchema,
-       tiles,
-       groups: instance.groups as TileGroupConfig[] | undefined,
-     };
+    return {
+      version: "1.1",
+      type: "assetCollection",
+      id: className.replace("WcAsset_", ""),
+      metadata: {
+        classRef: className,
+        sourceFile: entry.sourceFile,
+      },
+      tag: instance.tag || "",
+      params: extractedParams,
+      paramsSchema,
+      tiles,
+      groups: instance.groups as TileGroupConfig[] | undefined,
+    };
   }
 
   // ============================================================================
@@ -198,14 +206,26 @@ export class ConfigExtractor {
     }[] = [
       { prop: "houseSimple", classRef: "WcAsset_WallHouse", id: "WallHouse" },
       { prop: "fence", classRef: "WcAsset_FenceSimple", id: "FenceSimple" },
-      { prop: "fencePlatform", classRef: "WcAsset_FencePlatform", id: "FencePlatform" },
+      {
+        prop: "fencePlatform",
+        classRef: "WcAsset_FencePlatform",
+        id: "FencePlatform",
+      },
       { prop: "enter", classRef: "WcAsset_Enter", id: "Enter" },
       { prop: "fenceGrave", classRef: "WcAsset_FenceGrave", id: "FenceGrave" },
       { prop: "wallManor", classRef: "WcAsset_WallManor", id: "WallManor" },
       { prop: "corridor", classRef: "WcAsset_CorridorLab", id: "CorridorLab" },
-      { prop: "corridor", classRef: "WcAsset_CorridorPipe", id: "CorridorPipe" },
+      {
+        prop: "corridor",
+        classRef: "WcAsset_CorridorPipe",
+        id: "CorridorPipe",
+      },
       { prop: "wallRLab", classRef: "WcAsset_WallRLab", id: "WallRLab" },
-      { prop: "corridorLab", classRef: "WcAsset_CorridorLab", id: "CorridorLab" },
+      {
+        prop: "corridorLab",
+        classRef: "WcAsset_CorridorLab",
+        id: "CorridorLab",
+      },
     ];
 
     const classToSource: Record<string, string> = {
@@ -222,7 +242,7 @@ export class ConfigExtractor {
 
     for (const entry of assetCollectionProps) {
       const instance = (conf as BuildingConfigInstance)[entry.prop];
-      if (instance && typeof instance === 'object') {
+      if (instance && typeof instance === "object") {
         const key = entry.classRef;
         if (seen.has(key)) continue;
         seen.add(key);
@@ -235,7 +255,8 @@ export class ConfigExtractor {
           classRef: entry.classRef,
           tag,
           params,
-          sourceFile: classToSource[entry.classRef] || entry.classRef.toLowerCase(),
+          sourceFile: classToSource[entry.classRef] ||
+            entry.classRef.toLowerCase(),
         });
       }
     }
@@ -316,7 +337,10 @@ export class ConfigExtractor {
     for (const key of paramKeys) {
       if (key in obj && obj[key] !== undefined) {
         const value = obj[key];
-        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        if (
+          typeof value === "string" || typeof value === "number" ||
+          typeof value === "boolean"
+        ) {
           params[key] = value;
         } else if (Array.isArray(value)) {
           params[key] = JSON.stringify(value);
@@ -374,14 +398,17 @@ export class ConfigExtractor {
    * Create a consistent hash key from a face array for grouping
    */
   private static faceToKey(face: (string | null)[]): string {
-    return face.map(f => f ?? 'null').join('|');
+    return face.map((f) => f ?? "null").join("|");
   }
 
   /**
    * Detect tile groups by common face signature
    * Groups tiles that share identical face property
    */
-  static detectTileGroups(tiles: TileConfig[], minGroupSize: number = 2): { groups: TileGroupConfig[], remainingTiles: TileConfig[] } {
+  static detectTileGroups(
+    tiles: TileConfig[],
+    minGroupSize: number = 2,
+  ): { groups: TileGroupConfig[]; remainingTiles: TileConfig[] } {
     const faceGroups = new Map<string, TileConfig[]>();
 
     // Group tiles by face signature
@@ -404,12 +431,13 @@ export class ConfigExtractor {
         const group: TileGroupConfig = {
           id: `group_${groupCounter++}`,
           face: [...groupTiles[0].face],
-          weight: groupTiles.reduce((sum, t) => sum + (t.weight ?? 1), 0) / groupTiles.length,
-          items: groupTiles.map(tile => {
+          weight: groupTiles.reduce((sum, t) => sum + (t.weight ?? 1), 0) /
+            groupTiles.length,
+          items: groupTiles.map((tile) => {
             // Create group item without face property
             const { face, ...item } = tile;
             return item as TileGroupItem;
-          })
+          }),
         };
         groups.push(group);
       } else {
@@ -423,14 +451,16 @@ export class ConfigExtractor {
 
   /**
    * Detect rotation variant groups (sets of 4 tiles that are exact rotations)
-   * 
+   *
    * Rotation variants have faces that are cyclic shifts of each other.
    * For example: [A,B,C,D], [D,A,B,C], [C,D,A,B], [B,C,D,A]
-   * 
+   *
    * Groups tiles by their canonical (lexicographically smallest) cyclic shift,
    * then forms groups only when exactly 4 tiles with distinct faces are found.
    */
-  static detectRotationGroups(tiles: TileConfig[]): { groups: TileGroupConfig[], remainingTiles: TileConfig[] } {
+  static detectRotationGroups(
+    tiles: TileConfig[],
+  ): { groups: TileGroupConfig[]; remainingTiles: TileConfig[] } {
     // Helper to compute all cyclic shifts of a face array
     const getCyclicShifts = (face: (string | null)[]): (string | null)[][] => {
       const shifts: (string | null)[][] = [];
@@ -443,13 +473,13 @@ export class ConfigExtractor {
     // Get canonical form: lexicographically smallest cyclic shift as a string key
     const getCanonicalKey = (face: (string | null)[]): string => {
       const shifts = getCyclicShifts(face);
-      const sorted = shifts.map(s => s.join(",")).sort();
+      const sorted = shifts.map((s) => s.join(",")).sort();
       return sorted[0];
     };
 
     // Group tiles by their canonical face key
     const canonicalGroups = new Map<string, TileConfig[]>();
-    
+
     for (const tile of tiles) {
       const face = tile.face || [null, null, null, null];
       const key = getCanonicalKey(face);
@@ -466,30 +496,33 @@ export class ConfigExtractor {
     for (const [canonicalKey, groupTiles] of canonicalGroups.entries()) {
       // Only form rotation groups with exactly 4 tiles having distinct faces
       if (groupTiles.length === 4) {
-        const faceStrings = groupTiles.map(t => 
-          (t.face || [null, null, null, null]).map(f => f ?? 'null').join(',')
+        const faceStrings = groupTiles.map((t) =>
+          (t.face || [null, null, null, null]).map((f) => f ?? "null").join(",")
         );
         const uniqueFaces = new Set(faceStrings);
-        
+
         if (uniqueFaces.size === 4) {
           // Parse canonical face back to array
-          const canonicalFace = canonicalKey.split(',').map(f => f === 'null' ? null : f);
-          
+          const canonicalFace = canonicalKey.split(",").map((f) =>
+            f === "null" ? null : f
+          );
+
           // Create rotation group with canonical face
           const group: TileGroupConfig = {
             id: `rotation_group_${groupCounter++}`,
             face: canonicalFace,
-            weight: groupTiles.reduce((sum, t) => sum + (t.weight ?? 1), 0) / groupTiles.length,
-            items: groupTiles.map(tile => {
+            weight: groupTiles.reduce((sum, t) => sum + (t.weight ?? 1), 0) /
+              groupTiles.length,
+            items: groupTiles.map((tile) => {
               const { face, ...item } = tile;
               return item as TileGroupItem;
-            })
+            }),
           };
           groups.push(group);
           continue;
         }
       }
-      
+
       // Not a complete rotation group, add all to remaining
       remainingTiles.push(...groupTiles);
     }
@@ -504,7 +537,7 @@ export class ConfigExtractor {
     enableCompression: boolean;
     minGroupSize?: number;
     detectRotations?: boolean;
-  }): { groups: TileGroupConfig[], tiles: TileConfig[] } {
+  }): { groups: TileGroupConfig[]; tiles: TileConfig[] } {
     if (!options.enableCompression) {
       return { groups: [], tiles: [...tiles] };
     }
@@ -514,20 +547,24 @@ export class ConfigExtractor {
     const allGroups: TileGroupConfig[] = [];
 
     // First pass: simple face grouping
-    const { groups: faceGroups, remainingTiles } = this.detectTileGroups(currentTiles, minSize);
+    const { groups: faceGroups, remainingTiles } = this.detectTileGroups(
+      currentTiles,
+      minSize,
+    );
     allGroups.push(...faceGroups);
     currentTiles = remainingTiles;
 
     // Second pass: rotation group detection (if enabled)
     if (options.detectRotations) {
-      const { groups: rotationGroups, remainingTiles: rotationRemaining } = this.detectRotationGroups(currentTiles);
+      const { groups: rotationGroups, remainingTiles: rotationRemaining } = this
+        .detectRotationGroups(currentTiles);
       allGroups.push(...rotationGroups);
       currentTiles = rotationRemaining;
     }
 
     return {
       groups: allGroups,
-      tiles: currentTiles
+      tiles: currentTiles,
     };
   }
 
@@ -561,7 +598,11 @@ export class ConfigExtractor {
       const entry = ASSET_COLLECTION_REGISTRY[name];
       return {
         name: name.replace("WcAsset_", ""),
-        pattern: entry.usesGroupAsset ? "groupAsset" : entry.tileGetters ? "getter" : "unknown",
+        pattern: entry.usesGroupAsset
+          ? "groupAsset"
+          : entry.tileGetters
+          ? "getter"
+          : "unknown",
         classRef: name,
       };
     });

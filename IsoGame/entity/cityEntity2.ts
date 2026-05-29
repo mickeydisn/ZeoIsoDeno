@@ -1,12 +1,12 @@
 // import { PathFactory } from "../path.js";
-import { PathFactory } from "../generator/city/pathFactory.ts";
+import { PathFactory } from "../map/generator/city/pathFactory.ts";
 import { FactoryMap } from "../map/factory/factoryMap.ts";
 import { Tile } from "../map/object/tile.ts";
-import { TilesActions } from "../map/action2/tilesActions.ts";
+import { TilesActions } from "@iso-game/map/action/tilesActions.ts";
 import { World } from "../word.ts";
 import { CITIZEN_NAME } from "./CitizenTrais.ts";
 import { EntityBehavior, EntityGoal } from "./typeEntityBehavior.ts";
-import { cmd } from "../map/action2/builder/cmd.ts";
+import { cmd } from "@iso-game/map/action/builder/cmd.ts";
 
 export class CityEntity2 {
   world: World;

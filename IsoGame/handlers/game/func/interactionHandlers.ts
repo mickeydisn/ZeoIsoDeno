@@ -1,14 +1,13 @@
-import { gobalMapState } from "@iso-game/mapIso/mapState.ts";
 import { TypeKeysActionUpdate } from "@iso-web/js/main/keyboad.ts";
-import { toolRegistry } from "@iso-game/tools/toolRegistry.ts";
-import { City } from "../../../generator/city/city.ts";
-import { TilesActions } from "../../../map/action2/tilesActions.ts";
+import { toolRegistry } from "../tools/toolRegistry.ts";
+import { City } from "../../../map/generator/city/city.ts";
 import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
 import {
   gameAction,
   TGameHandlerAction,
   TGameHandlerContext,
 } from "../contexts.ts";
+import { gobalMapState } from "@iso-game/handlers/game/mapState.ts";
 
 // -------------------------------------
 
