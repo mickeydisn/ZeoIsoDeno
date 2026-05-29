@@ -2,7 +2,7 @@ import { Chunk, CHUNK_SIZE } from "../object/chunk.ts";
 import { RawTile } from "../object/tileRaw.ts";
 import { Tile } from "../object/tile.ts";
 import type { IMapPersistence } from "../interface.ts";
-import { mapServerPersistence } from "../persistence/db/mapServerPersistence.ts";
+import { mapServerPersistence } from "../persistence/map/mapServerPersistence.ts";
 
 export class FactoryMap {
   private static instance: FactoryMap;
@@ -51,32 +51,46 @@ export class FactoryMap {
   /**
    * Asynchronously load saved deltas from the persistence layer
    * and apply them to the chunk after generation.
-   * 
+   *
    * Priority order: Web (IndexedDB) is the authoritative local source
    * because it contains the most recent unsynced changes.
    * Server is only used as fallback when there is no local data.
    */
   private async loadChunkDeltas(chunk: Chunk): Promise<void> {
-    console.log(`[FactoryMap] Loading deltas for chunk (${chunk.cx}, ${chunk.cy})`);
+    console.log(
+      `[FactoryMap] Loading deltas for chunk (${chunk.cx}, ${chunk.cy})`,
+    );
     if (!this.persistence) return;
     try {
       // 1. Load from web persistence (IndexedDB) — this is the most recent local state
-      const webDeltas = await this.persistence.loadChunkDeltas(chunk.cx, chunk.cy);
+      const webDeltas = await this.persistence.loadChunkDeltas(
+        chunk.cx,
+        chunk.cy,
+      );
       if (webDeltas && webDeltas.length > 0) {
         chunk.applyDeltas(webDeltas);
-        console.log(`[FactoryMap] WEB Applied ${webDeltas.length} deltas to chunk ${chunk.cx}_${chunk.cy}`);
+        console.log(
+          `[FactoryMap] WEB Applied ${webDeltas.length} deltas to chunk ${chunk.cx}_${chunk.cy}`,
+        );
         return; // Web is authoritative — stop here. Server may not have the latest changes yet.
       }
 
       // 2. Fallback: load from server (SQLite) only if web had nothing
-      const serverDeltas = await mapServerPersistence.loadChunkDeltas(chunk.cx, chunk.cy);
+      const serverDeltas = await mapServerPersistence.loadChunkDeltas(
+        chunk.cx,
+        chunk.cy,
+      );
       if (serverDeltas && serverDeltas.length > 0) {
         chunk.applyDeltas(serverDeltas);
-        console.log(`[FactoryMap] SERVER Applied ${serverDeltas.length} deltas to chunk ${chunk.cx}_${chunk.cy}`);
+        console.log(
+          `[FactoryMap] SERVER Applied ${serverDeltas.length} deltas to chunk ${chunk.cx}_${chunk.cy}`,
+        );
       }
-
     } catch (error) {
-      console.error(`[FactoryMap] Failed to load deltas for chunk ${chunk.cx}_${chunk.cy}:`, error);
+      console.error(
+        `[FactoryMap] Failed to load deltas for chunk ${chunk.cx}_${chunk.cy}:`,
+        error,
+      );
     }
   }
 
@@ -111,16 +125,12 @@ export class FactoryMap {
   getTileColor(x: number, y: number) {
     const [cx, cy, modx, mody] = this.chunkPoint(x, y);
     const chunk = this.getExistingChunk(cx, cy);
-    return chunk
-      ? chunk.get(modx, mody)?.color
-      : new RawTile(x, y).genColor;
+    return chunk ? chunk.get(modx, mody)?.color : new RawTile(x, y).genColor;
   }
 
   getTileLvl(x: number, y: number) {
     const [cx, cy, modx, mody] = this.chunkPoint(x, y);
     const chunk = this.getExistingChunk(cx, cy);
-    return chunk
-      ? chunk.get(modx, mody)?.lvl
-      : new RawTile(x, y).genLvl2;
+    return chunk ? chunk.get(modx, mody)?.lvl : new RawTile(x, y).genLvl2;
   }
 }

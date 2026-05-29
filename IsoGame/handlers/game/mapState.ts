@@ -20,6 +20,7 @@ export interface PotionActionEntry {
 export interface Potion {
   id: string;
   name: string;
+  icon: string;
   actions: PotionActionEntry[];
   remainingUses: number;
   createdAt: number;

@@ -16,7 +16,8 @@ import { serveStatic as serveStaticAsset } from "./IsoGameAddon/assets-manager/w
 import { serveStatic as serveStaticEditor } from "./IsoGameAddon/editor/web/serveEditor.ts";
 import { serveStatic as serveStaticPallet } from "./IsoGameAddon/pallet/web/servePallet.ts";
 import { assetsManagerRouter } from "./IsoGameAddon/assets-manager/server.ts";
-import { mapRouter } from "./IsoGame/map/persistence/db/mapRouter.ts";
+import { mapRouter } from "./IsoGame/map/persistence/map/mapRouter.ts";
+import { userRouter } from "./IsoGame/map/persistence/user/userRouter.ts";
 
 export const serveStatic = async (context: Context) => {
   const filePath = context.request.url.pathname;
@@ -49,7 +50,7 @@ export const serveStatic2 = async (ctx: Context) => {
     ctx.response.status = 200;
   } else {
     // Remove leading slash for send() to work correctly with root
-    const cleanPath = filename.replace(/^\//, '');
+    const cleanPath = filename.replace(/^\//, "");
     await send(ctx, cleanPath, { root: Deno.cwd() });
   }
 };
@@ -58,7 +59,6 @@ const router = new Router();
 router.get("/img/(.*)", serveStatic2);
 
 // Editor static file router — serves /editor/* web files
-
 
 const app = new Application();
 const port = 8081;
@@ -69,16 +69,21 @@ app.use(async (ctx: Context, next) => {
   ctx.response.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
   // Add CORS headers for resource loading in workers
   ctx.response.headers.set("Access-Control-Allow-Origin", "*");
-  ctx.response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  ctx.response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS",
+  );
   await next();
 });
 
 app.use(assetsManagerRouter.routes());
 app.use(assetsManagerRouter.allowedMethods());
 
+// Persistance
 app.use(mapRouter.routes());
 app.use(mapRouter.allowedMethods());
-
+app.use(userRouter.routes());
+app.use(userRouter.allowedMethods());
 
 // IMPORTANT: Mount editor API routes FIRST so they take precedence over static serving
 app.use(editorRouter.routes());
@@ -87,7 +92,6 @@ app.use(editorRouter.allowedMethods());
 // Then mount the main router
 app.use(router.routes());
 app.use(router.allowedMethods());
-
 
 // /iso/
 const isoStaticRouter = new Router();
@@ -102,14 +106,12 @@ assetStaticRouter.get("/assets-manager/(.*)", serveStaticAsset);
 app.use(assetStaticRouter.routes());
 app.use(assetStaticRouter.allowedMethods());
 
-
 // /editor/
 const editorStaticRouter = new Router();
 editorStaticRouter.get("/editor/(.*)", serveStaticEditor);
 
 app.use(editorStaticRouter.routes());
 app.use(editorStaticRouter.allowedMethods());
-
 
 // /pallet/
 const palletStaticRouter = new Router();
@@ -119,8 +121,6 @@ app.use(palletStaticRouter.routes());
 app.use(palletStaticRouter.allowedMethods());
 
 console.log(`Server running on http://localhost:${port}`);
-
-
 
 app.listen({ port: port });
 

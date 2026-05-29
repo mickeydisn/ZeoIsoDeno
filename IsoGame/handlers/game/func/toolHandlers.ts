@@ -2,7 +2,7 @@ import { toolRegistry } from "../tools/toolRegistry.ts";
 import { gobalMapState } from "@iso-game/handlers/game/mapState.ts";
 import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
 import type { Potion } from "@iso-game/handlers/game/mapState.ts";
-import { mapDB } from "@iso-game/map/persistence/db/mapWebDatabase.ts";
+import { mapDB } from "../../../map/persistence/db/mapWebDatabase.ts";
 import {
   gameAction,
   TGameHandlerAction,

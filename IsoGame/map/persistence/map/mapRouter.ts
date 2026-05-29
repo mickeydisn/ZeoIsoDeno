@@ -19,6 +19,7 @@ mapRouter.get("/api/map/deltas", (ctx) => {
     ctx.response.body = { success: true, deltas };
   } catch (error) {
     ctx.response.status = 500;
+    // @ts-ignore error
 
     ctx.response.body = { success: false, error: error.message };
   }
@@ -28,9 +29,11 @@ mapRouter.post("/api/map/deltas", async (ctx) => {
   try {
     // Robust body parsing and logging for debugging mismatched client payloads.
     let body: any = {};
-    let rawText = "";
+    const rawText = "";
 
-    console.log("------------------------------------------------------");
+    console.log(
+      "----/api/map/deltas--------------------------------------------------",
+    );
 
     body = await ctx.request.body.json();
 
@@ -55,6 +58,9 @@ mapRouter.post("/api/map/deltas", async (ctx) => {
         // ignore
       }
     }
+    console.log(
+      "-End---/api/map/deltas--------------------------------------------------",
+    );
 
     if (
       (!Array.isArray(deltas) || cx === undefined || cy === undefined) &&
@@ -65,6 +71,9 @@ mapRouter.post("/api/map/deltas", async (ctx) => {
       cy = cy ?? parsed.cy;
       deltas = deltas ?? parsed.deltas ?? parsed.data;
     }
+    console.log(
+      "-End---/api/map/deltas--------------------------------------------------",
+    );
 
     // Attempt to parse URL-encoded "payload=" style in rawText
     if (
@@ -72,6 +81,7 @@ mapRouter.post("/api/map/deltas", async (ctx) => {
       rawText
     ) {
       try {
+        // @ts-ignore error
         const m = rawText.match(/payload=({.*})/);
         if (m) {
           const parsed = JSON.parse(decodeURIComponent(m[1]));
@@ -84,6 +94,9 @@ mapRouter.post("/api/map/deltas", async (ctx) => {
       }
     }
 
+    console.log(
+      "-End---/api/map/deltas--------------------------------------------------",
+    );
     // Final normalization: if deltas contains objects with a 'data' field, leave as-is.
     // If deltas is an array of raw tile deltas, allow that too.
     // At this point cx, cy, deltas may still be undefined; caller will validate below.
@@ -97,77 +110,27 @@ mapRouter.post("/api/map/deltas", async (ctx) => {
     console.log(
       `Saving deltas for chunk (${cx}, ${cy}), count: ${deltas.length}`,
     );
+    /*
     deltas.forEach((delta, i) => {
       const data = delta.data ?? delta;
       // console.log(`  Delta ${i}:`, JSON.stringify(data));
-      if (typeof data === "object" && data !== null && "color" in data) {
-        console.log(
-          `  Delta ${i}: x=${data.x}, y=${data.y}, color=${data.color}`,
-        );
-      }
+      // if (typeof data === "object" && data !== null && "color" in data) {
+      //  console.log(
+      //    `  Delta ${i}: x=${data.x}, y=${data.y}, color=${data.color}`,
+      //  );
+      // }
     });
-
-    mapDataBase.saveDeltas(cx, cy, deltas);
+    */
+    await mapDataBase.saveDeltas(cx, cy, deltas);
     ctx.response.body = { success: true };
   } catch (error) {
     ctx.response.status = 500;
+    // @ts-ignore error
     ctx.response.body = { success: false, error: error.message };
   }
-});
-
-// === Potion Inventory Routes ===
-
-mapRouter.get("/api/potions", (ctx) => {
-  const username = ctx.request.url.searchParams.get("username") ||
-    "mickey-test";
-
-  try {
-    const potions = mapDataBase.getAllPotions(username);
-    ctx.response.body = { success: true, potions };
-  } catch (error) {
-    ctx.response.status = 500;
-    ctx.response.body = { success: false, error: error.message };
-  }
-});
-
-mapRouter.post("/api/potions", async (ctx) => {
-  try {
-    const body = await ctx.request.body.json();
-    const { username, potion } = body;
-
-    if (!potion || !potion.id) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        error: "Missing potion object with id",
-      };
-      return;
-    }
-
-    mapDataBase.savePotion(username || "mickey-test", potion);
-    ctx.response.body = { success: true };
-  } catch (error) {
-    ctx.response.status = 500;
-    ctx.response.body = { success: false, error: error.message };
-  }
-});
-
-mapRouter.delete("/api/potions/:id", (ctx) => {
-  const id = ctx.params.id;
-
-  if (!id) {
-    ctx.response.status = 400;
-    ctx.response.body = { success: false, error: "Missing potion id" };
-    return;
-  }
-
-  try {
-    mapDataBase.deletePotion(id);
-    ctx.response.body = { success: true };
-  } catch (error) {
-    ctx.response.status = 500;
-    ctx.response.body = { success: false, error: error.message };
-  }
+  console.log(
+    "-End---/api/map/deltas--------------------------------------------------",
+  );
 });
 
 export { mapRouter };

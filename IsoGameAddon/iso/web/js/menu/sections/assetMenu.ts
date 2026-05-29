@@ -8,7 +8,7 @@ import { MenuTab } from "../headMenu.ts";
 // CONFIG
 export const assetMenuTab = (
   gameWorker: Worker,
-  _init_handlers: MessageHandler,
+  _init_handlers: MessageHandler<any, any, any>,
 ) => {
   return {
     id: "Struct",
@@ -85,7 +85,7 @@ let assetGroupSelected: { group: string; images: string[] } | null = null;
 let assetImageSelectedID: string | null = null;
 let assetDirectionSelected: string = "_NE";
 let gameWorker: Worker;
-let handlers: MessageHandler;
+let handlers: MessageHandler<any, any, any>;
 let assetImageListEl: HTMLElement | null = null;
 let assetImageEl: HTMLElement | null = null;
 
@@ -109,7 +109,7 @@ function setAssetGroupSelected(id: string) {
 // INIT
 export function initAssetGroups(
   init_gameWorker: Worker,
-  init_handlers: MessageHandler,
+  init_handlers: MessageHandler<any, any, any>,
 ): void {
   gameWorker = init_gameWorker;
   handlers = init_handlers;
@@ -251,6 +251,7 @@ function _renderImagesList(el: HTMLElement, call: () => void): void {
       assetId: imageName + "_NE",
     }).then((data) => {
       console.log("----------------------------", data);
+      // @ts-ignore result is in
       const newUrl = data?.result?.blobUrl;
 
       const img = new Image();

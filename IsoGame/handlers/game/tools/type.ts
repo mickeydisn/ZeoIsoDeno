@@ -1,5 +1,4 @@
 import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
-import { FactoryMap } from "../../../map/factory/factoryMap.ts";
 import { World } from "../../../word.ts";
 
 export type ToolContext = {

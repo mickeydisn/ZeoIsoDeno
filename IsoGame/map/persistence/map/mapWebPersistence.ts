@@ -3,7 +3,7 @@
  * Provides save/load functionality for chunk deltas.
  */
 
-import { mapDB } from "./mapWebDatabase.ts";
+import { mapDB } from "../db/mapWebDatabase.ts";
 
 export class MapWebPersistence {
   private static instance: MapWebPersistence;
@@ -68,9 +68,14 @@ export class MapWebPersistence {
           const [cx, cy] = key.split("_").map(Number);
           try {
             await mapDB.saveDeltas(cx, cy, deltas);
-            console.log(`[WebPersistence] Saved ${deltas.length} deltas for chunk ${cx}_${cy}`);
+            console.log(
+              `[WebPersistence] Saved ${deltas.length} deltas for chunk ${cx}_${cy}`,
+            );
           } catch (error) {
-            console.error(`[WebPersistence] Failed to save deltas for chunk ${cx}_${cy}:`, error);
+            console.error(
+              `[WebPersistence] Failed to save deltas for chunk ${cx}_${cy}:`,
+              error,
+            );
           }
         }
       }
@@ -93,10 +98,15 @@ export class MapWebPersistence {
 
     try {
       const deltas = await mapDB.loadDeltas(cx, cy);
-      console.log(`[WebPersistence] Loaded ${deltas.length} deltas for chunk ${cx}_${cy}`);
+      console.log(
+        `[WebPersistence] Loaded ${deltas.length} deltas for chunk ${cx}_${cy}`,
+      );
       return deltas;
     } catch (error) {
-      console.error(`[WebPersistence] Failed to load deltas for chunk ${cx}_${cy}:`, error);
+      console.error(
+        `[WebPersistence] Failed to load deltas for chunk ${cx}_${cy}:`,
+        error,
+      );
       return [];
     }
   }

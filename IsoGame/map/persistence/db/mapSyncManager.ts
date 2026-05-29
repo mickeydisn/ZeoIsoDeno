@@ -3,9 +3,9 @@
  * Flow: Memory -> WebPersistence (IndexedDB) -> RemotePersistence (SQLite)
  */
 
-import { mapWebPersistence } from "./mapWebPersistence.ts";
-import { mapServerPersistence } from "./mapServerPersistence.ts";
-import { potionServerPersistence } from "./potionServerPersistence.ts";
+import { mapWebPersistence } from "../map/mapWebPersistence.ts";
+import { mapServerPersistence } from "../map/mapServerPersistence.ts";
+import { potionServerPersistence } from "../user/potionServerPersistence.ts";
 import { Chunk } from "../../object/chunk.ts";
 import type { Potion } from "@iso-game/handlers/game/mapState.ts";
 

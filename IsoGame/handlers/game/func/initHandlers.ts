@@ -9,7 +9,7 @@ import { CityEntity } from "@iso-game/entity/cityEntity.ts";
 import { CityEntity2 } from "@iso-game/entity/cityEntity2.ts";
 import { CanvasMapDrawers } from "@iso-game/mapIso/canvasMapDrawer.ts";
 import { FactoryMap } from "@iso-game/map/factory/factoryMap.ts";
-import { mapWebPersistence } from "@iso-game/map/persistence/db/mapWebPersistence.ts";
+import { mapWebPersistence } from "../../../map/persistence/map/mapWebPersistence.ts";
 import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
 import {
   gameAction,
