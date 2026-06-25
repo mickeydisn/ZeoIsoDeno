@@ -11,7 +11,7 @@ const _drawHoverOverlayTile = (
   yy: number,
   color: string = "rgba(255, 220, 50, 0.35)",
 ) => {
-  const size = _ctx.conf.DRAW_TILE_COUNT;
+  const size = _ctx.conf.mapGridSize;
   // Bounds check
   if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1) return;
 
@@ -20,8 +20,8 @@ const _drawHoverOverlayTile = (
 
   // Get the tile's display level from the matrix
   const metaTile = _ctx.tilesMatrix.tiles[xx][yy];
-  const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * _ctx.conf.SCALE_SIZE /
-    _ctx.conf.SCALE_MOD;
+  const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * _ctx.conf.mapGridTileScale /
+    _ctx.conf.mapGridMod;
   const currentlvl = (metaTile.lvl - _ctx.tilesMatrix.avgLvl) *
     LVL_DISPLAY_SCALE;
   const height = 1;
@@ -42,11 +42,11 @@ export const drawHoverOverlay = (
   _ctx: DrawContext,
 ) => {
   // Directly use these coordinates without additional transformation
-  const xx = Math.round(_ctx.mapState.mouseWorldX);
-  const yy = Math.round(_ctx.mapState.mouseWorldY);
+  const xx = Math.round(_ctx.gameState.mouseWorldX);
+  const yy = Math.round(_ctx.gameState.mouseWorldY);
 
   // Bounds check
-  const size = _ctx.conf.DRAW_TILE_COUNT;
+  const size = _ctx.conf.mapGridSize;
   if (xx < 1 || xx >= size - 1 || yy < 1 || yy >= size - 1) return;
   // Check if tilesMatrix and the tile exist
   if (!_ctx.tilesMatrix?.tiles?.[xx]?.[yy]) return;
@@ -57,14 +57,14 @@ export const drawHoverOverlay = (
     const rangeX = Array.from(
       { length: bsize },
       (_, index) =>
-        (_ctx.conf.SCALE_MOD * index) -
-        (_ctx.conf.SCALE_MOD * Math.floor(bsize / 2)) + xx,
+        (_ctx.conf.mapGridMod * index) -
+        (_ctx.conf.mapGridMod * Math.floor(bsize / 2)) + xx,
     );
     const rangeY = Array.from(
       { length: bsize },
       (_, index) =>
-        (_ctx.conf.SCALE_MOD * index) -
-        (_ctx.conf.SCALE_MOD * Math.floor(bsize / 2)) + yy,
+        (_ctx.conf.mapGridMod * index) -
+        (_ctx.conf.mapGridMod * Math.floor(bsize / 2)) + yy,
     );
 
     rangeX.forEach((rx, _idx) => {

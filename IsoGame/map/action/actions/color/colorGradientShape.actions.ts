@@ -100,10 +100,10 @@ export const colorGradientShape = defineAction<
       {
         key: "size",
         type: "range",
-        label: "Area Size",
-        default: 5,
+        label: "Brush Size",
+        default: 1,
         min: 1,
-        max: 41,
+        max: 21,
         step: 2,
       },
     ],

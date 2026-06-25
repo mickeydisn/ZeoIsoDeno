@@ -2,10 +2,7 @@ import { TRenderHandlerContext } from "@iso-game/handlers/render/contexts.ts";
 import { drawHoverOverlay } from "@iso-game/mapIso/render/drawHoverOverlay.ts";
 import { drawPlayer } from "@iso-game/mapIso/render/drawPlayer.ts";
 import { drawTile } from "@iso-game/mapIso/render/drawTile.ts";
-import {
-  CANVAS_HEIGHT,
-  CANVAS_WIDTH,
-} from "@iso-game/handlers/game/mapState.ts";
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from "../game/gameState.ts";
 
 export const drawUpdate = (
   _ctx: TRenderHandlerContext,
@@ -17,11 +14,11 @@ export const drawUpdate = (
   _ctx.tilesMatrix.setOff(offx, offy);
   _ctx.tilesMatrix.setCenter(centreX, centreY);
   // Use the maximum of 1 or the scaled modifier for isomer
-  _ctx.isomer.SCALE_MOD = Math.max(1, 1 / 8);
+  _ctx.isomer.mapGridMod = Math.max(1, 1 / 8);
   _ctx.isomer.setOffset(offx, offy);
 
   _ctx.isoProject.updateConf({
-    SCALE_MOD: Math.max(1, 1 / 8),
+    mapGridMod: Math.max(1, 1 / 8),
     offsetX: offx,
     offsetY: offy,
   });
@@ -31,7 +28,7 @@ export const drawUpdate = (
 const _drawIso = (
   _ctx: TRenderHandlerContext,
 ) => {
-  const size = _ctx.conf.DRAW_TILE_COUNT;
+  const size = _ctx.conf.mapGridSize;
   _ctx.canvasCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
   // Clear all temporary tile items after each render frame
@@ -76,8 +73,8 @@ const _cleanCache = (
   // Calculate the map's current visible radius in world units
 
   // Define an aggressive margin (2x view extent)
-  const KEEP_MARGIN_X = _ctx.conf.DRAW_TILE_COUNT;
-  const KEEP_MARGIN_Y = _ctx.conf.DRAW_TILE_COUNT;
+  const KEEP_MARGIN_X = _ctx.conf.mapGridSize;
+  const KEEP_MARGIN_Y = _ctx.conf.mapGridSize;
 
   const xMin = _ctx.tilesMatrix.x - KEEP_MARGIN_X;
   const xMax = _ctx.tilesMatrix.x + KEEP_MARGIN_X;

@@ -8,7 +8,8 @@ import {
   _drawTileItem,
 } from "./utils/drawTileUtils.ts";
 import { msgToScreen } from "../../handlers/handlers.ts";
-import { gobalMapState } from "@iso-game/handlers/game/mapState.ts";
+import { gobalGameState } from "../../handlers/game/gameState.ts";
+import { drawSurfaceFlat } from "@iso-game/mapIso/render/utils/drawShapePaths.ts";
 
 /**
  * Draws the base tile geometry, including floor and borders.
@@ -18,7 +19,7 @@ export const drawTile = (
   x: number,
   y: number,
 ) => {
-  const size = _ctx.conf.DRAW_TILE_COUNT;
+  const size = _ctx.conf.mapGridSize;
   const xx = size - x - 1;
   const yy = size - y - 1;
 
@@ -26,8 +27,8 @@ export const drawTile = (
   const metaTile = _ctx.tilesMatrix.tiles[xx][yy];
 
   // Factor applied to raw level difference to get display level
-  const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * _ctx.conf.SCALE_SIZE /
-    _ctx.conf.SCALE_MOD;
+  const LVL_DISPLAY_SCALE = LVL_Z_SCALE_FACTOR * _ctx.conf.mapGridTileScale /
+    _ctx.conf.mapGridMod;
 
   // Calculate the tile's current display level (Z coordinate)
   const currentlvl = (metaTile.lvl - _ctx.tilesMatrix.avgLvl) *
@@ -67,8 +68,8 @@ export const drawTile = (
     _drawTileBack(_ctx, p, currentlvl, color, diffLvlSE, diffLvlSW);
   };
 
-  let offx = (gobalMapState.xf - gobalMapState.x) / _ctx.conf.SCALE_MOD;
-  let offy = (gobalMapState.yf - gobalMapState.y) / _ctx.conf.SCALE_MOD;
+  let offx = (gobalGameState.xf - gobalGameState.x) / _ctx.conf.mapGridMod;
+  let offy = (gobalGameState.yf - gobalGameState.y) / _ctx.conf.mapGridMod;
   // offx = offx > 0 ? offx : 1 + offx;
   // offy = offy >= 0 ? offy : 1 + offy ;
   offx = 0.5 + offx / 2;
@@ -76,6 +77,8 @@ export const drawTile = (
 
   _ctx.canvasCtx.save();
 
+  // ----------------------
+  // Draw Floor
   if (yy == 1) {
     drawFrontTile({ x: xx, y: yy, xoff: 0, yoff: offy });
     _ctx.canvasCtx.globalAlpha = 1 - offy;
@@ -92,9 +95,31 @@ export const drawTile = (
     _drawTileFloor(_ctx, xx, yy, currentlvl, color, diffLvlSE, diffLvlSW);
   }
 
-  // _ctx.drawTileBase(metaTile, xx, yy, currentlvl, diffLvlSE, diffLvlSW);
+  // ----------------------
+  // IsFrise
+  if (metaTile.isFrise) {
+    drawSurfaceFlat(
+      _ctx,
+      xx,
+      yy,
+      currentlvl,
+      "rgba(0, 0, 255, 0.2)",
+    );
+  }
+  // ----------------------
+  // Block
+  if (metaTile.isBlock) {
+    drawSurfaceFlat(
+      _ctx,
+      xx,
+      yy,
+      currentlvl,
+      "rgba(0, 0, 0, 0.5)",
+    );
+  }
 
   // ----------------------
+  // ITEMS
   // ----------------------
 
   // 3. Collect Items/Entities for Display
@@ -115,8 +140,11 @@ export const drawTile = (
 
   // ----------------------
   // Handle Box Node
-
-  if (metaTile.itemsBox && _ctx.conf.SCALE_MOD == 1) {
+  if (
+    _ctx.conf.showTileBox &&
+    _ctx.conf.mapGridMod == 1 &&
+    metaTile.itemsBox
+  ) {
     items.push({ t: "Svg", key: "statue_column_NE#C100_H60" });
 
     const dist_x = Math.abs((size / 2) - (xx + 1.5) + offx);
@@ -134,8 +162,8 @@ export const drawTile = (
   }
 
   // ----------------------
-  // Handle CityNode item
-  if (_ctx.conf.DRAW_TILE_COUNT <= 80) {
+  // Handle item
+  if (_ctx.conf.mapGridSize <= 80) {
     // 4. Draw Each Item (Z-sorted locally)
     items
       .sort((a: any, b: any) => (a.lvl || 0) - (b.lvl || 0))

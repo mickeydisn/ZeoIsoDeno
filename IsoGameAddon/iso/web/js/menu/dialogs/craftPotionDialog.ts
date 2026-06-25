@@ -9,10 +9,13 @@
  */
 
 import { DialogManager } from "../dialog.ts";
-import { gobalMapState } from "@iso-game/handlers/game/mapState.ts";
+import { gobalGameState } from "../../../../../../IsoGame/handlers/game/gameState.ts";
 import { ACTION_REGISTRY } from "@iso-game/map/action/actions/registry.ts";
-import type { Potion, PotionActionEntry } from "@iso-game/handlers/game/mapState.ts";
-import { uuid, renderField } from "./dialogHelpers.ts";
+import type {
+  Potion,
+  PotionActionEntry,
+} from "../../../../../../IsoGame/handlers/game/gameState.ts";
+import { renderField, uuid } from "./dialogHelpers.ts";
 
 // ============================================================================
 // HELPERS
@@ -31,7 +34,7 @@ function sendSavePotion(potion: Potion, gameWorker: Worker): void {
 function syncInventoryToWorker(gameWorker: Worker): void {
   gameWorker.postMessage({
     action: "syncInventory",
-    inventory: gobalMapState.playerState.inventory,
+    inventory: gobalGameState.playerState.inventory,
   });
 }
 
@@ -226,7 +229,8 @@ export async function openCraftDialog(
 
   // ---- 3. Action Selector ----
   const selectorRow = document.createElement("div");
-  selectorRow.style.cssText = "display:flex;gap:8px;align-items:center;margin-top:8px;";
+  selectorRow.style.cssText =
+    "display:flex;gap:8px;align-items:center;margin-top:8px;";
   const selectorLabel = document.createElement("label");
   selectorLabel.textContent = "Action:";
   const select = document.createElement("select");
@@ -276,7 +280,10 @@ export async function openCraftDialog(
   container.appendChild(closeBtn);
 
   // ---- Helper: populate config form for given action ----
-  function populateFormForAction(actionKey: string, existingConfig?: Record<string, unknown>): void {
+  function populateFormForAction(
+    actionKey: string,
+    existingConfig?: Record<string, unknown>,
+  ): void {
     const action = craftable.find((a) => a.key === actionKey);
     if (!action?.meta) return;
 
@@ -311,9 +318,14 @@ export async function openCraftDialog(
 
   // ---- Re-render action list (after add/remove/move) ----
   function refreshActionList(): void {
-    renderPendingActionList(actionListEl, pendingActions, craftable, (index) => {
-      startEditAction(index);
-    });
+    renderPendingActionList(
+      actionListEl,
+      pendingActions,
+      craftable,
+      (index) => {
+        startEditAction(index);
+      },
+    );
     saveBtn.disabled = pendingActions.length === 0;
   }
 
@@ -395,13 +407,13 @@ export async function openCraftDialog(
     dialog.close();
 
     // Optimistically update local state (will be confirmed by potionDBSynced)
-    const idx = gobalMapState.playerState.inventory.findIndex((p) =>
+    const idx = gobalGameState.playerState.inventory.findIndex((p) =>
       p.id === potion.id
     );
     if (idx !== -1) {
-      gobalMapState.playerState.inventory[idx] = potion;
+      gobalGameState.playerState.inventory[idx] = potion;
     } else {
-      gobalMapState.playerState.inventory.push(potion);
+      gobalGameState.playerState.inventory.push(potion);
     }
     syncInventoryToWorker(gameWorker);
   });

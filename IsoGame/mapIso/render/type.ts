@@ -3,7 +3,7 @@ import { AssetLoaderOpti } from "@iso-game/mapIso/asset/assetLoaderOpti.ts";
 import { IsometricProjector } from "@iso-game/mapIso/utils/simpleIso/IsometricProjector.ts";
 import { TilesMatrixAvg } from "@iso-game/map/object/tilesMatrix.ts";
 import { MessageHandler } from "@iso-game/etc/handlers/messageHandler.ts";
-import { MapState } from "@iso-game/handlers/game/mapState.ts";
+import { GameState } from "../../handlers/game/gameState.ts";
 
 // Canvas Context ( Shared beetween worker and screen render)
 type CanvasRenderingContext2D = OffscreenCanvasRenderingContext2D;
@@ -22,8 +22,8 @@ export type DrawContext = {
   assetLoader?: AssetLoaderOpti;
   canvasCtx: CanvasRenderingContext2D;
 
-  conf: CanvasMapDrawersConf;
-  mapState: MapState;
+  conf: MapGridLaout;
+  gameState: GameState;
   tilesMatrix: TilesMatrixAvg;
 
   frameCount: number;
@@ -38,19 +38,28 @@ export type DrawContext = {
 // ---
 
 // --- Configuration Interfaces (Renamed for Clarity) ---
-export interface CanvasMapDrawersConfOption {
-  DRAW_TILE_COUNT?: number;
-  SCALE_SIZE?: number;
-  SCALE_MOD?: number;
-}
-export interface CanvasMapDrawersConf {
-  DRAW_TILE_COUNT: number; // Replaced DRAW_TILE_COUNT
-  SCALE_SIZE: number;
-  SCALE_MOD: number;
+
+export interface MapGridLaout {
+  mapGridSize: number; // Replaced mapGridSize
+  mapGridTileScale: number; // Replaced mapGridTileScale
+  mapGridMod: number; // Replaced mapGridMod
+
+  showTileBox: boolean;
+  showIsFrise: boolean;
+  showIsBlock: boolean;
 }
 
-export const CanvasMapDrawersConfDefault: CanvasMapDrawersConf = {
-  DRAW_TILE_COUNT: 40,
-  SCALE_SIZE: 1,
-  SCALE_MOD: 1,
+export interface MapGridLaoutOption {
+  mapGridSize?: number;
+  mapGridTileScale?: number;
+  mapGridMod?: number;
+}
+
+export const MapGridLaoutDefault: MapGridLaout = {
+  mapGridSize: 40,
+  mapGridTileScale: 1.4,
+  mapGridMod: 1,
+  showTileBox: false,
+  showIsFrise: false,
+  showIsBlock: false,
 };

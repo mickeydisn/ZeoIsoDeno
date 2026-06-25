@@ -14,22 +14,23 @@ import {
 import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
-  gobalMapState,
-} from "@iso-game/handlers/game/mapState.ts";
+  gobalGameState,
+} from "../game/gameState.ts";
 import {
-  CanvasMapDrawersConf,
-  CanvasMapDrawersConfDefault,
+  MapGridLaout,
+  MapGridLaoutDefault,
 } from "@iso-game/mapIso/render/type.ts";
 import { AssetLoaderOpti } from "@iso-game/mapIso/asset/assetLoaderOpti.ts";
 import { Isomer } from "@iso-game/mapIso/utils/iso/isomer.ts";
 import { IsometricProjector } from "@iso-game/mapIso/utils/simpleIso/IsometricProjector.ts";
 import { TilesMatrixAvg } from "@iso-game/map/object/tilesMatrix.ts";
+import { gobalRenderState } from "./state/renderState.ts";
 
 export const createHander = (
   worker: Window & typeof globalThis,
   canvas?: Canvas,
 ) => {
-  const drawConf: CanvasMapDrawersConf = CanvasMapDrawersConfDefault;
+  const drawConf: MapGridLaout = MapGridLaoutDefault;
 
   const offScreenCanvas = canvas
     ? canvas
@@ -40,29 +41,30 @@ export const createHander = (
 
   const isomer = new Isomer(
     offScreenCanvas,
-    drawConf.DRAW_TILE_COUNT,
-    drawConf.SCALE_SIZE,
-    drawConf.SCALE_MOD,
+    drawConf.mapGridSize,
+    drawConf.mapGridTileScale,
+    drawConf.mapGridMod,
   );
   const isoProject = new IsometricProjector({
     originX: offScreenCanvas.width / 2,
     originY: offScreenCanvas.height / 2 +
-      drawConf.DRAW_TILE_COUNT * 16 * drawConf.SCALE_SIZE,
-    SCALE_SIZE: drawConf.SCALE_SIZE,
-    SCALE_MOD: drawConf.SCALE_MOD,
+      drawConf.mapGridSize * 16 * drawConf.mapGridTileScale,
+    mapGridTileScale: drawConf.mapGridTileScale,
+    mapGridMod: drawConf.mapGridMod,
   });
 
   const tilesMatrix = new TilesMatrixAvg(
-    drawConf.DRAW_TILE_COUNT,
+    drawConf.mapGridSize,
     0,
     0,
-    drawConf.SCALE_MOD,
+    drawConf.mapGridMod,
   );
 
   // const assetLoader = await AssetLoaderOpti.create();
 
   const frameCount: number = 0;
-  const mapState = gobalMapState;
+  const gameState = gobalGameState;
+  const renderState = gobalRenderState;
 
   const renderHandlerConfig = {
     worker: worker,
@@ -75,7 +77,8 @@ export const createHander = (
     canvasCtx,
 
     frameCount,
-    mapState,
+    gameState,
+    renderState,
     tilesMatrix,
     tileCache: new Map(),
   };

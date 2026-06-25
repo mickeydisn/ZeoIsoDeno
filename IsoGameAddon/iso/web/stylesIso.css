@@ -9,6 +9,15 @@ body {
 
   justify-content: center;
   align-items: center;
+
+
+   --menu-back-width: 80vw;
+  --menu-back-hieght: 4.3rem;
+  --menu-back-text-hieght: 3rem;
+  --menu-back-border-hieght: .6rem;
+  --menu-nav-butt-padding : .4rem;
+  --menu-back-radius-hieght: calc(var(--menu-back-hieght) / 2 + var(--menu-nav-butt-padding) * 2);
+
 }
 ul, li {
   list-style-type: none;
@@ -43,11 +52,13 @@ pre {
 }
 
 dialog {
-    background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 1rem;
+    background-color: #3A3A3AAA;
     border:none;
-    height: 50vh;
-    width: 60vw;
+    padding: 0;
+    padding-top: calc(var(--menu-back-hieght) + var(--menu-back-border-hieght) + .5rem);
+    padding-bottom: calc(var(--menu-back-hieght) + var(--menu-back-border-hieght) + .5rem);
+    height: calc(100vh - 2 * calc(var(--menu-back-hieght) + var(--menu-back-border-hieght) + .5rem));
+    width: var( --menu-back-width);
     z-index: 1;
     
 

@@ -1,7 +1,7 @@
 import { World } from "@iso-game/word.ts";
 import { CanvasMapDrawers } from "@iso-game/mapIso/canvasMapDrawer.ts";
 import { AssetLoaderOpti } from "@iso-game/mapIso/asset/assetLoaderOpti.ts";
-import { gobalMapState } from "@iso-game/handlers/game/mapState.ts";
+import { gobalGameState } from "../../../../IsoGame/handlers/game/gameState.ts";
 import {
   GameMessageHandler,
   indexGameHandler,
@@ -81,24 +81,24 @@ export class GameWorker {
       // console.log("Draw");
 
       this.world.tick();
-      //this.canvasMapDrawer.direction = mapState.direction;
+      //this.canvasMapDrawer.direction = gameState.direction;
       /*
       drawUpdate(
         this.renderHandler.ctx,
-        gobalMapState.x,
-        gobalMapState.y,
-        (gobalMapState.xf - gobalMapState.x) / gobalMapState.isoConf.tileScaleMod,
-        (gobalMapState.yf - gobalMapState.y) / gobalMapState.isoConf.tileScaleMod,
+        gobalGameState.x,
+        gobalGameState.y,
+        (gobalGameState.xf - gobalGameState.x) / gobalGameState.isoConf.tileScaleMod,
+        (gobalGameState.yf - gobalGameState.y) / gobalGameState.isoConf.tileScaleMod,
       );
       */
 
       this.canvasMapDrawer.drawUpdate(
-        gobalMapState.x,
-        gobalMapState.y,
-        (gobalMapState.xf - gobalMapState.x) /
-          gobalMapState.isoConf.tileScaleMod,
-        (gobalMapState.yf - gobalMapState.y) /
-          gobalMapState.isoConf.tileScaleMod,
+        gobalGameState.x,
+        gobalGameState.y,
+        (gobalGameState.xf - gobalGameState.x) /
+          gobalGameState.isoConf.tileScaleMod,
+        (gobalGameState.yf - gobalGameState.y) /
+          gobalGameState.isoConf.tileScaleMod,
       );
     }
     requestAnimationFrame(this.updateFram.bind(this));

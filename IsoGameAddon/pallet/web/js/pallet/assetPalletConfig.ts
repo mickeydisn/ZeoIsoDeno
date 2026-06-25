@@ -12,14 +12,21 @@ export type TypeAssetFileConfig = {
   scall?: boolean;
 };
 
-
-function fileToGroup(filename:string) : TypeAssetFileConfig{
+function fileToGroup(filename: string): TypeAssetFileConfig {
   return {
-    "src": "./img/asset-opti/"+filename+".png",
+    "src": "./img/asset-opti/" + filename + ".png",
     "group": filename,
     "imgHeight": 224,
     "imgWidth": 192,
-  }
+  };
+}
+function fileItemToGroup(filename: string): TypeAssetFileConfig {
+  return {
+    "src": "./img/asset-items/" + filename + ".png",
+    "group": filename,
+    "imgHeight": 224,
+    "imgWidth": 192,
+  };
 }
 
 export const assetFileConfig: TypeAssetFileConfig[] = [
@@ -30,8 +37,12 @@ export const assetFileConfig: TypeAssetFileConfig[] = [
   fileToGroup("AstroBase4"),
   fileToGroup("AstroBase5"),
   fileToGroup("GrokClean1"),
-  
+
   fileToGroup("Wall"),
+  fileItemToGroup("perso-3-anim-city"),
+  fileItemToGroup("perso-3-city"),
+  fileItemToGroup("perso-3-other"),
+  fileItemToGroup("edited-fences"),
   // fileToGroup("ItemPilar"),
   // fileToGroup("NatureRock"),
   // fileToGroup("AstroRocket"),

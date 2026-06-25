@@ -23,8 +23,8 @@ export class Isomer {
   private canvas: Canvas;
   private canvasCtx: CanvasRenderingContext2D;
 
-  private SCALE_SIZE: number;
-  SCALE_MOD: number;
+  private mapGridTileScale: number;
+  mapGridMod: number;
   // private angle: number = 0.44721359; // Math.PI / 6.75
   private originX: number;
   private originY: number = 660; // Fixed Y-origin
@@ -39,31 +39,32 @@ export class Isomer {
 
   constructor(
     canvas: Canvas,
-    DRAW_TILE_COUNT: number = 30,
-    SCALE_SIZE: number = 1,
-    SCALE_MOD: number = 1,
+    mapGridSize: number = 30,
+    mapGridTileScale: number = 1,
+    mapGridMod: number = 1,
   ) {
     this.canvas = canvas;
     this.canvasCtx = canvas.getContext("2d") as CanvasRenderingContext2D;
-    this.SCALE_SIZE = SCALE_SIZE;
-    this.SCALE_MOD = SCALE_MOD;
+    this.mapGridTileScale = mapGridTileScale;
+    this.mapGridMod = mapGridMod;
     this.originX = this.canvas.width / 2;
-    this.originY = this.canvas.height / 2 + DRAW_TILE_COUNT * 16 * this.SCALE_SIZE;
+    this.originY = this.canvas.height / 2 +
+      mapGridSize * 16 * this.mapGridTileScale;
     this.offsetX = 0;
     this.offsetY = 0;
 
     this.lightPosition = new Vector(20, -10, 30);
     this.lightAngle = this.lightPosition.normalize();
     this.lightColor = new Color(255, 255, 255);
-    
+
     this.transformation = [
-      [32 * this.SCALE_SIZE, 16 * this.SCALE_SIZE], // ISOSCALE * Math.cos(this.angle), ISOSCALE * Math.sin(this.angle)
-      [-32 * this.SCALE_SIZE, 16 * this.SCALE_SIZE], // ISOSCALE * Math.cos(Math.PI - this.angle), ISOSCALE * Math.sin(Math.PI - this.angle)
+      [32 * this.mapGridTileScale, 16 * this.mapGridTileScale], // ISOSCALE * Math.cos(this.angle), ISOSCALE * Math.sin(this.angle)
+      [-32 * this.mapGridTileScale, 16 * this.mapGridTileScale], // ISOSCALE * Math.cos(Math.PI - this.angle), ISOSCALE * Math.sin(Math.PI - this.angle)
     ];
     /*
     this.transformation = [
-      [0 * this.SCALE_SIZE, 32 * this.SCALE_SIZE],
-      [-32 * this.SCALE_SIZE, 0 * this.SCALE_SIZE],
+      [0 * this.mapGridTileScale, 32 * this.mapGridTileScale],
+      [-32 * this.mapGridTileScale, 0 * this.mapGridTileScale],
     ]; */
     //this._calculateTransformation();
   }
@@ -97,7 +98,7 @@ export class Isomer {
 
     const x = this.originX + xMap.x + yMap.x;
     const y = this.originY - xMap.y - yMap.y -
-      point.z * ISO_LVL_SCALE / this.SCALE_MOD;
+      point.z * ISO_LVL_SCALE / this.mapGridMod;
 
     return new Point(x, y);
   }

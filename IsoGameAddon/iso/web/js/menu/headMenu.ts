@@ -1,3 +1,4 @@
+import { DialogManager } from "@iso-web/js/menu/dialog.ts";
 import { assetCssClass } from "./sections/assetMenu.ts";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -70,22 +71,22 @@ const buildCss = (tabs: MenuTab[]): string => {
 
   return /* css */ `
     #HeadMenuIcons,  #HeadMenuPanel  {
-      --back-hieght: 3.3rem;
-      --opacity-hover: 0.9;
-      --opacity-disabled: 0.25;
-      --color-back-tranp : rgba(0, 0, 0, 0);
-      --color-back-white: rgba(255, 255, 255, 0.5);
-      /* --color-back: rgba(0, 0, 0, 0.5); */
-      --color-back: #3A3A3A;     
-      --color-active: rgba(0, 0, 0, 1);
+
+      --menu-opacity-hover: 0.9;
+      --menu-opacity-disabled: 0.25;
+      --menu-color-back-tranp : rgba(0, 0, 0, 0);
+      --menu-color-back-white: rgba(255, 255, 255, 0.5);
+      /* --menu-color-back: rgba(0, 0, 0, 0.5); */
+      --menu-color-back: #3A3A3A;     
+      --menu-color-active: rgba(0, 0, 0, 1);
     }
 
     #HeadMenuIcons {
       position: fixed;
-      top: 10px;
+      top: 0px;
       left: 50%;
-      height: var(--back-hieght);
-      border-radius:var(--back-hieght);
+      width: var( --menu-back-width);
+      height: var(--menu-back-hieght);
       transform: translateX(-50%);
       display: flex;
       flex-direction: row;
@@ -95,10 +96,9 @@ const buildCss = (tabs: MenuTab[]): string => {
       font-family: monospace;
       align-items: center;
       justify-content: center;
-      background-color: var( --color-back);
-      /*
-      background: linear-gradient(180deg, var(--color-back-tranp) 0%, var(--color-back-tranp) 40%, var(--color-back) 40%, var(--color-back) 60%, var(--color-back-tranp) 60%, var(--color-back-tranp) 100%);
-      */
+      background-color: var( --menu-color-back);
+      border-top: var(--menu-back-border-hieght) solid var(--menu-color-back);
+      border-radius:  0 0 calc(var(--menu-back-radius-hieght) / 2) calc(var(--menu-back-radius-hieght) / 2);
     }
 
     #HeadMenuIcons input[type="radio"] { display: none; }
@@ -113,6 +113,7 @@ const buildCss = (tabs: MenuTab[]): string => {
       
       cursor: pointer;
       border-radius: .5rem;
+      margin-right: 0.5rem;
       padding: .2rem;
       font-size: 1.5rem;
       user-select: none;
@@ -127,10 +128,10 @@ const buildCss = (tabs: MenuTab[]): string => {
     }
 
     .hm-label.nav {
-      font-size: var(--back-hieght);
-      padding: .4rem;
-      height: calc(2 var(--back-hieght));
-      width: calc(var(--back-hieght));
+      font-size: var(--menu-back-text-hieght);
+      padding: var(--menu-nav-butt-padding);
+      height: var(--menu-back-radius-hieght);
+      width: var(--menu-back-radius-hieght);
       border-radius: 100%;
       line-height: 0;
       opacity: .3;
@@ -141,17 +142,17 @@ const buildCss = (tabs: MenuTab[]): string => {
         z-index: -1;
         top: .1rem; left: .1rem; right: .1rem; bottom: .1rem;
         border-radius: inherit;
-        background-color: var(--color-active);
+        background-color: var(--menu-color-active);
     }
     .hm-label.nav:hover     { background: rgba(64, 64, 64, 0.9); }
     .hm-label.nav.disabled  { opacity: 0.25; cursor: default; pointer-events: none; }
 
-    .hm-label.nav.left { margin-right: 2rem;} 
-    .hm-label.nav.right { margin-left: 2rem; } 
+    .hm-label.nav.left { margin-right: 2rem;  margin-left: .5rem; } 
+    .hm-label.nav.right { margin-right: .5rem; margin-left: 2rem; } 
 
     .hm-label.menu-icone {
       opacity: .4;
-      background-color: var(--color-active);
+      background-color: var(--menu-color-active);
     }
     .hm-label.is-checked {
       font-size: 2.5rem;
@@ -178,9 +179,9 @@ const buildCss = (tabs: MenuTab[]): string => {
       position: fixed;
       left: 50%;
       transform: translateX(-50%);
-      width: 60vw;
-      height: var(--back-hieght);
-      border-bottom: calc(var(--back-hieght)/2) solid var(--color-back);
+      width: var( --menu-back-width);
+      height: var(--menu-back-hieght);
+      border-bottom: var(--menu-back-border-hieght) solid var(--menu-color-back);
       bottom:0px;
 
 
@@ -191,15 +192,13 @@ const buildCss = (tabs: MenuTab[]): string => {
         display: flex;
         align-items: center;
 
-        background-color: var(--color-back);
-        border-radius: calc(var(--back-hieght)/2) calc(var(--back-hieght)/2) 0 0;
+        background-color: var(--menu-color-back);
+        border-radius: calc(var(--menu-back-radius-hieght) / 2) calc(var(--menu-back-radius-hieght) / 2) 0 0;
         padding: 0 .75rem;
-        gap: .5rem;
 
         color: white;
         font-family: monospace;
         pointer-events: none;
-
         transform: translateY(12px) scale(0.98);
         opacity: 0;
         transition:
@@ -214,7 +213,7 @@ const buildCss = (tabs: MenuTab[]): string => {
 
       select {
         appearance: base-select;
-        background-color:  var(--color-active);
+        background-color:  var(--menu-color-active);
         color: white;
         display: flex;
         align-items: center;
@@ -236,7 +235,7 @@ const buildCss = (tabs: MenuTab[]): string => {
         overflow-y: auto;
         margin-bottom: 3rem;
 
-        background-color: var(--color-back-white);
+        background-color: var(--menu-color-back-white);
         border: none;
         border-radius: 1rem;
         padding: 0.5rem .5rem;
@@ -248,7 +247,7 @@ const buildCss = (tabs: MenuTab[]): string => {
         padding: 1rem 0;
         margin: 1.5rem 0;
 
-        background-color: var(--color-back);
+        background-color: var(--menu-color-back);
         border-radius: 1rem;
         font-size: 1.2rem;
 
@@ -256,10 +255,10 @@ const buildCss = (tabs: MenuTab[]): string => {
         color: white;
 
         &:hover {
-          background-color: var(--color-active);
+          background-color: var(--menu-color-active);
         }
         &:checked {
-          background-color: var(--color-active);
+          background-color: var(--menu-color-active);
         }
       
       }
@@ -679,13 +678,16 @@ export const initHeadMenu = (gameWorker: Worker, config: HeadMenuConfig) => {
 
   /* ── Fire callbacks ─────────────────────────────────────────── */
   const fireTabActive = (tab: MenuTab, activeSubIdx: number) => {
-    const section = document.getElementById(`section-${tab.id}`)!;
-    const activeSub = tab.sub?.[activeSubIdx] ?? null;
-
+    // Clean Current
     gameWorker.postMessage({
       action: "setActiveTool",
       toolId: "",
     });
+    const dialog = DialogManager.getInstance();
+    dialog.close();
+
+    const section = document.getElementById(`section-${tab.id}`)!;
+    const activeSub = tab.sub?.[activeSubIdx] ?? null;
 
     activeSub?.callback_select?.();
     fireVisibleParams(section, tab, activeSub?.id ?? null);

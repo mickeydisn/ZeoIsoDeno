@@ -41,15 +41,34 @@ export function withShape<
   base: TileAction<string, C>,
   keyOrOverride: K,
 ): TileAction<K, S> {
-  return defineAction<K, S>(keyOrOverride, (conf, ctx) => {
-    const size = conf.size ?? 1;
-    const shape = conf.shape ?? "square";
-    const points = [...iterShape(conf.x, conf.y, size, shape)];
+  const fields = base.meta?.fields as ActionMeta["fields"];
+  fields.push({
+    key: "size",
+    type: "range",
+    label: "Brush Size",
+    default: 1,
+    min: 1,
+    max: 21,
+    step: 2,
+  });
 
-    for (const p of points) {
-      base.execute({ ...conf, x: p.x, y: p.y }, ctx);
-    }
-  }, { ...base.meta, label: `${base.meta?.label} Square` } as ActionMeta);
+  return defineAction<K, S>(
+    keyOrOverride,
+    (conf, ctx) => {
+      const size = conf.size ?? 1;
+      const shape = conf.shape ?? "square";
+      const points = [...iterShape(conf.x, conf.y, size, shape)];
+
+      for (const p of points) {
+        base.execute({ ...conf, x: p.x, y: p.y }, ctx);
+      }
+    },
+    {
+      ...base.meta,
+      fields: fields,
+      label: `${base.meta?.label} Square`,
+    } as ActionMeta,
+  );
 }
 
 // ─── withLine ────────────────────────────────────────────────────────────────

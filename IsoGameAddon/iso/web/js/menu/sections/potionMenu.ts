@@ -10,7 +10,7 @@
  */
 
 import { MenuTab } from "../headMenu.ts";
-import { gobalMapState } from "@iso-game/handlers/game/mapState.ts";
+import { gobalGameState } from "../../../../../../IsoGame/handlers/game/gameState.ts";
 import { openCraftDialog } from "../dialogs/craftPotionDialog.ts";
 import {
   openPotionListDialog,
@@ -36,7 +36,7 @@ let barContainerEl: HTMLElement | null = null;
 function syncInventoryToWorker(): void {
   gameWorker.postMessage({
     action: "syncInventory",
-    inventory: gobalMapState.playerState.inventory,
+    inventory: gobalGameState.playerState.inventory,
   });
 }
 

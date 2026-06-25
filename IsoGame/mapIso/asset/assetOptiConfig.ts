@@ -1,5 +1,9 @@
 import { asset_AstroBase } from "./conf/asset_AstroBase.ts";
-import { asset_AstroBase2, asset_AstroBase3, asset_AstroBase5 } from "./conf/asset_AstroBase2.ts";
+import {
+  asset_AstroBase2,
+  asset_AstroBase3,
+  asset_AstroBase5,
+} from "./conf/asset_AstroBase2.ts";
 import { asset_AstroPlatform } from "./conf/asset_AstroPlatform.ts";
 import { asset_AstroRocket } from "./conf/asset_AstroRocket.ts";
 import { asset_edited_fences } from "./conf/asset_edited_Fences.ts";
@@ -17,6 +21,7 @@ import { asset_Train } from "./conf/asset_Train.ts";
 import { asset_UserAstro } from "./conf/asset_UserAstro.ts";
 import { asset_Wall } from "./conf/asset_Wall.ts";
 import { asset_Grok5 } from "./conf/grok_a.ts";
+import { asset_persoCity } from "@iso-game/mapIso/asset/conf/perso_city.ts";
 
 export type TypeAssetImageConfig = {
   label: string;
@@ -31,7 +36,6 @@ export type TypeAssetGroupConfig = {
   imgWidth: number;
   scall?: boolean;
 };
-
 
 export const assetOptiConfig: TypeAssetGroupConfig[] = [
   asset_AstroBase,
@@ -54,10 +58,10 @@ export const assetOptiConfig: TypeAssetGroupConfig[] = [
   asset_Train,
   asset_AstroRocket,
   asset_Grok5,
+  asset_persoCity,
 
   // asset_MyTower,
   asset_UserAstro,
-
 
   // ----------- 8 axes
   {

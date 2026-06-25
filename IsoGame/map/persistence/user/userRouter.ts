@@ -1,7 +1,6 @@
 import { Router } from "https://deno.land/x/oak/mod.ts";
-import { mapServerDatabase } from "../db/mapServerDatabase.ts";
+import { serverDataBase } from "../db/serverDatabase.ts";
 
-const mapDataBase = new mapServerDatabase();
 const userRouter = new Router();
 
 // === Potion Inventory Routes ===
@@ -11,7 +10,7 @@ userRouter.get("/api/potions", (ctx) => {
     "mickey-test";
 
   try {
-    const potions = mapDataBase.getAllPotions(username);
+    const potions = serverDataBase.getAllPotions(username);
     ctx.response.body = { success: true, potions };
   } catch (error) {
     ctx.response.status = 500;
@@ -23,7 +22,7 @@ userRouter.get("/api/potions", (ctx) => {
 userRouter.post("/api/potions", async (ctx) => {
   try {
     const body = await ctx.request.body.json();
-    const { username, potion } = body;
+    const { username, potion } = body ?? {};
 
     if (!potion || !potion.id) {
       ctx.response.status = 400;
@@ -34,7 +33,7 @@ userRouter.post("/api/potions", async (ctx) => {
       return;
     }
 
-    mapDataBase.savePotion(username || "mickey-test", potion);
+    serverDataBase.savePotion(username || "mickey-test", potion);
     ctx.response.body = { success: true };
   } catch (error) {
     ctx.response.status = 500;
@@ -53,7 +52,7 @@ userRouter.delete("/api/potions/:id", (ctx) => {
   }
 
   try {
-    mapDataBase.deletePotion(id);
+    serverDataBase.deletePotion(id);
     ctx.response.body = { success: true };
   } catch (error) {
     ctx.response.status = 500;

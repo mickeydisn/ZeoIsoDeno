@@ -10,9 +10,10 @@ export class MapServerPersistence implements IMapPersistence {
   async saveChunkDeltas(cx: number, cy: number, deltas: any[]): Promise<void> {
     if (deltas.length === 0) return;
 
-    // Ensure payload is serializable and log a compact summary to help debugging.
-    // Server expects each row shape as { x, y, data }.
-    const serverDeltas = deltas.map((d) => ({ x: d.x, y: d.y, data: d }));
+    // Server expects each delta as { x, y, data }.
+    // Deltas from chunk.getDeltas() already have this shape — do NOT re-wrap,
+    // or the DB ends up storing { data: { x, y, data: { x, y, ... } } }.
+    const serverDeltas = deltas;
     const payload = { cx, cy, deltas: serverDeltas };
     try {
       console.log("[RemotePersistence] POST /api/map/deltas", {
@@ -51,7 +52,9 @@ export class MapServerPersistence implements IMapPersistence {
   }
 
   async loadChunkDeltas(cx: number, cy: number): Promise<any[]> {
-    const response = await fetch(`${this.baseUrl}/api/map/deltas?cx=${cx}&cy=${cy}`);
+    const response = await fetch(
+      `${this.baseUrl}/api/map/deltas?cx=${cx}&cy=${cy}`,
+    );
 
     if (!response.ok) {
       const error = await response.json();

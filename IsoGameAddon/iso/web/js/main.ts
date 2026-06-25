@@ -40,9 +40,9 @@ const callback_initWorker = (_data: any) => {
   handler.sendMessageWithResponse({
     action: "initCanvasMap",
     mapConf: {
-      DRAW_TILE_COUNT: 30,
-      SCALE_SIZE: 1.5,
-      SCALE_MOD: 1,
+      mapGridSize: 30,
+      mapGridTileScale: 1.5,
+      mapGridMod: 1,
     },
   });
   // CITY

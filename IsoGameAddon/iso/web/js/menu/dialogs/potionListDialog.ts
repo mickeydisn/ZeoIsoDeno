@@ -15,9 +15,9 @@
  */
 
 import { DialogManager } from "../dialog.ts";
-import { gobalMapState } from "@iso-game/handlers/game/mapState.ts";
+import { gobalGameState } from "../../../../../../IsoGame/handlers/game/gameState.ts";
 import { ACTION_REGISTRY } from "@iso-game/map/action/actions/registry.ts";
-import type { Potion } from "@iso-game/handlers/game/mapState.ts";
+import type { Potion } from "../../../../../../IsoGame/handlers/game/gameState.ts";
 import { sanitizePotionConfig } from "./dialogHelpers.ts";
 import { openCraftDialog } from "./craftPotionDialog.ts";
 
@@ -38,7 +38,7 @@ function sendDeletePotion(potionId: string, gameWorker: Worker): void {
 function syncInventoryToWorker(worker: Worker): void {
   worker.postMessage({
     action: "syncInventory",
-    inventory: gobalMapState.playerState.inventory,
+    inventory: gobalGameState.playerState.inventory,
   });
 }
 
@@ -47,15 +47,15 @@ function syncInventoryToWorker(worker: Worker): void {
 // ============================================================================
 
 async function loadInventory(): Promise<Potion[]> {
-  let potions = gobalMapState.playerState.inventory;
+  let potions = gobalGameState.playerState.inventory;
   if (potions.length === 0) {
     try {
       const { mapDB } = await import(
         "../../../../../../IsoGame/map/persistence/db/mapWebDatabase.ts"
       );
-      potions = await mapDB.getAllPotions(gobalMapState.playerState.username);
+      potions = await mapDB.getAllPotions(gobalGameState.playerState.username);
       potions = potions.map(sanitizePotionConfig);
-      gobalMapState.playerState.inventory = potions;
+      gobalGameState.playerState.inventory = potions;
     } catch {
       potions = [];
     }
@@ -88,7 +88,9 @@ export async function renderPotionBar(
   for (const potion of shown) {
     const tile = document.createElement("div");
     tile.dataset.potionId = potion.id;
-    tile.title = `${potion.icon || "🧪"} ${potion.name} (${potion.remainingUses} use${
+    tile.title = `${
+      potion.icon || "🧪"
+    } ${potion.name} (${potion.remainingUses} use${
       potion.remainingUses !== 1 ? "s" : ""
     })`;
     tile.style.cssText = `
@@ -266,7 +268,8 @@ function buildListRow(
   // ---- Details/summary for actions ----
   if (potion.actions.length > 0) {
     const details = document.createElement("details");
-    details.style.cssText = "font-size:0.75rem;opacity:0.7;margin-top:2px;";
+    details.style.cssText =
+      "font-size:0.75rem;opacity:0.7;margin-top:2px;text-align:left;";
 
     const summary = document.createElement("summary");
     summary.textContent = `${potion.actions.length} action${
@@ -415,7 +418,7 @@ export async function openPotionListDialog(
         const aIdx = parseInt(swapTarget.dataset.index!, 10);
         const bIdx = parseInt(row.dataset.index!, 10);
         if (!isNaN(aIdx) && !isNaN(bIdx)) {
-          const arr = gobalMapState.playerState.inventory;
+          const arr = gobalGameState.playerState.inventory;
           [arr[aIdx], arr[bIdx]] = [arr[bIdx], arr[aIdx]];
           sendSavePotion(arr[aIdx], gameWorker);
           sendSavePotion(arr[bIdx], gameWorker);
@@ -429,7 +432,7 @@ export async function openPotionListDialog(
   }
 
   function rebuild(): void {
-    const all = gobalMapState.playerState.inventory;
+    const all = gobalGameState.playerState.inventory;
 
     // Clear lists
     leftList.innerHTML = "";

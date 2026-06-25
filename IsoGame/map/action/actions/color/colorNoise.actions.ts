@@ -184,6 +184,15 @@ export const colorSmoothShape = defineAction<
     description: "Blends tile colors toward the average of their neighbours",
     fields: [
       {
+        key: "size",
+        type: "range",
+        label: "Brush Size",
+        default: 1,
+        min: 1,
+        max: 21,
+        step: 2,
+      },
+      {
         key: "smoothRadius",
         type: "number",
         label: "Smooth Radius",

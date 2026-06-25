@@ -33,15 +33,6 @@ export const color = defineAction<"color", ColorConfig>(
     label: "Color-Apply",
     fields: [
       { key: "color", type: "color", label: "Color", default: [128, 128, 128] },
-      {
-        key: "size",
-        type: "range",
-        label: "Brush Size",
-        default: 1,
-        min: 1,
-        max: 21,
-        step: 2,
-      },
     ],
   },
 );

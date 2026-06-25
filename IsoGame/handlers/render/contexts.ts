@@ -11,8 +11,9 @@ import { Isomer } from "@iso-game/mapIso/utils/iso/isomer.ts";
 import { AssetLoaderOpti } from "@iso-game/mapIso/asset/assetLoaderOpti.ts";
 import { IsometricProjector } from "@iso-game/mapIso/utils/simpleIso/IsometricProjector.ts";
 import { TilesMatrixAvg } from "@iso-game/map/object/tilesMatrix.ts";
-import { MapState } from "@iso-game/handlers/game/mapState.ts";
-import { CanvasMapDrawersConf } from "@iso-game/mapIso/render/type.ts";
+import { GameState } from "../game/gameState.ts";
+import { RenderState } from "./state/renderState.ts";
+import { MapGridLaout } from "@iso-game/mapIso/render/type.ts";
 
 // ────────────────────────────────────────────
 // CONTEXT
@@ -21,7 +22,7 @@ export type TRenderHandlerContext = THandlerContext & {
   worker: Window & typeof globalThis;
   tag: "render";
 
-  conf: CanvasMapDrawersConf;
+  conf: MapGridLaout;
   isomer: Isomer;
   isoProject: IsometricProjector;
 
@@ -30,7 +31,8 @@ export type TRenderHandlerContext = THandlerContext & {
   canvasCtx: CanvasRenderingContext2D;
 
   frameCount: number;
-  mapState: MapState;
+  gameState: GameState;
+  renderState: RenderState;
   tilesMatrix: TilesMatrixAvg;
   tileCache: Map<string, OffscreenCanvas | ImageBitmap>;
 };

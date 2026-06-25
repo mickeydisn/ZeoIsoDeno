@@ -13,9 +13,9 @@ import { World } from "../word.ts";
 import { AssetLoaderOpti } from "./asset/assetLoaderOpti.ts";
 import { IsometricProjector } from "./utils/simpleIso/IsometricProjector.ts";
 import {
-  CanvasMapDrawersConf,
-  CanvasMapDrawersConfDefault,
   DrawContext,
+  MapGridLaout,
+  MapGridLaoutDefault,
 } from "./render/type.ts";
 import { drawTile } from "./render/drawTile.ts";
 import { drawPlayer } from "./render/drawPlayer.ts";
@@ -26,8 +26,9 @@ import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
 import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
-  gobalMapState,
-} from "@iso-game/handlers/game/mapState.ts";
+  gobalGameState,
+} from "../handlers/game/gameState.ts";
+import { drawGridOverlay } from "@iso-game/mapIso/render/drawGridOverlay.ts";
 
 // --- Main Drawer Class ---
 export class CanvasMapDrawers {
@@ -44,19 +45,19 @@ export class CanvasMapDrawers {
     _ctx: TGameHandlerContext,
     width: number,
     height: number,
-    conf: CanvasMapDrawersConf,
+    conf: MapGridLaout,
     assetLoadder: AssetLoaderOpti,
     canvas?: Canvas,
   ) {
     this._ctx = _ctx;
     this.world = _ctx.world;
 
-    // Use DRAW_TILE_COUNT instead of DRAW_TILE_COUNT
-    const drawConf: CanvasMapDrawersConf = {
-      ...CanvasMapDrawersConfDefault,
+    // Use mapGridSize instead of mapGridSize
+    const drawConf: MapGridLaout = {
+      ...MapGridLaoutDefault,
       ...conf,
-      DRAW_TILE_COUNT: conf.DRAW_TILE_COUNT ||
-        CanvasMapDrawersConfDefault.DRAW_TILE_COUNT,
+      mapGridSize: conf.mapGridSize ||
+        MapGridLaoutDefault.mapGridSize,
     };
 
     const offScreenCanvas = canvas ? canvas : createCanvas(width, height);
@@ -66,23 +67,23 @@ export class CanvasMapDrawers {
 
     const isomer = new Isomer(
       offScreenCanvas,
-      drawConf.DRAW_TILE_COUNT,
-      drawConf.SCALE_SIZE,
-      drawConf.SCALE_MOD,
+      drawConf.mapGridSize,
+      drawConf.mapGridTileScale,
+      drawConf.mapGridMod,
     );
     const isoProject = new IsometricProjector({
       originX: offScreenCanvas.width / 2,
       originY: offScreenCanvas.height / 2 +
-        drawConf.DRAW_TILE_COUNT * 16 * drawConf.SCALE_SIZE,
-      SCALE_SIZE: drawConf.SCALE_SIZE,
-      SCALE_MOD: drawConf.SCALE_MOD,
+        drawConf.mapGridSize * 16 * drawConf.mapGridTileScale,
+      mapGridTileScale: drawConf.mapGridTileScale,
+      mapGridMod: drawConf.mapGridMod,
     });
 
     const tilesMatrix = new TilesMatrixAvg(
-      drawConf.DRAW_TILE_COUNT,
+      drawConf.mapGridSize,
       0,
       0,
-      drawConf.SCALE_MOD,
+      drawConf.mapGridMod,
     );
 
     this.frameSubCount = 0;
@@ -99,7 +100,7 @@ export class CanvasMapDrawers {
       canvasCtx: canvasCtx,
 
       conf: drawConf,
-      mapState: gobalMapState,
+      gameState: gobalGameState,
       tilesMatrix: tilesMatrix,
 
       frameCount: 0,
@@ -120,11 +121,11 @@ export class CanvasMapDrawers {
     this._drawCtx.tilesMatrix.setOff(offx, offy);
     this._drawCtx.tilesMatrix.setCenter(centreX, centreY);
     // Use the maximum of 1 or the scaled modifier for isomer
-    this._drawCtx.isomer.SCALE_MOD = Math.max(1, 1 / 8);
+    this._drawCtx.isomer.mapGridMod = Math.max(1, 1 / 8);
     this._drawCtx.isomer.setOffset(offx, offy);
 
     this._drawCtx.isoProject.updateConf({
-      SCALE_MOD: Math.max(1, 1 / 8),
+      mapGridMod: Math.max(1, 1 / 8),
       offsetX: offx,
       offsetY: offy,
     });
@@ -137,7 +138,7 @@ export class CanvasMapDrawers {
   }
 
   drawIso() {
-    const size = this._drawCtx.conf.DRAW_TILE_COUNT;
+    const size = this._drawCtx.conf.mapGridSize;
     this._drawCtx.canvasCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Clear all temporary tile items after each render frame
@@ -169,8 +170,10 @@ export class CanvasMapDrawers {
     }
 
     // Draw grid overlay to show tile boundaries
+
     // this.drawGridOverlay();
     // this.drawHoverOverlay();
+    // drawGridOverlay(this._drawCtx);
     drawHoverOverlay(this._drawCtx);
   }
 }

@@ -1,6 +1,6 @@
 import { defineTool, ToolConfigBrush, ToolContext } from "../type.ts";
 import { toolRegistry } from "../toolRegistry.ts";
-import { gobalMapState } from "@iso-game/handlers/game/mapState.ts";
+import { gobalGameState } from "../../gameState.ts";
 import { TilesActions } from "@iso-game/map/action/tilesActions.ts";
 import { mapDB } from "../../../../map/persistence/db/mapWebDatabase.ts";
 import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
@@ -22,7 +22,7 @@ export const usePotionTool = defineTool<"use_potion", ToolConfigBrush>(
       return { success: false, reason: "No active potion set" };
     }
 
-    const inventory = gobalMapState.playerState.inventory;
+    const inventory = gobalGameState.playerState.inventory;
     const idx = inventory.findIndex((p) => p.id === potionId);
     if (idx === -1) {
       toolRegistry.setActivePotionId(null);
@@ -54,10 +54,10 @@ export const usePotionTool = defineTool<"use_potion", ToolConfigBrush>(
     // Execute all actions
     TilesActions.getInstance().doActions(confs);
 
-    await mapDB.savePotion(gobalMapState.playerState.username, potion);
+    await mapDB.savePotion(gobalGameState.playerState.username, potion);
     _ctx.handler.send({
       action: "potionDBSynced",
-      potions: [...gobalMapState.playerState.inventory],
+      potions: [...gobalGameState.playerState.inventory],
     });
 
     // Keep potion in inventory even at 0 uses (don't delete).

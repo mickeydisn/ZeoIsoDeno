@@ -1,7 +1,4 @@
-import {
-  assetFileConfig,
-  TypeAssetFileConfig,
-} from "./assetPalletConfig.ts";
+import { assetFileConfig, TypeAssetFileConfig } from "./assetPalletConfig.ts";
 // import { canvasFilterStrToValue, colorVariation } from "./assetUtils.ts";
 
 export type TypeCanvasFilterConf = {
@@ -15,7 +12,10 @@ const colorVariation = (
   conf: TypeCanvasFilterConf,
 ): OffscreenCanvas | undefined => {
   // Mock implementation for color variation (e.g., tinting)
-  const newCanvas = new OffscreenCanvas(sourceCanvas.width, sourceCanvas.height);
+  const newCanvas = new OffscreenCanvas(
+    sourceCanvas.width,
+    sourceCanvas.height,
+  );
   const ctx = newCanvas.getContext("2d");
   if (!ctx) return undefined;
   ctx.drawImage(sourceCanvas, 0, 0);
@@ -29,7 +29,7 @@ const colorVariation = (
 };
 
 // Assuming this constant is intended to be the base scaling factor for the canvas
-const SCALE_SIZE = 1;
+const mapGridTileScale = 1;
 
 export type TypeAsset = {
   group: string;
@@ -59,7 +59,9 @@ export class AssetLoaderPallet {
 
   constructor(assetList: TypeAssetFileConfig[] = []) {
     // Use injected or default config
-    this.assetList = assetList.length > 0 ? assetList : (assetFileConfig as TypeAssetFileConfig[] | undefined) || [];
+    this.assetList = assetList.length > 0
+      ? assetList
+      : (assetFileConfig as TypeAssetFileConfig[] | undefined) || [];
   }
 
   /**
@@ -92,7 +94,9 @@ export class AssetLoaderPallet {
         try {
           // Prepend asset path correctly (e.g., using import.meta.url or a proper base path)
           // Adjusting the path from "../../" to a more relative/defined path is safer in a real app.
-          const image: ImageBitmap = await loadImageBitmap("../../" + assetInfo.src);
+          const image: ImageBitmap = await loadImageBitmap(
+            "../../" + assetInfo.src,
+          );
           this.loadAssetImage(assetInfo, image);
         } catch (e) {
           console.error(`Failed to load asset: ${assetInfo.src}`, e);
@@ -117,8 +121,8 @@ export class AssetLoaderPallet {
     const __cutImage = (wId: number, hId: number): OffscreenCanvas => {
       // Dimensions of the destination canvas are fixed
       const destCanvas = new OffscreenCanvas(
-        256 * SCALE_SIZE,
-        256 * SCALE_SIZE,
+        256 * mapGridTileScale,
+        256 * mapGridTileScale,
       );
       // Use non-null assertion `!` because `OffscreenCanvas` contexts are usually guaranteed.
       const ctx = destCanvas.getContext("2d", { willReadFrequently: true })!;
@@ -131,10 +135,10 @@ export class AssetLoaderPallet {
       const sHeight = hCutSize + 128; // This seems to be an arbitrary extension
 
       // Calculate destination coordinates and dimensions on the new canvas
-      const dX = 32 * SCALE_SIZE;
+      const dX = 32 * mapGridTileScale;
       const dY = 0 + (assetInfo.scall ? 32 : 0);
-      const dWidth = wCutSize * SCALE_SIZE;
-      const dHeight = Math.floor(hCutSize / scall) * SCALE_SIZE + 128; // This also seems complex/arbitrary
+      const dWidth = wCutSize * mapGridTileScale;
+      const dHeight = Math.floor(hCutSize / scall) * mapGridTileScale + 128; // This also seems complex/arbitrary
 
       // Draw the cut portion of the source image onto the destination canvas
       ctx.drawImage(
@@ -158,7 +162,7 @@ export class AssetLoaderPallet {
     // Process each row (tile set)
     for (let idx = 0; idx < n; idx++) {
       const labelBase = `${assetInfo.group}_${String(idx)}`;
-      
+
       // Creating the row with the 4 assets (NE, NW, SW, SE)
       const assets: TypeAssetRow = [
         {
@@ -191,9 +195,12 @@ export class AssetLoaderPallet {
     }
 
     // Create an OffscreenCanvas with the same dimensions as the ImageBitmap
-    const offscreenCanvas = new OffscreenCanvas(sourceImg.width, sourceImg.height);
+    const offscreenCanvas = new OffscreenCanvas(
+      sourceImg.width,
+      sourceImg.height,
+    );
     // Get the 2D rendering context
-    const ctx = offscreenCanvas.getContext('2d');
+    const ctx = offscreenCanvas.getContext("2d");
     // Draw the ImageBitmap onto the OffscreenCanvas
     if (ctx) {
       ctx.drawImage(sourceImg, 0, 0);
@@ -202,7 +209,7 @@ export class AssetLoaderPallet {
     // Store the complete sheet data
     const assetSheet: TypeAssetSheet = {
       name: assetInfo.group,
-      cimage : offscreenCanvas,
+      cimage: offscreenCanvas,
       assets: assetRows,
     };
     this.assetSheets.push(assetSheet);
@@ -232,7 +239,7 @@ export class AssetLoaderPallet {
 
     if (parentAsset) {
       const parentCimage = parentAsset.cimage;
-      
+
       // Parse the filter string (e.g., "blue") into a config object
       const canvasFilterConf = canvasFilterStrToValue(canvasFilter);
 

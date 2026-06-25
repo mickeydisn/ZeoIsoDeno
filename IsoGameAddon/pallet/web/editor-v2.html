@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asset Pipeline v2 — Modular Editor</title>
+<link rel="stylesheet" href="editor/main.css">
+</head>
+<body>
+
+<div class="header">
+  <h1>⚙️ Asset Pipeline v2</h1>
+  <div class="header-actions">
+    <span style="font-size:.72em;color:rgba(255,255,255,.75);">Suffixe</span>
+    <input id="exportSuffix" type="text" value="_fixed" style="width:72px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:4px;color:#fff;padding:3px 6px;font-size:.75em;">
+    <label class="btn btn-pink btn-sm" style="cursor:pointer;">📁 Importer PNG<input type="file" id="batchInput" accept="image/png" multiple style="display:none"></label>
+    <button class="btn btn-warn btn-sm" id="saveJsonBtn">💾 Sauvegarder</button>
+    <label class="btn btn-warn btn-sm" style="cursor:pointer;">📂 Charger JSON<input type="file" id="loadJsonInput" accept=".json" style="display:none"></label>
+    <button class="btn btn-success btn-sm" id="exportAllBtn">📦 Exporter tout</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="fix">✂️ Étape 1 — Recadrage</div>
+  <div class="tab" data-tab="compose">🎨 Étape 2 — Composition</div>
+  <div class="tab" data-tab="mask">🎭 Étape 3 — Masques</div>
+</div>
+
+<div class="app-body">
+  <div class="sidebar">
+    <div class="sidebar-header">Assets <span id="assetCountBadge" class="badge badge-purple">0</span></div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <div class="asset-list" id="assetList"><div style="padding:16px;text-align:center;color:var(--muted);font-size:.75em;">Importez des PNG</div></div>
+    <div style="padding:5px 8px;border-top:1px solid var(--border);font-size:.66em;color:var(--muted);line-height:1.8;">
+      <span style="color:var(--muted);">●</span> À faire &nbsp;
+      <span style="color:#ffc107;">●</span> Fix &nbsp;
+      <span style="color:var(--green);">●</span> Composé &nbsp;
+      <span style="color:var(--pink2);">●</span> Masqué
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══════════════ FIX ═══════════════ -->
+    <div class="panel-view visible" id="panelFix">
+      <div class="fix-layout">
+        <div class="fix-controls">
+          <div class="sec-title">Source</div>
+          <div class="ctrl-group">
+            <label class="ctrl-label">Nb. lignes</label>
+            <input type="number" class="ctrl-input" id="sourceRowCountInput" value="1" min="1">
+          </div>
+          <div class="ctrl-group">
+            <label class="ctrl-label">Zoom vue</label>
+            <input type="number" class="ctrl-input" id="zoomInput" min=".25" max="4" step=".1" value="1">
+          </div>
+          <hr class="ctrl-sep">
+          <div class="sec-title">Transformation</div>
+          <div class="ctrl-group"><label class="ctrl-label">Scale global</label><input type="number" class="ctrl-input" id="scaleInput" min=".1" max="5" step=".01" value="1"></div>
+          <div class="ctrl-group"><label class="ctrl-label">Offset X global</label><input type="number" class="ctrl-input" id="offsetXInput" min="-500" max="500" step="1" value="0"></div>
+          <div class="ctrl-group"><label class="ctrl-label">Offset Y global</label><input type="number" class="ctrl-input" id="offsetYInput" min="-500" max="500" step="1" value="0"></div>
+          <hr class="ctrl-sep">
+          <div class="sec-title">Offset col X</div>
+          <div class="col-offset-grid">
+            <input type="number" class="column-offset-x" data-col="0" value="0" min="-500" max="500" step="1" title="Col 1">
+            <input type="number" class="column-offset-x" data-col="1" value="0" min="-500" max="500" step="1" title="Col 2">
+            <input type="number" class="column-offset-x" data-col="2" value="0" min="-500" max="500" step="1" title="Col 3">
+            <input type="number" class="column-offset-x" data-col="3" value="0" min="-500" max="500" step="1" title="Col 4">
+          </div>
+          <div class="sec-title" style="margin-top:4px;">Offset col Y</div>
+          <div class="col-offset-grid">
+            <input type="number" class="column-offset-y" data-col="0" value="0" min="-500" max="500" step="1" title="Col 1">
+            <input type="number" class="column-offset-y" data-col="1" value="0" min="-500" max="500" step="1" title="Col 2">
+            <input type="number" class="column-offset-y" data-col="2" value="0" min="-500" max="500" step="1" title="Col 3">
+            <input type="number" class="column-offset-y" data-col="3" value="0" min="-500" max="500" step="1" title="Col 4">
+          </div>
+          <hr class="ctrl-sep">
+          <label class="checkbox-row"><input type="checkbox" id="removeBgCheck"> Supprimer BG</label>
+          <div id="smoothEdgeGroup" style="display:none;" class="ctrl-group">
+            <label class="ctrl-label">Érosion (px)</label>
+            <input type="number" class="ctrl-input" id="smoothEdgeInput" min="0" max="10" step="1" value="2">
+          </div>
+          <label class="checkbox-row"><input type="checkbox" id="showTilesCheckFix" checked> Overlay tiles iso</label>
+          <hr class="ctrl-sep">
+          <div class="sec-title">🎨 Couleurs (global)</div>
+          <div id="fixHscbWrap">
+            <div class="hscb-row">
+              <label>H°</label>
+              <input type="range" id="fixHue" min="-180" max="180" value="0" step="1">
+              <input type="number" id="fixHueN" min="-180" max="180" value="0" step="1">
+            </div>
+            <div class="hscb-row">
+              <label>Sat</label>
+              <input type="range" id="fixSat" min="-100" max="100" value="0" step="1">
+              <input type="number" id="fixSatN" min="-100" max="100" value="0" step="1">
+            </div>
+            <div class="hscb-row">
+              <label>Con</label>
+              <input type="range" id="fixCon" min="-100" max="100" value="0" step="1">
+              <input type="number" id="fixConN" min="-100" max="100" value="0" step="1">
+            </div>
+            <div class="hscb-row">
+              <label>Lum</label>
+              <input type="range" id="fixBri" min="-100" max="100" value="0" step="1">
+              <input type="number" id="fixBriN" min="-100" max="100" value="0" step="1">
+            </div>
+          </div>
+          <button class="btn btn-danger btn-full btn-sm" id="fixHscbResetBtn" style="margin-top:2px;">↺ Reset couleurs</button>
+          <hr class="ctrl-sep">
+          <dl class="stats-grid" id="fixStats" style="display:none;">
+            <dt>Source</dt><dd id="statSrc">-</dd>
+            <dt>Output</dt><dd id="statOut">-</dd>
+            <dt>Grille</dt><dd id="statGrid">-</dd>
+          </dl>
+          <button class="btn btn-success btn-full" id="fixApplyBtn" disabled>✅ Valider</button>
+          <button class="btn btn-primary btn-full" id="fixNextBtn" disabled>➡️ Suivant</button>
+        </div>
+
+        <div class="fix-canvas-wrap" id="fixCanvasWrap">
+          <div class="empty-state" id="fixEmptyState"><div class="empty-icon">✂️</div><span>Sélectionnez un asset</span></div>
+          <canvas id="sourceCanvas"></canvas>
+        </div>
+
+        <div class="fix-preview">
+          <div class="sec-title">Prévisualisation sortie</div>
+          <div style="font-size:.68em;color:var(--muted);margin-bottom:4px;">
+            🔴 lignes = rows &nbsp; 🟢 lignes = cols (glisser pour ajuster)
+          </div>
+          <div class="preview-grid" id="previewGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ COMPOSE ═══════════════ -->
+    <div class="panel-view" id="panelCompose">
+      <div class="compose-layout">
+        <div class="compose-controls">
+          <div class="sec-title">Workspace</div>
+          <div class="row-bar">
+            <button class="btn btn-primary btn-sm" id="addRowBtn">+ Ligne</button>
+            <button class="btn btn-danger btn-sm" id="removeRowBtn">− Ligne</button>
+          </div>
+          <label class="checkbox-row"><input type="checkbox" id="showGridCheck" checked> Grille</label>
+          <label class="checkbox-row"><input type="checkbox" id="showTilesCheck" checked> Tiles iso</label>
+          <hr class="ctrl-sep">
+          <div class="hint-box">
+            <b>Clic</b> — sélectionner<br>
+            <b>Drag</b> — déplacer le sprite (offset X/Y)<br>
+            <b>Shift+drag</b> — déplacer/dupliquer/échanger<br>
+            &nbsp;&nbsp;↳ remplie→vide : <i>copie</i><br>
+            &nbsp;&nbsp;↳ remplie→remplie : échange<br>
+            &nbsp;&nbsp;↳ vers 🗑 : vider la case<br>
+            <b style="color:#00dc64;">Shift+⌘/Ctrl+drag</b> — <i>fusionner</i><br>
+            &nbsp;&nbsp;↳ case drop = fond<br>
+            &nbsp;&nbsp;↳ case dragged = devant<br>
+            &nbsp;&nbsp;↳ résultat aplati dans la case drop
+          </div>
+          <hr class="ctrl-sep">
+          <div id="spriteControls" style="display:none;">
+            <div class="sec-title">Case sélectionnée</div>
+            <span class="info-badge" id="selectedInfo">—</span>
+            <div class="ctrl-group">
+              <label class="ctrl-label">Offset X</label>
+              <div class="slider-row">
+                <input type="range" id="spriteXSlider" min="-192" max="192" value="0" step="1">
+                <input type="number" id="spriteXInput" min="-192" max="192" value="0" step="1">
+              </div>
+            </div>
+            <div class="ctrl-group">
+              <label class="ctrl-label">Offset Y</label>
+              <div class="slider-row">
+                <input type="range" id="spriteYSlider" min="-224" max="224" value="0" step="1">
+                <input type="number" id="spriteYInput" min="-224" max="224" value="0" step="1">
+              </div>
+            </div>
+            <div class="ctrl-group">
+              <label class="ctrl-label">Scale</label>
+              <div class="slider-row">
+                <input type="range" id="spriteScaleSlider" min=".1" max="2" value="1" step=".01">
+                <input type="number" id="spriteScaleInput" min=".1" max="2" value="1" step=".01">
+              </div>
+            </div>
+            <div class="btn-group" style="margin-top:6px;">
+              <button class="btn btn-warn btn-sm" id="flipHBtn">↔ Flip H</button>
+              <button class="btn btn-primary btn-sm" id="resetSprScaleBtn">⤡ Scale×1</button>
+            </div>
+            <div class="btn-group" style="margin-top:4px;">
+              <button class="btn btn-warn btn-sm" id="mirrorLBtn">⇐ Mirror G</button>
+              <button class="btn btn-warn btn-sm" id="mirrorRBtn">Mirror D ⇒</button>
+            </div>
+            <hr class="ctrl-sep">
+            <div class="sec-title">🎨 Couleurs</div>
+            <div id="cmpHscbWrap">
+              <div class="hscb-row">
+                <label>H°</label>
+                <input type="range" id="cmpHue" min="-180" max="180" value="0" step="1">
+                <input type="number" id="cmpHueN" min="-180" max="180" value="0" step="1">
+              </div>
+              <div class="hscb-row">
+                <label>Sat</label>
+                <input type="range" id="cmpSat" min="-100" max="100" value="0" step="1">
+                <input type="number" id="cmpSatN" min="-100" max="100" value="0" step="1">
+              </div>
+              <div class="hscb-row">
+                <label>Con</label>
+                <input type="range" id="cmpCon" min="-100" max="100" value="0" step="1">
+                <input type="number" id="cmpConN" min="-100" max="100" value="0" step="1">
+              </div>
+              <div class="hscb-row">
+                <label>Lum</label>
+                <input type="range" id="cmpBri" min="-100" max="100" value="0" step="1">
+                <input type="number" id="cmpBriN" min="-100" max="100" value="0" step="1">
+              </div>
+            </div>
+            <button class="btn btn-danger btn-full btn-sm" id="cmpHscbResetBtn" style="margin-top:2px;">↺ Reset couleurs</button>
+            <hr class="ctrl-sep">
+            <button class="btn btn-danger btn-full btn-sm" id="clearSpriteBtn">🗑 Vider case</button>
+            <button class="btn btn-primary btn-full btn-sm" id="resetSpriteBtn">↺ Reset</button>
+          </div>
+          <hr class="ctrl-sep">
+          <button class="btn btn-success btn-full" id="composeApplyBtn" disabled>✅ Valider composition</button>
+          <button class="btn btn-primary btn-full" id="composeNextBtn" disabled>➡️ Suivant</button>
+        </div>
+
+        <div class="compose-canvas-wrap" id="composeCanvasWrap">
+          <div class="empty-state" id="composeEmpty"><div class="empty-icon">🎨</div><span>Validez d'abord l'étape 1</span></div>
+          <canvas id="mainCanvas"></canvas>
+          <div class="trash-zone" id="trashZone">🗑</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ MASK ═══════════════ -->
+    <div class="panel-view" id="panelMask">
+      <div class="mask-layout">
+        <div class="mask-controls">
+          <div class="sec-title">🎭 Masques de tiles</div>
+          <div style="font-size:.7em;color:var(--muted);line-height:1.5;">
+            Chaque masque découpe l'image selon la forme isométrique de la tile.
+            Activez, puis ajustez la position avec les sliders.
+          </div>
+
+          <div class="mask-card" id="maskCardBottom">
+            <div class="mask-card-header">
+              <input type="checkbox" class="mask-toggle" id="maskBottomOn">
+              <span class="mask-card-title">▽ Masque Bas</span>
+              <span style="font-size:.65em;color:var(--muted);">V vers le bas</span>
+            </div>
+            <div class="mask-offset-row"><span>X</span>
+              <input type="range" id="maskBottomX" min="-96" max="96" value="0" step="1">
+              <input type="number" id="maskBottomXN" min="-96" max="96" value="0" step="1">
+            </div>
+            <div class="mask-offset-row"><span>Y</span>
+              <input type="range" id="maskBottomY" min="-112" max="112" value="0" step="1">
+              <input type="number" id="maskBottomYN" min="-112" max="112" value="0" step="1">
+            </div>
+          </div>
+
+          <div class="mask-card" id="maskCardTop">
+            <div class="mask-card-header">
+              <input type="checkbox" class="mask-toggle" id="maskTopOn">
+              <span class="mask-card-title">△ Masque Haut</span>
+              <span style="font-size:.65em;color:var(--muted);">V vers le haut</span>
+            </div>
+            <div class="mask-offset-row"><span>X</span>
+              <input type="range" id="maskTopX" min="-96" max="96" value="0" step="1">
+              <input type="number" id="maskTopXN" min="-96" max="96" value="0" step="1">
+            </div>
+            <div class="mask-offset-row"><span>Y</span>
+              <input type="range" id="maskTopY" min="-112" max="112" value="0" step="1">
+              <input type="number" id="maskTopYN" min="-112" max="112" value="0" step="1">
+            </div>
+          </div>
+
+          <div class="mask-card" id="maskCardLeft">
+            <div class="mask-card-header">
+              <input type="checkbox" class="mask-toggle" id="maskLeftOn">
+              <span class="mask-card-title">◁ Masque Gauche</span>
+              <span style="font-size:.65em;color:var(--muted);">coupe verticalement</span>
+            </div>
+            <div class="mask-offset-row"><span>X</span>
+              <input type="range" id="maskLeftX" min="-96" max="96" value="0" step="1">
+              <input type="number" id="maskLeftXN" min="-96" max="96" value="0" step="1">
+            </div>
+            <div class="mask-offset-row"><span>Y</span>
+              <input type="range" id="maskLeftY" min="-112" max="112" value="0" step="1">
+              <input type="number" id="maskLeftYN" min="-112" max="112" value="0" step="1">
+            </div>
+          </div>
+
+          <div class="mask-card" id="maskCardRight">
+            <div class="mask-card-header">
+              <input type="checkbox" class="mask-toggle" id="maskRightOn">
+              <span class="mask-card-title">▷ Masque Droite</span>
+              <span style="font-size:.65em;color:var(--muted);">coupe verticalement</span>
+            </div>
+            <div class="mask-offset-row"><span>X</span>
+              <input type="range" id="maskRightX" min="-96" max="96" value="0" step="1">
+              <input type="number" id="maskRightXN" min="-96" max="96" value="0" step="1">
+            </div>
+            <div class="mask-offset-row"><span>Y</span>
+              <input type="range" id="maskRightY" min="-112" max="112" value="0" step="1">
+              <input type="number" id="maskRightYN" min="-112" max="112" value="0" step="1">
+            </div>
+          </div>
+
+          <hr class="ctrl-sep">
+          <label class="checkbox-row"><input type="checkbox" id="maskShowTiles" checked> Afficher tiles iso</label>
+          <label class="checkbox-row"><input type="checkbox" id="maskShowMaskOverlay" checked> Afficher overlay masques</label>
+          <hr class="ctrl-sep">
+          <button class="btn btn-danger btn-full btn-sm" id="maskResetBtn">↺ Reset tous les masques</button>
+          <button class="btn btn-success btn-full" id="maskApplyBtn" disabled>✅ Valider masques</button>
+          <button class="btn btn-primary btn-full" id="maskNextBtn" disabled>➡️ Suivant</button>
+
+          <hr class="ctrl-sep">
+          <div class="sec-title">Prévisualisation sortie</div>
+          <div class="mask-preview-strip" id="maskPreviewStrip"></div>
+        </div>
+
+        <div class="mask-canvas-wrap" id="maskCanvasWrap">
+          <div class="empty-state" id="maskEmpty"><div class="empty-icon">🎭</div><span>Validez d'abord l'étape 2</span></div>
+          <canvas id="maskCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<canvas id="dragGhost"></canvas>
+
+<script type="module" src="editor/main.js"></script>
+</body>
+</html>
