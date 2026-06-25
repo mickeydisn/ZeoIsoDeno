@@ -30,6 +30,11 @@ export const state = {
     shiftDragPos: {x:0,y:0},
     shiftDragOver: null,
 
+    // rows — per-row transformation state
+    // rows[i] = { scale, offsetX, offsetY, flipH, mirrorSide, hue, sat, con, bri }
+    rows: [],
+    selectedRowIdx: -1,
+
     // mask — one set of 4 masks, shared
     maskState: defaultMaskState(),
     maskSourceImg: null,
@@ -44,6 +49,10 @@ export function defaultMaskState() {
     };
 }
 
+export function defaultRowState() {
+    return { scale:1, offsetX:0, offsetY:0, flipH:false, mirrorSide:0, hue:0, sat:0, con:0, bri:0 };
+}
+
 export function resetStateForNewSession() {
     state.assets = [];
     state.currentAssetIdx = -1;
@@ -51,6 +60,8 @@ export function resetStateForNewSession() {
     state.fixImage = null;
     state.workspace = [];
     state.selectedCell = null;
+    state.rows = [];
+    state.selectedRowIdx = -1;
     state.maskState = defaultMaskState();
     state.maskSourceImg = null;
 }

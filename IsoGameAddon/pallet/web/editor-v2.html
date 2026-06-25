@@ -22,8 +22,9 @@
 
 <div class="tabs">
   <div class="tab active" data-tab="fix">✂️ Étape 1 — Recadrage</div>
-  <div class="tab" data-tab="compose">🎨 Étape 2 — Composition</div>
-  <div class="tab" data-tab="mask">🎭 Étape 3 — Masques</div>
+  <div class="tab" data-tab="rows">📏 Étape 2 — Lignes</div>
+  <div class="tab" data-tab="compose">🎨 Étape 3 — Composition</div>
+  <div class="tab" data-tab="mask">🎭 Étape 4 — Masques</div>
 </div>
 
 <div class="app-body">
@@ -127,6 +128,91 @@
             🔴 lignes = rows &nbsp; 🟢 lignes = cols (glisser pour ajuster)
           </div>
           <div class="preview-grid" id="previewGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ ROWS ═══════════════ -->
+    <div class="panel-view" id="panelRows">
+      <div class="compose-layout">
+        <div class="compose-controls">
+          <div class="sec-title">📏 Gestion des lignes</div>
+          <div style="font-size:.7em;color:var(--muted);line-height:1.5;">
+            Cliquez sur une ligne pour la sélectionner.<br>
+            <b>Drag</b> la poignée ⡇≡ à gauche pour réordonner.<br>
+            Appliquez scale, offset, couleurs à <b>toute la ligne</b> — visible en direct.
+          </div>
+          <hr class="ctrl-sep">
+
+          <!-- Row controls (shown when a row is selected) -->
+          <div id="rowControls" style="display:none;">
+            <span class="info-badge" id="rowSelectedInfo">—</span>
+
+            <div class="ctrl-group" style="margin-top:6px;">
+              <label class="ctrl-label">Scale</label>
+              <div class="slider-row">
+                <input type="range" id="rowScaleSlider" min=".1" max="2" value="1" step=".01">
+                <input type="number" id="rowScaleInput" min=".1" max="2" value="1" step=".01">
+              </div>
+            </div>
+
+            <div class="ctrl-group">
+              <label class="ctrl-label">Offset X</label>
+              <div class="slider-row">
+                <input type="range" id="rowOffsetXSlider" min="-192" max="192" value="0" step="1">
+                <input type="number" id="rowOffsetXInput" min="-192" max="192" value="0" step="1">
+              </div>
+            </div>
+
+            <div class="ctrl-group">
+              <label class="ctrl-label">Offset Y</label>
+              <div class="slider-row">
+                <input type="range" id="rowOffsetYSlider" min="-224" max="224" value="0" step="1">
+                <input type="number" id="rowOffsetYInput" min="-224" max="224" value="0" step="1">
+              </div>
+            </div>
+
+            <hr class="ctrl-sep">
+            <div class="sec-title">🎨 Couleurs (ligne)</div>
+            <div id="rowHscbWrap">
+              <div class="hscb-row">
+                <label>H°</label>
+                <input type="range" id="rowHue" min="-180" max="180" value="0" step="1">
+                <input type="number" id="rowHueN" min="-180" max="180" value="0" step="1">
+              </div>
+              <div class="hscb-row">
+                <label>Sat</label>
+                <input type="range" id="rowSat" min="-100" max="100" value="0" step="1">
+                <input type="number" id="rowSatN" min="-100" max="100" value="0" step="1">
+              </div>
+              <div class="hscb-row">
+                <label>Con</label>
+                <input type="range" id="rowCon" min="-100" max="100" value="0" step="1">
+                <input type="number" id="rowConN" min="-100" max="100" value="0" step="1">
+              </div>
+              <div class="hscb-row">
+                <label>Lum</label>
+                <input type="range" id="rowBri" min="-100" max="100" value="0" step="1">
+                <input type="number" id="rowBriN" min="-100" max="100" value="0" step="1">
+              </div>
+            </div>
+            <button class="btn btn-danger btn-full btn-sm" id="rowHscbResetBtn" style="margin-top:2px;">↺ Reset couleurs ligne</button>
+
+            <hr class="ctrl-sep">
+            <button class="btn btn-danger btn-sm" id="rowDeleteBtn">🗑 Supprimer ligne</button>
+            <button class="btn btn-warn btn-full btn-sm" id="rowResetBtn">↺ Reset ligne</button>
+            <button class="btn btn-success btn-full" id="rowApplyBtn">✅ Appliquer (bake)</button>
+          </div>
+
+          <hr class="ctrl-sep">
+          <label class="checkbox-row"><input type="checkbox" id="rowShowTiles" checked> Afficher tiles iso</label>
+          <hr class="ctrl-sep">
+          <button class="btn btn-primary btn-full" id="rowNextBtn" disabled>➡️ Suivant (Masques)</button>
+        </div>
+
+        <div class="compose-canvas-wrap" style="background:#111;overflow:auto;padding:16px;">
+          <div class="empty-state" id="rowEmpty"><div class="empty-icon">📏</div><span>Validez d'abord l'étape 2</span></div>
+          <canvas id="rowCanvas"></canvas>
         </div>
       </div>
     </div>

@@ -16,6 +16,7 @@ import { setupImport, renderSidebar } from './ui/sidebar.js';
 import { setupFixMouseEvents, bindFixEvents, onFixApply } from './fix/fixModule.js';
 import { setupComposeMouseEvents, bindComposeEvents, loadComposer, onComposeApply } from './compose/composeModule.js';
 import { bindMaskEvents, refreshMaskPanel } from './mask/maskModule.js';
+import { setupRowMouseEvents, bindRowEvents } from './rows/rowModule.js';
 import { setupIO } from './io/ioManager.js';
 
 // ════════════════════════════════════════════════════════
@@ -44,6 +45,10 @@ export function init() {
     });
     setupComposeMouseEvents();
     bindComposeEvents();
+
+    // Row module (step 3 between compose and mask)
+    setupRowMouseEvents();
+    bindRowEvents();
 
     // Mask module
     bindMaskEvents();
