@@ -181,8 +181,7 @@ export class PathFactory {
   }
 
   private isValideTile(tile: Tile): boolean {
-    const isVal = (tile: Tile) => !tile.wcBuild || !tile.isBlock;
-    return isVal(tile) && tile.nearTiles.filter(isVal).length === 4;
+    return !tile.wcBuild && !tile.isBlock && tile.isLoaded; // && tile.nearTiles.filter(isVal).length === 4;
   }
 
   private score(t1: Tile, t2: Tile): number {
@@ -272,6 +271,6 @@ export class PathFactory {
   }
 
   static canMove(t1: Tile, t2: Tile): boolean {
-    return !(t2.isBlock || Math.abs(t1.lvl - t2.lvl) > 2);
+    return !t1.isBlock && !t2.isBlock && Math.abs(t1.lvl - t2.lvl) <= 2;
   }
 }

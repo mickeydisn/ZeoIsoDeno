@@ -1,68 +1,56 @@
 // ════════════════════════════════════════════════════════
-//  SIDEBAR UI
+//  SIDEBAR — Asset list & batch import
 // ════════════════════════════════════════════════════════
 import { state } from '../state.js';
-import { selectAsset } from '../app.js';
+import { selectAsset, getAsset } from '../app.js';
+import { setupAssetFromImport, loadFixImage } from '../fix/fixModule.js';
+import { syncRowsFromWorkspace, renderRowPanel } from '../rows/rowModule.js';
+import { loadComposer } from '../compose/composeModule.js';
+import { refreshMaskPanel } from '../mask/maskModule.js';
 
 const $ = id => document.getElementById(id);
 
-// ════════════════════════════════════════════════════════
-//  IMPORT
-// ════════════════════════════════════════════════════════
 export function setupImport() {
     $('batchInput').addEventListener('change', e => {
-        const files = Array.from(e.target.files);
-        if (!files.length) return;
-        let n = 0;
-        files.forEach(file => {
+        Array.from(e.target.files).forEach(f => {
             const r = new FileReader();
             r.onload = ev => {
-                if (!state.assets.find(a => a.originalName === file.name)) {
-                    state.assets.push({
-                        originalName: file.name,
-                        dataURL: ev.target.result,
-                        fixParams: null,
-                        composerParams: null,
-                        maskParams: null,
-                        fixCanvasDataURL: null,
-                        composerCanvasDataURL: null,
-                        maskedCanvasDataURL: null,
-                    });
-                }
-                if (++n === files.length) {
-                    renderSidebar();
-                    if (state.currentAssetIdx === -1) selectAsset(0);
-                }
+                const img = new Image();
+                img.onload = () => { setupAssetFromImport(img, f.name); renderSidebar(); };
+                img.src = ev.target.result;
             };
-            r.readAsDataURL(file);
+            r.readAsDataURL(f);
         });
-        $('batchInput').value = '';
+        e.target.value = '';
     });
 }
 
-// ════════════════════════════════════════════════════════
-//  SIDEBAR
-// ════════════════════════════════════════════════════════
 export function renderSidebar() {
-    const assetListEl = $('assetList');
-    const assetCountBadge = $('assetCountBadge');
-    const progressBar = $('progressBar');
-
-    assetCountBadge.textContent = state.assets.length;
-    if (!state.assets.length) {
-        assetListEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:.75em;">Importez des PNG</div>';
-        progressBar.style.width = '0%';
-        return;
-    }
-    const done = state.assets.filter(a => a.fixCanvasDataURL && a.composerCanvasDataURL).length;
-    progressBar.style.width = Math.round(done / state.assets.length * 100) + '%';
-    assetListEl.innerHTML = '';
+    const list = $('assetList');
+    list.innerHTML = '';
+    const allValidated = a => a.fix.validated && a.rows.validated && a.compose.validated && a.mask.validated;
+    const anyProcess = a => a.rows.validated || a.compose.validated || a.mask.validated;
     state.assets.forEach((a, i) => {
         const div = document.createElement('div');
-        const hF = !!a.fixCanvasDataURL, hC = !!a.composerCanvasDataURL, hM = !!a.maskedCanvasDataURL;
-        div.className = `asset-entry ${hM ? 'done-mask' : hC ? 'done-both' : hF ? 'done-fix' : ''} ${i === state.currentAssetIdx ? 'active' : ''}`;
-        div.innerHTML = `<span class="status-dot"></span><span class="asset-name" title="${a.originalName}">${a.originalName}</span>`;
-        div.addEventListener('click', () => selectAsset(i));
-        assetListEl.appendChild(div);
+        div.className = 'asset-item' + (i === state.currentAssetIdx ? ' active' : '');
+        let cls, entryCls;
+        if (allValidated(a)) { cls = 'badge badge-done'; entryCls = 'done-all'; }
+        else if (anyProcess(a)) { cls = 'badge badge-process'; entryCls = 'done-process'; }
+        else if (a.fix.validated) { cls = 'badge badge-recadre'; entryCls = 'done-fix'; }
+        else { cls = 'badge badge-todo'; entryCls = ''; }
+        if (entryCls) div.className += ' ' + entryCls;
+        div.innerHTML = `<span class="${cls}">●</span> ${a.fileName || `Asset ${i+1}`}`;
+        div.addEventListener('click', () => {
+            selectAsset(i);
+            loadFixImage(a);
+            renderSidebar();
+            // Refresh current tab view after switching asset
+            const a2 = getAsset();
+            if (state.currentTab === 'rows' && a2 && a2.fix.canvas) { syncRowsFromWorkspace(); renderRowPanel(); }
+            else if (state.currentTab === 'compose' && a2) { loadComposer(a2); }
+            else if (state.currentTab === 'mask' && a2) { refreshMaskPanel(); }
+        });
+        list.appendChild(div);
     });
+    $('assetCountBadge').textContent = state.assets.length;
 }

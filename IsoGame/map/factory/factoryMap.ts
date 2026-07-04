@@ -43,7 +43,13 @@ export class FactoryMap {
       const chunk = new Chunk(cx, cy);
       chunkRow.set(cy, chunk);
       // Fire-and-forget: load saved deltas after chunk generation
-      this.loadChunkDeltas(chunk);
+      this.loadChunkDeltas(chunk).then(() => {
+        console.log(
+          `[FactoryMap] Finished loading deltas for chunk (${cx}, ${cy})`,
+        );
+        chunk.isLoaded = true; // Mark chunk as fully loaded after applying deltas
+      });
+      console.log(`[FactoryMap] Returning chunk (${cx}, ${cy})`);
     }
     return chunkRow.get(cy)!;
   }
@@ -69,9 +75,9 @@ export class FactoryMap {
       );
       if (webDeltas && webDeltas.length > 0) {
         chunk.applyDeltas(webDeltas);
-        console.log(
-          `[FactoryMap] WEB Applied ${webDeltas.length} deltas to chunk ${chunk.cx}_${chunk.cy}`,
-        );
+        // console.log(
+        //   `[FactoryMap] WEB Applied ${webDeltas.length} deltas to chunk ${chunk.cx}_${chunk.cy}`,
+        // );
         return; // Web is authoritative — stop here. Server may not have the latest changes yet.
       }
 
@@ -82,9 +88,9 @@ export class FactoryMap {
       );
       if (serverDeltas && serverDeltas.length > 0) {
         chunk.applyDeltas(serverDeltas);
-        console.log(
-          `[FactoryMap] SERVER Applied ${serverDeltas.length} deltas to chunk ${chunk.cx}_${chunk.cy}`,
-        );
+        // console.log(
+        //   `[FactoryMap] SERVER Applied ${serverDeltas.length} deltas to chunk ${chunk.cx}_${chunk.cy}`,
+        // );
       }
     } catch (error) {
       console.error(

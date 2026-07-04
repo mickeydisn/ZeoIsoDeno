@@ -22,7 +22,8 @@ export class CityEntity {
 
   name: string;
 
-  waitingTickCount: number;
+  tickCount: number;
+  tickWaitingCount: number;
   currentGoal: EntityGoal | null;
   nextGoalList: EntityGoal[] = [];
 
@@ -35,12 +36,14 @@ export class CityEntity {
     this.tile = FactoryMap.getInstance().getTile(0, 0);
 
     this.lvl = 0;
-    this.assetkey = `ghost`;
+    const randomId = Math.floor(Math.random() * 27) + 1;
+    this.assetkey = `PersoCity-${randomId.toString().padStart(2, "0")}`;
+    console.log("CityEntity", this.assetkey, this.tile.x, this.tile.y);
     const randomHue = (Math.floor(Math.random() * 16)) * 16;
-    this.assetFilter = `#_H${randomHue}_C165_S225`;
+    this.assetFilter = `#_C128_S128`;
     this.offset = { x: 0, y: 0 };
 
-    this.speed = .015;
+    this.speed = .015 * 4;
     this.directionCooldown = 0;
     this.direction = "S";
 
@@ -48,7 +51,8 @@ export class CityEntity {
     this.name = CITIZEN_NAME.rand();
     // object that stor the current step data
 
-    this.waitingTickCount = 0;
+    this.tickCount = 0;
+    this.tickWaitingCount = 0;
     this.currentGoal = null;
     this.nextGoalList = [
       { id: "randomMove", waitCount: 20 * 4 },
@@ -56,9 +60,11 @@ export class CityEntity {
   }
 
   get items() {
+    const animFrame = ((this.tickCount / 10) % 10) * 20;
     return {
       t: "Svg",
-      key: this.assetkey + "_" + this.direction + this.assetFilter,
+      key: this.assetkey + "_" + this.direction + this.assetFilter, //  + "_H" +
+      // animFrame.toString(),
       lvl: this.lvl,
       off: { x: this.offset.x, y: this.offset.y },
       z: 1000,
@@ -81,7 +87,7 @@ export class CityEntity {
   }
 
   clearGoal() {
-    this.waitingTickCount = 0;
+    this.tickWaitingCount = 0;
     this.currentGoal = null;
   }
 
@@ -131,7 +137,6 @@ export class CityEntity {
 
   moveOffet(dx: number, dy: number, _dh: number) {
     // Tile not Change .
-
     const dox = dx != 0
       ? dx
       : -(this.offset.x > 0 ? 1 : this.offset.x < 0 ? -1 : 0);
@@ -179,17 +184,16 @@ export class CityEntity {
   }
 
   doTick() {
-    if (this.waitingTickCount > 0) {
-      this.waitingTickCount -= 1;
+    if (this.tickWaitingCount > 0) {
+      this.tickWaitingCount -= 1;
       return;
     }
-    this.waitingTickCount = 0;
+    this.tickWaitingCount = 0;
+    // this.tickCount += 1;
     const chain = [
       behavior_noGoal,
       // behaviorMove_start,
-
       behaviorMove_getRandomGoal,
-
       behaviorMove_GoalIN,
       behaviorMove_getPath,
       behaviorMove_nextPossition,
@@ -217,16 +221,17 @@ const behavior_noGoal = {
     return entity.currentGoal == null;
   },
   do: (entity: CityEntity) => {
+    entity.tickCount = 0;
     const nextGoal = entity.nextGoalList.shift();
     if (!nextGoal) {
       entity.nextGoalList = [
-        { id: "randomMove", waitCount: 20 * 4 },
+        { id: "randomMove", waitCount: 0 },
       ];
       return;
     }
 
     if (nextGoal.waitCount) {
-      entity.waitingTickCount = nextGoal.waitCount;
+      entity.tickWaitingCount = nextGoal.waitCount;
     }
     entity.currentGoal = nextGoal;
   },
@@ -251,8 +256,8 @@ const behaviorMove_start = {
 const behaviorMove_getRandomGoal = {
   name: "behaviorMove_getRandomGoal",
   isValidate: (entity: CityEntity) =>
-    entity.currentGoal?.id.localeCompare("randomMove") == 0 &&
-    !entity.currentGoal?.sData?.moveGoal,
+    !entity.currentGoal?.sData?.moveGoal &&
+    entity.currentGoal?.id.localeCompare("randomMove") == 0,
   do: (entity: CityEntity) => {
     const currentGoal = entity.currentGoal as EntityGoal;
     const randomX = Math.round(Math.random() * 40 - 20);
@@ -276,9 +281,10 @@ const behaviorMove_GoalIN = {
       entity.currentGoal.sData.moveGoal.y == entity.tile.y),
 
   do: (entity: CityEntity) => {
+    entity.moveOffet(-entity.offset.x, -entity.offset.y, 0);
     entity.offset.x = 0;
     entity.offset.y = 0;
-    entity.direction = "S";
+    // entity.direction = "S";
     entity.clearGoal();
   },
 };

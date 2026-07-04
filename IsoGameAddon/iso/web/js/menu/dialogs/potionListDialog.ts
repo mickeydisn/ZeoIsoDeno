@@ -171,13 +171,13 @@ function addAdminButtons(
 
   // +1 Use
   const useBtn = document.createElement("button");
-  useBtn.textContent = "+1";
+  useBtn.textContent = "+100";
   useBtn.title = "Add one use";
   useBtn.style.cssText =
     "padding:2px 6px;border:none;border-radius:3px;background:#a84;color:#fff;cursor:pointer;font-size:0.7rem;";
   useBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    potion.remainingUses += 1;
+    potion.remainingUses += 100;
     sendSavePotion(potion, gameWorker);
     // Update uses badge in the top line
     const badge = row.querySelector<HTMLElement>(".potion-uses-badge");

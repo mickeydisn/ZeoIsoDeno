@@ -1,7 +1,7 @@
 import { initHandlers } from "./game/handler/initHandlers.ts";
 import { renderHandlers } from "./game/handler/renderHandlers.ts";
 import { interactionHandlers } from "./game/handler/interactionHandlers.ts";
-import { toolHandlers } from "./game/handler-tools.ts/toolHandlers.ts";
+import { toolHandlers } from "./game/handler-tools/toolHandlers.ts";
 import { queryHandlers } from "./game/handler/queryHandlers.ts";
 import {
   buildHandlerIndexes,

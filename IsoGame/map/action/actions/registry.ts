@@ -1,4 +1,3 @@
-
 // ─── Block / Frise ────────────────────────────────────────────────────────────
 import { setBlocked, setBlockedSquare } from "./block/setBlocked.action.ts";
 import { setFrise, setFriseSquare } from "./block/setFrise.action.ts";
@@ -6,10 +5,10 @@ import { clearAll, clearAllSquare } from "./block/clearAll.action.ts";
 
 // ─── Item ─────────────────────────────────────────────────────────────────────
 import {
-  itemAddKey,
-  itemForceKey,
   clearItem,
   clearItemSquare,
+  itemAddKey,
+  itemForceKey,
   temporaryItemsForceKey,
 } from "./item/item.actions.ts";
 
@@ -17,23 +16,24 @@ import {
 import {
   clearLvl,
   clearLvlSquare,
+  lvlAvgBorder,
+  lvlAvgSquare,
+  lvlByStep,
+  lvlFlatSquare,
   lvlSet,
+  lvlSetLine,
+  lvlSetShape,
   lvlUp,
   lvlUpSquare,
-  lvlFlatSquare,
-  lvlAvgSquare,
-  lvlAvgBorder,
-  lvlSetShape,
-  lvlSetLine,
 } from "./lvl/lvl.actions.ts";
 
 // ─── Color ────────────────────────────────────────────────────────────────────
 import {
-  color,
-  colorSquare,
   clearColor,
   clearColorSquare,
+  color,
   colorLine,
+  colorSquare,
 } from "./color/color.actions.ts";
 
 // ─── Color ────────────────────────────────────────────────────────────────────
@@ -52,48 +52,47 @@ import { lvlGradientShape } from "./lvl/lvlGradientShape.action.ts";
 
 export const ACTION_REGISTRY = [
   // block / frise
-  setBlocked, 
+  setBlocked,
   setBlockedSquare,
-  setFrise, 
+  setFrise,
   setFriseSquare,
-  clearAll, 
+  clearAll,
   clearAllSquare,
   // item
   itemAddKey,
   itemForceKey,
-  clearItem, 
+  clearItem,
   clearItemSquare,
   temporaryItemsForceKey,
 
   // level
-  clearLvl, 
+  clearLvl,
   clearLvlSquare,
-  lvlSet, 
+  lvlSet,
   lvlSetShape,
   lvlSetLine,
-  lvlUp, 
+  lvlByStep,
+  lvlUp,
   lvlUpSquare,
   lvlFlatSquare,
   lvlAvgSquare,
   lvlAvgBorder,
-  // lvlRamp, 
+  // lvlRamp,
   lvlRampShape,
   lvlSmoothBorder,
   lvlGradientShape,
   // color
-  color, 
+  color,
   colorSquare,
   colorLine,
-  clearColor, 
+  clearColor,
   clearColorSquare,
   // color noise
-  colorNoise, 
+  colorNoise,
   colorNoiseShape,
   colorNoiseLine,
   colorSmoothShape,
   colorGradientShape,
- ] as const;
-
+] as const;
 
 export type RegistryAction = typeof ACTION_REGISTRY[number];
-

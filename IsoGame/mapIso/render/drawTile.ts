@@ -97,24 +97,24 @@ export const drawTile = (
 
   // ----------------------
   // IsFrise
-  if (metaTile.isFrise) {
+  if (_ctx.conf.showIsFrise && metaTile.isFrise) {
     drawSurfaceFlat(
       _ctx,
       xx,
       yy,
-      currentlvl,
+      currentlvl + .1 * LVL_DISPLAY_SCALE,
       "rgba(0, 0, 255, 0.2)",
     );
   }
   // ----------------------
   // Block
-  if (metaTile.isBlock) {
+  if (_ctx.conf.showIsBlock && metaTile.isBlock) {
     drawSurfaceFlat(
       _ctx,
       xx,
       yy,
-      currentlvl,
-      "rgba(0, 0, 0, 0.5)",
+      currentlvl + .2 * LVL_DISPLAY_SCALE,
+      "rgba(255, 0, 0, 0.2)",
     );
   }
 
@@ -124,8 +124,10 @@ export const drawTile = (
 
   // 3. Collect Items/Entities for Display
   // Flatten entities items into the main list
-  const entitiesItems = metaTile.entities.flatMap((x: any) => x.items);
-
+  const entitiesItems = metaTile.entities.flatMap((e: any) => e.items);
+  entitiesItems.forEach((item: any) => {
+    item.lvl = item.lvl ?? 0; // Ensure each entity item has a level for sorting
+  });
   const items = [
     ...metaTile.items,
     ...metaTile.temporatyItems,
@@ -142,9 +144,11 @@ export const drawTile = (
   // Handle Box Node
   if (
     _ctx.conf.showTileBox &&
+    _ctx.conf.mapGridSize <= 40 &&
     _ctx.conf.mapGridMod == 1 &&
     metaTile.itemsBox
   ) {
+    // console.log("==> drawTile: itemsBox", metaTile.itemsBox);
     items.push({ t: "Svg", key: "statue_column_NE#C100_H60" });
 
     const dist_x = Math.abs((size / 2) - (xx + 1.5) + offx);

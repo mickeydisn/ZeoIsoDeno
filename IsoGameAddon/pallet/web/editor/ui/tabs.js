@@ -1,9 +1,11 @@
 // ════════════════════════════════════════════════════════
-//  TABS
+//  TABS — tab panel switching
 // ════════════════════════════════════════════════════════
 import { state } from '../state.js';
+import { syncRowsFromWorkspace, renderRowPanel } from '../rows/rowModule.js';
 import { refreshMaskPanel } from '../mask/maskModule.js';
-import { renderRowPanel, syncRowsFromWorkspace } from '../rows/rowModule.js';
+import { loadComposer } from '../compose/composeModule.js';
+import { getAsset } from '../app.js';
 
 const $ = id => document.getElementById(id);
 
@@ -13,14 +15,13 @@ export function setupTabs() {
         document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
         t.classList.add('active');
         $('panelFix').classList.toggle('visible', state.currentTab === 'fix');
-        $('panelCompose').classList.toggle('visible', state.currentTab === 'compose');
         $('panelRows').classList.toggle('visible', state.currentTab === 'rows');
+        $('panelCompose').classList.toggle('visible', state.currentTab === 'compose');
         $('panelMask').classList.toggle('visible', state.currentTab === 'mask');
 
-        if (state.currentTab === 'rows') {
-            syncRowsFromWorkspace();
-            renderRowPanel();
-        }
-        if (state.currentTab === 'mask') refreshMaskPanel();
+        const a = getAsset();
+        if (state.currentTab === 'rows' && a && a.fix.canvas) { syncRowsFromWorkspace(); renderRowPanel(); }
+        else if (state.currentTab === 'compose' && a) { loadComposer(a); }
+        else if (state.currentTab === 'mask' && a) { refreshMaskPanel(); }
     }));
 }

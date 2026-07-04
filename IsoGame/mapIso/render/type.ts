@@ -60,6 +60,6 @@ export const MapGridLaoutDefault: MapGridLaout = {
   mapGridTileScale: 1.4,
   mapGridMod: 1,
   showTileBox: false,
-  showIsFrise: false,
-  showIsBlock: false,
+  showIsFrise: true,
+  showIsBlock: true,
 };

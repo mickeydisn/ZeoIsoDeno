@@ -38,6 +38,14 @@ function applyAvgLvl(
   );
   tile.lvl = sum / count;
 }
+function applyStepLvl(
+  x: number,
+  y: number,
+  ctx: ActionContext,
+): void {
+  const tile = ctx.fm.getTile(x, y);
+  tile.lvl = Math.floor(tile.lvl * 1) / 1; // Round down to nearest multiple of 3
+}
 
 // ---------------------
 // clearLvl
@@ -219,5 +227,36 @@ export const lvlAvgBorder = defineAction<"lvlAvgBorder", LvlConfig>(
       applyAvgLvl(x - fCenter - 1, yy, 5, ctx);
       applyAvgLvl(x + (size - fCenter), yy, 5, ctx);
     });
+  },
+);
+
+// ---------------------
+// lvlByStep — smooths the ring of tiles just outside the selection box
+// ---------------------
+
+export const lvlByStep = defineAction<"lvlByStep", LvlConfig>(
+  "lvlByStep",
+  (conf, ctx) => {
+    const size = conf.size ?? 1;
+    const box = new TilesMatrix(size, conf.x, conf.y);
+    box.tiles.forEach((row) =>
+      row.forEach((cell) => applyStepLvl(cell.x, cell.y, ctx))
+    );
+  },
+  {
+    label: "Level-By-Step",
+    description:
+      "Smooths every tile in a square by rounding down to the nearest multiple of 3",
+    fields: [
+      {
+        key: "size",
+        type: "range",
+        label: "Area Size",
+        default: 3,
+        min: 1,
+        max: 21,
+        step: 2,
+      },
+    ],
   },
 );

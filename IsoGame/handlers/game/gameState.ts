@@ -43,8 +43,6 @@ export class GameState {
   }
   constructor() {}
 
-  overlayPoint: Array<Point2D> = [];
-
   playerState: PlayerState = {
     username: "mickey-test",
     inventory: [],
@@ -56,7 +54,6 @@ export class GameState {
     tileScaleSize: 1.4,
     tileScaleMod: 1,
   };
-
   setIsoConf(isoConf: CanvasMapConf) {
     this.isoConf = isoConf;
   }
@@ -108,6 +105,11 @@ export class GameState {
   mouseScreenY: number = 0;
   mouseWorldX: number = 0;
   mouseWorldY: number = 0;
+
+  // Postition tracking
+  save = {
+    p0: { x: 0, y: 0 },
+  };
 
   public setMouseScreen(
     _drawCtx: DrawContext,

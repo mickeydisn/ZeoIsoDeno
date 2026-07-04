@@ -102,9 +102,8 @@ body {
 .asset-entry:hover { border-color:var(--purple); }
 .asset-entry.active { border-color:var(--purple); background:#1a2a5e; }
 .asset-entry.done-fix .status-dot { background:#ffc107; }
-.asset-entry.done-compose .status-dot { background:var(--teal); }
-.asset-entry.done-both .status-dot { background:var(--green); }
-.asset-entry.done-mask .status-dot { background:var(--pink2); }
+.asset-entry.done-process .status-dot { background:var(--teal); }
+.asset-entry.done-all .status-dot { background:var(--green); }
 .status-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex-shrink:0; }
 .asset-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .progress-bar-wrap { background:var(--card); border-radius:10px; height:5px; overflow:hidden; margin:5px 8px; }
@@ -167,6 +166,10 @@ body {
 .btn-group { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
 .badge { display:inline-block; padding:2px 6px; border-radius:9px; font-size:.68em; font-weight:700; }
 .badge-purple { background:var(--purple); color:#fff; }
+.badge-todo { background:var(--muted); color:#fff; }
+.badge-recadre { background:#ffc107; color:#222; }
+.badge-process { background:var(--teal); color:#fff; }
+.badge-done { background:var(--green); color:#fff; }
 .sec-title { font-size:.7em; font-weight:700; color:var(--purple); text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px; }
 .checkbox-row { display:flex; align-items:center; gap:5px; font-size:.78em; cursor:pointer; }
 .checkbox-row input { accent-color:var(--purple); }

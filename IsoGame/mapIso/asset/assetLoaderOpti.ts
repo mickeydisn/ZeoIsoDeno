@@ -1,15 +1,14 @@
-
 // Define a compatible canvas type for both Deno and browser
 type CanvasType = OffscreenCanvas; // | import("jsr:@gfx/canvas@0.5.6").Canvas;
 // type ImageType = ImageBitmap; // | import("jsr:@gfx/canvas@0.5.6").Image;
 
 import {
   assetOptiConfig,
+  assetPersoConfig,
   TypeAssetGroupConfig,
   TypeAssetImageConfig,
 } from "./assetOptiConfig.ts";
 import { canvasFilterStrToValue, colorVariation } from "./assetUtils.ts";
-
 
 export type TypeAsset = {
   group: string;
@@ -23,7 +22,7 @@ export class AssetLoaderOpti {
   countLoad: number = 0;
 
   constructor() {
-    this.assetList = assetOptiConfig;
+    this.assetList = [];
   }
 
   // Static method to create an instance and handle async loading
@@ -31,31 +30,37 @@ export class AssetLoaderOpti {
     assetList?: TypeAssetGroupConfig[],
   ): Promise<AssetLoaderOpti> {
     const loader = new AssetLoaderOpti();
-    await loader.loadAssetFiles(assetList || assetOptiConfig); // Load the assets after instantiation
+    await loader.loadAssetFiles(
+      assetList ? assetList : [...assetOptiConfig, ...assetPersoConfig],
+    ); // Load the assets after instantiation
 
     return loader;
   }
 
-  async loadAssetFiles(assetList?: TypeAssetGroupConfig[]) {
-    const assList = assetList ? assetList : this.assetList;
+  async loadAssetFiles(assetList: TypeAssetGroupConfig[]) {
+    this.assetList = assetList;
 
     async function loadImage(url: string): Promise<ImageBitmap> {
       const response = await fetch(url);
       if (!response.ok) {
-        throw new Error(`Failed to load image: ${url} (status: ${response.status})`);
+        throw new Error(
+          `Failed to load image: ${url} (status: ${response.status})`,
+        );
       }
       return createImageBitmap(await response.blob()); // No <img>, direct GPU data
     }
 
     // Use absolute path from origin to ensure correct resolution in web worker context
-    const baseUrl = typeof self !== 'undefined' && self.location ? self.location.origin : '';
+    const baseUrl = typeof self !== "undefined" && self.location
+      ? self.location.origin
+      : "";
 
-    const promises = assList.map(
+    const promises = this.assetList.map(
       async (assetInfo: TypeAssetGroupConfig): Promise<void> => {
         this.countLoad++;
         try {
           // Remove leading "./" from src and build absolute path
-          const cleanSrc = assetInfo.src.replace(/^\.\//, '');
+          const cleanSrc = assetInfo.src.replace(/^\.\//, "");
           const url = `${baseUrl}/${cleanSrc}`;
           console.log(`Loading asset: ${url}`);
           const image: ImageBitmap = await loadImage(url);
@@ -86,11 +91,25 @@ export class AssetLoaderOpti {
     assetInfo: TypeAssetGroupConfig,
     sourceImg: ImageBitmap,
   ): void {
+    const imgType = assetInfo.imgType || "default";
+
+    if (imgType === "perso") {
+      this.loadAssetImagePerso(assetInfo, sourceImg);
+    } else {
+      this.loadAssetImageImage(assetInfo, sourceImg);
+    }
+  }
+
+  private loadAssetImageImage(
+    assetInfo: TypeAssetGroupConfig,
+    sourceImg: ImageBitmap,
+  ): void {
     // "imgHeight": 224,
     // "imgWidth": 192,
     const imgWidth = assetInfo.imgWidth | 256 - 64;
     const imgHeight = assetInfo.imgHeight | 256 - 32;
     const scall = assetInfo.scall ? .7 : 1;
+    const imgType = assetInfo.imgType || "default";
 
     assetInfo.images.map((info: TypeAssetImageConfig, idx: number) => {
       const __cutImage = (wId: number, hId: number) => {
@@ -105,7 +124,6 @@ export class AssetLoaderOpti {
           imgHeight * hId, // + Math.floor(imgHeight * (1 - scall)),
           Math.floor(imgWidth), // * scall),
           imgHeight,
-          
           0,
           0, //  + (assetInfo.scall ? 32 : 0),
           imgWidth,
@@ -158,6 +176,82 @@ export class AssetLoaderOpti {
           "cimage": __cutImage(7, idx),
         };
       }
+    });
+  }
+
+  private loadAssetImagePerso(
+    assetInfo: TypeAssetGroupConfig,
+    sourceImg: ImageBitmap,
+  ): void {
+    // "imgHeight": 224,
+    // "imgWidth": 192,
+    const imgWidth = assetInfo.imgWidth | 256 - 64;
+    const imgHeight = assetInfo.imgHeight | 256 - 32;
+    const scall = assetInfo.scall ? .7 : 1;
+
+    assetInfo.images.map((info: TypeAssetImageConfig, idx: number) => {
+      const __cutImage = (wId: number, hId: number) => {
+        const destCanvas = new OffscreenCanvas(192, 224);
+        const ctx = destCanvas.getContext("2d", { willReadFrequently: true });
+        if (ctx == null) return destCanvas;
+
+        // Draw the cut portion of the source image onto the destination canvas
+        ctx.drawImage(
+          sourceImg,
+          imgWidth * wId, //  + Math.floor(imgWidth * ((1 - scall) / 2)),
+          imgHeight * hId, // + Math.floor(imgHeight * (1 - scall)),
+          Math.floor(imgWidth), // * scall),
+          imgHeight,
+          0,
+          0, //  + (assetInfo.scall ? 32 : 0),
+          imgWidth,
+          imgHeight, // Math.floor(imgHeight / scall),
+        );
+        // dest.ctx.drawImage(cutImg,0, 0, dest.width, dest.height);
+        return destCanvas;
+      };
+
+      this.assetTree[info.label + "_N"] = {
+        "group": assetInfo.group,
+        "label": info.label + "_N",
+        "cimage": __cutImage(0, idx * 2),
+      };
+      this.assetTree[info.label + "_S"] = {
+        "group": assetInfo.group,
+        "label": info.label + "_S",
+        "cimage": __cutImage(1, idx * 2),
+      };
+      this.assetTree[info.label + "_E"] = {
+        "group": assetInfo.group,
+        "label": info.label + "_E",
+        "cimage": __cutImage(2, idx * 2),
+      };
+      this.assetTree[info.label + "_W"] = {
+        "group": assetInfo.group,
+        "label": info.label + "_W",
+        "cimage": __cutImage(3, idx * 2),
+      };
+
+      this.assetTree[info.label + "_NW"] = {
+        "group": assetInfo.group,
+        "label": info.label + "_NW",
+        "cimage": __cutImage(0, idx * 2 + 1),
+      };
+      this.assetTree[info.label + "_SW"] = {
+        "group": assetInfo.group,
+        "label": info.label + "_SW",
+        "cimage": __cutImage(1, idx * 2 + 1),
+      };
+      this.assetTree[info.label + "_SE"] = {
+        "group": assetInfo.group,
+        "label": info.label + "_SE",
+        "cimage": __cutImage(2, idx * 2 + 1),
+      };
+      this.assetTree[info.label + "_NE"] = {
+        "group": assetInfo.group,
+        "label": info.label + "_NE",
+        "cimage": __cutImage(3, idx * 2 + 1),
+      };
     });
   }
 

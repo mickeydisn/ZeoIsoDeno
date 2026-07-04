@@ -239,4 +239,11 @@ export class Tile extends RawTile {
   get nearSquareTiles() {
     return [...this.nearTiles, ...this.nearCrossTiles];
   }
+
+  get getChuck() {
+    return FactoryMap.getInstance().getChunk(this.cx, this.cy);
+  }
+  get isLoaded() {
+    return this.getChuck?.isLoaded ?? false;
+  }
 }

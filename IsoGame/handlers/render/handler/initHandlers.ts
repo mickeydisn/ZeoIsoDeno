@@ -28,6 +28,7 @@ const iniRender: TRenderHandlerAction<EventInitWorker> = renderAction<
     g: TypeAssetGroupConfig,
   ) => ({
     group: g.group,
+    imgType: g.imgType,
     images: g.images.map((i: TypeAssetImageConfig) => i.label),
   }));
   _ctx.handler.send({

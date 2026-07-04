@@ -134,7 +134,7 @@ export function initAssetGroups(
 // ============================================================================
 // HANDEL
 export function handleAssetGroups(
-  groups: Array<{ group: string; images: string[] }>,
+  groups: Array<{ group: string; imgType: string; images: string[] }>,
 ): void {
   if (!assetImageListEl) return;
 

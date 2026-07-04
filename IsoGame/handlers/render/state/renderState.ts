@@ -1,4 +1,5 @@
 import { Point2D } from "@iso-game/handlers/utils/renderUtils.ts";
+import { MapGridLaoutDefault } from "@iso-game/mapIso/render/type.ts";
 
 export const CANVAS_WIDTH = 1600;
 export const CANVAS_HEIGHT = 800;
@@ -14,9 +15,10 @@ export class RenderState {
   mapGridSize: number = 40;
   mapGridMod: number = 1.4;
   mapGridTileScale: number = 1;
-  showTileBox: boolean = false;
-  showIsFrise: boolean = false;
-  showIsBlock: boolean = false;
+
+  showTileBox: boolean = MapGridLaoutDefault.showTileBox;
+  showIsFrise: boolean = MapGridLaoutDefault.showIsFrise;
+  showIsBlock: boolean = MapGridLaoutDefault.showIsBlock;
 
   x: number = 0;
   y: number = 0;

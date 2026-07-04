@@ -39,6 +39,7 @@ const initWorker: TGameHandlerAction<EventInitWorker> = gameAction<
   // deno-lint-ignore no-explicit-any
   const assetGroups = _ctx.gameloop.assetLoader.assetList.map((g: any) => ({
     group: g.group,
+    imgType: g.imgType,
     // deno-lint-ignore no-explicit-any
     images: g.images.map((i: any) => i.label),
   }));

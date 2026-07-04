@@ -6,8 +6,10 @@ import { structureTools } from "./structureTools.ts";
 import { potionTools } from "./tiles/potionTool.ts";
 import { AnyToolAction, ToolContext } from "./type.ts";
 import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
+import { layerTools } from "@iso-game/handlers/game/tools/tiles/layerTools.ts";
 
 export const TOOL_ACTION_REGISTRY = [
+  ...layerTools,
   ...terrainTools,
   ...colorTools,
   ...assetTools,

@@ -1,67 +1,48 @@
 // ════════════════════════════════════════════════════════
 //  GLOBAL STATE
 // ════════════════════════════════════════════════════════
-import { DEFAULT_COLS } from './constants.js';
-
 export const state = {
     assets: [],
     currentAssetIdx: -1,
     currentTab: 'fix',
 
-    // fix
+    // fix — editing state (temporary until validated)
     fixImage: null,
     rowYPos: [],
     colXPos: [],
-    activeDragLine: 0, // 0=none, >0 = row index, <0 = -(col index)
+    activeDragLine: 0,
     fixScale: 1,
     fixHscb: { hue:0, sat:0, con:0, bri:0 },
 
-    // composer
-    workspace: [],
-    selectedCell: null,
-    compRows: 1,
-    compCols: DEFAULT_COLS,
-
-    // normal drag (offset X/Y inside cell)
-    normalDrag: null,
-
-    // shift-drag
-    shiftDrag: null,
-    shiftDragPos: {x:0,y:0},
-    shiftDragOver: null,
-
-    // rows — per-row transformation state
-    // rows[i] = { scale, offsetX, offsetY, flipH, mirrorSide, hue, sat, con, bri }
+    // rows — per-row editing state
     rows: [],
     selectedRowIdx: -1,
 
-    // mask — one set of 4 masks, shared
-    maskState: defaultMaskState(),
-    maskSourceImg: null,
+    // compose — per-cell editing state
+    workspace: [],
+    selectedCell: null,
+    compRows: 1,
+    compCols: 4,
+    normalDrag: null,
+    shiftDrag: null,
+    shiftDragOver: null,
+
+    // mask — editing state
+    maskState: { bottom:{on:false,x:0,y:0}, top:{on:false,x:0,y:0}, left:{on:false,x:0,y:0}, right:{on:false,x:0,y:0} },
 };
 
-export function defaultMaskState() {
-    return {
-        bottom: { on:false, x:0, y:0 },
-        top:    { on:false, x:0, y:0 },
-        left:   { on:false, x:0, y:0 },
-        right:  { on:false, x:0, y:0 },
-    };
-}
-
 export function defaultRowState() {
-    return { scale:1, offsetX:0, offsetY:0, flipH:false, mirrorSide:0, hue:0, sat:0, con:0, bri:0 };
+    return { scale:1, offsetX:0, offsetY:0, hue:0, sat:0, con:0, bri:0 };
 }
 
-export function resetStateForNewSession() {
-    state.assets = [];
-    state.currentAssetIdx = -1;
-    state.currentTab = 'fix';
-    state.fixImage = null;
-    state.workspace = [];
-    state.selectedCell = null;
-    state.rows = [];
-    state.selectedRowIdx = -1;
-    state.maskState = defaultMaskState();
-    state.maskSourceImg = null;
+export function createAsset(sourceImage, fileName) {
+    return {
+        sourceImage,
+        fileName: fileName || 'unnamed',
+        // Validated stages store params + baked output
+        fix: { validated: false, params: null, canvas: null },
+        rows: { validated: false, params: null, canvas: null },
+        compose: { validated: false, params: null, canvas: null },
+        mask: { validated: false, params: null, canvas: null },
+    };
 }

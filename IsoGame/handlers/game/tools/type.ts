@@ -32,7 +32,7 @@ export type ToolAction<K extends string, C extends BaseToolConfig> = {
   readonly key: K;
   name: string;
   icon: string;
-  category: "terrain" | "color" | "asset" | "structure" | "inspect";
+  category: "layer" | "terrain" | "color" | "asset" | "structure" | "inspect";
   execute(conf: C, ctx: TGameHandlerContext): void;
 };
 
@@ -50,7 +50,7 @@ export function defineTool<K extends string, C extends BaseToolConfig>(
   key: K,
   name: string,
   icon: string,
-  category: "terrain" | "color" | "asset" | "structure" | "inspect",
+  category: "layer" | "terrain" | "color" | "asset" | "structure" | "inspect",
   execute: (conf: C, ctx: TGameHandlerContext) => void,
 ): ToolAction<K, C> {
   return {

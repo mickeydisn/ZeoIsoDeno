@@ -7,7 +7,7 @@ export type BaseTile = {
   x: number;
   y: number;
   lvl: number;
-}
+};
 
 export class BaseChunk<ITile extends BaseTile> {
   size: number = CHUNK_SIZE;
@@ -16,8 +16,12 @@ export class BaseChunk<ITile extends BaseTile> {
   matrix: ITile[][];
   loaded: boolean = false;
 
-  get x() : number { return this.cx * this.size }
-  get y() : number { return this.cy * this.size }
+  get x(): number {
+    return this.cx * this.size;
+  }
+  get y(): number {
+    return this.cy * this.size;
+  }
 
   constructor(cx: number, cy: number) {
     this.cx = cx;
@@ -31,11 +35,9 @@ export class BaseChunk<ITile extends BaseTile> {
   get(x: number, y: number): ITile {
     return this.matrix[x][y];
   }
-
 }
 
 export class ChunkGen extends BaseChunk<Tile> {
-
   sizeFull: number;
   matrixGen: Tile[][];
   sizeBorder: number = 2;
@@ -56,10 +58,8 @@ export class ChunkGen extends BaseChunk<Tile> {
     // this.smoothMatrix();
     this._copyMatrix();
     this.matrixGen = null!;
-
   }
-  
-  
+
   _initGenMatrix() {
     for (let i = 0; i < this.sizeFull; i++) {
       for (let j = 0; j < this.sizeFull; j++) {
@@ -98,11 +98,10 @@ export class ChunkGen extends BaseChunk<Tile> {
       }
     }
   }
-
 }
 
 export class Chunk extends ChunkGen {
-
+  isLoaded: boolean = false;
   /* Delta system for synchronizing tile changes */
 
   getDeltas(): any[] {
@@ -122,20 +121,15 @@ export class Chunk extends ChunkGen {
   applyDeltas(deltas: any[]) {
     deltas.forEach((delta) => {
       try {
-        const x = delta.x >= 0 ? delta.x % this.size : this.size + (delta.x % this.size);
-        const y = delta.y >= 0 ? delta.y % this.size : this.size + (delta.y % this.size);
         // Ensure positive modulo for negative coordinates
         const rx = ((delta.x % this.size) + this.size) % this.size;
         const ry = ((delta.y % this.size) + this.size) % this.size;
 
-        const colorLen = Array.isArray(delta.color) ? delta.color.length : (delta.color ? delta.color.length : 0);
-        const itemsLen = Array.isArray(delta.items) ? delta.items.length : 0;
-
-        // console.log(`[Chunk ${this.cx}_${this.cy}] applyDelta incoming x:${delta.x} y:${delta.y} -> rx:${rx} ry:${ry} lvl:${delta.lvl} colorLen:${colorLen} itemsLen:${itemsLen}`);
-
         // Normalize color to RGBA array if present
         if (delta.color !== undefined) {
-          const arr = Array.isArray(delta.color) ? delta.color.slice() : Array.from(delta.color);
+          const arr = Array.isArray(delta.color)
+            ? delta.color.slice()
+            : Array.from(delta.color);
           if (arr.length === 3) arr.push(255);
           delta.color = arr;
         }
@@ -146,12 +140,17 @@ export class Chunk extends ChunkGen {
         if (this.matrix[rx] && this.matrix[rx][ry]) {
           this.matrix[rx][ry].applyDelta(delta);
         } else {
-          console.warn(`[Chunk ${this.cx}_${this.cy}] applyDelta target missing for rx:${rx} ry:${ry}`);
+          console.warn(
+            `[Chunk ${this.cx}_${this.cy}] applyDelta target missing for rx:${rx} ry:${ry}`,
+          );
         }
       } catch (e) {
-        console.error(`[Chunk ${this.cx}_${this.cy}] applyDelta error for delta:`, delta, e);
+        console.error(
+          `[Chunk ${this.cx}_${this.cy}] applyDelta error for delta:`,
+          delta,
+          e,
+        );
       }
     });
   }
-
 }

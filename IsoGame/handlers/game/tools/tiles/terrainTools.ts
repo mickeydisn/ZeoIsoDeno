@@ -80,6 +80,20 @@ export const smoothTool = defineTool<"smooth", ToolConfigBrush>(
   },
 );
 
+export const byStepTool = defineTool<"lvlByStep", ToolConfigBrush>(
+  "lvlByStep",
+  "lvlByStep",
+  "📶",
+  "terrain",
+  (conf: ToolConfigBrush, _ctx: TGameHandlerContext) => {
+    tilesActions.doAction(cmd.lvlByStep({
+      x: conf.x,
+      y: conf.y,
+      size: conf.brushSize,
+    }));
+  },
+);
+
 // Plateau tool uses two-click interaction
 let plateauTargetLevel: number | null = null;
 let _plateauStartPos: { x: number; y: number } | null = null;
@@ -129,6 +143,7 @@ export const terrainTools = [
   raiseTerrainTool,
   lowerTerrainTool,
   flattenTool,
+  byStepTool,
   smoothTool,
   plateauTool,
 ];

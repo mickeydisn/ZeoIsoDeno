@@ -80,6 +80,7 @@ const FPS: TScreenHandlerAction<EventInfoFPS> = screenAction<EventInfoFPS>(
 export interface EventAssetGroups extends TBaseMessage<"assetGroups"> {
   groups: Array<{
     group: string;
+    imgType: string;
     images: string[];
   }>;
 }
@@ -120,7 +121,7 @@ const infoCardPositions: TScreenHandlerAction<EventInfoCardPositions> =
     "infoCardPositions",
     (data: EventInfoCardPositions, _ctx: TScreenHandlerContext) => {
       InfoCardManager.getInstance().updateAllPos(data.cards);
-      // console.warn("==> infoCardPosition", data)
+      // console.warn("==> infoCardPosition", data);
     },
   );
 
