@@ -16,6 +16,36 @@ export const flyMenuTab = (gameWorker: Worker) => {
             action: "initCanvasMap",
             mapConf: {
               mapGridSize: 30,
+              mapGridTileScale: 2.5,
+              mapGridMod: 1,
+            },
+          });
+        },
+      },
+      {
+        id: "player",
+        icon: "🧍",
+        callback_select: () => {
+          gameWorker.postMessage({ action: "setActiveTool", toolId: "" });
+          gameWorker.postMessage({
+            action: "initCanvasMap",
+            mapConf: {
+              mapGridSize: 30,
+              mapGridTileScale: 2,
+              mapGridMod: 1,
+            },
+          });
+        },
+      },
+      {
+        id: "player",
+        icon: "🧍",
+        callback_select: () => {
+          gameWorker.postMessage({ action: "setActiveTool", toolId: "" });
+          gameWorker.postMessage({
+            action: "initCanvasMap",
+            mapConf: {
+              mapGridSize: 30,
               mapGridTileScale: 1.6,
               mapGridMod: 1,
             },
