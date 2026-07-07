@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Row Sorter — grid row/cell reorganizer</title>
+<style>
+  :root{
+    --bg:#15181c;
+    --panel:#1e2227;
+    --panel-2:#252a30;
+    --line:#333a42;
+    --text:#e7e9ec;
+    --muted:#8a939c;
+    --accent:#e0a458;
+    --accent-dim:#8a6a3f;
+    --danger:#c96a5b;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--sans); font-size:14px;
+    display:flex; flex-direction:column;
+  }
+  header{
+    display:flex; align-items:center; gap:12px;
+    padding:10px 16px; background:var(--panel);
+    border-bottom:1px solid var(--line);
+    flex-shrink:0; flex-wrap:wrap;
+  }
+  header h1{
+    font-size:15px; font-weight:600; margin:0 12px 0 0;
+    letter-spacing:.02em; color:var(--text);
+  }
+  header h1 span{ color:var(--accent); font-family:var(--mono); }
+  .spacer{flex:1;}
+  button, .btn{
+    background:var(--panel-2); color:var(--text);
+    border:1px solid var(--line); border-radius:6px;
+    padding:7px 13px; font-size:13px; cursor:pointer;
+    font-family:var(--sans); transition:border-color .15s, color .15s;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  button:hover{ border-color:var(--accent); color:var(--accent); }
+  button.primary{ background:var(--accent); color:#1b1206; border-color:var(--accent); font-weight:600;}
+  button.primary:hover{ opacity:.9; color:#1b1206; }
+  button:disabled{ opacity:.4; cursor:not-allowed; }
+  button:disabled:hover{ border-color:var(--line); color:var(--text); }
+  input[type=file]{ display:none; }
+  .status{ font-family:var(--mono); font-size:12px; color:var(--muted); }
+  .header-sep{ width:1px; height:22px; background:var(--line); }
+
+  main{ flex:1; display:flex; min-height:0; }
+
+  .panel{ display:flex; flex-direction:column; min-height:0; }
+  .panel-head{
+    padding:10px 14px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+    flex-shrink:0; background:var(--panel);
+  }
+  .panel-head h2{ font-size:12px; margin:0; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:600; }
+  .panel-body{ flex:1; overflow-y:auto; padding:12px; }
+
+  #library{ width:300px; border-right:1px solid var(--line); background:var(--panel); }
+  #library .panel-body{ display:flex; flex-direction:column; gap:8px; }
+
+  .lib-row{
+    display:flex; align-items:center; gap:8px;
+    background:var(--panel-2); border:1px solid var(--line);
+    border-radius:6px; padding:6px; cursor:grab;
+  }
+  .lib-row:active{ cursor:grabbing; }
+  .lib-row.dragging{ opacity:.35; }
+  .lib-row .thumb-wrap{ display:flex; border-radius:3px; overflow:hidden; border:1px solid #000a; flex-shrink:0;}
+  .lib-row .meta{ font-family:var(--mono); font-size:10.5px; color:var(--muted); overflow:hidden; }
+  .lib-row .meta b{ color:var(--text); display:block; font-size:11px; }
+
+  #empty-lib{ color:var(--muted); font-size:12.5px; padding:20px 4px; text-align:center; line-height:1.6; }
+
+  #groups-area{ flex:1; background:var(--bg); }
+  #groups-area .panel-body{
+    display:flex; flex-wrap:wrap; align-content:flex-start; gap:14px; padding:14px;
+  }
+  #groups-area .panel-body.group-drag-over{ background:#e0a45808; }
+
+  .group{
+    width:340px; background:var(--panel); border:1px solid var(--line);
+    border-radius:8px; display:flex; flex-direction:column; overflow:hidden;
+    flex-shrink:0; transition:opacity .15s, border-color .15s;
+  }
+  .group.group-dragging{ opacity:.4; }
+  .group.group-drag-over{ border-color:var(--accent); }
+  .group.collapsed .group-body{
+    min-height:0; padding:6px 10px 8px;
+  }
+  .group.collapsed .group-body:not(:has(.grow)){ display:none; }
+
+  .group-head{
+    display:flex; align-items:center; gap:4px; padding:8px 8px 8px 6px;
+    background:var(--panel-2); border-bottom:1px solid var(--line);
+    transition:background .15s, border-color .15s;
+  }
+  .group-head.head-drop-target{ background:#e0a45818; outline:2px dashed var(--accent); outline-offset:-2px; }
+
+  .group-handle{
+    cursor:grab; color:var(--muted); padding:4px 2px; font-size:14px; line-height:1;
+    user-select:none; flex-shrink:0;
+  }
+  .group-handle:active{ cursor:grabbing; }
+  .group-handle:hover{ color:var(--text); }
+
+  .collapse-btn{
+    background:transparent; border:none; color:var(--muted);
+    padding:4px 2px; font-size:11px; cursor:pointer; line-height:1; flex-shrink:0;
+    width:18px; text-align:center;
+  }
+  .collapse-btn:hover{ color:var(--accent); }
+
+  .group-head input.gname{
+    background:transparent; border:none; color:var(--text); font-weight:600;
+    font-size:13.5px; flex:1; min-width:0; padding:4px 2px; border-radius:4px;
+  }
+  .group-head input.gname:focus{ outline:none; background:#0003; }
+  .icon-btn{
+    background:transparent; border:1px solid transparent; color:var(--muted);
+    border-radius:5px; padding:5px 7px; font-size:12px; cursor:pointer; line-height:1;
+  }
+  .icon-btn:hover{ color:var(--text); border-color:var(--line); }
+  .icon-btn.active{ color:#1b1206; background:var(--accent); border-color:var(--accent); }
+  .icon-btn.danger:hover{ color:var(--danger); border-color:var(--danger); }
+
+  .group-body{
+    padding:10px; display:flex; flex-direction:column; gap:6px;
+    min-height:70px;
+  }
+  .group-body.cellmode{ background:repeating-linear-gradient(135deg, #ffffff05 0 8px, transparent 8px 16px); }
+  .group-empty-hint{
+    color:var(--muted); font-size:11.5px; text-align:center; padding:14px 4px;
+    border:1px dashed var(--line); border-radius:6px;
+  }
+
+  .grow{
+    display:flex; align-items:center; gap:6px;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:6px;
+    padding:4px; position:relative;
+  }
+  .grow.empty-row{ border-style:dashed; opacity:.85; }
+  .grow.drag-over-top::before, .grow.drag-over-bottom::after{
+    content:""; position:absolute; left:4px; right:4px; height:2px; background:var(--accent);
+  }
+  .grow.drag-over-top::before{ top:-3px; }
+  .grow.drag-over-bottom::after{ bottom:-3px; }
+  .grow[draggable=true]{ cursor:grab; }
+  .grow[draggable=true]:active{ cursor:grabbing; }
+  .grow.dragging{ opacity:.35; }
+  .grow .cells{ display:flex; gap:2px; border-radius:3px; overflow:hidden; }
+  .grow .row-remove{ margin-left:auto; }
+  .grow canvas{ display:block; }
+
+  .cell-slot{ position:relative; }
+  .cell-slot.cellmode canvas{ cursor:grab; }
+  .cell-slot.cellmode:active canvas{ cursor:grabbing; }
+  .cell-slot.cell-dragging{ opacity:.3; }
+  .cell-slot.cell-over{ outline:2px solid var(--accent); outline-offset:-2px; }
+
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:#3a4048; border-radius:5px; }
+  ::-webkit-scrollbar-thumb:hover{ background:#4a525b; }
+
+  .hint{ color:var(--muted); font-size:11px; font-family:var(--mono); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Row Sorter <span>// grid reorganizer</span></h1>
+  <button id="btn-load" class="primary">Load PNGs</button>
+  <input type="file" id="file-input" accept="image/png" multiple>
+  <button id="btn-add-group">+ New group</button>
+  <div class="header-sep"></div>
+  <button id="btn-save-json">Save JSON…</button>
+  <button id="btn-load-json">Load JSON…</button>
+  <input type="file" id="json-input" accept=".json,application/json">
+  <div class="spacer"></div>
+  <span class="status" id="status-text">No images loaded</span>
+  <button id="btn-save" class="primary" disabled>Save PNGs…</button>
+</header>
+
+<main>
+  <section id="library" class="panel">
+    <div class="panel-head"><h2>Source rows</h2><span class="hint" id="lib-count">0</span></div>
+    <div class="panel-body" id="lib-body">
+      <div id="empty-lib">Load one or more PNGs.<br>Each image is read as a 4-column grid — 192px columns, 224px rows.<br>Drag rows from here into a group on the right.</div>
+    </div>
+  </section>
+
+  <section id="groups-area" class="panel">
+    <div class="panel-head"><h2>Groups</h2><span class="hint">drag rows · drop on title to append · toggle ⛶ for cell swap</span></div>
+    <div class="panel-body" id="groups-body"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  const CELL_W = 192, CELL_H = 224, COLS = 4;
+  const LIB_SCALE = 0.34;
+  const GROUP_SCALE = 0.34;
+  const CONFIG_VERSION = 1;
+
+  let allRows = [];
+  let groups = [];
+  let uidCounter = 1;
+  function uid(){ return "id" + (uidCounter++) + "_" + Math.random().toString(36).slice(2,7); }
+
+  function cloneCanvas(src){
+    const c = document.createElement("canvas");
+    c.width = src.width; c.height = src.height;
+    c.getContext("2d").drawImage(src, 0, 0);
+    return c;
+  }
+
+  function createEmptyCells(){
+    const cells = [];
+    for (let c = 0; c < COLS; c++) {
+      const canvas = document.createElement("canvas");
+      canvas.width = CELL_W; canvas.height = CELL_H;
+      cells.push(canvas);
+    }
+    return cells;
+  }
+
+  function createEmptyRow(){
+    return { id: uid(), cells: createEmptyCells(), source: "(empty)", rowIndex: -1, empty: true };
+  }
+
+  function canvasToDataUrl(canvas){
+    return canvas.toDataURL("image/png");
+  }
+
+  function dataUrlToCanvas(dataUrl){
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement("canvas");
+        c.width = CELL_W; c.height = CELL_H;
+        c.getContext("2d").drawImage(img, 0, 0);
+        resolve(c);
+      };
+      img.onerror = () => {
+        const c = document.createElement("canvas");
+        c.width = CELL_W; c.height = CELL_H;
+        resolve(c);
+      };
+      img.src = dataUrl;
+    });
+  }
+
+  async function serializeRow(row){
+    const cells = await Promise.all(row.cells.map(c => canvasToDataUrl(c)));
+    return {
+      id: row.id,
+      source: row.source,
+      rowIndex: row.rowIndex,
+      empty: !!row.empty,
+      cells
+    };
+  }
+
+  async function deserializeRow(data){
+    const cells = await Promise.all(data.cells.map(u => dataUrlToCanvas(u)));
+    return {
+      id: data.id || uid(),
+      source: data.source,
+      rowIndex: data.rowIndex,
+      empty: !!data.empty,
+      cells
+    };
+  }
+
+  // ---------- Loading PNGs ----------
+  const fileInput = document.getElementById("file-input");
+  document.getElementById("btn-load").addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", async (e) => {
+    const files = Array.from(e.target.files || []);
+    for (const f of files) await loadPng(f);
+    fileInput.value = "";
+    renderLibrary();
+    updateStatus();
+    updateSaveEnabled();
+  });
+
+  function loadPng(file){
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        sliceImageToRows(img, file.name);
+        URL.revokeObjectURL(url);
+        resolve();
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+      img.src = url;
+    });
+  }
+
+  function sliceImageToRows(img, sourceName){
+    const colW = img.width / COLS;
+    const rowCount = Math.max(1, Math.round(img.height / CELL_H));
+    for (let r = 0; r < rowCount; r++) {
+      const cells = [];
+      for (let c = 0; c < COLS; c++) {
+        const canvas = document.createElement("canvas");
+        canvas.width = CELL_W; canvas.height = CELL_H;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, c*colW, r*CELL_H, colW, CELL_H, 0, 0, CELL_W, CELL_H);
+        cells.push(canvas);
+      }
+      allRows.push({ id: uid(), cells, source: sourceName, rowIndex: r, empty: false });
+    }
+  }
+
+  function updateStatus(){
+    const t = document.getElementById("status-text");
+    if (allRows.length === 0 && groups.every(g => g.rows.length === 0)) {
+      t.textContent = "No images loaded";
+    } else {
+      const inGroups = groups.reduce((n, g) => n + g.rows.length, 0);
+      t.textContent = allRows.length + " in library · " + inGroups + " in groups · " + groups.length + " group(s)";
+    }
+  }
+
+  function updateSaveEnabled(){
+    const has = groups.some(g => g.rows.length > 0);
+    document.getElementById("btn-save").disabled = !has;
+  }
+
+  function buildRowStrip(cells, scale){
+    const wrap = document.createElement("div");
+    wrap.className = "cells";
+    cells.forEach((srcCanvas) => {
+      const c = document.createElement("canvas");
+      c.width = CELL_W; c.height = CELL_H;
+      c.style.width = Math.round(CELL_W*scale)+"px";
+      c.style.height = Math.round(CELL_H*scale)+"px";
+      c.getContext("2d").drawImage(srcCanvas, 0, 0);
+      wrap.appendChild(c);
+    });
+    return wrap;
+  }
+
+  // ---------- LIBRARY ----------
+  const libBody = document.getElementById("lib-body");
+
+  function renderLibrary(){
+    libBody.innerHTML = "";
+    document.getElementById("lib-count").textContent = allRows.length + " row(s)";
+    if (allRows.length === 0){
+      const e = document.createElement("div");
+      e.id = "empty-lib";
+      e.innerHTML = "Load one or more PNGs.<br>Each image is read as a 4-column grid — 192px columns, 224px rows.<br>Drag rows from here into a group on the right.";
+      libBody.appendChild(e);
+      return;
+    }
+    allRows.forEach(row => {
+      const item = document.createElement("div");
+      item.className = "lib-row";
+      item.draggable = true;
+      item.dataset.rowId = row.id;
+
+      const tw = document.createElement("div");
+      tw.className = "thumb-wrap";
+      tw.appendChild(buildRowStrip(row.cells, LIB_SCALE));
+      item.appendChild(tw);
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      const label = row.empty ? "(empty row)" : ("row " + row.rowIndex);
+      meta.innerHTML = "<b>" + label + "</b>" + row.source;
+      item.appendChild(meta);
+
+      item.addEventListener("dragstart", (e) => {
+        item.classList.add("dragging");
+        dragKind = "library-row";
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("application/json", JSON.stringify({ kind: "library-row", rowId: row.id }));
+      });
+      item.addEventListener("dragend", () => { item.classList.remove("dragging"); dragKind = null; });
+
+      libBody.appendChild(item);
+    });
+  }
+
+  // ---------- GROUPS ----------
+  const groupsBody = document.getElementById("groups-body");
+  let dragKind = null;
+
+  function createGroup(name){
+    const g = { id: uid(), name: name || ("Group " + (groups.length+1)), cellMode: false, collapsed: false, rows: [] };
+    groups.push(g);
+    renderGroups();
+    updateSaveEnabled();
+    return g;
+  }
+  document.getElementById("btn-add-group").addEventListener("click", () => createGroup());
+
+  function renderGroups(){
+    groupsBody.innerHTML = "";
+    groups.forEach(g => groupsBody.appendChild(buildGroupEl(g)));
+  }
+
+  function handleRowDrop(data, targetGroup, insertAt){
+    if (data.kind === "library-row"){
+      const srcIdx = allRows.findIndex(r => r.id === data.rowId);
+      if (srcIdx === -1) return;
+      const [moved] = allRows.splice(srcIdx, 1);
+      let at = insertAt == null ? targetGroup.rows.length : insertAt;
+      targetGroup.rows.splice(at, 0, moved);
+      renderLibrary();
+      renderGroups();
+      updateSaveEnabled();
+      updateStatus();
+    } else if (data.kind === "group-row"){
+      const fromGroup = groups.find(x => x.id === data.groupId);
+      if (!fromGroup) return;
+      const fromIdx = fromGroup.rows.findIndex(r => r.id === data.rowId);
+      if (fromIdx === -1) return;
+      const [moved] = fromGroup.rows.splice(fromIdx, 1);
+      let at = insertAt == null ? targetGroup.rows.length : insertAt;
+      if (fromGroup === targetGroup && fromIdx < at) at -= 1;
+      targetGroup.rows.splice(at, 0, moved);
+      renderGroups();
+      updateSaveEnabled();
+      updateStatus();
+    }
+  }
+
+  function parseDragData(e){
+    try { return JSON.parse(e.dataTransfer.getData("application/json")); }
+    catch(err){ return null; }
+  }
+
+  function isRowDrag(kind){
+    return kind === "library-row" || kind === "group-row";
+  }
+
+  function buildGroupEl(g){
+    const el = document.createElement("div");
+    el.className = "group" + (g.collapsed ? " collapsed" : "");
+    el.dataset.groupId = g.id;
+
+    const head = document.createElement("div");
+    head.className = "group-head";
+
+    const handle = document.createElement("span");
+    handle.className = "group-handle";
+    handle.title = "Drag to reorder groups";
+    handle.textContent = "⠿";
+    handle.draggable = true;
+    handle.addEventListener("dragstart", (e) => {
+      e.stopPropagation();
+      dragKind = "group-reorder";
+      el.classList.add("group-dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("application/json", JSON.stringify({ kind: "group-reorder", groupId: g.id }));
+    });
+    handle.addEventListener("dragend", () => {
+      el.classList.remove("group-dragging");
+      dragKind = null;
+      document.querySelectorAll(".group-drag-over").forEach(x => x.classList.remove("group-drag-over"));
+      groupsBody.classList.remove("group-drag-over");
+    });
+    head.appendChild(handle);
+
+    const collapseBtn = document.createElement("button");
+    collapseBtn.className = "collapse-btn";
+    collapseBtn.title = g.collapsed ? "Expand group" : "Collapse group";
+    collapseBtn.textContent = g.collapsed ? "▶" : "▼";
+    collapseBtn.addEventListener("click", () => {
+      g.collapsed = !g.collapsed;
+      renderGroups();
+    });
+    head.appendChild(collapseBtn);
+
+    const nameInput = document.createElement("input");
+    nameInput.className = "gname";
+    nameInput.value = g.name;
+    nameInput.addEventListener("input", () => { g.name = nameInput.value; });
+    head.appendChild(nameInput);
+
+    const addRowBtn = document.createElement("button");
+    addRowBtn.className = "icon-btn";
+    addRowBtn.title = "Add empty row";
+    addRowBtn.textContent = "+ row";
+    addRowBtn.addEventListener("click", () => {
+      g.rows.push(createEmptyRow());
+      renderGroups();
+      updateSaveEnabled();
+      updateStatus();
+    });
+    head.appendChild(addRowBtn);
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.className = "icon-btn" + (g.cellMode ? " active" : "");
+    toggleBtn.title = "Toggle cell reorganization mode";
+    toggleBtn.textContent = "⛶ cells";
+    toggleBtn.addEventListener("click", () => {
+      g.cellMode = !g.cellMode;
+      renderGroups();
+    });
+    head.appendChild(toggleBtn);
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "icon-btn danger";
+    delBtn.title = "Delete group";
+    delBtn.textContent = "✕";
+    delBtn.addEventListener("click", () => {
+      g.rows.forEach(row => allRows.push(row));
+      groups = groups.filter(x => x.id !== g.id);
+      renderLibrary();
+      renderGroups();
+      updateSaveEnabled();
+      updateStatus();
+    });
+    head.appendChild(delBtn);
+
+    // Drop on title → append row at end (works when collapsed too)
+    head.addEventListener("dragover", (e) => {
+      if (!isRowDrag(dragKind)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = "move";
+      head.classList.add("head-drop-target");
+    });
+    head.addEventListener("dragleave", (e) => {
+      if (!head.contains(e.relatedTarget)) head.classList.remove("head-drop-target");
+    });
+    head.addEventListener("drop", (e) => {
+      if (!isRowDrag(dragKind)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      head.classList.remove("head-drop-target");
+      const data = parseDragData(e);
+      if (!data || !isRowDrag(data.kind)) return;
+      handleRowDrop(data, g, g.rows.length);
+    });
+
+    el.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "group-body" + (g.cellMode ? " cellmode" : "");
+    body.dataset.groupId = g.id;
+
+    if (g.rows.length === 0){
+      const hint = document.createElement("div");
+      hint.className = "group-empty-hint";
+      hint.textContent = "Drag rows here";
+      body.appendChild(hint);
+    } else {
+      const rowsToShow = g.collapsed ? g.rows.slice(0, 1) : g.rows;
+      rowsToShow.forEach((row, idx) => body.appendChild(buildGroupRowEl(g, row, idx)));
+    }
+
+    body.addEventListener("dragover", (e) => {
+      if (!isRowDrag(dragKind)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    });
+    body.addEventListener("drop", (e) => {
+      if (!isRowDrag(dragKind)) return;
+      e.preventDefault();
+      const data = parseDragData(e);
+      if (!data || !isRowDrag(data.kind)) return;
+      let dropIndex;
+      if (g.collapsed) {
+        // collapsed: only first row visible — drop below it appends at end
+        dropIndex = computeDropIndex(body, e.clientY, 1);
+        if (dropIndex >= 1) dropIndex = g.rows.length;
+      } else {
+        dropIndex = computeDropIndex(body, e.clientY, g.rows.length);
+      }
+      handleRowDrop(data, g, dropIndex);
+    });
+
+    el.appendChild(body);
+
+    // Group reorder: drop target on the whole group card
+    el.addEventListener("dragover", (e) => {
+      if (dragKind !== "group-reorder") return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      el.classList.add("group-drag-over");
+      groupsBody.classList.add("group-drag-over");
+    });
+    el.addEventListener("dragleave", (e) => {
+      if (!el.contains(e.relatedTarget)) el.classList.remove("group-drag-over");
+    });
+    el.addEventListener("drop", (e) => {
+      if (dragKind !== "group-reorder") return;
+      e.preventDefault();
+      el.classList.remove("group-drag-over");
+      groupsBody.classList.remove("group-drag-over");
+      const data = parseDragData(e);
+      if (!data || data.kind !== "group-reorder") return;
+      if (data.groupId === g.id) return;
+      const fromIdx = groups.findIndex(x => x.id === data.groupId);
+      const toIdx = groups.findIndex(x => x.id === g.id);
+      if (fromIdx === -1 || toIdx === -1) return;
+      const [moved] = groups.splice(fromIdx, 1);
+      const insertAt = fromIdx < toIdx ? toIdx - 1 : toIdx;
+      groups.splice(insertAt, 0, moved);
+      renderGroups();
+    });
+
+    return el;
+  }
+
+  function computeDropIndex(container, clientY, count){
+    const rowEls = Array.from(container.querySelectorAll(":scope > .grow"));
+    for (let i = 0; i < rowEls.length; i++){
+      const r = rowEls[i].getBoundingClientRect();
+      if (clientY < r.top + r.height/2) return i;
+    }
+    return count;
+  }
+
+  function buildGroupRowEl(g, row, idx){
+    const rEl = document.createElement("div");
+    rEl.className = "grow" + (row.empty ? " empty-row" : "");
+    rEl.dataset.rowId = row.id;
+    rEl.draggable = !g.cellMode;
+
+    const cellsWrap = document.createElement("div");
+    cellsWrap.className = "cells";
+
+    row.cells.forEach((cellCanvas, cIdx) => {
+      const slot = document.createElement("div");
+      slot.className = "cell-slot" + (g.cellMode ? " cellmode" : "");
+      const c = document.createElement("canvas");
+      c.width = CELL_W; c.height = CELL_H;
+      c.style.width = Math.round(CELL_W*GROUP_SCALE)+"px";
+      c.style.height = Math.round(CELL_H*GROUP_SCALE)+"px";
+      c.getContext("2d").drawImage(cellCanvas, 0, 0);
+      slot.appendChild(c);
+
+      if (g.cellMode){
+        slot.draggable = true;
+        slot.addEventListener("dragstart", (e) => {
+          e.stopPropagation();
+          dragKind = "cell";
+          slot.classList.add("cell-dragging");
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("application/json", JSON.stringify({
+            kind: "cell", groupId: g.id, rowId: row.id, cellIndex: cIdx
+          }));
+        });
+        slot.addEventListener("dragend", () => { slot.classList.remove("cell-dragging"); dragKind = null; });
+        slot.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          slot.classList.add("cell-over");
+        });
+        slot.addEventListener("dragleave", () => slot.classList.remove("cell-over"));
+        slot.addEventListener("drop", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          slot.classList.remove("cell-over");
+          const data = parseDragData(e);
+          if (!data || data.kind !== "cell") return;
+          if (data.groupId !== g.id) return;
+          const fromRow = g.rows.find(r => r.id === data.rowId);
+          const toRow = row;
+          if (!fromRow || !toRow) return;
+          if (fromRow === toRow && data.cellIndex === cIdx) return;
+          const tmp = fromRow.cells[data.cellIndex];
+          fromRow.cells[data.cellIndex] = toRow.cells[cIdx];
+          toRow.cells[cIdx] = tmp;
+          if (fromRow.empty || toRow.empty) {
+            fromRow.empty = false;
+            toRow.empty = false;
+          }
+          renderGroups();
+        });
+      }
+
+      cellsWrap.appendChild(slot);
+    });
+
+    rEl.appendChild(cellsWrap);
+
+    const rmBtn = document.createElement("button");
+    rmBtn.className = "icon-btn row-remove danger";
+    rmBtn.textContent = "✕";
+    rmBtn.title = "Return row to source library";
+    rmBtn.addEventListener("click", () => {
+      g.rows = g.rows.filter(r => r.id !== row.id);
+      allRows.push(row);
+      renderLibrary();
+      renderGroups();
+      updateSaveEnabled();
+      updateStatus();
+    });
+    rEl.appendChild(rmBtn);
+
+    if (!g.cellMode){
+      rEl.addEventListener("dragstart", (e) => {
+        dragKind = "group-row";
+        rEl.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("application/json", JSON.stringify({ kind: "group-row", groupId: g.id, rowId: row.id }));
+      });
+      rEl.addEventListener("dragend", () => { rEl.classList.remove("dragging"); dragKind = null; });
+      rEl.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        const r = rEl.getBoundingClientRect();
+        rEl.classList.toggle("drag-over-top", e.clientY < r.top + r.height/2);
+        rEl.classList.toggle("drag-over-bottom", e.clientY >= r.top + r.height/2);
+      });
+      rEl.addEventListener("dragleave", () => {
+        rEl.classList.remove("drag-over-top", "drag-over-bottom");
+      });
+    }
+
+    return rEl;
+  }
+
+  // ---------- JSON SAVE / LOAD ----------
+  const jsonInput = document.getElementById("json-input");
+
+  document.getElementById("btn-save-json").addEventListener("click", async () => {
+    flashStatus("Saving JSON…");
+    const library = await Promise.all(allRows.map(serializeRow));
+    const groupData = [];
+    for (const g of groups) {
+      const rows = await Promise.all(g.rows.map(serializeRow));
+      groupData.push({
+        id: g.id,
+        name: g.name,
+        cellMode: g.cellMode,
+        collapsed: g.collapsed,
+        rows
+      });
+    }
+    const config = {
+      version: CONFIG_VERSION,
+      uidCounter,
+      library,
+      groups: groupData
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "row-sorter-config.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    flashStatus("JSON config saved.");
+  });
+
+  document.getElementById("btn-load-json").addEventListener("click", () => jsonInput.click());
+  jsonInput.addEventListener("change", async (e) => {
+    const file = (e.target.files || [])[0];
+    jsonInput.value = "";
+    if (!file) return;
+    try {
+      const config = JSON.parse(await file.text());
+      if (!config || !Array.isArray(config.groups)) throw new Error("Invalid config file");
+
+      allRows = await Promise.all((config.library || []).map(deserializeRow));
+      groups = [];
+      for (const gd of config.groups) {
+        const rows = await Promise.all((gd.rows || []).map(deserializeRow));
+        groups.push({
+          id: gd.id || uid(),
+          name: gd.name || "Group",
+          cellMode: !!gd.cellMode,
+          collapsed: !!gd.collapsed,
+          rows
+        });
+      }
+      if (config.uidCounter) uidCounter = config.uidCounter;
+
+      renderLibrary();
+      renderGroups();
+      updateSaveEnabled();
+      updateStatus();
+      flashStatus("JSON config loaded.");
+    } catch (err) {
+      console.error(err);
+      flashStatus("Failed to load JSON: " + err.message);
+    }
+  });
+
+  // ---------- PNG SAVE ----------
+  function composeGroupCanvas(g){
+    const width = CELL_W * COLS;
+    const height = CELL_H * g.rows.length;
+    const canvas = document.createElement("canvas");
+    canvas.width = width; canvas.height = Math.max(height, 1);
+    const ctx = canvas.getContext("2d");
+    g.rows.forEach((row, rIdx) => {
+      row.cells.forEach((cellCanvas, cIdx) => {
+        ctx.drawImage(cellCanvas, cIdx*CELL_W, rIdx*CELL_H);
+      });
+    });
+    return canvas;
+  }
+
+  function safeFileName(name){
+    return (name || "group").replace(/[\\/:*?"<>|]+/g, "_").trim() || "group";
+  }
+
+  document.getElementById("btn-save").addEventListener("click", async () => {
+    const activeGroups = groups.filter(g => g.rows.length > 0);
+    if (activeGroups.length === 0) return;
+
+    if (window.showDirectoryPicker){
+      try {
+        const dirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+        for (const g of activeGroups){
+          const canvas = composeGroupCanvas(g);
+          const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+          const fileHandle = await dirHandle.getFileHandle(safeFileName(g.name) + ".png", { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+        }
+        flashStatus("Saved " + activeGroups.length + " group PNG(s).");
+      } catch (err) {
+        if (err && err.name !== "AbortError") {
+          console.error(err);
+          flashStatus("Save cancelled or failed — falling back to downloads.");
+          await downloadFallback(activeGroups);
+        }
+      }
+    } else {
+      await downloadFallback(activeGroups);
+    }
+  });
+
+  async function downloadFallback(activeGroups){
+    for (const g of activeGroups){
+      const canvas = composeGroupCanvas(g);
+      const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = safeFileName(g.name) + ".png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+    flashStatus("Downloaded " + activeGroups.length + " group PNG(s).");
+  }
+
+  function flashStatus(msg){
+    const t = document.getElementById("status-text");
+    t.textContent = msg;
+    setTimeout(() => updateStatus(), 3000);
+  }
+
+  createGroup("Group 1");
+  renderLibrary();
+})();
+</script>
+</body>
+</html>

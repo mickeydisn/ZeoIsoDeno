@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Art Studio - Pipeline Dynamique Connecté</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-color: #1e1e1e;
+            --accent-color: #00adb5;
+            --text-color: #eeeeee;
+            --card-color: #2a2a2a;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { margin-bottom: 5px; color: var(--accent-color); font-size: 24px; }
+        p { margin: 0 0 20px 0; color: #aaa; font-size: 14px; }
+        
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1500px;
+            width: 100%;
+            align-items: flex-start;
+        }
+        
+        .sidebar {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: 88vh;
+            overflow-y: auto;
+            background: var(--panel-color);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .preview-panel {
+            flex: 2;
+            background: var(--panel-color);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .section {
+            border: 1px solid #444;
+            padding: 12px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .section-title {
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pipeline-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 100px;
+            border: 2px dashed #444;
+            padding: 10px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.4);
+        }
+        
+        .pipeline-item {
+            background: var(--card-color);
+            border: 1px solid #555;
+            border-left: 4px solid var(--accent-color);
+            padding: 10px;
+            border-radius: 4px;
+            cursor: grab;
+            position: relative;
+        }
+        .pipeline-item:active { cursor: grabbing; }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        
+        .btn-remove {
+            background: #ff414d;
+            border: none;
+            color: white;
+            border-radius: 3px;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        label { display: block; margin-top: 6px; font-size: 0.85em; color: #ccc; }
+        .label-val { float: right; color: var(--accent-color); font-weight: bold; }
+        
+        select, input[type="range"], input[type="file"] {
+            width: 100%;
+            padding: 6px;
+            background: #2b2b2b;
+            border: 1px solid #555;
+            color: #fff;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-top: 2px;
+        }
+        
+        .canvas-container {
+            width: 100%;
+            height: 65vh;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #555;
+            background-image: linear-gradient(45deg, #222 25%, transparent 25%), 
+                              linear-gradient(-45deg, #222 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #222 75%), 
+                              linear-gradient(-45deg, transparent 75%, #222 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        
+        canvas {
+            image-rendering: pixelated;
+            transform-origin: center center;
+        }
+        
+        .btn-group { display: flex; gap: 8px; margin-top: 8px; }
+        button.action-btn {
+            flex: 1;
+            padding: 8px;
+            background: var(--accent-color);
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        button.action-btn:hover { background: #008c9e; }
+        .btn-secondary { background: #555; }
+        
+        .add-actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        
+        .zoom-controls {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.2);
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Pixel Art Studio (Modular Engine V2)</h1>
+    <p>Chaque filtre applique directement ses changements sur les pixels de l'étape précédente.</p>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="section">
+                <div class="section-title">1. Image Source</div>
+                <input type="file" id="imageLoader" accept="image/*">
+            </div>
+
+            <div class="section">
+                <div class="section-title">2. Ajouter des filtres</div>
+                <div class="add-actions-grid">
+                    <button class="action-btn btn-secondary" onclick="addAction('hsl')">+ Ajustement HSL</button>
+                    <button class="action-btn btn-secondary" onclick="addAction('quant')">+ Palette Normalizer</button>
+                    <button class="action-btn btn-secondary" onclick="addAction('dither')">+ Merger / Dither</button>
+                    <button class="action-btn btn-secondary" onclick="addAction('pixel')">+ Pixel Art Render</button>
+                </div>
+                <button class="action-btn btn-secondary" onclick="addAction('outline')" style="width: 100%; margin-top: 6px; background: #c05c04;">+ Suppr. Contours / Isolés</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">3. Ordre d'exécution</div>
+                <div id="pipeline" class="pipeline-list"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">4. Exporter</div>
+                <div class="btn-group">
+                    <button id="btnSaveImg" class="action-btn">Sauver PNG</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="preview-panel">
+            <div class="zoom-controls">
+                <div>
+                    <button id="btnZoomOut" class="action-btn btn-secondary" style="padding: 2px 10px;">-</button>
+                    <span style="font-size:13px; margin: 0 8px;">Zoom: <span id="zoomVal">100</span>%</span>
+                    <button id="btnZoomIn" class="action-btn btn-secondary" style="padding: 2px 10px;">+</button>
+                </div>
+                <button id="btnZoomReset" class="action-btn btn-secondary" style="padding: 2px 10px;">Ajuster</button>
+            </div>
+            <div class="canvas-container">
+                <canvas id="canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const pipelineContainer = document.getElementById('pipeline');
+        
+        let originalImage = null;
+        let zoomScale = 1.0;
+        let dragSrcEl = null;
+        let activePaletteGlobal = null; // Stocke la dernière palette générée pour le Dithering
+
+        const FILTER_TEMPLATES = {
+            hsl: () => `
+                <div class="item-header"><span>Filtre: Ajustement HSL</span><button class="btn-remove" onclick="this.closest('.pipeline-item').remove(); updatePipeline();">X</button></div>
+                <label>Teinte <span class="label-val" data-val="hue">0</span></label><input type="range" class="p-input" data-key="hue" min="-180" max="180" value="0">
+                <label>Saturation <span class="label-val" data-val="sat">0</span>%</label><input type="range" class="p-input" data-key="sat" min="-100" max="100" value="0">
+                <label>Luminosité <span class="label-val" data-val="light">0</span>%</label><input type="range" class="p-input" data-key="light" min="-100" max="100" value="0">
+            `,
+            dither: () => `
+                <div class="item-header"><span>Filtre: Merger & Dither</span><button class="btn-remove" onclick="this.closest('.pipeline-item').remove(); updatePipeline();">X</button></div>
+                <label>Distance Espace Couleur</label>
+                <select class="p-input" data-key="mergeAlgo">
+                    <option value="euclidean">Euclidien</option>
+                    <option value="manhattan">Manhattan (Tranchant)</option>
+                    <option value="cie76">CIE76 (Perceptuel)</option>
+                </select>
+                <label>Trame (Dithering)</label>
+                <select class="p-input" data-key="ditherAlgo">
+                    <option value="floyd">Floyd-Steinberg</option>
+                    <option value="bayer2x2">Bayer 2x2</option>
+                    <option value="bayer4x4">Bayer 4x4</option>
+                </select>
+                <label>Intensité Trame <span class="label-val" data-val="weight">80</span>%</label><input type="range" class="p-input" data-key="weight" min="0" max="100" value="80">
+            `,
+            quant: () => `
+                <div class="item-header"><span>Filtre: Palette Normalizer</span><button class="btn-remove" onclick="this.closest('.pipeline-item').remove(); updatePipeline();">X</button></div>
+                <label>Appliquer la Palette</label>
+                <select class="p-input" data-key="paletteMode">
+                    <option value="16">16 Couleurs (Adaptatif)</option>
+                    <option value="32_std" selected>32 Couleurs (Standard Adaptatif)</option>
+                    <option value="32_sweet">32 Couleurs (Sweetie Pastel)</option>
+                    <option value="32_db32">32 Couleurs (DB32 Retro)</option>
+                    <option value="32_gameboy">32 Couleurs (Gameboy Advanced)</option>
+                    <option value="48">48 Couleurs (Étendu Adaptatif)</option>
+                    <option value="64">64 Couleurs (Adaptatif)</option>
+                    <option value="128">128 Couleurs (Adaptatif)</option>
+                </select>
+            `,
+            pixel: () => `
+                <div class="item-header"><span>Filtre: Pixel Art Render</span><button class="btn-remove" onclick="this.closest('.pipeline-item').remove(); updatePipeline();">X</button></div>
+                <label>Taille Pixel <span class="label-val" data-val="size">8</span>px</label><input type="range" class="p-input" data-key="size" min="1" max="64" value="8">
+                <label>Mode Échantillonnage</label>
+                <select class="p-input" data-key="algo"><option value="center">Pixel Centre</option><option value="average">Moyenne du Bloc</option></select>
+            `,
+            outline: () => `
+                <div class="item-header"><span>Filtre: Nettoyeur Contours</span><button class="btn-remove" onclick="this.closest('.pipeline-item').remove(); updatePipeline();">X</button></div>
+                <label>Méthode d'isolation</label>
+                <select class="p-input" data-key="cleanMode">
+                    <option value="1px">Supprimer Pixels Isolés (1px)</option>
+                    <option value="2px">Supprimer petits blocs (2px)</option>
+                    <option value="3px">Supprimer blocs moyens (3px)</option>
+                </select>
+            `
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Setup initial
+            addAction('hsl');
+            addAction('quant');
+            addAction('dither');
+            addAction('outline');
+            addAction('pixel');
+        });
+
+        function addAction(type) {
+            const item = document.createElement('div');
+            item.className = 'pipeline-item';
+            item.setAttribute('draggable', 'true');
+            item.setAttribute('data-type', type);
+            item.innerHTML = FILTER_TEMPLATES[type]();
+            
+            addItemDragListeners(item);
+            
+            item.querySelectorAll('.p-input').forEach(input => {
+                input.addEventListener(input.type === 'range' ? 'input' : 'change', () => {
+                    const labelVal = item.querySelector(`[data-val="${input.getAttribute('data-key')}"]`);
+                    if(labelVal) labelVal.innerText = input.value;
+                    updatePipeline();
+                });
+            });
+
+            pipelineContainer.appendChild(item);
+            updatePipeline();
+        }
+
+        function updatePipeline() { processImage(); }
+
+        document.getElementById('imageLoader').addEventListener('change', (e) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    canvas.width = originalImage.width;
+                    canvas.height = originalImage.height;
+                    zoomScale = 1.0; updateZoom(); updatePipeline();
+                };
+                originalImage.src = event.target.result;
+            };
+            if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+        });
+
+        function updateZoom() {
+            canvas.style.transform = `scale(${zoomScale})`;
+            document.getElementById('zoomVal').innerText = Math.round(zoomScale * 100);
+        }
+        document.getElementById('btnZoomIn').addEventListener('click', () => { zoomScale += 0.25; updateZoom(); });
+        document.getElementById('btnZoomOut').addEventListener('click', () => { if(zoomScale > 0.25) zoomScale -= 0.25; updateZoom(); });
+        document.getElementById('btnZoomReset').addEventListener('click', () => { zoomScale = 1.0; updateZoom(); });
+
+        // --- ENTRAINEMENT DE RENDU SÉQUENTIEL PUR ---
+        function processImage() {
+            if (!originalImage) return;
+
+            // Rerender Strict : Reset total à la source
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(originalImage, 0, 0);
+            
+            let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const items = pipelineContainer.querySelectorAll('.pipeline-item');
+            
+            // Re-génère la palette par défaut si aucun filtre quant n'est présent avant le dither
+            activePaletteGlobal = extractDynamicPalette(imgData, '32_std');
+
+            items.forEach(item => {
+                const type = item.getAttribute('data-type');
+                const params = {};
+                item.querySelectorAll('.p-input').forEach(input => {
+                    params[input.getAttribute('data-key')] = input.value;
+                });
+
+                if (type === 'hsl') {
+                    applyHSL(imgData, parseFloat(params.hue), parseFloat(params.sat)/100, parseFloat(params.light)/100);
+                } 
+                else if (type === 'quant') {
+                    // 1. On extrait la palette demandée
+                    activePaletteGlobal = extractDynamicPalette(imgData, params.paletteMode);
+                    // 2. CORRECTION : On applique DIRECTEMENT cette palette de façon ferme sur l'image en cours
+                    applyDirectPaletteSnap(imgData, activePaletteGlobal);
+                } 
+                else if (type === 'dither') {
+                    applyDitherMerge(imgData, activePaletteGlobal, params.mergeAlgo, params.ditherAlgo, parseFloat(params.weight)/100);
+                } 
+                else if (type === 'outline') {
+                    applyOutlineCleaner(imgData, params.cleanMode);
+                }
+                else if (type === 'pixel') {
+                    imgData = applyPixelation(imgData, parseInt(params.size), params.algo);
+                }
+            });
+
+            ctx.putImageData(imgData, 0, 0);
+        }
+
+        // --- EXÉCUTION DE L'APPLICATION DIRECTE DE PALETTE ---
+        function applyDirectPaletteSnap(imgData, palette) {
+            const d = imgData.data;
+            for (let i = 0; i < d.length; i += 4) {
+                if (d[i+3] < 128) continue;
+                const nearest = findNearestColor([d[i], d[i+1], d[i+2]], palette, 'euclidean');
+                d[i] = nearest[0]; d[i+1] = nearest[1]; d[i+2] = nearest[2];
+            }
+        }
+
+        function applyHSL(imgData, hMod, sMod, lMod) {
+            const d = imgData.data;
+            for(let i=0; i<d.length; i+=4) {
+                if(d[i+3] === 0) continue;
+                let r = d[i]/255, g = d[i+1]/255, b = d[i+2]/255;
+                let max = Math.max(r, g, b), min = Math.min(r, g, b);
+                let h, s, l = (max + min) / 2;
+
+                if(max === min) { h = s = 0; } 
+                else {
+                    let diff = max - min;
+                    s = l > 0.5 ? diff / (2 - max - min) : diff / (max + min);
+                    if (max === r) h = (g - b) / diff + (g < b ? 6 : 0);
+                    else if (max === g) h = (b - r) / diff + 2;
+                    else h = (r - g) / diff + 4;
+                    h /= 6;
+                }
+
+                h = (h * 360 + hMod) % 360; if(h < 0) h += 360; h /= 360;
+                s = Math.min(1, Math.max(0, s + sMod));
+                l = Math.min(1, Math.max(0, l + lMod));
+
+                let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                let p = 2 * l - q;
+                const hue2rgb = (p, q, t) => {
+                    if(t < 0) t += 1; if(t > 1) t -= 1;
+                    if(t < 1/6) return p + (q - p) * 6 * t;
+                    if(t < 1/2) return q;
+                    if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                d[i] = Math.round(hue2rgb(p, q, h + 1/3) * 255);
+                d[i+1] = Math.round(hue2rgb(p, q, h) * 255);
+                d[i+2] = Math.round(hue2rgb(p, q, h - 1/3) * 255);
+            }
+        }
+
+        function extractDynamicPalette(imgData, mode) {
+            if(mode === '32_sweet') return [[26,27,38],[47,44,61],[80,66,88],[136,102,120],[195,152,149],[247,219,198],[240,165,140],[212,109,114],[166,61,90],[102,38,71],[237,117,143],[244,171,194],[162,112,207],[103,81,171],[64,66,133],[59,96,166],[70,147,194],[110,204,224],[162,235,212],[94,191,141],[50,135,103],[37,87,81],[66,54,49],[112,85,67],[171,130,94],[219,189,140],[133,143,101],[193,204,137],[242,245,211],[255,255,255],[150,150,150],[70,70,70]];
+            if(mode === '32_db32') return [[0,0,0],[34,32,52],[69,40,60],[102,57,49],[143,86,59],[223,113,38],[217,160,102],[238,195,154],[251,242,54],[153,229,80],[106,190,48],[55,148,110],[75,105,47],[82,75,36],[50,60,57],[63,73,115],[48,96,130],[91,110,225],[99,155,255],[95,205,228],[203,219,252],[255,255,255],[155,173,183],[132,126,135],[105,106,106],[89,86,81],[118,66,138],[172,50,50],[217,87,99],[215,123,186],[143,151,74],[138,111,48]];
+            if(mode === '32_gameboy') return [[15,56,15],[48,98,48],[139,172,15],[155,188,15],[10,10,25],[30,40,80],[90,100,180],[150,190,240],[240,250,220],[200,160,40],[140,90,20],[70,30,10],[250,50,90],[180,20,80],[100,10,60],[40,5,40],[5,120,130],[20,170,150],[110,220,190],[220,250,240],[250,120,40],[200,80,20],[255,220,80],[255,255,255],[210,210,210],[160,160,160],[110,110,110],[70,70,70],[40,40,40],[180,140,200],[120,80,150],[50,20,90]];
+
+            const maxColors = parseInt(mode);
+            const data = imgData.data;
+            let buckets = {};
+            for (let i = 0; i < data.length; i += 16) {
+                if(data[i+3] < 128) continue;
+                let key = (data[i]>>4) + "," + (data[i+1]>>4) + "," + (data[i+2]>>4);
+                if (!buckets[key]) buckets[key] = { rgb: [data[i], data[i+1], data[i+2]], count: 0 };
+                buckets[key].count++;
+            }
+            return Object.values(buckets).sort((a,b) => b.count - a.count).slice(0, maxColors).map(b => b.rgb);
+        }
+
+        function getColorDistance(c1, c2, algo) {
+            if (algo === 'manhattan') return Math.abs(c1[0]-c2[0]) + Math.abs(c1[1]-c2[1]) + Math.abs(c1[2]-c2[2]);
+            if (algo === 'cie76') return Math.pow((c1[0]-c2[0])*0.3, 2) + Math.pow((c1[1]-c2[1])*0.59, 2) + Math.pow((c1[2]-c2[2])*0.11, 2);
+            return Math.pow(c1[0]-c2[0], 2) + Math.pow(c1[1]-c2[1], 2) + Math.pow(c1[2]-c2[2], 2);
+        }
+
+        function findNearestColor(pixel, palette, algo) {
+            let minDistance = Infinity; let nearest = palette[0] || [0,0,0];
+            for (let i = 0; i < palette.length; i++) {
+                let dist = getColorDistance(pixel, palette[i], algo);
+                if (dist < minDistance) { minDistance = dist; nearest = palette[i]; }
+            }
+            return nearest;
+        }
+
+        function applyDitherMerge(imgData, palette, mergeAlgo, ditherAlgo, weight) {
+            if(!palette || palette.length === 0) return;
+            const w = imgData.width, h = imgData.height, d = imgData.data;
+            const bayer2x2 = [ [0, 2], [3, 1] ];
+            const bayer4x4 = [ [0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5] ];
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const idx = (y * w + x) * 4;
+                    if(d[idx+3] < 128) continue;
+                    let r = d[idx], g = d[idx+1], b = d[idx+2];
+
+                    if (ditherAlgo.startsWith('bayer')) {
+                        let matrix = ditherAlgo === 'bayer2x2' ? bayer2x2 : bayer4x4;
+                        let size = matrix.length;
+                        let ratio = (matrix[y % size][x % size] / (size * size)) - 0.5;
+                        r = Math.min(255, Math.max(0, r + ratio * 68 * weight));
+                        g = Math.min(255, Math.max(0, g + ratio * 68 * weight));
+                        b = Math.min(255, Math.max(0, b + ratio * 68 * weight));
+                    }
+
+                    const nearest = findNearestColor([r, g, b], palette, mergeAlgo);
+
+                    if (ditherAlgo === 'floyd' && weight > 0) {
+                        let errR = (d[idx] - nearest[0]) * weight;
+                        let errG = (d[idx+1] - nearest[1]) * weight;
+                        let errB = (d[idx+2] - nearest[2]) * weight;
+                        distributeError(d, x+1, y, w, h, errR * 7/16, errG * 7/16, errB * 7/16);
+                        distributeError(d, x-1, y+1, w, h, errR * 3/16, errG * 3/16, errB * 3/16);
+                        distributeError(d, x, y+1, w, h, errR * 5/16, errG * 5/16, errB * 5/16);
+                        distributeError(d, x+1, y+1, w, h, errR * 1/16, errG * 1/16, errB * 1/16);
+                    }
+                    d[idx] = nearest[0]; d[idx+1] = nearest[1]; d[idx+2] = nearest[2];
+                }
+            }
+        }
+
+        function distributeError(data, x, y, w, h, errR, errG, errB) {
+            if (x < 0 || x >= w || y < 0 || y >= h) return;
+            const idx = (y * w + x) * 4;
+            data[idx] = Math.min(255, Math.max(0, data[idx] + errR));
+            data[idx+1] = Math.min(255, Math.max(0, data[idx+1] + errG));
+            data[idx+2] = Math.min(255, Math.max(0, data[idx+2] + errB));
+        }
+
+        function applyOutlineCleaner(imgData, mode) {
+            const w = imgData.width, h = imgData.height, data = imgData.data;
+            const tempAlpha = new Uint8ClampedArray(w * h);
+            for (let i = 0; i < w * h; i++) tempAlpha[i] = data[i * 4 + 3];
+
+            const radius = parseInt(mode); 
+            for (let y = radius; y < h - radius; y++) {
+                for (let x = radius; x < w - radius; x++) {
+                    const idx = (y * w + x) * 4;
+                    if (data[idx + 3] === 0) continue;
+
+                    let connected = 0;
+                    for (let ny = -radius; ny <= radius; ny++) {
+                        for (let nx = -radius; nx <= radius; nx++) {
+                            if (nx === 0 && ny === 0) continue;
+                            if (tempAlpha[(y + ny) * w + (x + nx)] > 50) connected++;
+                        }
+                    }
+                    if (connected < 2) {
+                        data[idx] = 0; data[idx+1] = 0; data[idx+2] = 0; data[idx+3] = 0;
+                    }
+                }
+            }
+        }
+
+        function applyPixelation(imgData, size, mode) {
+            if(size <= 1) return imgData;
+            const w = imgData.width, h = imgData.height, data = imgData.data;
+            for (let y = 0; y < h; y += size) {
+                for (let x = 0; x < w; x += size) {
+                    let r = 0, g = 0, b = 0, a = 0, count = 0;
+                    if (mode === 'average') {
+                        for (let cy = 0; cy < size && y+cy < h; cy++) {
+                            for (let cx = 0; cx < size && x+cx < w; cx++) {
+                                const idx = ((y + cy) * w + (x + cx)) * 4;
+                                r += data[idx]; g += data[idx+1]; b += data[idx+2]; a += data[idx+3]; count++;
+                            }
+                        }
+                        r = Math.floor(r/count); g = Math.floor(g/count); b = Math.floor(b/count); a = Math.floor(a/count);
+                    } else {
+                        const idx = (Math.min(y + Math.floor(size/2), h-1) * w + Math.min(x + Math.floor(size/2), w-1)) * 4;
+                        r = data[idx]; g = data[idx+1]; b = data[idx+2]; a = data[idx+3];
+                    }
+                    for (let cy = 0; cy < size && y+cy < h; cy++) {
+                        for (let cx = 0; cx < size && x+cx < w; cx++) {
+                            const idx = ((y + cy) * w + (x + cx)) * 4;
+                            data[idx] = r; data[idx+1] = g; data[idx+2] = b; data[idx+3] = a;
+                        }
+                    }
+                }
+            }
+            return imgData;
+        }
+
+        // --- DRAG AND DROP ---
+        function addItemDragListeners(el) {
+            el.addEventListener('dragstart', handleDragStart, false);
+            el.addEventListener('dragenter', handleDragEnter, false);
+            el.addEventListener('dragover', handleDragOver, false);
+            el.addEventListener('dragleave', handleDragLeave, false);
+            el.addEventListener('drop', handleDrop, false);
+            el.addEventListener('dragend', handleDragEnd, false);
+        }
+
+        function handleDragStart(e) { dragSrcEl = this; e.dataTransfer.effectAllowed = 'move'; this.style.opacity = '0.4'; }
+        function handleDragOver(e) { if (e.preventDefault) e.preventDefault(); return false; }
+        function handleDragEnter(e) { this.style.borderTop = "3px solid #00adb5"; }
+        function handleDragLeave(e) { this.style.borderTop = ""; }
+        function handleDrop(e) {
+            if (e.stopPropagation) e.stopPropagation();
+            if (dragSrcEl !== this) { pipelineContainer.insertBefore(dragSrcEl, this); updatePipeline(); }
+            return false;
+        }
+        function handleDragEnd(e) { this.style.opacity = '1'; pipelineContainer.querySelectorAll('.pipeline-item').forEach(el => el.style.borderTop = ""); }
+
+        document.getElementById('btnSaveImg').addEventListener('click', () => {
+            if(!originalImage) return alert("Chargez une image !");
+            const link = document.createElement('a');
+            link.download = 'pixelart-studio.png'; link.href = canvas.toDataURL(); link.click();
+        });
+    </script>
+</body>
+</html>

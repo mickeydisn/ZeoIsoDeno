@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PNG Alpha Sketch</title>
+<style>
+  :root{
+    --bg-0:#15161a;
+    --bg-1:#1d1f25;
+    --bg-2:#26282f;
+    --line:#34363e;
+    --text:#e8e9ec;
+    --text-dim:#9498a3;
+    --accent:#5ad1c9;
+    --accent-dim:#2e5f5b;
+    --danger:#e2645a;
+    --danger-dim:#5f2e2e;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;height:100%;
+    background:var(--bg-0);
+    color:var(--text);
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    overflow:hidden;
+  }
+  #app{
+    display:flex;
+    flex-direction:column;
+    height:100%;
+  }
+  header{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:10px 16px;
+    background:var(--bg-1);
+    border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  header h1{
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin:0;
+    margin-right:2px;
+  }
+  .group{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:4px 10px;
+    background:var(--bg-2);
+    border-radius:8px;
+    border:1px solid var(--line);
+  }
+  .group label{
+    font-size:11px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:.03em;
+  }
+  button{
+    background:var(--bg-2);
+    color:var(--text);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:7px 12px;
+    font-size:13px;
+    cursor:pointer;
+    transition:background .12s, border-color .12s;
+    white-space:nowrap;
+  }
+  button:hover{ background:#2f323a; }
+  button:disabled{ opacity:.4; cursor:default; }
+  button:disabled:hover{ background:var(--bg-2); }
+  button.active{
+    background:var(--accent-dim);
+    border-color:var(--accent);
+    color:var(--accent);
+  }
+  button.active.layer-image{
+    background:var(--danger-dim);
+    border-color:var(--danger);
+    color:var(--danger);
+  }
+  button.primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#0d1817;
+    font-weight:600;
+  }
+  button.primary:hover{ filter:brightness(1.08); }
+  input[type=range]{ accent-color:var(--accent); width:100px; }
+  input[type=color]{
+    width:30px;height:26px;
+    border:1px solid var(--line);
+    border-radius:5px;
+    background:none;
+    padding:0;
+    cursor:pointer;
+  }
+  #sizeVal{ font-size:12px; color:var(--text-dim); width:26px; text-align:right; }
+  #fileInput{ display:none; }
+  main{
+    flex:1;
+    position:relative;
+    overflow:hidden;
+    background:
+      linear-gradient(45deg,#26282f 25%,transparent 25%) 0 0/20px 20px,
+      linear-gradient(-45deg,#26282f 25%,transparent 25%) 0 0/20px 20px,
+      linear-gradient(45deg,transparent 75%,#26282f 75%) 0 0/20px 20px,
+      linear-gradient(-45deg,transparent 75%,#26282f 75%) 0 0/20px 20px,
+      #1a1b20;
+  }
+  main.tool-cursor{ cursor:none; }
+  main.pan-mode{ cursor:grab; }
+  main.panning{ cursor:grabbing; }
+  #world{
+    position:absolute;
+    top:0; left:0;
+    transform-origin:0 0;
+    background:#FF00FF;
+    box-shadow:0 0 0 1px rgba(0,0,0,.35), 0 10px 40px rgba(0,0,0,.5);
+  }
+  #world canvas{
+    position:absolute;
+    top:0; left:0;
+    image-rendering:pixelated;
+  }
+  #placeholder{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    gap:14px;
+    color:var(--text-dim);
+    text-align:center;
+    pointer-events:none;
+  }
+  #placeholder span{ font-size:13px; max-width:340px; line-height:1.5; }
+  #zoomLabel{ font-size:12px; color:var(--text-dim); min-width:44px; text-align:center; }
+  #brushCursor{
+    position:absolute;
+    top:0; left:0;
+    pointer-events:none;
+    transform:translate(-9999px,-9999px);
+    z-index:50;
+    border:1.5px solid #ffffff;
+    box-shadow:0 0 0 1px rgba(0,0,0,.85);
+    background:rgba(255,255,255,0.08);
+  }
+  #brushCursor.hidden{ display:none; }
+  #layerBanner{
+    position:absolute;
+    top:10px; left:50%;
+    transform:translateX(-50%);
+    background:var(--danger-dim);
+    color:var(--danger);
+    border:1px solid var(--danger);
+    border-radius:6px;
+    padding:5px 12px;
+    font-size:11px;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    display:none;
+    z-index:40;
+  }
+  #layerBanner.show{ display:block; }
+  footer{
+    padding:6px 16px;
+    font-size:11px;
+    color:var(--text-dim);
+    background:var(--bg-1);
+    border-top:1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>PNG Alpha Sketch</h1>
+
+    <div class="group">
+      <button id="loadBtn">Load PNG</button>
+      <input type="file" id="fileInput" accept="image/png">
+    </div>
+
+    <div class="group">
+      <label>Layer</label>
+      <button id="layerDrawBtn" class="active">Sketch</button>
+      <button id="layerImageBtn">Image</button>
+    </div>
+
+    <div class="group">
+      <button id="brushBtn" class="active">Brush</button>
+      <button id="eraserBtn">Eraser</button>
+      <button id="panBtn">Pan</button>
+    </div>
+
+    <div class="group">
+      <label>Shape</label>
+      <button id="shapeIsoBtn" class="active">Isometric</button>
+      <button id="shapeHexBtn">Hex Diamond</button>
+      <button id="shapeSquareBtn">Square</button>
+      <button id="shapeRoundBtn">Round</button>
+    </div>
+
+    <div class="group">
+      <label>Size</label>
+      <input type="range" id="sizeRange" min="1" max="200" value="24">
+      <span id="sizeVal">24</span>
+    </div>
+
+    <div class="group">
+      <label>Color</label>
+      <input type="color" id="colorPicker" value="#1fa39c">
+    </div>
+
+    <div class="group">
+      <button id="zoomOut">&minus;</button>
+      <span id="zoomLabel">100%</span>
+      <button id="zoomIn">&plus;</button>
+      <button id="zoomReset">Fit</button>
+    </div>
+
+    <div class="group">
+      <button id="undoBtn" disabled>Undo</button>
+      <button id="clearBtn">Clear Sketch</button>
+    </div>
+
+    <div class="group" style="margin-left:auto;">
+      <button id="saveBtn" class="primary">Save PNG</button>
+    </div>
+  </header>
+
+  <main id="viewport">
+    <div id="placeholder">
+      <strong style="font-size:15px;color:var(--text);">No image loaded</strong>
+      <span>Load a PNG to see it over a magenta backdrop, revealing every transparent pixel. Sketch on the layer underneath, or switch to the Image layer to remove pixels from the PNG itself.</span>
+    </div>
+    <div id="layerBanner">Editing image layer &mdash; this removes pixels from the loaded PNG</div>
+    <div id="world" style="display:none;">
+      <canvas id="drawCanvas"></canvas>
+      <canvas id="pngCanvas"></canvas>
+    </div>
+    <div id="brushCursor" class="hidden"></div>
+  </main>
+
+  <footer>
+    Scroll to zoom &middot; middle-click drag (or Pan tool) to move &middot; magenta shows transparency &middot; Sketch layer sits under the PNG, Image layer edits the PNG's own pixels.
+  </footer>
+</div>
+
+<script>
+(function(){
+  const viewport   = document.getElementById('viewport');
+  const world      = document.getElementById('world');
+  const drawCanvas = document.getElementById('drawCanvas');
+  const pngCanvas  = document.getElementById('pngCanvas');
+  const placeholder= document.getElementById('placeholder');
+  const layerBanner= document.getElementById('layerBanner');
+  const brushCursor= document.getElementById('brushCursor');
+  const dctx = drawCanvas.getContext('2d');
+  const pctx = pngCanvas.getContext('2d');
+
+  const fileInput  = document.getElementById('fileInput');
+  const loadBtn    = document.getElementById('loadBtn');
+  const layerDrawBtn  = document.getElementById('layerDrawBtn');
+  const layerImageBtn = document.getElementById('layerImageBtn');
+  const brushBtn   = document.getElementById('brushBtn');
+  const eraserBtn  = document.getElementById('eraserBtn');
+  const panBtn     = document.getElementById('panBtn');
+  const shapeIsoBtn    = document.getElementById('shapeIsoBtn');
+  const shapeHexBtn    = document.getElementById('shapeHexBtn');
+  const shapeSquareBtn = document.getElementById('shapeSquareBtn');
+  const shapeRoundBtn  = document.getElementById('shapeRoundBtn');
+  const sizeRange  = document.getElementById('sizeRange');
+  const sizeVal    = document.getElementById('sizeVal');
+  const colorPicker= document.getElementById('colorPicker');
+  const zoomIn     = document.getElementById('zoomIn');
+  const zoomOut    = document.getElementById('zoomOut');
+  const zoomReset  = document.getElementById('zoomReset');
+  const zoomLabel  = document.getElementById('zoomLabel');
+  const clearBtn   = document.getElementById('clearBtn');
+  const undoBtn    = document.getElementById('undoBtn');
+  const saveBtn    = document.getElementById('saveBtn');
+
+  const MAX_UNDO = 10;
+  let undoStack = [];
+
+  function snapshot(){
+    return {
+      draw: dctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height),
+      png:  pctx.getImageData(0, 0, pngCanvas.width, pngCanvas.height)
+    };
+  }
+
+  function pushUndo(){
+    if(!hasImage) return;
+    undoStack.push(snapshot());
+    if(undoStack.length > MAX_UNDO) undoStack.shift();
+    updateUndoButton();
+  }
+
+  function undo(){
+    if(undoStack.length === 0) return;
+    const snap = undoStack.pop();
+    dctx.putImageData(snap.draw, 0, 0);
+    pctx.putImageData(snap.png, 0, 0);
+    updateUndoButton();
+  }
+
+  function updateUndoButton(){
+    undoBtn.disabled = undoStack.length === 0;
+  }
+
+  undoBtn.onclick = undo;
+  window.addEventListener('keydown', (e) => {
+    if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){
+      e.preventDefault();
+      undo();
+    }
+  });
+
+  let scale = 1, tx = 0, ty = 0;
+  let imgNatW = 0, imgNatH = 0;
+  let tool = 'brush';       // brush | eraser | pan
+  let activeLayer = 'draw'; // draw | image
+  let shape = 'iso';        // iso | square | round
+  let hasImage = false;
+
+  let drawing = false, panning = false;
+  let lastX = 0, lastY = 0; // canvas-pixel coords
+  let lastScreenX = 0, lastScreenY = 0;
+
+  // isometric diamond width:height ratio (classic 2:1 tile angle)
+  const ISO_RATIO = 2;
+  // hex diamond: fraction of half-height where the flat side vertices sit
+  const HEX_MID = 1/3;
+
+  function setTool(next){
+    tool = next;
+    [brushBtn, eraserBtn, panBtn].forEach(b => b.classList.remove('active'));
+    if(next === 'brush') brushBtn.classList.add('active');
+    if(next === 'eraser') eraserBtn.classList.add('active');
+    if(next === 'pan') panBtn.classList.add('active');
+    viewport.classList.toggle('pan-mode', next === 'pan');
+    viewport.classList.toggle('tool-cursor', next !== 'pan');
+    updateCursorVisibility();
+  }
+  brushBtn.onclick  = () => setTool('brush');
+  eraserBtn.onclick = () => setTool('eraser');
+  panBtn.onclick    = () => setTool('pan');
+
+  function setLayer(next){
+    activeLayer = next;
+    layerDrawBtn.classList.remove('active');
+    layerImageBtn.classList.remove('active', 'layer-image');
+    if(next === 'draw'){
+      layerDrawBtn.classList.add('active');
+      layerBanner.classList.remove('show');
+    } else {
+      layerImageBtn.classList.add('active', 'layer-image');
+      layerBanner.classList.add('show');
+    }
+  }
+  layerDrawBtn.onclick  = () => setLayer('draw');
+  layerImageBtn.onclick = () => setLayer('image');
+
+  function setShape(next){
+    shape = next;
+    [shapeIsoBtn, shapeHexBtn, shapeSquareBtn, shapeRoundBtn].forEach(b => b.classList.remove('active'));
+    if(next === 'iso') shapeIsoBtn.classList.add('active');
+    if(next === 'hex') shapeHexBtn.classList.add('active');
+    if(next === 'square') shapeSquareBtn.classList.add('active');
+    if(next === 'round') shapeRoundBtn.classList.add('active');
+    updateCursorShape();
+  }
+  shapeIsoBtn.onclick    = () => setShape('iso');
+  shapeHexBtn.onclick    = () => setShape('hex');
+  shapeSquareBtn.onclick = () => setShape('square');
+  shapeRoundBtn.onclick  = () => setShape('round');
+
+  sizeRange.oninput = () => { sizeVal.textContent = sizeRange.value; updateCursorShape(); };
+
+  function applyTransform(){
+    world.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+    zoomLabel.textContent = Math.round(scale * 100) + '%';
+    updateCursorShape();
+  }
+
+  function fitToView(){
+    if(!hasImage) return;
+    const pad = 60;
+    const vw = viewport.clientWidth - pad;
+    const vh = viewport.clientHeight - pad;
+    scale = Math.min(vw / imgNatW, vh / imgNatH, 1);
+    if(scale <= 0 || !isFinite(scale)) scale = 1;
+    tx = (viewport.clientWidth - imgNatW * scale) / 2;
+    ty = (viewport.clientHeight - imgNatH * scale) / 2;
+    applyTransform();
+  }
+
+  // ---- Load PNG ----
+  loadBtn.onclick = () => fileInput.click();
+  fileInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      imgNatW = img.naturalWidth;
+      imgNatH = img.naturalHeight;
+
+      world.style.width  = imgNatW + 'px';
+      world.style.height = imgNatH + 'px';
+
+      drawCanvas.width  = imgNatW;
+      drawCanvas.height = imgNatH;
+      drawCanvas.style.width  = imgNatW + 'px';
+      drawCanvas.style.height = imgNatH + 'px';
+      dctx.clearRect(0,0,imgNatW,imgNatH);
+
+      pngCanvas.width  = imgNatW;
+      pngCanvas.height = imgNatH;
+      pngCanvas.style.width  = imgNatW + 'px';
+      pngCanvas.style.height = imgNatH + 'px';
+      pctx.clearRect(0,0,imgNatW,imgNatH);
+      pctx.drawImage(img, 0, 0, imgNatW, imgNatH);
+
+      URL.revokeObjectURL(url);
+
+      placeholder.style.display = 'none';
+      world.style.display = 'block';
+      hasImage = true;
+      undoStack = [];
+      updateUndoButton();
+      setLayer('draw');
+      fitToView();
+    };
+    img.src = url;
+    fileInput.value = '';
+  };
+
+  // ---- Coordinate helpers ----
+  function screenToCanvas(clientX, clientY){
+    const rect = viewport.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left - tx) / scale,
+      y: (clientY - rect.top  - ty) / scale
+    };
+  }
+
+  // ---- Zoom (wheel) ----
+  viewport.addEventListener('wheel', (e) => {
+    if(!hasImage) return;
+    e.preventDefault();
+    const rect = viewport.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const worldX = (cx - tx) / scale;
+    const worldY = (cy - ty) / scale;
+
+    const delta = -e.deltaY * 0.0015;
+    let newScale = scale * (1 + delta);
+    newScale = Math.min(Math.max(newScale, 0.05), 20);
+
+    tx = cx - worldX * newScale;
+    ty = cy - worldY * newScale;
+    scale = newScale;
+    applyTransform();
+  }, { passive:false });
+
+  // ---- Shape path builder ----
+  function tracePath(ctx, x, y, size){
+    const h = size / 2;
+    ctx.beginPath();
+    if(shape === 'round'){
+      ctx.arc(x, y, h, 0, Math.PI*2);
+    } else if(shape === 'square'){
+      ctx.rect(x - h, y - h, size, size);
+    } else if(shape === 'hex'){ // elongated 6-edge diamond
+      const w = h * ISO_RATIO;
+      const hh = h;
+      const midY = hh * HEX_MID;
+      ctx.moveTo(x,      y - hh);
+      ctx.lineTo(x + w,  y - midY);
+      ctx.lineTo(x + w,  y + midY);
+      ctx.lineTo(x,      y + hh);
+      ctx.lineTo(x - w,  y + midY);
+      ctx.lineTo(x - w,  y - midY);
+      ctx.closePath();
+    } else { // iso diamond, 2:1 width:height
+      const w = h * ISO_RATIO;
+      const hh = h;
+      ctx.moveTo(x,      y - hh);
+      ctx.lineTo(x + w,  y);
+      ctx.lineTo(x,      y + hh);
+      ctx.lineTo(x - w,  y);
+      ctx.closePath();
+    }
+  }
+
+  function activeCtx(){ return activeLayer === 'image' ? pctx : dctx; }
+
+  function paintAt(ctx, x, y, size, color){
+    if(tool === 'eraser'){
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillStyle = 'rgba(0,0,0,1)';
+    } else {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = color;
+    }
+    tracePath(ctx, x, y, size);
+    ctx.fill();
+  }
+
+  function paintLine(ctx, x0, y0, x1, y1, size, color){
+    const dx = x1 - x0, dy = y1 - y0;
+    const dist = Math.hypot(dx, dy);
+    const step = Math.max(1, size * 0.2);
+    const steps = Math.max(1, Math.ceil(dist / step));
+    for(let i = 1; i <= steps; i++){
+      const t = i / steps;
+      paintAt(ctx, x0 + dx*t, y0 + dy*t, size, color);
+    }
+  }
+
+  viewport.addEventListener('mousedown', (e) => {
+    if(!hasImage) return;
+    const isMiddle = e.button === 1;
+    const wantsPan = tool === 'pan' || isMiddle;
+
+    if(wantsPan){
+      panning = true;
+      lastScreenX = e.clientX;
+      lastScreenY = e.clientY;
+      viewport.classList.add('panning');
+      e.preventDefault();
+      return;
+    }
+
+    if(e.button === 0){
+      drawing = true;
+      pushUndo();
+      const p = screenToCanvas(e.clientX, e.clientY);
+      lastX = p.x; lastY = p.y;
+      const size = parseInt(sizeRange.value, 10);
+      paintAt(activeCtx(), p.x, p.y, size, colorPicker.value);
+    }
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    positionCursor(e.clientX, e.clientY);
+
+    if(panning){
+      tx += e.clientX - lastScreenX;
+      ty += e.clientY - lastScreenY;
+      lastScreenX = e.clientX;
+      lastScreenY = e.clientY;
+      applyTransform();
+      return;
+    }
+    if(drawing){
+      const p = screenToCanvas(e.clientX, e.clientY);
+      const size = parseInt(sizeRange.value, 10);
+      paintLine(activeCtx(), lastX, lastY, p.x, p.y, size, colorPicker.value);
+      lastX = p.x; lastY = p.y;
+    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    drawing = false;
+    if(panning){
+      panning = false;
+      viewport.classList.remove('panning');
+    }
+  });
+
+  viewport.addEventListener('mouseleave', () => {
+    brushCursor.classList.add('hidden');
+  });
+  viewport.addEventListener('mouseenter', updateCursorVisibility);
+
+  viewport.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // ---- Brush cursor overlay (always shown above the image) ----
+  function updateCursorVisibility(){
+    const show = hasImage && tool !== 'pan';
+    brushCursor.classList.toggle('hidden', !show);
+  }
+
+  function updateCursorShape(){
+    const size = parseInt(sizeRange.value, 10) * scale;
+    const h = size;
+    if(shape === 'round'){
+      brushCursor.style.borderRadius = '50%';
+      brushCursor.style.clipPath = 'none';
+      brushCursor.style.width  = h + 'px';
+      brushCursor.style.height = h + 'px';
+    } else if(shape === 'square'){
+      brushCursor.style.borderRadius = '0';
+      brushCursor.style.clipPath = 'none';
+      brushCursor.style.width  = h + 'px';
+      brushCursor.style.height = h + 'px';
+    } else if(shape === 'hex'){
+      const w = h * ISO_RATIO;
+      const midPct = 50 * HEX_MID; // offset from center, as % of half-height
+      const top = 50 - midPct, bot = 50 + midPct;
+      brushCursor.style.borderRadius = '0';
+      brushCursor.style.clipPath = `polygon(50% 0%, 100% ${top}%, 100% ${bot}%, 50% 100%, 0% ${bot}%, 0% ${top}%)`;
+      brushCursor.style.width  = w + 'px';
+      brushCursor.style.height = h + 'px';
+    } else {
+      const w = h * ISO_RATIO;
+      brushCursor.style.borderRadius = '0';
+      brushCursor.style.clipPath = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
+      brushCursor.style.width  = w + 'px';
+      brushCursor.style.height = h + 'px';
+    }
+  }
+
+  function positionCursor(clientX, clientY){
+    if(!hasImage || tool === 'pan'){ brushCursor.classList.add('hidden'); return; }
+    const rect = viewport.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    brushCursor.classList.remove('hidden');
+    brushCursor.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+  }
+
+  // ---- Clear layer ----
+  clearBtn.onclick = () => {
+    if(!hasImage) return;
+    if(activeLayer === 'image'){
+      if(!confirm('This will erase ALL pixels of the loaded PNG. Continue?')) return;
+      pushUndo();
+      pctx.clearRect(0,0,pngCanvas.width, pngCanvas.height);
+    } else {
+      pushUndo();
+      dctx.clearRect(0,0,drawCanvas.width, drawCanvas.height);
+    }
+  };
+
+  // ---- Zoom buttons ----
+  function zoomBy(factor){
+    if(!hasImage) return;
+    const rect = viewport.getBoundingClientRect();
+    const cx = rect.width/2, cy = rect.height/2;
+    const worldX = (cx - tx) / scale;
+    const worldY = (cy - ty) / scale;
+    scale = Math.min(Math.max(scale * factor, 0.05), 20);
+    tx = cx - worldX * scale;
+    ty = cy - worldY * scale;
+    applyTransform();
+  }
+  zoomIn.onclick  = () => zoomBy(1.2);
+  zoomOut.onclick = () => zoomBy(1/1.2);
+  zoomReset.onclick = fitToView;
+
+  window.addEventListener('resize', () => { if(hasImage) fitToView(); });
+
+  // ---- Save ----
+  saveBtn.onclick = () => {
+    if(!hasImage){ return; }
+    const out = document.createElement('canvas');
+    out.width = imgNatW;
+    out.height = imgNatH;
+    const octx = out.getContext('2d');
+    // sketch layer (below) then the image layer (on top) — no magenta background
+    octx.drawImage(drawCanvas, 0, 0);
+    octx.drawImage(pngCanvas, 0, 0);
+    out.toBlob((blob) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'edited.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }, 'image/png');
+  };
+
+  setTool('brush');
+  setShape('iso');
+  updateCursorVisibility();
+})();
+</script>
+</body>
+</html>

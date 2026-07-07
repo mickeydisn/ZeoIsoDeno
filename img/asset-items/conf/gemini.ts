@@ -1,0 +1,43 @@
+[{
+  "src": "./img/asset-items/gemini-arme.png",
+  "name": "gemini-arme",
+  "imgHeight": 224,
+  "imgWidth": 192,
+  "assetCount": 7,
+  "type": "items-single",
+}, {
+  "src": "./img/asset-items/gemini-box.png",
+  "name": "gemini-box",
+  "imgHeight": 224,
+  "imgWidth": 192,
+  "assetCount": 14,
+  "type": "items-single",
+}, {
+  "src": "./img/asset-items/gemini-drone.png",
+  "name": "gemini-drone",
+  "imgHeight": 224,
+  "imgWidth": 192,
+  "assetCount": 19,
+  "type": "items-single",
+}, {
+  "src": "./img/asset-items/gemini-items-other.png",
+  "name": "gemini-items-other",
+  "imgHeight": 224,
+  "imgWidth": 192,
+  "assetCount": 33,
+  "type": "items-single",
+}, {
+  "src": "./img/asset-items/gemini-items.png",
+  "name": "gemini-items",
+  "imgHeight": 224,
+  "imgWidth": 192,
+  "assetCount": 22,
+  "type": "items-single",
+}, {
+  "src": "./img/asset-items/gemini-organic.png",
+  "name": "gemini-organic",
+  "imgHeight": 224,
+  "imgWidth": 192,
+  "assetCount": 14,
+  "type": "items-single",
+}];
