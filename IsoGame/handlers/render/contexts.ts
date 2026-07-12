@@ -13,7 +13,7 @@ import { IsometricProjector } from "@iso-game/mapIso/utils/simpleIso/IsometricPr
 import { TilesMatrixAvg } from "@iso-game/map/object/tilesMatrix.ts";
 import { GameState } from "../game/gameState.ts";
 import { RenderState } from "./state/renderState.ts";
-import { MapGridLaout } from "@iso-game/mapIso/render/type.ts";
+import { IsoConfig } from "@iso-game/mapIso/render/type.ts";
 
 // ────────────────────────────────────────────
 // CONTEXT
@@ -22,7 +22,7 @@ export type TRenderHandlerContext = THandlerContext & {
   worker: Window & typeof globalThis;
   tag: "render";
 
-  conf: MapGridLaout;
+  conf: IsoConfig;
   isomer: Isomer;
   isoProject: IsometricProjector;
 
@@ -31,6 +31,12 @@ export type TRenderHandlerContext = THandlerContext & {
   canvasCtx: CanvasRenderingContext2D;
 
   frameCount: number;
+  currentDiplayBox: {
+    cardId: string;
+    x: number;
+    y: number;
+    distance: number;
+  }[];
   gameState: GameState;
   renderState: RenderState;
   tilesMatrix: TilesMatrixAvg;

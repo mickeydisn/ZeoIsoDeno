@@ -11,7 +11,7 @@ import {
   TGameHandlerAction,
   TGameHandlerContext,
 } from "../contexts.ts";
-import { MapGridLaout } from "@iso-game/mapIso/render/type.ts";
+import { IsoConfig } from "@iso-game/mapIso/render/type.ts";
 
 // -------------------------------------
 
@@ -100,11 +100,7 @@ const setOffScreenCanvas: TGameHandlerAction<EventSetCanvasMap> = gameAction<
 // -------------------------------------
 
 export interface EventInitCanvasMap extends TBaseMessage<"initCanvasMap"> {
-  mapConf: {
-    mapGridSize: number;
-    mapGridTileScale: number;
-    mapGridMod: number;
-  };
+  mapConf: IsoConfig;
   width?: number;
   height?: number;
 }
@@ -114,10 +110,13 @@ const initCanvasMap: TGameHandlerAction<EventInitCanvasMap> = gameAction<
 >("initCanvasMap", (data: EventInitCanvasMap, _ctx: TGameHandlerContext) => {
   console.log("=== Init Render Worker");
 
-  const isoConf = data.mapConf as MapGridLaout || {
-    mapGridSize: 40,
-    mapGridTileScale: 1.2,
-    mapGridMod: 1,
+  const isoConf: IsoConfig = {
+    mapGridSize: data.mapConf.mapGridSize ?? 40,
+    mapGridTileScale: data.mapConf.mapGridTileScale ?? 1.2,
+    mapGridMod: data.mapConf.mapGridMod ?? 1,
+    showTileBox: data.mapConf.showTileBox ?? false,
+    showIsFrise: data.mapConf.showIsFrise ?? true,
+    showIsBlock: data.mapConf.showIsBlock ?? true,
   };
 
   _ctx.gameloop.canvasMapDrawer = new CanvasMapDrawers(
@@ -129,13 +128,7 @@ const initCanvasMap: TGameHandlerAction<EventInitCanvasMap> = gameAction<
     _ctx.gameloop.canvasMap,
   );
 
-  gobalGameState.setIsoConf({
-    mapSize: isoConf.mapGridSize,
-    tileScaleSize: isoConf.mapGridTileScale,
-    tileScaleMod: isoConf.mapGridMod,
-  });
-  // gobalGameState._isoProject = _ctx.gameloop.canvasMapDrawer.isoProject
-  // gobalGameState._tilesMatrix = _ctx.gameloop.canvasMapDrawer.tilesMatrix
+  gobalGameState.setIsoConf(isoConf);
 });
 
 // -------------------------------------

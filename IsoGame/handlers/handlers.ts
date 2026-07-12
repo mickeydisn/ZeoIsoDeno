@@ -17,6 +17,7 @@ import { TScreenHandlerContext } from "@iso-game/handlers/screen/contexts.ts";
 import { TRenderHandlerContext } from "@iso-game/handlers/render/contexts.ts";
 import { initRenderHandlers } from "./render/handler/initHandlers.ts";
 import { moveHandlers } from "./render/handler/moveHandlers.ts";
+import { stateHandlers } from "./render/handler/statesHandlers.ts";
 
 // ────────────────────────────────────────────
 
@@ -36,6 +37,7 @@ export const AllScreenHandlers = [
 
 export const AllRenderHandlers = [
   ...initRenderHandlers,
+  ...stateHandlers,
   ...moveHandlers,
 ] as const;
 

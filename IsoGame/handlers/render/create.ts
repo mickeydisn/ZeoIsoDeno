@@ -17,8 +17,8 @@ import {
   gobalGameState,
 } from "../game/gameState.ts";
 import {
-  MapGridLaout,
-  MapGridLaoutDefault,
+  DEFAULT_ISO_CONFIG,
+  IsoConfig,
 } from "@iso-game/mapIso/render/type.ts";
 import { AssetLoaderOpti } from "@iso-game/mapIso/asset/assetLoaderOpti.ts";
 import { Isomer } from "@iso-game/mapIso/utils/iso/isomer.ts";
@@ -30,7 +30,7 @@ export const createHander = (
   worker: Window & typeof globalThis,
   canvas?: Canvas,
 ) => {
-  const drawConf: MapGridLaout = MapGridLaoutDefault;
+  const drawConf: IsoConfig = DEFAULT_ISO_CONFIG;
 
   const offScreenCanvas = canvas
     ? canvas
@@ -77,6 +77,7 @@ export const createHander = (
     canvasCtx,
 
     frameCount,
+    currentDiplayBox: [],
     gameState,
     renderState,
     tilesMatrix,

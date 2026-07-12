@@ -4,55 +4,28 @@ import {
   TRenderHandlerAction,
   TRenderHandlerContext,
 } from "../contexts.ts";
+import { IsoConfig } from "@iso-game/mapIso/render/type.ts";
 
 // -------------------------------------
-export interface EventUpdateDrawConfigLayout
-  extends TBaseMessage<"updateDrawConfigLayout"> {
-  mapGridSize: number;
-  mapGridMod: number;
-  mapGridTileScale: number;
+export interface EventUpdateIsoConfig
+  extends TBaseMessage<"updateIsoConfig"> {
+  isoConfig: IsoConfig;
 }
 
-const updateDrawConfigLayout: TRenderHandlerAction<
-  EventUpdateDrawConfigLayout
-> = renderAction<
-  EventUpdateDrawConfigLayout
+const updateIsoConfig: TRenderHandlerAction<EventUpdateIsoConfig> = renderAction<
+  EventUpdateIsoConfig
 >(
-  "updateDrawConfigLayout",
-  (_data: EventUpdateDrawConfigLayout, _ctx: TRenderHandlerContext) => {
-    _ctx.renderState.mapGridSize = _data.mapGridSize;
-    _ctx.renderState.mapGridTileScale = _data.mapGridTileScale;
-    _ctx.renderState.mapGridMod = _data.mapGridMod;
+  "updateIsoConfig",
+  (_data: EventUpdateIsoConfig, _ctx: TRenderHandlerContext) => {
+    Object.assign(_ctx.renderState.isoConfig, _data.isoConfig);
   },
 );
 // -------------------------------------
 
 // -------------------------------------
-export interface EventUpdateDrawConfigLayer
-  extends TBaseMessage<"updateDrawConfigLayer"> {
-  showTileBox: boolean;
-  showIsFrise: boolean;
-  showIsBlock: boolean;
-}
-
-const updateDrawConfigLayer: TRenderHandlerAction<EventUpdateDrawConfigLayer> =
-  renderAction<
-    EventUpdateDrawConfigLayer
-  >(
-    "updateDrawConfigLayer",
-    (_data: EventUpdateDrawConfigLayer, _ctx: TRenderHandlerContext) => {
-      _ctx.renderState.showTileBox = _data.showTileBox;
-      _ctx.renderState.showIsFrise = _data.showIsFrise;
-      _ctx.renderState.showIsBlock = _data.showIsBlock;
-    },
-  );
-// -------------------------------------
-
-// -------------------------------------
 // -------------------------------------
 // -------------------------------------
 
-export const initRenderHandlers = [
-  updateDrawConfigLayout,
-  updateDrawConfigLayer,
+export const stateHandlers = [
+  updateIsoConfig,
 ] as const;

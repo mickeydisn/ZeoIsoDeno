@@ -1,4 +1,4 @@
-import { DrawContext } from "@iso-game/mapIso/render/type.ts";
+import { DrawContext, IsoConfig } from "@iso-game/mapIso/render/type.ts";
 import { TypeKeysActionUpdate } from "@iso-web/js/main/keyboad.ts";
 import {
   directionVector,
@@ -10,11 +10,6 @@ export const CANVAS_HEIGHT = 800;
 
 const PLAYER_SPEED = 0.25; // Base speed in tiles per tick, modulated by tileScaleMod
 
-export interface CanvasMapConf {
-  mapSize: number; // Replaced mapGridSize
-  tileScaleSize: number; // Replaced mapGridTileScale
-  tileScaleMod: number; // Replaced mapGridMod
-}
 
 export interface PotionActionEntry {
   func: string;
@@ -49,12 +44,15 @@ export class GameState {
     activePotionId: null,
   };
 
-  isoConf: CanvasMapConf = {
-    mapSize: 40,
-    tileScaleSize: 1.4,
-    tileScaleMod: 1,
+  isoConf: IsoConfig = {
+    mapGridSize: 40,
+    mapGridTileScale: 1.4,
+    mapGridMod: 1,
+    showTileBox: false,
+    showIsFrise: true,
+    showIsBlock: true,
   };
-  setIsoConf(isoConf: CanvasMapConf) {
+  setIsoConf(isoConf: IsoConfig) {
     this.isoConf = isoConf;
   }
 
@@ -140,7 +138,7 @@ export const tickUpdateKeyboard = (
   _stt: GameState,
   keyboardAction: TypeKeysActionUpdate,
 ) => {
-  const mapMod = _stt.isoConf.tileScaleMod;
+  const mapMod = _stt.isoConf.mapGridMod;
   const speed = PLAYER_SPEED * mapMod;
 
   const vecD = new directionVector(

@@ -96,9 +96,9 @@ export class GameWorker {
         gobalGameState.x,
         gobalGameState.y,
         (gobalGameState.xf - gobalGameState.x) /
-          gobalGameState.isoConf.tileScaleMod,
+          gobalGameState.isoConf.mapGridMod,
         (gobalGameState.yf - gobalGameState.y) /
-          gobalGameState.isoConf.tileScaleMod,
+          gobalGameState.isoConf.mapGridMod,
       );
     }
     requestAnimationFrame(this.updateFram.bind(this));

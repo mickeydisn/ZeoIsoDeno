@@ -37,25 +37,29 @@ export type DrawContext = {
 
 // ---
 
-// --- Configuration Interfaces (Renamed for Clarity) ---
+// --- Configuration Interfaces ---
 
-export interface MapGridLaout {
-  mapGridSize: number; // Replaced mapGridSize
-  mapGridTileScale: number; // Replaced mapGridTileScale
-  mapGridMod: number; // Replaced mapGridMod
+/**
+ * Canonical isometric configuration type used throughout the codebase.
+ * All isometric rendering parameters are defined here in one place.
+ */
+export interface IsoConfig {
+  mapGridSize: number;
+  mapGridTileScale: number;
+  mapGridMod: number;
 
   showTileBox: boolean;
   showIsFrise: boolean;
   showIsBlock: boolean;
 }
 
-export interface MapGridLaoutOption {
-  mapGridSize?: number;
-  mapGridTileScale?: number;
-  mapGridMod?: number;
-}
+/** @deprecated Use `IsoConfig` instead */
+export type MapGridLaout = IsoConfig;
 
-export const MapGridLaoutDefault: MapGridLaout = {
+/** @deprecated Use `IsoConfig` with partial fields instead */
+export type MapGridLaoutOption = Partial<IsoConfig>;
+
+export const DEFAULT_ISO_CONFIG: IsoConfig = {
   mapGridSize: 40,
   mapGridTileScale: 1.4,
   mapGridMod: 1,
@@ -63,3 +67,6 @@ export const MapGridLaoutDefault: MapGridLaout = {
   showIsFrise: true,
   showIsBlock: true,
 };
+
+/** @deprecated Use `DEFAULT_ISO_CONFIG` instead */
+export const MapGridLaoutDefault = DEFAULT_ISO_CONFIG;

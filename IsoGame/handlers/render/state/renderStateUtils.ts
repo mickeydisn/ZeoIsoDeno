@@ -25,7 +25,7 @@ export const tickRenderKeyboard = (
   renderState: RenderState,
   keyboardAction: TypeKeysActionUpdate,
 ) => {
-  const mapMod = renderState.mapGridMod;
+  const mapMod = renderState.isoConfig.mapGridMod;
   const speed = PLAYER_SPEED * mapMod;
 
   const vecD = new directionVector(

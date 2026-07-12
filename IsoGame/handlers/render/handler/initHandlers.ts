@@ -5,7 +5,7 @@ import {
   TRenderHandlerAction,
   TRenderHandlerContext,
 } from "../contexts.ts";
-import { MapGridLaout } from "@iso-game/mapIso/render/type.ts";
+import { IsoConfig } from "@iso-game/mapIso/render/type.ts";
 import {
   TypeAssetGroupConfig,
   TypeAssetImageConfig,
@@ -55,11 +55,7 @@ const setOffScreenRender: TRenderHandlerAction<EventSetCanvasMap> =
 // -------------------------------------
 
 export interface EventInitCanvasMap extends TBaseMessage<"initRenderMap"> {
-  mapConf: {
-    mapGridSize: number;
-    mapGridTileScale: number;
-    mapGridMod: number;
-  };
+  mapConf: IsoConfig;
   width?: number;
   height?: number;
 }
@@ -69,16 +65,15 @@ const initRenderMap: TRenderHandlerAction<EventInitCanvasMap> = renderAction<
 >("initRenderMap", (data: EventInitCanvasMap, _ctx: TRenderHandlerContext) => {
   console.log("=== Init Render Canvas");
 
-  const isoConf = data.mapConf as MapGridLaout || {
-    mapGridSize: 40,
-    mapGridTileScale: 1.2,
-    mapGridMod: 1,
+  const isoConf: IsoConfig = {
+    mapGridSize: data.mapConf.mapGridSize ?? 40,
+    mapGridTileScale: data.mapConf.mapGridTileScale ?? 1.2,
+    mapGridMod: data.mapConf.mapGridMod ?? 1,
+    showTileBox: data.mapConf.showTileBox ?? false,
+    showIsFrise: data.mapConf.showIsFrise ?? true,
+    showIsBlock: data.mapConf.showIsBlock ?? true,
   };
-  _ctx.conf.mapGridSize = isoConf.mapGridSize;
-  _ctx.conf.mapGridTileScale = isoConf.mapGridTileScale;
-  _ctx.conf.mapGridMod = isoConf.mapGridMod;
-  // gameState._isoProject =
-  // gameState._tilesMatrix = _ctx.gameloop.canvasMapDrawer.tilesMatrix
+  Object.assign(_ctx.conf, isoConf);
 });
 
 // -------------------------------------

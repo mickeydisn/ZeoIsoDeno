@@ -13,9 +13,9 @@ import { World } from "../word.ts";
 import { AssetLoaderOpti } from "./asset/assetLoaderOpti.ts";
 import { IsometricProjector } from "./utils/simpleIso/IsometricProjector.ts";
 import {
+  DEFAULT_ISO_CONFIG,
   DrawContext,
   MapGridLaout,
-  MapGridLaoutDefault,
 } from "./render/type.ts";
 import { drawTile } from "./render/drawTile.ts";
 import { drawPlayer } from "./render/drawPlayer.ts";
@@ -28,7 +28,6 @@ import {
   CANVAS_WIDTH,
   gobalGameState,
 } from "../handlers/game/gameState.ts";
-import { drawGridOverlay } from "@iso-game/mapIso/render/drawGridOverlay.ts";
 
 // --- Main Drawer Class ---
 export class CanvasMapDrawers {
@@ -54,10 +53,10 @@ export class CanvasMapDrawers {
 
     // Use mapGridSize instead of mapGridSize
     const drawConf: MapGridLaout = {
-      ...MapGridLaoutDefault,
+      ...DEFAULT_ISO_CONFIG,
       ...conf,
       mapGridSize: conf.mapGridSize ||
-        MapGridLaoutDefault.mapGridSize,
+        DEFAULT_ISO_CONFIG.mapGridSize,
     };
 
     const offScreenCanvas = canvas ? canvas : createCanvas(width, height);
