@@ -14,6 +14,7 @@ import {
   savePotion,
   syncInventory,
 } from "./toolHandlers-potion.ts";
+import { setIsoConfigLayer } from "./toolHandlers-view.ts";
 
 export const toolHandlers = [
   // action handlers
@@ -31,4 +32,6 @@ export const toolHandlers = [
   syncInventory,
   savePotion,
   deletePotion,
+  // view handlers
+  setIsoConfigLayer,
 ] as const;

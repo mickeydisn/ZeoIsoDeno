@@ -8,6 +8,7 @@ import { assetMenuTab } from "./menu/sections/assetMenu.ts";
 import { colorMenuTab } from "./menu/sections/colorMenu.ts";
 import { buildingMenuTab } from "./menu/sections/buildingMenu.ts";
 import { potionMenuTab } from "./menu/sections/potionMenu.ts";
+import { viewMenuTab } from "./menu/sections/viewMenu.ts";
 import {
   indexScreenHandler,
   ScreenMessageHandler,
@@ -85,6 +86,7 @@ const config_tag: MenuTab[] = [
   assetMenuTab(gameWorker, handler),
   buildingMenuTab(gameWorker),
   potionMenuTab(gameWorker),
+  viewMenuTab(gameWorker),
 ];
 
 const menu = initHeadMenu(gameWorker, { tabs: config_tag, defaultIndex: 1 });
