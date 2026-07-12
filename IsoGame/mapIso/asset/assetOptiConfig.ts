@@ -29,11 +29,9 @@ import { asset_Gemini_Box } from "@iso-game/mapIso/asset/conf/items-single/asset
 import { asset_Gemini_Organic } from "@iso-game/mapIso/asset/conf/items-single/asset_gemini_organic.ts";
 import { asset_Gemini2_G2_1 } from "@iso-game/mapIso/asset/conf/items-single/asset_gemini2_G2.ts";
 import { asset_Gemini2_G3_1 } from "@iso-game/mapIso/asset/conf/items-single/asset_gemini2_G3.ts";
-import {
-  asset_Gemini2_G4_1,
-  asset_Gemini2_G4_2,
-  asset_Gemini2_G4_3,
-} from "@iso-game/mapIso/asset/conf/items-single/asset_gemini2_G4.ts";
+import { asset_Gemini2_G4_1 } from "@iso-game/mapIso/asset/conf/items-single/asset_gemini2_G4.ts";
+import { asset_Gemini2_G5_1 } from "@iso-game/mapIso/asset/conf/items-single/asset_gemini2_G5.ts";
+import { asset_Gemini2_G6_1 } from "@iso-game/mapIso/asset/conf/items-single/asset_gemini2_G6.ts";
 
 export type TypeAssetImageConfig = {
   label: string;
@@ -89,8 +87,8 @@ export const assetOptiConfig: TypeAssetGroupConfig[] = [
   asset_Gemini2_G2_1,
   asset_Gemini2_G3_1,
   asset_Gemini2_G4_1,
-  asset_Gemini2_G4_2,
-  asset_Gemini2_G4_3,
+  asset_Gemini2_G5_1,
+  asset_Gemini2_G6_1,
 ];
 
 export const assetPersoConfig: TypeAssetGroupConfig[] = [

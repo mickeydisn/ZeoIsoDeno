@@ -1,7 +1,7 @@
 import { TypeAssetGroupConfig } from "../../assetOptiConfig.ts";
 
 export const asset_Gemini2_G2_1: TypeAssetGroupConfig = {
-  "src": "./img/asset-opti/items-single/gemini-G2-1.png",
+  "src": "./img/asset-opti/items-single/gemini-G2.png",
   "group": "Gemini2_G2_1",
   "images": [
     { "top": 0., "label": "Gemini_G2_1_01" },
