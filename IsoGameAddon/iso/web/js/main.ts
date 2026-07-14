@@ -84,7 +84,7 @@ const config_tag: MenuTab[] = [
   terrainMenuTab(gameWorker),
   colorMenuTab(gameWorker),
   assetMenuTab(gameWorker, handler),
-  buildingMenuTab(gameWorker),
+  buildingMenuTab(gameWorker, handler),
   potionMenuTab(gameWorker),
   viewMenuTab(gameWorker),
 ];
