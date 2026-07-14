@@ -51,8 +51,8 @@ async function fetchBuildingConfigList(): Promise<BuildingConfigInfo[]> {
   try {
     const response = await handler.sendMessageWithResponse({
       action: "getBuildingConfigList",
-    }) as { configs: BuildingConfigInfo[] };
-    return response?.configs ?? [];
+    }) as { result?: { configs: BuildingConfigInfo[] } };
+    return response?.result?.configs ?? [];
   } catch {
     return [];
   }
