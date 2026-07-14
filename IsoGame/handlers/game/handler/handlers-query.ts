@@ -6,7 +6,11 @@ import {
   TGameHandlerAction,
   TGameHandlerContext,
 } from "../contexts.ts";
-import { getBuildingConfigList } from "@iso-game/handlers/game/tools/buildingConfigRegistry.ts";
+import {
+  createBuildingConfig,
+  getBuildingConfigEntry,
+  getBuildingConfigList,
+} from "@iso-game/handlers/game/tools/buildingConfigRegistry.ts";
 
 // -------------------------------------
 
@@ -43,12 +47,58 @@ const getBuildingConfigListHandler: TGameHandlerAction<
 );
 
 // -------------------------------------
+
+export interface EventGetFullBuildingConfig
+  extends TBaseMessage<"getFullBuildingConfig"> {
+  configId: string;
+}
+
+const getFullBuildingConfigHandler: TGameHandlerAction<
+  EventGetFullBuildingConfig
+> = gameAction<EventGetFullBuildingConfig>(
+  "getFullBuildingConfig",
+  (
+    data: EventGetFullBuildingConfig,
+    _ctx: TGameHandlerContext,
+  ) => {
+    const entry = getBuildingConfigEntry(data.configId);
+    if (!entry) return { config: null };
+
+    // Create a config instance to get the full initialized config
+    const config = createBuildingConfig(data.configId, {
+      growLoopCount: entry.defaultGrowLoop,
+      endLoopMax: entry.defaultEndLoop,
+    });
+
+    if (!config) return { config: null };
+
+    // Return the full config as a serializable object
+    return {
+      config: {
+        id: entry.id,
+        name: entry.name,
+        description: entry.description,
+        growLoopCount: config.growLoopCount,
+        endLoopMax: config.endLoopMax,
+        mainLvl: config.mainLvl,
+        faceLinkWeight: config.faceLinkWeight,
+        faceLinks: config.faceLinks,
+        startTileOptions: config.startTileOptions,
+        listTileOptions: config.listTileOptions,
+        listFaceKey: config.listFaceKey,
+      },
+    };
+  },
+);
+
+// -------------------------------------
 // -------------------------------------
 // -------------------------------------
 
 export const queryHandlers = [
   query_infoCell,
   getBuildingConfigListHandler,
+  getFullBuildingConfigHandler,
 ] as const;
 
 // -------------------------------------

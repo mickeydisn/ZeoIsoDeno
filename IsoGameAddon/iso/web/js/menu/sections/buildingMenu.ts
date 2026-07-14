@@ -26,6 +26,7 @@ let handler: MessageHandler<any, any, any>;
 let selectedBuildingId: string = "";
 let growSizeValue: number = 20;
 let endLoopValue: number = 100;
+let cachedFullConfigs: Record<string, object> = {};
 
 // ============================================================================
 // HANDLERS
@@ -44,7 +45,7 @@ function sendSetActiveTool() {
 }
 
 // ============================================================================
-// FETCH BUILDING CONFIG LIST FROM WORKER
+// FETCH BUILDING CONFIG LIST AND FULL CONFIGS FROM WORKER
 // ============================================================================
 
 async function fetchBuildingConfigList(): Promise<BuildingConfigInfo[]> {
@@ -55,6 +56,22 @@ async function fetchBuildingConfigList(): Promise<BuildingConfigInfo[]> {
     return response?.result?.configs ?? [];
   } catch {
     return [];
+  }
+}
+
+async function fetchFullConfig(configId: string): Promise<object | null> {
+  // Cache hit
+  if (cachedFullConfigs[configId]) return cachedFullConfigs[configId];
+  try {
+    const response = await handler.sendMessageWithResponse({
+      action: "getFullBuildingConfig",
+      configId,
+    }) as { result?: { config: object } };
+    const config = response?.result?.config ?? null;
+    if (config) cachedFullConfigs[configId] = config;
+    return config;
+  } catch {
+    return null;
   }
 }
 
@@ -259,43 +276,23 @@ async function openBuildingDialog(): Promise<void> {
   growRow.appendChild(growInput);
   container.appendChild(growRow);
 
-  // ---- End Loop Slider ----
-  const endRow = document.createElement("div");
-  endRow.style.cssText = "display:flex;flex-direction:column;gap:4px;";
-  const endHeader = document.createElement("div");
-  endHeader.style.cssText = "display:flex;justify-content:space-between;";
-  const endLabel = document.createElement("span");
-  endLabel.textContent = "End Loop (close steps):";
-  const endValue = document.createElement("span");
-  endValue.textContent = String(currentEndLoop);
-  endHeader.appendChild(endLabel);
-  endHeader.appendChild(endValue);
-  endRow.appendChild(endHeader);
-  const endInput = document.createElement("input");
-  endInput.type = "range";
-  endInput.min = "50";
-  endInput.max = "1000";
-  endInput.step = "10";
-  endInput.value = String(currentEndLoop);
-  endInput.style.cssText = "width:100%;accent-color:#a74;";
-  endInput.addEventListener("input", () => {
-    currentEndLoop = parseInt(endInput.value, 10);
-    endValue.textContent = String(currentEndLoop);
-    jsonPreview.innerHTML = syntaxHighlightJson(buildConfigJson());
-  });
-  endRow.appendChild(endInput);
-  container.appendChild(endRow);
-
-  // ---- JSON Preview ----
+  // ---- JSON Preview (full building config) ----
   const jsonLabel = document.createElement("strong");
-  jsonLabel.textContent = "Configuration JSON:";
+  jsonLabel.textContent = "Full Configuration JSON:";
   jsonLabel.style.cssText = "margin-top:8px;";
   container.appendChild(jsonLabel);
 
   const jsonPreview = document.createElement("pre");
   jsonPreview.style.cssText =
-    "background:#1a1a1a;border:1px solid #333;border-radius:4px;padding:8px;overflow:auto;max-height:200px;font-size:0.75rem;line-height:1.3;white-space:pre-wrap;word-break:break-all;";
-  jsonPreview.innerHTML = syntaxHighlightJson(buildConfigJson());
+    "background:#1a1a1a;border:1px solid #333;border-radius:4px;padding:8px;overflow:auto;max-height:300px;font-size:0.75rem;line-height:1.3;text-align:left;";
+  // Fetch and display the full config
+  fetchFullConfig(currentConfigId).then((full) => {
+    if (full) {
+      jsonPreview.innerHTML = syntaxHighlightJson(JSON.stringify(full, null, 2));
+    } else {
+      jsonPreview.innerHTML = buildConfigJson();
+    }
+  });
   container.appendChild(jsonPreview);
 
   // ---- Asset Previews ----
@@ -306,7 +303,14 @@ async function openBuildingDialog(): Promise<void> {
   const assetGrid = document.createElement("div");
   assetGrid.style.cssText =
     "border:1px dashed #444;border-radius:4px;padding:8px;min-height:60px;";
-  renderAssetPreviewGrid(assetGrid, buildConfigJson());
+  // Fetch full config for asset grid too
+  fetchFullConfig(currentConfigId).then((full) => {
+    if (full) {
+      renderAssetPreviewGrid(assetGrid, syntaxHighlightJson(JSON.stringify(full, null, 2)));
+    } else {
+      renderAssetPreviewGrid(assetGrid, buildConfigJson());
+    }
+  });
   container.appendChild(assetGrid);
 
   // ---- Action Buttons ----

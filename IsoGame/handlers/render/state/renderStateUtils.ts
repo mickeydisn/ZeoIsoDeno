@@ -3,7 +3,7 @@ import {
   RenderState,
 } from "@iso-game/handlers/render/state/renderState.ts";
 import { TypeKeysActionUpdate } from "@iso-game/handlers/render/state/renderStateType.ts";
-import { directionVector } from "@iso-game/handlers/utils/renderUtils.ts";
+import { directionVector } from "@iso-game/mapIso/render/utils/renderUtils.ts";
 
 export const setRenderPosition = (
   renderState: RenderState,

@@ -14,7 +14,7 @@ import {
   savePotion,
   syncInventory,
 } from "./toolHandlers-potion.ts";
-import { setIsoConfigLayer } from "./toolHandlers-view.ts";
+import { setIsoConfigLayer } from "../handler/handlers-view.ts";
 
 export const toolHandlers = [
   // action handlers

@@ -8,7 +8,7 @@ import {
   RenderMessageHandler,
 } from "@iso-game/handlers/handlers.ts";
 import { createHander } from "../../../../IsoGame/handlers/render/create.ts";
-import { drawUpdate } from "@iso-game/handlers/render/update.ts";
+import { drawUpdate } from "../../../../IsoGame/mapIso/render/drawUpdate.ts";
 
 export class GameWorker {
   public world = new World();

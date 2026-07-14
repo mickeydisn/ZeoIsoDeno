@@ -1,4 +1,4 @@
-import { Point2D } from "@iso-game/handlers/utils/renderUtils.ts";
+import { Point2D } from "@iso-game/mapIso/render/utils/renderUtils.ts";
 import { DEFAULT_ISO_CONFIG, IsoConfig } from "@iso-game/mapIso/render/type.ts";
 
 export const CANVAS_WIDTH = 1600;

@@ -6,6 +6,7 @@ export const viewMenuTab = (gameWorker: Worker) => {
   // Current state (initial defaults match DEFAULT_ISO_CONFIG)
   let showIsFrise = true;
   let showIsBlock = true;
+  let showTileBox = true;
 
   return {
     id: "view",
@@ -32,6 +33,17 @@ export const viewMenuTab = (gameWorker: Worker) => {
           gameWorker.postMessage({
             action: "setIsoConfigLayer",
             showIsBlock: showIsBlock,
+          });
+        },
+      },
+      {
+        id: "tilebox",
+        icon: showIsBlock ? "🔲" : "⬜",
+        callback_select: () => {
+          showTileBox = !showTileBox;
+          gameWorker.postMessage({
+            action: "setIsoConfigLayer",
+            showTileBox: showTileBox,
           });
         },
       },

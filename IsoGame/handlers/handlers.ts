@@ -1,8 +1,8 @@
-import { initHandlers } from "./game/handler/initHandlers.ts";
-import { renderHandlers } from "./game/handler/renderHandlers.ts";
-import { interactionHandlers } from "./game/handler/interactionHandlers.ts";
+import { initHandlers } from "./game/handler/handlers-init.ts";
+import { renderHandlers } from "./game/handler/handlers-render.ts";
+import { interactionHandlers } from "./game/handler/handlers-interaction.ts";
 import { toolHandlers } from "./game/handler-tools/toolHandlers.ts";
-import { queryHandlers } from "./game/handler/queryHandlers.ts";
+import { queryHandlers } from "./game/handler/handlers-query.ts";
 import {
   buildHandlerIndexes,
   buildHandlerRegistry,
@@ -18,6 +18,7 @@ import { TRenderHandlerContext } from "@iso-game/handlers/render/contexts.ts";
 import { initRenderHandlers } from "./render/handler/initHandlers.ts";
 import { moveHandlers } from "./render/handler/moveHandlers.ts";
 import { stateHandlers } from "./render/handler/statesHandlers.ts";
+import { viewHandlers } from "@iso-game/handlers/game/handler/handlers-view.ts";
 
 // ────────────────────────────────────────────
 
@@ -27,6 +28,7 @@ export const AllGameHandlers = [
   ...interactionHandlers,
   ...toolHandlers,
   ...queryHandlers,
+  ...viewHandlers,
 ] as const;
 
 // ────────────────────────────────────────────

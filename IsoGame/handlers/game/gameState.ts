@@ -3,13 +3,12 @@ import { TypeKeysActionUpdate } from "@iso-web/js/main/keyboad.ts";
 import {
   directionVector,
   Point2D,
-} from "@iso-game/handlers/utils/renderUtils.ts";
+} from "@iso-game/mapIso/render/utils/renderUtils.ts";
 
 export const CANVAS_WIDTH = 1600;
 export const CANVAS_HEIGHT = 800;
 
 const PLAYER_SPEED = 0.25; // Base speed in tiles per tick, modulated by tileScaleMod
-
 
 export interface PotionActionEntry {
   func: string;

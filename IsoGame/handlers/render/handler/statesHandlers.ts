@@ -7,19 +7,19 @@ import {
 import { IsoConfig } from "@iso-game/mapIso/render/type.ts";
 
 // -------------------------------------
-export interface EventUpdateIsoConfig
-  extends TBaseMessage<"updateIsoConfig"> {
+export interface EventUpdateIsoConfig extends TBaseMessage<"updateIsoConfig"> {
   isoConfig: IsoConfig;
 }
 
-const updateIsoConfig: TRenderHandlerAction<EventUpdateIsoConfig> = renderAction<
-  EventUpdateIsoConfig
->(
-  "updateIsoConfig",
-  (_data: EventUpdateIsoConfig, _ctx: TRenderHandlerContext) => {
-    Object.assign(_ctx.renderState.isoConfig, _data.isoConfig);
-  },
-);
+const updateIsoConfig: TRenderHandlerAction<EventUpdateIsoConfig> =
+  renderAction<
+    EventUpdateIsoConfig
+  >(
+    "updateIsoConfig",
+    (_data: EventUpdateIsoConfig, _ctx: TRenderHandlerContext) => {
+      Object.assign(_ctx.renderState.isoConfig, _data.isoConfig);
+    },
+  );
 // -------------------------------------
 
 // -------------------------------------
