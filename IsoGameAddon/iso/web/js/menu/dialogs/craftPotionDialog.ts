@@ -9,12 +9,14 @@
  */
 
 import { DialogManager } from "../dialog.ts";
-import { gobalGameState } from "../../../../../../IsoGame/handlers/game/gameState.ts";
+import { gobalGameState } from "@iso-game/states/game/gameState.ts";
+
 import { ACTION_REGISTRY } from "@iso-game/map/action/actions/registry.ts";
 import type {
   Potion,
   PotionActionEntry,
-} from "../../../../../../IsoGame/handlers/game/gameState.ts";
+} from "@iso-game/states/game/gameState.ts";
+
 import { renderField, uuid } from "./dialogHelpers.ts";
 
 // ============================================================================

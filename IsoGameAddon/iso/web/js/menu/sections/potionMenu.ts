@@ -10,7 +10,8 @@
  */
 
 import { MenuTab } from "../headMenu.ts";
-import { gobalGameState } from "../../../../../../IsoGame/handlers/game/gameState.ts";
+import { gobalGameState } from "@iso-game/states/game/gameState.ts";
+
 import { openCraftDialog } from "../dialogs/craftPotionDialog.ts";
 import {
   openPotionListDialog,

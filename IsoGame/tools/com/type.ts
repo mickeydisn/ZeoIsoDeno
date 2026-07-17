@@ -1,5 +1,5 @@
 import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
-import { World } from "../../../word.ts";
+import { World } from "@iso-game/word.ts";
 
 export type ToolContext = {
   world: World;

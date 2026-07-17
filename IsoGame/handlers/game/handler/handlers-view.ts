@@ -1,16 +1,17 @@
-import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
+import { TBaseMessage } from "@iso-game/etc/handlers/types/type.ts";
 import {
   gameAction,
   TGameHandlerAction,
   TGameHandlerContext,
-} from "../contexts.ts";
-import { gobalGameState } from "../gameState.ts";
+} from "@iso-game/handlers/game/contexts.ts";
+import { gobalGameState } from "@iso-game/states/game/gameState.ts";
 
 // -------------------------------------
 export interface EventSetViewLayer extends TBaseMessage<"setIsoConfigLayer"> {
   showIsFrise?: boolean;
   showIsBlock?: boolean;
   showTileBox?: boolean;
+  showIsBuilding?: boolean;
 }
 
 export const setIsoConfigLayer: TGameHandlerAction<EventSetViewLayer> =
@@ -31,6 +32,9 @@ export const setIsoConfigLayer: TGameHandlerAction<EventSetViewLayer> =
       if (data.showTileBox !== undefined) {
         gobalGameState.isoConf.showTileBox = data.showTileBox;
       }
+      if (data.showIsBuilding !== undefined) {
+        gobalGameState.isoConf.showIsBuilding = data.showIsBuilding;
+      }
 
       // Update draw context conf (used immediately by render pipeline)
       const drawCtx = _ctx.gameloop.canvasMapDrawer?._drawCtx;
@@ -43,6 +47,9 @@ export const setIsoConfigLayer: TGameHandlerAction<EventSetViewLayer> =
         }
         if (data.showTileBox !== undefined) {
           drawCtx.conf.showTileBox = data.showTileBox;
+        }
+        if (data.showIsBuilding !== undefined) {
+          drawCtx.conf.showIsBuilding = data.showIsBuilding;
         }
       }
     },

@@ -1,5 +1,5 @@
-import { toolRegistry } from "../tools/toolRegistry.ts";
-import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
+import { TBaseMessage } from "@iso-game/etc/handlers/types/type.ts";
+import { toolRegistry } from "@iso-game/tools/com/toolRegistry.ts";
 import {
   gameAction,
   TGameHandlerAction,

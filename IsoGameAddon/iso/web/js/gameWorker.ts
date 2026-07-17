@@ -1,7 +1,8 @@
 import { World } from "@iso-game/word.ts";
 import { CanvasMapDrawers } from "@iso-game/mapIso/canvasMapDrawer.ts";
 import { AssetLoaderOpti } from "@iso-game/mapIso/asset/assetLoaderOpti.ts";
-import { gobalGameState } from "../../../../IsoGame/handlers/game/gameState.ts";
+import { gobalGameState } from "@iso-game/states/game/gameState.ts";
+
 import {
   GameMessageHandler,
   indexGameHandler,

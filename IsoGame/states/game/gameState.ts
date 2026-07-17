@@ -50,6 +50,7 @@ export class GameState {
     showTileBox: false,
     showIsFrise: true,
     showIsBlock: true,
+    showIsBuilding: true,
   };
   setIsoConf(isoConf: IsoConfig) {
     this.isoConf = isoConf;

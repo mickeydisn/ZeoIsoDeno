@@ -27,7 +27,7 @@ import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   gobalGameState,
-} from "../handlers/game/gameState.ts";
+} from "@iso-game/states/game/gameState.ts";
 
 // --- Main Drawer Class ---
 export class CanvasMapDrawers {

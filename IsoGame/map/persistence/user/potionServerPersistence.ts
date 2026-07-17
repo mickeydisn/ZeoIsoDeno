@@ -4,7 +4,7 @@
  * Flow: Client -> HTTP POST/GET/DELETE -> Server SQLite
  */
 
-import { Potion } from "../../../handlers/game/gameState.ts";
+import { Potion } from "@iso-game/states/game/gameState.ts";
 
 export class PotionServerPersistence {
   private baseUrl: string;

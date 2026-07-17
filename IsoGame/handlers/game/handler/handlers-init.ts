@@ -1,6 +1,12 @@
 import { AssetLoaderOpti } from "@iso-game/mapIso/asset/assetLoaderOpti.ts";
-import { toolRegistry } from "../tools/toolRegistry.ts";
-import { CANVAS_HEIGHT, CANVAS_WIDTH, gobalGameState } from "../gameState.ts";
+import { toolRegistry } from "@iso-game/tools/com/toolRegistry.ts";
+
+import {
+  CANVAS_HEIGHT,
+  CANVAS_WIDTH,
+  gobalGameState,
+} from "@iso-game/states/game/gameState.ts";
+
 import { CityEntity } from "@iso-game/entity/cityEntity.ts";
 import { CanvasMapDrawers } from "@iso-game/mapIso/canvasMapDrawer.ts";
 import { FactoryMap } from "@iso-game/map/factory/factoryMap.ts";
@@ -100,7 +106,9 @@ const setOffScreenCanvas: TGameHandlerAction<EventSetCanvasMap> = gameAction<
 // -------------------------------------
 
 export interface EventInitCanvasMap extends TBaseMessage<"initCanvasMap"> {
-  mapConf: Partial<IsoConfig> & Pick<IsoConfig, "mapGridSize" | "mapGridTileScale" | "mapGridMod">;
+  mapConf:
+    & Partial<IsoConfig>
+    & Pick<IsoConfig, "mapGridSize" | "mapGridTileScale" | "mapGridMod">;
   width?: number;
   height?: number;
 }
@@ -117,6 +125,7 @@ const initCanvasMap: TGameHandlerAction<EventInitCanvasMap> = gameAction<
     showTileBox: data.mapConf.showTileBox ?? false,
     showIsFrise: data.mapConf.showIsFrise ?? true,
     showIsBlock: data.mapConf.showIsBlock ?? true,
+    showIsBuilding: data.mapConf.showIsBuilding ?? true,
   };
 
   _ctx.gameloop.canvasMapDrawer = new CanvasMapDrawers(

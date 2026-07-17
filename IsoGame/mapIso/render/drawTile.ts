@@ -1,15 +1,17 @@
-import { PointIso } from "../utils/simpleIso/IsometricProjector.ts";
-import { DrawContext, LVL_Z_SCALE_FACTOR } from "./type.ts";
-import { Color } from "../utils/iso/color.ts";
+import { PointIso } from "@iso-game/mapIso/utils/simpleIso/IsometricProjector.ts";
+import {
+  DrawContext,
+  LVL_Z_SCALE_FACTOR,
+} from "@iso-game/mapIso/render/type.ts";
+import { Color } from "@iso-game/mapIso/utils/iso/color.ts";
 import {
   _drawTileBack,
   _drawTileFloor,
   _drawTileFront,
   _drawTileItem,
 } from "./utils/drawTileUtils.ts";
-import { msgToScreen } from "../../handlers/handlers.ts";
-import { gobalGameState } from "../../handlers/game/gameState.ts";
 import { drawSurfaceFlat } from "@iso-game/mapIso/render/utils/drawShapePaths.ts";
+import { gobalGameState } from "@iso-game/states/game/gameState.ts";
 
 /**
  * Draws the base tile geometry, including floor and borders.

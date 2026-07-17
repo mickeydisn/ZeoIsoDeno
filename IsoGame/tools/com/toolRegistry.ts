@@ -1,12 +1,12 @@
-import { World } from "../../../word.ts";
-import { terrainTools } from "./tiles/terrainTools.ts";
-import { colorTools } from "./tiles/colorTools.ts";
-import { assetTools } from "./tiles/assetTools.ts";
-import { structureTools } from "./structureTools.ts";
-import { potionTools } from "./tiles/potionTool.ts";
-import { AnyToolAction, ToolContext } from "./type.ts";
+import { World } from "@iso-game/word.ts";
+import { terrainTools } from "@iso-game/tools/tiles/terrainTools.ts";
+import { colorTools } from "@iso-game/tools/tiles/colorTools.ts";
+import { assetTools } from "@iso-game/tools/tiles/assetTools.ts";
+import { structureTools } from "@iso-game/tools/structureTools.ts";
+import { potionTools } from "@iso-game/tools/tiles/potionTool.ts";
+import { AnyToolAction, ToolContext } from "@iso-game/tools/com/type.ts";
 import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
-import { layerTools } from "@iso-game/handlers/game/tools/tiles/layerTools.ts";
+import { layerTools } from "@iso-game/tools/tiles/layerTools.ts";
 
 export const TOOL_ACTION_REGISTRY = [
   ...layerTools,

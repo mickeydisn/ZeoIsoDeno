@@ -3,7 +3,7 @@ import { AssetLoaderOpti } from "@iso-game/mapIso/asset/assetLoaderOpti.ts";
 import { IsometricProjector } from "@iso-game/mapIso/utils/simpleIso/IsometricProjector.ts";
 import { TilesMatrixAvg } from "@iso-game/map/object/tilesMatrix.ts";
 import { MessageHandler } from "@iso-game/etc/handlers/messageHandler.ts";
-import { GameState } from "../../handlers/game/gameState.ts";
+import { GameState } from "@iso-game/states/game/gameState.ts";
 
 // Canvas Context ( Shared beetween worker and screen render)
 type CanvasRenderingContext2D = OffscreenCanvasRenderingContext2D;
@@ -22,7 +22,7 @@ export type DrawContext = {
   assetLoader?: AssetLoaderOpti;
   canvasCtx: CanvasRenderingContext2D;
 
-  conf: MapGridLaout;
+  conf: IsoConfig;
   gameState: GameState;
   tilesMatrix: TilesMatrixAvg;
 
@@ -51,6 +51,7 @@ export interface IsoConfig {
   showTileBox: boolean;
   showIsFrise: boolean;
   showIsBlock: boolean;
+  showIsBuilding: boolean;
 }
 
 /** @deprecated Use `IsoConfig` instead */
@@ -66,6 +67,7 @@ export const DEFAULT_ISO_CONFIG: IsoConfig = {
   showTileBox: false,
   showIsFrise: true,
   showIsBlock: true,
+  showIsBuilding: true,
 };
 
 /** @deprecated Use `DEFAULT_ISO_CONFIG` instead */

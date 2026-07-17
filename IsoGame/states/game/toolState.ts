@@ -1,4 +1,4 @@
-import { AnyToolAction } from "@iso-game/handlers/game/tools/type.ts";
+import { AnyToolAction } from "@iso-game/tools/type.ts";
 
 // ----------------------------------------------------------------------------
 export class ToolState {

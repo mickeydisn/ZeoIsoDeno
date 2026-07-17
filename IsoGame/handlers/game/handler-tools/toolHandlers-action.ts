@@ -1,5 +1,7 @@
-import { toolRegistry } from "../tools/toolRegistry.ts";
-import { gobalGameState } from "../gameState.ts";
+import { toolRegistry } from "@iso-game/tools/com/toolRegistry.ts";
+
+import { gobalGameState } from "@iso-game/states/game/gameState.ts";
+
 import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
 import { mapDB } from "../../../map/persistence/db/mapWebDatabase.ts";
 import {

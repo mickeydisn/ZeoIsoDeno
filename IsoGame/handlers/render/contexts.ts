@@ -11,8 +11,9 @@ import { Isomer } from "@iso-game/mapIso/utils/iso/isomer.ts";
 import { AssetLoaderOpti } from "@iso-game/mapIso/asset/assetLoaderOpti.ts";
 import { IsometricProjector } from "@iso-game/mapIso/utils/simpleIso/IsometricProjector.ts";
 import { TilesMatrixAvg } from "@iso-game/map/object/tilesMatrix.ts";
-import { GameState } from "../game/gameState.ts";
-import { RenderState } from "./state/renderState.ts";
+import { GameState } from "@iso-game/states/game/gameState.ts";
+
+import { RenderState } from "@iso-game/states/render/renderState.ts";
 import { IsoConfig } from "@iso-game/mapIso/render/type.ts";
 
 // ────────────────────────────────────────────

@@ -1,6 +1,8 @@
-import { gobalGameState } from "../gameState.ts";
+import { gobalGameState } from "@iso-game/states/game/gameState.ts";
+
 import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
-import type { Potion } from "../gameState.ts";
+import type { Potion } from "@iso-game/states/game/gameState.ts";
+
 import { mapDB } from "../../../map/persistence/db/mapWebDatabase.ts";
 import {
   gameAction,

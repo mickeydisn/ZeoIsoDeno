@@ -1,6 +1,10 @@
-import { defineTool, ToolConfigBrush, ToolContext } from "./type.ts";
-import { toolRegistry } from "./toolRegistry.ts";
-import { WcBuildActions } from "../../../map/generator/wcBuilding2/wcBuildAction.ts";
+import {
+  defineTool,
+  ToolConfigBrush,
+  ToolContext,
+} from "@iso-game/tools/com/type.ts";
+import { toolRegistry } from "@iso-game/tools/com/toolRegistry.ts";
+import { WcBuildActions } from "@iso-game/map/generator/wcBuilding2/wcBuildAction.ts";
 
 /**
  * Place Building Tool

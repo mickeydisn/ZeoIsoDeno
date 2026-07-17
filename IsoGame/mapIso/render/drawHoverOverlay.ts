@@ -3,7 +3,7 @@ import { Shape } from "../utils/iso/shape.ts";
 import { Point } from "../utils/iso/point.ts";
 import { _drawTileItem } from "./utils/drawTileUtils.ts";
 import { drawShapePaths } from "./utils/drawShapePaths.ts";
-import { toolRegistry } from "../../handlers/game/tools/toolRegistry.ts";
+import { toolRegistry } from "@iso-game/tools/com/toolRegistry.ts";
 
 export const _drawHoverOverlayTile = (
   _ctx: DrawContext,

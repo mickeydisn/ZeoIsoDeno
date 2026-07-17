@@ -2,7 +2,10 @@ import { TRenderHandlerContext } from "@iso-game/handlers/render/contexts.ts";
 import { drawHoverOverlay } from "@iso-game/mapIso/render/drawHoverOverlay.ts";
 import { drawPlayer } from "@iso-game/mapIso/render/drawPlayer.ts";
 import { drawTile } from "@iso-game/mapIso/render/drawTile.ts";
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from "../../handlers/game/gameState.ts";
+import {
+  CANVAS_HEIGHT,
+  CANVAS_WIDTH,
+} from "@iso-game/states/game/gameState.ts";
 
 export const drawUpdate = (
   _ctx: TRenderHandlerContext,

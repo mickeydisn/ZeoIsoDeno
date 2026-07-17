@@ -11,8 +11,9 @@ import {
   TScreenHandlerAction,
   TScreenHandlerContext,
 } from "@iso-game/handlers/screen/contexts.ts";
-import { gobalGameState } from "../../game/gameState.ts";
-import type { Potion } from "../../game/gameState.ts";
+import { gobalGameState } from "@iso-game/states/game/gameState.ts";
+
+import type { Potion } from "@iso-game/states/game/gameState.ts";
 
 // ----
 

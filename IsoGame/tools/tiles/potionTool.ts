@@ -1,8 +1,9 @@
-import { defineTool, ToolConfigBrush, ToolContext } from "../type.ts";
-import { toolRegistry } from "../toolRegistry.ts";
-import { gobalGameState } from "../../gameState.ts";
+import { defineTool, ToolConfigBrush } from "@iso-game/tools/com/type.ts";
+import { toolRegistry } from "@iso-game/tools/com/toolRegistry.ts";
+import { gobalGameState } from "@iso-game/states/game/gameState.ts";
+
 import { TilesActions } from "@iso-game/map/action/tilesActions.ts";
-import { mapDB } from "../../../../map/persistence/db/mapWebDatabase.ts";
+import { mapDB } from "@iso-game/map/persistence/db/mapWebDatabase.ts";
 import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
 
 /**

@@ -7,7 +7,7 @@ import { mapWebPersistence } from "../map/mapWebPersistence.ts";
 import { mapServerPersistence } from "../map/mapServerPersistence.ts";
 import { potionServerPersistence } from "../user/potionServerPersistence.ts";
 import { Chunk } from "../../object/chunk.ts";
-import type { Potion } from "../../../handlers/game/gameState.ts";
+import type { Potion } from "@iso-game/states/game/gameState.ts";
 
 export class MapSyncManager {
   private static instance: MapSyncManager;

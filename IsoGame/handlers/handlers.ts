@@ -1,53 +1,25 @@
-import { initHandlers } from "./game/handler/handlers-init.ts";
-import { renderHandlers } from "./game/handler/handlers-render.ts";
-import { interactionHandlers } from "./game/handler/handlers-interaction.ts";
-import { toolHandlers } from "./game/handler-tools/toolHandlers.ts";
-import { queryHandlers } from "./game/handler/handlers-query.ts";
 import {
   buildHandlerIndexes,
   buildHandlerRegistry,
   buildMsgMap,
   IncomingMessages,
   IndexedHandlers,
-} from "../etc/handlers/types/handlerCmd.ts";
-import { MessageHandler } from "../etc/handlers/messageHandler.ts";
-import { TGameHandlerContext } from "./game/contexts.ts";
-import { initScreenHandler } from "./screen/handler/mainMessage.ts";
+} from "@iso-game/etc/handlers/types/handlerCmd.ts";
+import { MessageHandler } from "@iso-game/etc/handlers/messageHandler.ts";
+import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
 import { TScreenHandlerContext } from "@iso-game/handlers/screen/contexts.ts";
 import { TRenderHandlerContext } from "@iso-game/handlers/render/contexts.ts";
-import { initRenderHandlers } from "./render/handler/initHandlers.ts";
-import { moveHandlers } from "./render/handler/moveHandlers.ts";
-import { stateHandlers } from "./render/handler/statesHandlers.ts";
-import { viewHandlers } from "@iso-game/handlers/game/handler/handlers-view.ts";
+import { gameHandlers } from "@iso-game/handlers/game/handlers.ts";
+import { screenHandlers } from "@iso-game/handlers/screen/handlers.ts";
+import { renderHandlers } from "@iso-game/handlers/render/handlers.ts";
 
 // ────────────────────────────────────────────
-
-export const AllGameHandlers = [
-  ...initHandlers,
-  ...renderHandlers,
-  ...interactionHandlers,
-  ...toolHandlers,
-  ...queryHandlers,
-  ...viewHandlers,
-] as const;
-
-// ────────────────────────────────────────────
-
-export const AllScreenHandlers = [
-  ...initScreenHandler,
-] as const;
-
-export const AllRenderHandlers = [
-  ...initRenderHandlers,
-  ...stateHandlers,
-  ...moveHandlers,
-] as const;
 
 // ────────────────────────────────────────────
 // ────────────────────────────────────────────
 
-export type TAnyGameHandlers = typeof AllGameHandlers[number];
-export type TAnyScreenHandlers = typeof AllScreenHandlers[number];
+export type TAnyGameHandlers = typeof gameHandlers[number];
+export type TAnyScreenHandlers = typeof screenHandlers[number];
 
 // ────────────────────────────────────────────
 // GAME HANDLERS
@@ -55,15 +27,15 @@ export type TAnyScreenHandlers = typeof AllScreenHandlers[number];
 
 export const indexGameHandler = buildHandlerIndexes<
   TGameHandlerContext,
-  typeof AllGameHandlers
->(AllGameHandlers);
+  typeof gameHandlers
+>(gameHandlers);
 
-const GAME_HANDLER_REGISTRY = buildHandlerRegistry(AllGameHandlers);
+const GAME_HANDLER_REGISTRY = buildHandlerRegistry(gameHandlers);
 export const msgToWorker = buildMsgMap(GAME_HANDLER_REGISTRY);
 
 export type TGameHandlerIndex = IndexedHandlers<
   TGameHandlerContext,
-  typeof AllGameHandlers
+  typeof gameHandlers
 >;
 export type TGameIncomingMessages = IncomingMessages<TGameHandlerIndex>;
 
@@ -79,15 +51,15 @@ export class GameMessageHandler extends MessageHandler<
 
 export const indexScreenHandler = buildHandlerIndexes<
   TScreenHandlerContext,
-  typeof AllScreenHandlers
->(AllScreenHandlers);
+  typeof screenHandlers
+>(screenHandlers);
 
-const SCREEN_HANDLER_REGISTRY = buildHandlerRegistry(AllScreenHandlers);
+const SCREEN_HANDLER_REGISTRY = buildHandlerRegistry(screenHandlers);
 export const msgToScreen = buildMsgMap(SCREEN_HANDLER_REGISTRY);
 
 export type TScreenHandlerIndex = IndexedHandlers<
   TScreenHandlerContext,
-  typeof AllScreenHandlers
+  typeof screenHandlers
 >;
 export type TScreenIncomingMessages = IncomingMessages<TScreenHandlerIndex>;
 
@@ -103,15 +75,15 @@ export class ScreenMessageHandler extends MessageHandler<
 
 export const indexRenderHandler = buildHandlerIndexes<
   TRenderHandlerContext,
-  typeof AllRenderHandlers
->(AllRenderHandlers);
+  typeof renderHandlers
+>(renderHandlers);
 
-const RENDER_HANDLER_REGISTRY = buildHandlerRegistry(AllRenderHandlers);
+const RENDER_HANDLER_REGISTRY = buildHandlerRegistry(renderHandlers);
 export const msgToRender = buildMsgMap(RENDER_HANDLER_REGISTRY);
 
 export type TRenderHandlerIndex = IndexedHandlers<
   TRenderHandlerContext,
-  typeof AllRenderHandlers
+  typeof renderHandlers
 >;
 export type TRenderIncomingMessages = IncomingMessages<TRenderHandlerIndex>;
 

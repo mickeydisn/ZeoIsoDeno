@@ -1,10 +1,10 @@
-import { WcAbstractBuildConf } from "../../../map/generator/wcBuilding2/wcAbstractBuildConf.ts";
-import { WcBuildConf_GraveA } from "../../../map/generator/wcBuilding2/conf/buildConf_GraveA.ts";
-import { WcBuildConf_HouseA } from "../../../map/generator/wcBuilding2/conf/buildConf_HouseA.ts";
-import { WcBuildConf_ManorA } from "../../../map/generator/wcBuilding2/conf/buildConf_ManorA.ts";
-import { WcBuildConf_LabBorderA } from "../../../map/generator/wcBuilding2/conf/buildConf_LabBorderA.ts";
-import { WcBuildConf_LabPipeA } from "../../../map/generator/wcBuilding2/conf/buildConf_LabPipeA.ts";
-import { WcBuildConf_RLabA } from "../../../map/generator/wcBuilding2/conf/buildConf_RLabA.ts";
+import { WcAbstractBuildConf } from "@iso-game/map/generator/wcBuilding2/wcAbstractBuildConf.ts";
+import { WcBuildConf_GraveA } from "@iso-game/map/generator/wcBuilding2/conf/buildConf_GraveA.ts";
+import { WcBuildConf_HouseA } from "@iso-game/map/generator/wcBuilding2/conf/buildConf_HouseA.ts";
+import { WcBuildConf_ManorA } from "@iso-game/map/generator/wcBuilding2/conf/buildConf_ManorA.ts";
+import { WcBuildConf_LabBorderA } from "@iso-game/map/generator/wcBuilding2/conf/buildConf_LabBorderA.ts";
+import { WcBuildConf_LabPipeA } from "@iso-game/map/generator/wcBuilding2/conf/buildConf_LabPipeA.ts";
+import { WcBuildConf_RLabA } from "@iso-game/map/generator/wcBuilding2/conf/buildConf_RLabA.ts";
 
 export interface BuildingConfigEntry {
   id: string;
@@ -36,56 +36,6 @@ buildingConfigRegistry.set("grave_a", {
   defaultGrowLoop: 20,
   defaultEndLoop: 100,
   createConfig: (options) => new WcBuildConf_GraveA(options),
-});
-
-buildingConfigRegistry.set("house_a", {
-  id: "house_a",
-  name: "House",
-  description:
-    "A simple house structure with walls, roof, windows, and a door. Features fence perimeter and platform areas.",
-  defaultGrowLoop: 20,
-  defaultEndLoop: 100,
-  createConfig: (options) => new WcBuildConf_HouseA(options),
-});
-
-buildingConfigRegistry.set("manor_a", {
-  id: "manor_a",
-  name: "Manor",
-  description:
-    "An elegant manor building with multiple rooms and decorative elements. Larger and more complex than a standard house.",
-  defaultGrowLoop: 30,
-  defaultEndLoop: 150,
-  createConfig: (options) => new WcBuildConf_ManorA(options),
-});
-
-buildingConfigRegistry.set("lab_border_a", {
-  id: "lab_border_a",
-  name: "Lab Border",
-  description:
-    "A laboratory border structure with walls and entrances. Used to define laboratory perimeters.",
-  defaultGrowLoop: 15,
-  defaultEndLoop: 80,
-  createConfig: (options) => new WcBuildConf_LabBorderA(options),
-});
-
-buildingConfigRegistry.set("lab_pipe_a", {
-  id: "lab_pipe_a",
-  name: "Lab Pipe",
-  description:
-    "A laboratory pipe structure with connections and junctions. Used for creating pipe networks within laboratories.",
-  defaultGrowLoop: 25,
-  defaultEndLoop: 120,
-  createConfig: (options) => new WcBuildConf_LabPipeA(options),
-});
-
-buildingConfigRegistry.set("r_lab_a", {
-  id: "r_lab_a",
-  name: "Research Lab",
-  description:
-    "A research laboratory with equipment areas and specialized rooms. Advanced structure for scientific facilities.",
-  defaultGrowLoop: 35,
-  defaultEndLoop: 200,
-  createConfig: (options) => new WcBuildConf_RLabA(options),
 });
 
 /**

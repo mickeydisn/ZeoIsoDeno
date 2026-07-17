@@ -7,6 +7,7 @@ export const viewMenuTab = (gameWorker: Worker) => {
   let showIsFrise = true;
   let showIsBlock = true;
   let showTileBox = true;
+  let showIsBuilding = true;
 
   return {
     id: "view",
@@ -44,6 +45,17 @@ export const viewMenuTab = (gameWorker: Worker) => {
           gameWorker.postMessage({
             action: "setIsoConfigLayer",
             showTileBox: showTileBox,
+          });
+        },
+      },
+      {
+        id: "isbuilding",
+        icon: showIsBuilding ? "🏠" : "⬜",
+        callback_select: () => {
+          showIsBuilding = !showIsBuilding;
+          gameWorker.postMessage({
+            action: "setIsoConfigLayer",
+            showIsBuilding: showIsBuilding,
           });
         },
       },
