@@ -7,8 +7,8 @@ import {
 import {
   setRenderPosition,
   tickRenderKeyboard,
-} from "../../../states/render/renderStateUtils.ts";
-import { TypeKeysActionUpdate } from "../../../states/render/renderStateType.ts";
+} from "../states/renderStateUtils.ts";
+import { TypeKeysActionUpdate } from "../states/renderStateType.ts";
 
 // -------------------------------------
 export interface EventUpdateCenter extends TBaseMessage<"updateCenter"> {

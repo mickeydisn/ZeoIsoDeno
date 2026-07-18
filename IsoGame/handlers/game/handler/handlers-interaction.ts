@@ -1,5 +1,5 @@
 import { TypeKeysActionUpdate } from "@iso-web/js/main/keyboad.ts";
-import { toolRegistry } from "@iso-game/tools/com/toolRegistry.ts";
+import { toolRegistry } from "@iso-game/tools/toolRegistry.ts";
 
 import { City } from "../../../map/generator/city/city.ts";
 import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
@@ -8,10 +8,8 @@ import {
   TGameHandlerAction,
   TGameHandlerContext,
 } from "../contexts.ts";
-import {
-  gobalGameState,
-  tickUpdateKeyboard,
-} from "@iso-game/states/game/gameState.ts";
+import { gobalGameState } from "../states/gameState.ts";
+import { tickUpdateKeyboard } from "@iso-game/handlers/game/handler/tickUpdateKeyboard.ts";
 
 // -------------------------------------
 

@@ -1,23 +1,7 @@
 import { World } from "@iso-game/word.ts";
-import { terrainTools } from "@iso-game/tools/tiles/terrainTools.ts";
-import { colorTools } from "@iso-game/tools/tiles/colorTools.ts";
-import { assetTools } from "@iso-game/tools/tiles/assetTools.ts";
-import { structureTools } from "@iso-game/tools/structureTools.ts";
-import { potionTools } from "@iso-game/tools/tiles/potionTool.ts";
-import { AnyToolAction, ToolContext } from "@iso-game/tools/com/type.ts";
+import { AnyToolAction, ToolContext } from "@iso-game/tools/type.ts";
 import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
-import { layerTools } from "@iso-game/tools/tiles/layerTools.ts";
-
-export const TOOL_ACTION_REGISTRY = [
-  ...layerTools,
-  ...terrainTools,
-  ...colorTools,
-  ...assetTools,
-  ...structureTools,
-  ...potionTools,
-] as const;
-
-export type RegistryToolAction = typeof TOOL_ACTION_REGISTRY[number];
+import { TOOL_ACTION_REGISTRY } from "@iso-game/tools/register.ts";
 
 export class ToolRegistry {
   private static instance: ToolRegistry;
@@ -28,7 +12,6 @@ export class ToolRegistry {
 
   /** Dispatch table built once from the registry */
   private index: Map<string, AnyToolAction> = new Map();
-
   private activeTool: AnyToolAction | null = null;
   private brushSize: number = 1;
   private activeColor: [number, number, number] = [128, 128, 128]; // Default gray

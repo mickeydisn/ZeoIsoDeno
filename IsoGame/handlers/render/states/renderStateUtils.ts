@@ -1,8 +1,5 @@
-import {
-  PLAYER_SPEED,
-  RenderState,
-} from "@iso-game/states/render/renderState.ts";
-import { TypeKeysActionUpdate } from "@iso-game/states/render/renderStateType.ts";
+import { PLAYER_SPEED, RenderState } from "./renderState.ts";
+import { TypeKeysActionUpdate } from "./renderStateType.ts";
 import { directionVector } from "@iso-game/mapIso/render/utils/renderUtils.ts";
 
 export const setRenderPosition = (

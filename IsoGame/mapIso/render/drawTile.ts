@@ -11,7 +11,7 @@ import {
   _drawTileItem,
 } from "./utils/drawTileUtils.ts";
 import { drawSurfaceFlat } from "@iso-game/mapIso/render/utils/drawShapePaths.ts";
-import { gobalGameState } from "@iso-game/states/game/gameState.ts";
+import { gobalGameState } from "../../handlers/game/states/gameState.ts";
 
 /**
  * Draws the base tile geometry, including floor and borders.

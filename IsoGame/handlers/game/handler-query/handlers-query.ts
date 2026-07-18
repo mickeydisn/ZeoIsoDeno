@@ -1,17 +1,12 @@
 import { FactoryMap } from "@iso-game/map/factory/factoryMap.ts";
-import { gobalGameState } from "@iso-game/states/game/gameState.ts";
+import { gobalGameState } from "../states/gameState.ts";
 
-import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
+import { TBaseMessage } from "@iso-game/etc/handlers/types/type.ts";
 import {
   gameAction,
   TGameHandlerAction,
   TGameHandlerContext,
-} from "../contexts.ts";
-import {
-  createBuildingConfig,
-  getBuildingConfigEntry,
-  getBuildingConfigList,
-} from "@iso-game/tools/buildingConfigRegistry.ts";
+} from "@iso-game/handlers/game/contexts.ts";
 
 // -------------------------------------
 

@@ -3,7 +3,7 @@
  */
 
 import type { ActionField } from "@iso-game/map/action/utils/types.ts";
-import type { Potion } from "@iso-game/states/game/gameState.ts";
+import type { Potion } from "../../../../../../IsoGame/handlers/game/states/gameState.ts";
 
 // ============================================================================
 // UUID

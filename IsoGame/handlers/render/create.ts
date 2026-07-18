@@ -15,13 +15,13 @@ import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   gobalGameState,
-} from "@iso-game/states/game/gameState.ts";
+} from "@iso-game/handlers/game/states/gameState.ts";
 
 import { DEFAULT_ISO_CONFIG, IsoConfig } from "@iso-game/mapIso/render/type.ts";
 import { Isomer } from "@iso-game/mapIso/utils/iso/isomer.ts";
 import { IsometricProjector } from "@iso-game/mapIso/utils/simpleIso/IsometricProjector.ts";
 import { TilesMatrixAvg } from "@iso-game/map/object/tilesMatrix.ts";
-import { gobalRenderState } from "../../states/render/renderState.ts";
+import { gobalRenderState } from "@iso-game/handlers/render/states/renderState.ts";
 
 export const createHander = (
   worker: Window & typeof globalThis,

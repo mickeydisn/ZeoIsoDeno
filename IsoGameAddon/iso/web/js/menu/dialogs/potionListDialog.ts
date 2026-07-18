@@ -15,10 +15,10 @@
  */
 
 import { DialogManager } from "../dialog.ts";
-import { gobalGameState } from "@iso-game/states/game/gameState.ts";
+import { gobalGameState } from "../../../../../../IsoGame/handlers/game/states/gameState.ts";
 
 import { ACTION_REGISTRY } from "@iso-game/map/action/actions/registry.ts";
-import type { Potion } from "@iso-game/states/game/gameState.ts";
+import type { Potion } from "../../../../../../IsoGame/handlers/game/states/gameState.ts";
 
 import { sanitizePotionConfig } from "./dialogHelpers.ts";
 import { openCraftDialog } from "./craftPotionDialog.ts";

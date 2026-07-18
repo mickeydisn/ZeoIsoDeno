@@ -1,4 +1,4 @@
-import { defineTool, ToolConfigBrush } from "@iso-game/tools/com/type.ts";
+import { defineTool, ToolConfigBrush } from "@iso-game/tools/type.ts";
 import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
 
 import { cmd } from "@iso-game/map/action/builder/cmd.ts";

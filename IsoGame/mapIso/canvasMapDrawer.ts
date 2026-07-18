@@ -27,7 +27,7 @@ import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   gobalGameState,
-} from "@iso-game/states/game/gameState.ts";
+} from "../handlers/game/states/gameState.ts";
 
 // --- Main Drawer Class ---
 export class CanvasMapDrawers {
@@ -104,7 +104,7 @@ export class CanvasMapDrawers {
 
       frameCount: 0,
       currentDiplayBox: [],
-    };
+    } as DrawContext;
 
     console.log("=== GameContext- Init");
   }

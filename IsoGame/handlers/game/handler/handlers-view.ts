@@ -4,7 +4,7 @@ import {
   TGameHandlerAction,
   TGameHandlerContext,
 } from "@iso-game/handlers/game/contexts.ts";
-import { gobalGameState } from "@iso-game/states/game/gameState.ts";
+import { gobalGameState } from "../states/gameState.ts";
 
 // -------------------------------------
 export interface EventSetViewLayer extends TBaseMessage<"setIsoConfigLayer"> {

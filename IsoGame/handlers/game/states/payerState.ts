@@ -14,12 +14,6 @@ export interface Potion {
 
 // ----------------------------------------------------------------------------
 export class PayerState {
-  private static instance: PayerState;
-  public static getInstance(): PayerState {
-    return PayerState.instance ??= new PayerState();
-  }
-  constructor() {}
-
   username: string = "mickey-test";
 
   x: number = 0;
@@ -28,8 +22,6 @@ export class PayerState {
   yf: number = 0;
   direction: string = "NE";
 
-  inventory: Potion[] = [];
-  activePotionId: string | null = null;
+  // inventory: Potion[] = [];
+  // activePotionId: string | null = null;
 }
-
-export const payerState = PayerState.getInstance();

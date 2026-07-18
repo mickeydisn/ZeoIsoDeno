@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import { GameWorker } from "../../../../IsoGameAddon/iso/web/js/gameWorker.ts";
+import { GameWorker } from "../../../gameWorker.ts";
 import { MessageHandler } from "../messageHandler.ts";
 
 // -------------------------------------
@@ -18,14 +18,10 @@ export interface TBaseMessage<TMsgKey extends string> {
 }
 
 // -------------------------------------
-export type ExtractAction<T> =
-  T extends TBaseMessage<infer A> ? A : never;
-
+export type ExtractAction<T> = T extends TBaseMessage<infer A> ? A : never;
 
 export type THandlerAction<
-  TMsg extends TBaseMessage<string>, 
+  TMsg extends TBaseMessage<string>,
   TCtx extends THandlerContext,
-  TMsgKey extends string = ExtractAction<TMsg>, 
-> = (data: TMsg, _ctx: TCtx) => any
-
-
+  TMsgKey extends string = ExtractAction<TMsg>,
+> = (data: TMsg, _ctx: TCtx) => any;

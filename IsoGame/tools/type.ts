@@ -22,6 +22,14 @@ export type ToolConfigBrushColor = BaseToolConfig & {
   color: [number, number, number];
 };
 
+type ToolCategory =
+  | "layer"
+  | "terrain"
+  | "color"
+  | "asset"
+  | "structure"
+  | "inspect";
+
 // ---------------------
 // A self-contained action descriptor
 // K is the literal key type (e.g. "lvlFlatSquare"), not widened to string.
@@ -32,7 +40,7 @@ export type ToolAction<K extends string, C extends BaseToolConfig> = {
   readonly key: K;
   name: string;
   icon: string;
-  category: "layer" | "terrain" | "color" | "asset" | "structure" | "inspect";
+  category: ToolCategory;
   execute(conf: C, ctx: TGameHandlerContext): void;
 };
 
@@ -50,7 +58,7 @@ export function defineTool<K extends string, C extends BaseToolConfig>(
   key: K,
   name: string,
   icon: string,
-  category: "layer" | "terrain" | "color" | "asset" | "structure" | "inspect",
+  category: ToolCategory,
   execute: (conf: C, ctx: TGameHandlerContext) => void,
 ): ToolAction<K, C> {
   return {

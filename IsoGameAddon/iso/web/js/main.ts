@@ -1,18 +1,18 @@
-import { flyMenuTab } from "./menu/sections/flyMenu.ts";
-import { initHeadMenu } from "./menu/headMenu.ts";
+import { flyMenuTab } from "@iso-web/js/menu/sections/flyMenu.ts";
+import { initHeadMenu } from "@iso-web/js/menu/headMenu.ts";
 
-import { initCanvas, initKeyBoard } from "./main/keyboad.ts";
-import { MenuTab } from "./menu/headMenu.ts";
-import { terrainMenuTab } from "./menu/sections/terrainMenu.ts";
-import { assetMenuTab } from "./menu/sections/assetMenu.ts";
-import { colorMenuTab } from "./menu/sections/colorMenu.ts";
-import { buildingMenuTab } from "./menu/sections/buildingMenu.ts";
-import { potionMenuTab } from "./menu/sections/potionMenu.ts";
-import { viewMenuTab } from "./menu/sections/viewMenu.ts";
+import { initCanvas, initKeyBoard } from "@iso-web/js/main/keyboad.ts";
+import { MenuTab } from "@iso-web/js/menu/headMenu.ts";
+import { terrainMenuTab } from "@iso-web/js/menu/sections/terrainMenu.ts";
+import { assetMenuTab } from "@iso-web/js/menu/sections/assetMenu.ts";
+import { colorMenuTab } from "@iso-web/js/menu/sections/colorMenu.ts";
+import { buildingMenuTab } from "@iso-web/js/menu/sections/buildingMenu.ts";
+import { potionMenuTab } from "@iso-web/js/menu/sections/potionMenu.ts";
+import { viewMenuTab } from "@iso-web/js/menu/sections/viewMenu.ts";
 import {
   indexScreenHandler,
   ScreenMessageHandler,
-} from "../../../../IsoGame/handlers/handlers.ts";
+} from "@iso-game/handlers/handlers.ts";
 
 // ============================================================================
 // CREATE WORKER

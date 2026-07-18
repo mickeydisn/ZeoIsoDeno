@@ -1,9 +1,9 @@
 import { FactoryMap } from "@iso-game/map/factory/factoryMap.ts";
-import { toolRegistry } from "@iso-game/tools/com/toolRegistry.ts";
+import { toolRegistry } from "@iso-game/tools/toolRegistry.ts";
 
 import { cmd } from "@iso-game/map/action/builder/cmd.ts";
 import { TilesActions } from "@iso-game/map/action/tilesActions.ts";
-import { defineTool, ToolConfigBrush } from "@iso-game/tools/com/type.ts";
+import { defineTool, ToolConfigBrush } from "@iso-game/tools/type.ts";
 import { TGameHandlerContext } from "@iso-game/handlers/game/contexts.ts";
 const tilesActions = TilesActions.getInstance();
 

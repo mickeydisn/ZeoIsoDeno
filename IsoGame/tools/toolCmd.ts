@@ -1,7 +1,10 @@
 /** */
 
-import { RegistryToolAction, TOOL_ACTION_REGISTRY } from "./toolRegistry.ts";
-import { ToolAction } from "@iso-game/tools/com/type.ts";
+import { ToolAction } from "@iso-game/tools/type.ts";
+import {
+  RegistryToolAction,
+  TOOL_ACTION_REGISTRY,
+} from "@iso-game/tools/register.ts";
 
 // 1. Extract the specific Config (C) from the TileAction
 export type ExtractConfig<T> = T extends ToolAction<infer K, infer C> ? C

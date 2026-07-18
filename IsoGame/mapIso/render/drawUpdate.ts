@@ -5,7 +5,7 @@ import { drawTile } from "@iso-game/mapIso/render/drawTile.ts";
 import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
-} from "@iso-game/states/game/gameState.ts";
+} from "../../handlers/game/states/gameState.ts";
 
 export const drawUpdate = (
   _ctx: TRenderHandlerContext,

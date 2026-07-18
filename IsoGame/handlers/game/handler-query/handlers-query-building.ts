@@ -3,12 +3,12 @@ import {
   gameAction,
   TGameHandlerAction,
   TGameHandlerContext,
-} from "../contexts.ts";
+} from "@iso-game/handlers/game/contexts.ts";
 import {
   createBuildingConfig,
   getBuildingConfigEntry,
   getBuildingConfigList,
-} from "@iso-game/tools/buildingConfigRegistry.ts";
+} from "@iso-game/tools/building/buildingConfigRegistry.ts";
 
 // -------------------------------------
 

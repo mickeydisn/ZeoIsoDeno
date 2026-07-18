@@ -1,4 +1,4 @@
-import { gobalGameState } from "@iso-game/states/game/gameState.ts";
+import { gobalGameState } from "../states/gameState.ts";
 
 import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
 import {

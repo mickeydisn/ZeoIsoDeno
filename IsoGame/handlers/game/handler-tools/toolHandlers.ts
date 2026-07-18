@@ -6,15 +6,18 @@ import {
   setBuildingConfig,
   setBuildingParams,
   setColor,
-} from "./toolHandlers-attr.ts";
-import { getAsset, setActiveAsset } from "./toolHandlers-asset.ts";
-import { toolClick } from "./toolHandlers-action.ts";
+} from "@iso-game/handlers/game/handler-tools/toolHandlers-attr.ts";
+import {
+  getAsset,
+  setActiveAsset,
+} from "@iso-game/handlers/game/handler-tools/toolHandlers-asset.ts";
+import { toolClick } from "@iso-game/handlers/game/handler-tools/toolHandlers-action.ts";
 import {
   deletePotion,
   savePotion,
   syncInventory,
-} from "./toolHandlers-potion.ts";
-import { setIsoConfigLayer } from "../handler/handlers-view.ts";
+} from "@iso-game/handlers/game/handler-tools/toolHandlers-potion.ts";
+import { setIsoConfigLayer } from "@iso-game/handlers/game/handler/handlers-view.ts";
 
 export const toolHandlers = [
   // action handlers

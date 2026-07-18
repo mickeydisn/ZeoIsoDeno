@@ -4,7 +4,7 @@
  */
 
 import { WEB_DB_NAME, WEB_DB_VERSION } from "../const.ts";
-import type { Potion } from "@iso-game/states/game/gameState.ts";
+import type { Potion } from "../../../handlers/game/states/gameState.ts";
 
 export interface MapChunkMeta {
   id: string; // "cx_cy"

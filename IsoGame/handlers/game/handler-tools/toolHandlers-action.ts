@@ -1,14 +1,14 @@
-import { toolRegistry } from "@iso-game/tools/com/toolRegistry.ts";
+import { toolRegistry } from "@iso-game/tools/toolRegistry.ts";
 
-import { gobalGameState } from "@iso-game/states/game/gameState.ts";
+import { gobalGameState } from "../states/gameState.ts";
 
-import { TBaseMessage } from "../../../etc/handlers/types/type.ts";
-import { mapDB } from "../../../map/persistence/db/mapWebDatabase.ts";
+import { TBaseMessage } from "@iso-game/etc/handlers/types/type.ts";
+import { mapDB } from "@iso-game/map/persistence/db/mapWebDatabase.ts";
 import {
   gameAction,
   TGameHandlerAction,
   TGameHandlerContext,
-} from "../contexts.ts";
+} from "@iso-game/handlers/game/contexts.ts";
 
 // -------------------------------------
 export interface EventToolClick extends TBaseMessage<"toolClick"> {
@@ -61,7 +61,7 @@ export const toolClick: TGameHandlerAction<EventToolClick> = gameAction<
 
   _ctx.handler.send({
     action: "toolExecuted",
-    toolId: toolRegistry.getActiveId(),
+    toolId: _ctx.toolState.getActiveId(),
     success: true,
     potionResult:
       _result && typeof _result === "object" && "potionId" in (_result as any)

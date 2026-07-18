@@ -1,16 +1,17 @@
 import { TBaseMessage } from "@iso-game/etc/handlers/types/type.ts";
-import { toolRegistry } from "@iso-game/tools/com/toolRegistry.ts";
+import { toolRegistry } from "@iso-game/tools/toolRegistry.ts";
 import {
   gameAction,
   TGameHandlerAction,
   TGameHandlerContext,
-} from "../contexts.ts";
+} from "@iso-game/handlers/game/contexts.ts";
 
 // ------------------- PRIVATE ------------------
 async function _getBlobUrlFromAsset(
   _ctx: TGameHandlerContext,
   assetId: string,
 ): Promise<string | null> {
+  _ctx.toolState.assetStates.setActiveAssetId(assetId);
   toolRegistry.setActiveAssetId(assetId);
   const assetLoader = _ctx.gameloop.assetLoader;
   if (assetLoader && assetId) {

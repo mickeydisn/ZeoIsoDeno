@@ -2,8 +2,8 @@ import {
   defineTool,
   ToolConfigBrush,
   ToolContext,
-} from "@iso-game/tools/com/type.ts";
-import { toolRegistry } from "@iso-game/tools/com/toolRegistry.ts";
+} from "@iso-game/tools/type.ts";
+import { toolRegistry } from "@iso-game/tools/toolRegistry.ts";
 import { WcBuildActions } from "@iso-game/map/generator/wcBuilding2/wcBuildAction.ts";
 
 /**
